@@ -19,7 +19,7 @@ Implementation lives in `src/styles/tokens.css` (colors) and `src/shared/ui` + `
 | Color | Hex | Brand meaning | Where it is used in the app |
 | --- | --- | --- | --- |
 | Yellow | `#FFCB00` | energy & attention | Primary buttons, active nav, focus ring in dark mode. Nothing else |
-| Black | `#000000` | strength & precision | The sidebar (as `#141414`), primary text, dark-mode surfaces |
+| Black | `#000000` | strength & precision | The sidebar and the dark-mode canvas, **verbatim** |
 | Grey | `#D8D9D9` | metal & technology | Borders, dividers, table rules |
 | Navy | `#0F0F35` | stability & trust | **The `info` tone only.** Never chrome, never body text, never a surface |
 
@@ -46,18 +46,18 @@ Components use Tailwind classes generated from the tokens: `bg-surface`, `text-f
 
 | Token | Light | Dark | Purpose |
 | --- | --- | --- | --- |
-| `canvas` | `#F3F3F4` | `#0C0C0C` | Page background *behind* cards |
-| `surface` | `#FFFFFF` | `#161616` | Cards, tables, modals, popovers |
-| `surface-muted` | `#F6F6F7` | `#1C1C1C` | Table headers, row hover, inactive tabs |
-| `surface-inset` | `#EDEDEE` | `#222222` | Inputs, wells, avatar placeholders |
-| `border` | `#D8D9D9` | `#2A2A2A` | Every 1px divider |
-| `border-strong` | `#BDBEC1` | `#3A3A3A` | Input borders on hover, checkbox outlines |
-| `fg` | `#141414` | `#F0F0F0` | Primary text — near-black, never `#000` (it vibrates on white) |
-| `fg-muted` | `#626366` | `#A1A1A1` | Labels, secondary text, table headers |
-| `fg-subtle` | `#8F9094` | `#6F6F6F` | Placeholders, disabled text, em-dash empties |
+| `canvas` | `#F3F3F4` | `#000000` | Page background *behind* cards |
+| `surface` | `#FFFFFF` | `#121212` | Cards, tables, modals, popovers |
+| `surface-muted` | `#F6F6F7` | `#1A1A1A` | Table headers, row hover, inactive tabs |
+| `surface-inset` | `#EDEDEE` | `#202020` | Inputs, wells, avatar placeholders |
+| `border` | `#D8D9D9` | `#262626` | Every 1px divider |
+| `border-strong` | `#BDBEC1` | `#383838` | Input borders on hover, checkbox outlines |
+| `fg` | `#141414` | `#E8E8E8` | Primary text. Near-black on white and off-white on black — the extremes glare in both directions |
+| `fg-muted` | `#626366` | `#9C9C9C` | Labels, secondary text, table headers |
+| `fg-subtle` | `#8F9094` | `#6A6A6A` | Placeholders, disabled text, em-dash empties |
 | `primary` / `primary-fg` | `#FFCB00` / `#141414` | same | The primary action |
 | `primary-soft` | `#FFF4CC` | `#2E2810` | Soft brand fill (rare) |
-| `chrome` | `#141414` | `#0A0A0A` | The sidebar, in **both** themes |
+| `chrome` | `#000000` | `#000000` | The sidebar, in **both** themes — the brand's black, verbatim |
 | `success` | `#15803D` | `#4ADE80` | Paid, active, in stock, completed |
 | `warning` | `#C2410C` | `#FB923C` | Low stock, pending, expiring, needs attention |
 | `danger` | `#C81E1E` | `#F87171` | Destructive actions, errors, overdue, out of stock |
@@ -65,9 +65,10 @@ Components use Tailwind classes generated from the tokens: `bg-surface`, `text-f
 
 ### 1.4 Dark mode
 
-Dark mode is **true neutral**: `#0C0C0C` canvas, `#161616` surfaces, `#0A0A0A` sidebar. No tint.
-The sidebar sits one step darker than the surfaces and keeps a 1px `chrome-border` edge so it
-still reads as chrome rather than smearing into the canvas. Yellow stays `#FFCB00` in both themes
+Dark mode is **pure black**: `#000000` canvas and sidebar, with cards lifted off it at `#121212`
+and two further steps for muted and inset surfaces. On a true-black ground, hierarchy comes
+entirely from those steps and from the hairline borders, so neither may be dropped. The sidebar
+keeps its 1px `chrome-border` edge for the same reason. Yellow stays `#FFCB00` in both themes
 because it is the brand; the status colours lift to their lighter variants so they hold contrast.
 
 Every color must be defined in **both** blocks in `tokens.css`. A color defined only in `:root` is
@@ -147,7 +148,7 @@ Multiples of 4px, via Tailwind's default scale. The only values used are
 
 Fixed and identical on every screen — `AppShell`:
 
-- **Sidebar**, left, near-black (`bg-chrome`) in both themes. 240px expanded / 56px collapsed.
+- **Sidebar**, left, pure black (`bg-chrome`) in both themes. 240px expanded / 56px collapsed.
   Collapse state persists per user. The logo sits on a white backing tile because its black
   outlines would vanish on the chrome (brand guidelines p.9).
 - **Top bar**, 56px, `bg-surface`, bottom border. Contents left→right:
@@ -483,7 +484,7 @@ everything else is a supporting neutral or a distinct hue.
 | 6 | `#7A3FBF` | Sixth series |
 
 Never more than six categorical series in one chart — beyond that, group the tail into "Other".
-In dark mode series 2 becomes `#A1A1A1` (near-black is the background there).
+In dark mode series 2 becomes `#9C9C9C` (black is the background there).
 
 ### 10.2 Rules
 
@@ -511,7 +512,7 @@ In dark mode series 2 becomes `#A1A1A1` (near-black is the background there).
 
 ## 12. Navigation
 
-- Sidebar is near-black in both themes. Section rows are icons + label; the active item is yellow
+- Sidebar is pure black in both themes. Section rows are icons + label; the active item is yellow
   text on a 15% yellow fill. Nothing else in the sidebar is yellow except `New`/`Beta` badges.
 - Sections expand in place. **Nothing is expanded by default** — only the section containing the
   current route opens automatically; anything else stays open only if the user opened it.

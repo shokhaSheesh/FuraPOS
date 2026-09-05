@@ -9,7 +9,7 @@
  *
  * Brand palette (Fura Sentr brand guidelines, p.8):
  *   #FFCB00  yellow  — the accent. Primary actions, active state, focus (dark)
- *   #000000  black   — the chrome. Sidebar, primary text, dark-mode surfaces
+ *   #000000  black   — the chrome, verbatim. Sidebar and dark-mode canvas
  *   #D8D9D9  grey    — borders, dividers, rules
  *   #0F0F35  navy    — reserved: the `info` tone only. Never chrome, never text.
  *
@@ -64,12 +64,12 @@
   --color-primary-soft: #fff4cc;
   --color-primary-border: #ebbb00;
 
-  /* Chrome: the sidebar. Near-black in BOTH themes — it is the brand's black. */
-  --color-chrome: #141414;
-  --color-chrome-muted: #202020;
-  --color-chrome-fg: #ececec;
-  --color-chrome-fg-muted: #9a9a9a;
-  --color-chrome-border: #2a2a2a;
+  /* Chrome: the sidebar. Pure black in BOTH themes — it is the brand's black. */
+  --color-chrome: #000000;
+  --color-chrome-muted: #161616;
+  --color-chrome-fg: #e8e8e8;
+  --color-chrome-fg-muted: #8f8f8f;
+  --color-chrome-border: #1f1f1f;
 
   /* Status. Deliberately NOT yellow — yellow is the brand. */
   --color-success: #15803d;
@@ -92,18 +92,18 @@
 :root[data-theme='dark'] {
   color-scheme: dark;
 
-  /* True neutral darks. No blue, no purple. */
-  --color-canvas: #0c0c0c;
-  --color-surface: #161616;
-  --color-surface-muted: #1c1c1c;
-  --color-surface-inset: #222222;
+  /* Pure black canvas; surfaces lift off it in three steps. No tint anywhere. */
+  --color-canvas: #000000;
+  --color-surface: #121212;
+  --color-surface-muted: #1a1a1a;
+  --color-surface-inset: #202020;
 
-  --color-border: #2a2a2a;
-  --color-border-strong: #3a3a3a;
+  --color-border: #262626;
+  --color-border-strong: #383838;
 
-  --color-fg: #f0f0f0;
-  --color-fg-muted: #a1a1a1;
-  --color-fg-subtle: #6f6f6f;
+  --color-fg: #e8e8e8; /* not #fff — full white on pure black glares */
+  --color-fg-muted: #9c9c9c;
+  --color-fg-subtle: #6a6a6a;
   --color-fg-inverted: #141414;
 
   --color-primary: #ffcb00;
@@ -113,12 +113,12 @@
   --color-primary-soft: #2e2810;
   --color-primary-border: #5c4f14;
 
-  /* One step darker than the surfaces so the sidebar still reads as chrome. */
-  --color-chrome: #0a0a0a;
-  --color-chrome-muted: #181818;
-  --color-chrome-fg: #ececec;
+  /* Same black as the canvas; the hairline border is what separates them. */
+  --color-chrome: #000000;
+  --color-chrome-muted: #161616;
+  --color-chrome-fg: #e8e8e8;
   --color-chrome-fg-muted: #8f8f8f;
-  --color-chrome-border: #202020;
+  --color-chrome-border: #1f1f1f;
 
   --color-success: #4ade80;
   --color-success-soft: #14291c;

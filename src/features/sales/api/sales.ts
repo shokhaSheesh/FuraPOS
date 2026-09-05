@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { http } from '@/shared/lib/http'
 import type { ListQuery, Paginated } from '@/shared/types'
-import type { Sale, SaleLine } from '../model/sale'
+import type { Sale, SaleDelivery, SaleLine, SaleStatus } from '../model/sale'
 
 export const saleKeys = {
   all: ['sales'] as const,
@@ -34,10 +34,13 @@ export interface CreateSalePayload {
   clientId: string | null
   locationId: string
   paymentMethod: Sale['paymentMethod']
+  channel: Sale['channel']
   comment: string
   paid: number
   lines: SaleLine[]
-  status: 'draft' | 'completed' | 'postponed'
+  delivery: SaleDelivery | null
+  expiresAt: string | null
+  status: SaleStatus
 }
 
 export function useCreateSale() {

@@ -217,3 +217,51 @@ main dashboard.
   revisiting once the widget set is settled; building it before then would freeze the wrong set.
 - **The seller dashboard tab**, including the motivation widgets, which depend on Personnel →
   Seller motivation existing first.
+
+---
+
+## Sale record — field comparison
+
+Captured from OX's All sales screen: its column-visibility panel, its filter panel and the summary
+strip above the table. The tenant has no sales, so no populated row could be read; the *fields* are
+what was compared. OX creates sales in its POS, which we do not have, so the field set below is what
+our New sale screen must carry instead.
+
+| OX field | Ours | Decision |
+| --- | --- | --- |
+| ID Продажа | `number` | kept |
+| Статус | `status` | kept — **and we adopted OX's full status set**, see below |
+| Клиент | `clientId` / `clientName` | kept |
+| Продавец | `sellerName` | kept |
+| Зоны | `locationId` | kept — "zone" is OX's word for what we call a location |
+| Позиция продажи | `lines` | kept |
+| Способ оплаты | `paymentMethod` | kept |
+| Сумма продаж | `total` | kept |
+| Долг / Сумма долга | `debt` | kept |
+| Продано шт. | derived from `lines` | kept, derived rather than stored |
+| Интернет-магазин | `channel` | **adapted.** OX has a boolean web-shop flag because its only origins are the POS and the web shop. With manual entry the useful distinction is who was in front of you: at the counter / by phone / online store. |
+| Доставки, Сумма доставки | `delivery`, `deliveryCost` | **added.** A sale can require delivery, with an address, cost, planned date and courier. Delivery is charged on top of goods and is never discounted. |
+| Время истечения | `expiresAt` | **added**, and only meaningful on a postponed sale — a reservation that never lapses is not a reservation. |
+| Обновлено в / Закончено в | `updatedAt` / `finishedAt` | **added.** `finishedAt` is null while the sale is still moving. |
+| ID заказа (separate from sale id) | — | **dropped.** OX splits an *order* (web/POS) from a *sale*. With one manual record there is nothing to split, and two ids for one thing is a reliable source of confusion. |
+| ID Возврат/Обмен, Возвраты, Обмены, Разница обмена | — | **dropped from the sale.** A return or an exchange is its own document that references a sale, not a field on it. Worth its own screen later; it is not part of creating a sale. |
+| Доп. статус | — | **dropped.** A second, unexplained status alongside the first. If a real meaning turns up we will add a named field for it rather than a generic slot. |
+
+### Status set — adopted from OX verbatim
+
+`Открыто / Новые / Обработано / Доставляется / Доставлено / Завершён / Отложки / Удалено`
+→ `open / new / processed / delivering / delivered / completed / postponed / deleted`
+
+These are **not** POS leftovers, which is what we assumed before looking: they are an order-fulfilment
+lifecycle, exactly what a counter that also takes phone orders needs. This also settles the earlier
+open question about the Sales sub-pages — Open, Closed, Postponed and Deleted sales each map onto a
+real status, so all four screens earn their place.
+
+Completing a sale that requires delivery moves it to **processed**, not completed: goods that still
+have to reach the customer are not a finished sale.
+
+### Also worth taking, not yet built
+
+OX shows a **summary strip** above the sales table for the filtered range — sales count, sales total,
+units sold, returns, debts, deliveries, clients, sellers. That is a genuinely good idea and we should
+add the subset that applies to us when the Sales lifecycle screens are built.

@@ -593,7 +593,15 @@ value, never from the abandoned edit.
 The trigger shows the applied range (`05.08.2026 – 19.08.2026`) or the placeholder, and takes the
 soft-brand fill when a custom range is the active selection.
 
-### 11.5 Period filters
+### 11.5 Single dates
+
+`DatePicker` is one date, on the same popover and the same three-step calendar. **Never a native
+`<input type="date">`** — its popup is the browser's, not ours, and it looks different on every OS.
+
+Unlike the range picker there is no Apply: with one date the pick *is* the decision, so it commits
+and closes. Dates outside the allowed window are dimmed, not hidden.
+
+### 11.6 Period filters
 
 A screen that offers both presets and a custom range renders them as **one row**: a segmented
 control of presets, then the range picker as a peer. Selecting a preset clears the custom range;

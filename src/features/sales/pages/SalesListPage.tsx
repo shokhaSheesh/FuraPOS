@@ -12,17 +12,7 @@ import { useSession } from '@/app/providers/SessionProvider'
 import { paths } from '@/shared/config/paths'
 import { formatDate, formatMoney } from '@/shared/lib/format'
 import { useSales } from '../api/sales'
-import { PAYMENT_METHODS, type Sale, type SaleStatus } from '../model/sale'
-
-const statusTone: Record<
-  SaleStatus,
-  { tone: 'success' | 'warning' | 'neutral' | 'danger'; label: string }
-> = {
-  completed: { tone: 'success', label: 'Completed' },
-  draft: { tone: 'warning', label: 'Open' },
-  postponed: { tone: 'warning', label: 'Postponed' },
-  deleted: { tone: 'danger', label: 'Deleted' },
-}
+import { PAYMENT_METHODS, SALE_STATUSES, type Sale, type SaleStatus } from '../model/sale'
 
 const columns: TableColumn<Sale>[] = [
   {
@@ -70,8 +60,8 @@ const columns: TableColumn<Sale>[] = [
     accessorKey: 'status',
     header: 'Status',
     cell: ({ row }) => {
-      const { tone, label } = statusTone[row.original.status]
-      return <Badge tone={tone}>{label}</Badge>
+      const status = SALE_STATUSES.find((s) => s.value === row.original.status)
+      return <Badge tone={status?.tone ?? 'neutral'}>{status?.label ?? row.original.status}</Badge>
     },
   },
 ]

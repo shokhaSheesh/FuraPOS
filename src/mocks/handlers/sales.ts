@@ -2,7 +2,7 @@ import { delay, http, HttpResponse } from 'msw'
 import { api } from './api'
 import { clients, locations, sales } from '../seed'
 import { matches, paginate } from '../utils'
-import type { Sale, SaleLine } from '@/features/sales/model/sale'
+import type { Sale, SaleDelivery, SaleLine, SaleStatus } from '@/features/sales/model/sale'
 import { computeTotals } from '@/features/sales/model/sale'
 
 let sequence = sales.length
@@ -40,9 +40,12 @@ export const salesHandlers = [
       locationId: string
       paymentMethod: Sale['paymentMethod']
       comment: string
+      channel: Sale['channel']
       paid: number
       lines: SaleLine[]
-      status: 'draft' | 'completed' | 'postponed'
+      delivery: SaleDelivery | null
+      expiresAt: string | null
+      status: SaleStatus
     }
 
     if (!body.lines?.length) {
@@ -52,7 +55,9 @@ export const salesHandlers = [
     // Deliberate latency so the in-flight state is visible in development.
     await delay(700)
 
-    const totals = computeTotals(body.lines, body.paid)
+    const totals = computeTotals(body.lines, body.paid, body.delivery?.cost ?? 0)
+    const now = new Date().toISOString()
+    const settled = body.status === 'completed' || body.status === 'delivered'
     sequence += 1
     const client = clients.find((c) => c.id === body.clientId)
 
@@ -66,14 +71,20 @@ export const salesHandlers = [
       locationName: locations.find((l) => l.id === body.locationId)?.name ?? '—',
       sellerName: 'Akhmet Dauletmuratov',
       paymentMethod: body.paymentMethod,
+      channel: body.channel,
       comment: body.comment || null,
       lines: body.lines,
+      delivery: body.delivery,
       subtotal: totals.subtotal,
       discount: totals.discount,
+      deliveryCost: totals.deliveryCost,
       total: totals.total,
       paid: body.paid,
       debt: totals.debt,
-      createdAt: new Date().toISOString(),
+      expiresAt: body.expiresAt,
+      createdAt: now,
+      updatedAt: now,
+      finishedAt: settled ? now : null,
     }
 
     sales.push(sale)

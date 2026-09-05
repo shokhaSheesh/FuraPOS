@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { ArrowLeft, Check } from 'lucide-react'
+import { ArrowLeft, Check, Clock, Truck } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
 import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
 import { Select } from '@/shared/ui/Select'
+import { DatePicker } from '@/shared/ui/DatePicker'
 import { toast } from '@/shared/ui/toast'
 import { paths } from '@/shared/config/paths'
 import { useSession } from '@/app/providers/SessionProvider'
@@ -16,7 +17,15 @@ import type { Client } from '../api/sales'
 import { ProductPicker } from '../components/ProductPicker'
 import { SaleLinesTable } from '../components/SaleLinesTable'
 import { ClientPicker } from '../components/ClientPicker'
-import { computeTotals, PAYMENT_METHODS, type PaymentMethod, type SaleLine } from '../model/sale'
+import {
+  computeTotals,
+  PAYMENT_METHODS,
+  SALE_CHANNELS,
+  type PaymentMethod,
+  type SaleChannel,
+  type SaleLine,
+  type SaleStatus,
+} from '../model/sale'
 import type { Product } from '@/features/products/model/product'
 
 const LOCATIONS = [
@@ -42,11 +51,23 @@ export default function NewSalePage() {
   const [client, setClient] = useState<Client | null>(null)
   const [locationId, setLocationId] = useState('loc-2')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash')
+  const [channel, setChannel] = useState<SaleChannel>('desk')
   const [comment, setComment] = useState('')
   const [paidText, setPaidText] = useState('')
 
-  const totals = useMemo(() => computeTotals(lines, Number(paidText) || 0), [lines, paidText])
+  const [deliveryOn, setDeliveryOn] = useState(false)
+  const [address, setAddress] = useState('')
+  const [deliveryCostText, setDeliveryCostText] = useState('')
+  const [scheduledFor, setScheduledFor] = useState<Date | null>(null)
+  const [courier, setCourier] = useState('')
+
+  const deliveryCost = deliveryOn ? Number(deliveryCostText) || 0 : 0
+  const totals = useMemo(
+    () => computeTotals(lines, Number(paidText) || 0, deliveryCost),
+    [lines, paidText, deliveryCost],
+  )
   const empty = lines.length === 0
+  const deliveryIncomplete = deliveryOn && address.trim().length < 3
 
   const addProduct = (product: Product) => {
     setLines((previous) => {
@@ -80,25 +101,55 @@ export default function NewSalePage() {
   const removeLine = (id: string) =>
     setLines((previous) => previous.filter((line) => line.id !== id))
 
-  const submit = (status: 'draft' | 'completed') => {
+  /**
+   * A sale that still has to be delivered is not finished, so completing it
+   * moves to `processed` rather than `completed` — the delivery states then
+   * carry it the rest of the way.
+   */
+  const submit = (intent: 'open' | 'postponed' | 'complete') => {
+    const status: SaleStatus =
+      intent === 'complete' ? (deliveryOn ? 'processed' : 'completed') : intent
+    const settling = intent === 'complete'
+
     createSale.mutate(
       {
         clientId: client?.id ?? null,
         locationId,
         paymentMethod,
+        channel,
         comment,
-        paid: status === 'completed' ? Number(paidText) || totals.total : 0,
+        paid: settling ? Number(paidText) || totals.total : 0,
         lines,
+        delivery: deliveryOn
+          ? {
+              address: address.trim(),
+              cost: deliveryCost,
+              scheduledFor: scheduledFor ? scheduledFor.toISOString().slice(0, 10) : null,
+              courier: courier.trim() || null,
+            }
+          : null,
+        expiresAt:
+          intent === 'postponed' ? new Date(Date.now() + 3 * 86_400_000).toISOString() : null,
         status,
       },
       {
         onSuccess: (sale) => {
           toast.success(
-            status === 'draft'
-              ? `Sale ${sale.number} saved as draft`
-              : `Sale ${sale.number} completed`,
+            intent === 'open'
+              ? `Sale ${sale.number} saved`
+              : intent === 'postponed'
+                ? `Sale ${sale.number} postponed`
+                : deliveryOn
+                  ? `Sale ${sale.number} accepted for delivery`
+                  : `Sale ${sale.number} completed`,
           )
-          navigate(status === 'draft' ? paths.sales.drafts : paths.sales.orders)
+          navigate(
+            intent === 'open'
+              ? paths.sales.drafts
+              : intent === 'postponed'
+                ? paths.sales.postponed
+                : paths.sales.orders,
+          )
         },
         onError: (error) => toast.error(error.message),
       },
@@ -121,20 +172,33 @@ export default function NewSalePage() {
           <div className="flex items-center gap-2">
             <Button
               variant="secondary"
-              disabled={empty}
-              loading={createSale.isPending && createSale.variables?.status === 'draft'}
-              onClick={() => submit('draft')}
+              disabled={empty || createSale.isPending}
+              loading={createSale.isPending && createSale.variables?.status === 'open'}
+              onClick={() => submit('open')}
             >
-              Save as draft
+              Save
+            </Button>
+            <Button
+              variant="secondary"
+              disabled={empty || createSale.isPending}
+              loading={createSale.isPending && createSale.variables?.status === 'postponed'}
+              onClick={() => submit('postponed')}
+            >
+              <Clock />
+              Postpone
             </Button>
             <Button
               variant="primary"
-              disabled={empty}
-              loading={createSale.isPending && createSale.variables?.status === 'completed'}
-              onClick={() => submit('completed')}
+              disabled={empty || deliveryIncomplete || createSale.isPending}
+              loading={
+                createSale.isPending &&
+                (createSale.variables?.status === 'completed' ||
+                  createSale.variables?.status === 'processed')
+              }
+              onClick={() => submit('complete')}
             >
               <Check />
-              Complete sale
+              {deliveryOn ? 'Accept order' : 'Complete sale'}
             </Button>
           </div>
         }
@@ -179,6 +243,15 @@ export default function NewSalePage() {
                   className="w-full"
                 />
               </Field>
+              <Field label="Source">
+                <Select
+                  value={channel}
+                  onChange={setChannel}
+                  options={SALE_CHANNELS}
+                  aria-label="Source"
+                  className="w-full"
+                />
+              </Field>
               <Field label="Payment method">
                 <Select
                   value={paymentMethod}
@@ -203,12 +276,75 @@ export default function NewSalePage() {
 
           <Card>
             <CardHeader>
+              <CardTitle>Delivery</CardTitle>
+              <label className="text-fg-muted flex cursor-pointer items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={deliveryOn}
+                  onChange={(event) => setDeliveryOn(event.target.checked)}
+                  className="accent-primary size-4"
+                />
+                Required
+              </label>
+            </CardHeader>
+            {deliveryOn ? (
+              <CardBody className="space-y-3">
+                <Field label="Address">
+                  <Input
+                    value={address}
+                    onChange={(event) => setAddress(event.target.value)}
+                    placeholder="Street, building, flat"
+                  />
+                </Field>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Cost">
+                    <Input
+                      type="number"
+                      min={0}
+                      value={deliveryCostText}
+                      onChange={(event) => setDeliveryCostText(event.target.value)}
+                      placeholder="0"
+                      className="text-right"
+                    />
+                  </Field>
+                  <Field label="Date">
+                    <DatePicker
+                      value={scheduledFor}
+                      onChange={setScheduledFor}
+                      placeholder="Pick a date"
+                      minDate={new Date()}
+                    />
+                  </Field>
+                </div>
+                <Field label="Courier">
+                  <Input
+                    value={courier}
+                    onChange={(event) => setCourier(event.target.value)}
+                    placeholder="Optional"
+                  />
+                </Field>
+              </CardBody>
+            ) : (
+              <CardBody>
+                <p className="text-fg-subtle flex items-center gap-2 text-sm">
+                  <Truck className="size-4" />
+                  Customer is taking it with them.
+                </p>
+              </CardBody>
+            )}
+          </Card>
+
+          <Card>
+            <CardHeader>
               <CardTitle>Total</CardTitle>
             </CardHeader>
             <CardBody className="space-y-2">
               <Row label="Subtotal" value={formatMoney(totals.subtotal)} />
               {totals.discount > 0 ? (
                 <Row label="Discount" value={`− ${formatMoney(totals.discount)}`} tone="warning" />
+              ) : null}
+              {totals.deliveryCost > 0 ? (
+                <Row label="Delivery" value={`+ ${formatMoney(totals.deliveryCost)}`} />
               ) : null}
               <div className="border-border flex items-baseline justify-between border-t pt-2">
                 <span className="text-fg text-sm font-medium">To pay</span>

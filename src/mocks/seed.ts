@@ -131,8 +131,22 @@ export const sales: Sale[] = Array.from({ length: 18 }, (_, index) => {
     0,
   )
   const total = Math.round(subtotal - discount)
-  const status = random() > 0.82 ? 'draft' : 'completed'
-  const paid = status === 'completed' ? total : 0
+  const status = pick([
+    'completed',
+    'completed',
+    'completed',
+    'open',
+    'new',
+    'processed',
+    'delivering',
+    'delivered',
+    'postponed',
+  ] as const)
+  const settled = status === 'completed' || status === 'delivered'
+  const paid = settled ? total : random() > 0.6 ? Math.round(total / 2) : 0
+  const needsDelivery = status === 'delivering' || status === 'delivered'
+  const deliveryCost = needsDelivery ? between(20_000, 90_000) : 0
+  const createdAt = new Date(Date.now() - between(0, 20) * 86_400_000)
 
   return {
     id: `sale-${index + 1}`,
@@ -144,13 +158,29 @@ export const sales: Sale[] = Array.from({ length: 18 }, (_, index) => {
     locationName: location.name,
     sellerName: pick(['Akhmet Dauletmuratov', 'Mansurbek Akchaev', 'Dilshod Yusupov']),
     paymentMethod: pick(['cash', 'card', 'transfer', 'credit'] as const),
+    channel: pick(['desk', 'desk', 'phone', 'online'] as const),
     comment: null,
     lines,
+    delivery: needsDelivery
+      ? {
+          address: `Ташкент, ул. ${pick(['Амира Темура', 'Бунёдкор', 'Навои', 'Чилонзор'])}, ${between(1, 90)}`,
+          cost: deliveryCost,
+          scheduledFor: new Date(createdAt.getTime() + 86_400_000).toISOString().slice(0, 10),
+          courier: pick(['Sardor', 'Jasur', 'Otabek']),
+        }
+      : null,
     subtotal,
     discount,
-    total,
+    deliveryCost,
+    total: total + deliveryCost,
     paid,
-    debt: Math.max(0, total - paid),
-    createdAt: new Date(Date.now() - between(0, 20) * 86_400_000).toISOString(),
+    debt: Math.max(0, total + deliveryCost - paid),
+    expiresAt:
+      status === 'postponed'
+        ? new Date(createdAt.getTime() + 3 * 86_400_000).toISOString()
+        : null,
+    createdAt: createdAt.toISOString(),
+    updatedAt: createdAt.toISOString(),
+    finishedAt: settled ? createdAt.toISOString() : null,
   }
 })

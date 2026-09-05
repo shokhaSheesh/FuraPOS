@@ -41,10 +41,18 @@ describe('sale totals', () => {
     expect(totals.change).toBe(0)
   })
 
+  it('adds delivery on top of goods, and never discounts it', () => {
+    const totals = computeTotals([line({ discountPercent: 50 })], 0, 30_000)
+    expect(totals.discount).toBe(100_000)
+    expect(totals.deliveryCost).toBe(30_000)
+    expect(totals.total).toBe(130_000)
+  })
+
   it('is zero across the board with no lines', () => {
     expect(computeTotals([], 0)).toEqual({
       subtotal: 0,
       discount: 0,
+      deliveryCost: 0,
       total: 0,
       change: 0,
       debt: 0,

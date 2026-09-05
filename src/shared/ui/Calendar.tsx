@@ -49,10 +49,21 @@ interface CalendarProps {
   onRangeChange: (range: DateRange) => void
   month: Date
   onMonthChange: (month: Date) => void
+  minDate?: Date
   maxDate?: Date
+  /** 'single' collapses the range to one day; the zoom behaviour is identical. */
+  mode?: 'single' | 'range'
 }
 
-export function Calendar({ range, onRangeChange, month, onMonthChange, maxDate }: CalendarProps) {
+export function Calendar({
+  range,
+  onRangeChange,
+  month,
+  onMonthChange,
+  minDate,
+  maxDate,
+  mode = 'range',
+}: CalendarProps) {
   const [view, setView] = useState<CalendarView>('days')
   const [hovered, setHovered] = useState<Date | null>(null)
   const gridRef = useRef<HTMLDivElement>(null)
@@ -97,11 +108,14 @@ export function Calendar({ range, onRangeChange, month, onMonthChange, maxDate }
           ref={gridRef}
           month={month}
           range={range}
-          hovered={hovered}
+          hovered={mode === 'single' ? null : hovered}
+          minDate={minDate}
           maxDate={maxDate}
           onHover={setHovered}
           onMonthChange={onMonthChange}
-          onPick={(day) => onRangeChange(nextRange(range, day))}
+          onPick={(day) =>
+            onRangeChange(mode === 'single' ? { from: day, to: day } : nextRange(range, day))
+          }
         />
       ) : view === 'months' ? (
         <Grid
@@ -191,6 +205,7 @@ interface DaysViewProps {
   month: Date
   range: DateRange
   hovered: Date | null
+  minDate?: Date
   maxDate?: Date
   onHover: (day: Date | null) => void
   onPick: (day: Date) => void
@@ -202,6 +217,7 @@ function DaysView({
   month,
   range,
   hovered,
+  minDate,
   maxDate,
   onHover,
   onPick,
@@ -269,7 +285,8 @@ function DaysView({
       <div className="grid grid-cols-7 gap-y-0.5">
         {days.map((day) => {
           const outside = !isSameMonth(day, month)
-          const disabled = maxDate ? isAfter(day, maxDate) : false
+          const disabled =
+            (maxDate ? isAfter(day, maxDate) : false) || (minDate ? isBefore(day, minDate) : false)
           const isStart = range.from && isSameDay(day, range.from)
           const isEnd = previewTo && isSameDay(day, previewTo)
           const isEdge = Boolean(isStart || isEnd)

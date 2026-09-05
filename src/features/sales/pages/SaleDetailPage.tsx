@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
-import { ArrowLeft, HandCoins, MapPin, Truck } from 'lucide-react'
+import { ArrowLeft, HandCoins, MapPin, RotateCcw, Trash2, Truck } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
@@ -19,6 +19,7 @@ import {
   formatPercent,
 } from '@/shared/lib/format'
 import { useSale, useUpdateSale } from '../api/sales'
+import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 import { RecordPaymentModal } from '../components/RecordPaymentModal'
 import { SaleTimeline } from '../components/SaleTimeline'
 import {
@@ -40,6 +41,7 @@ export default function SaleDetailPage() {
   const { data: sale, isLoading, isError } = useSale(orderId)
   const update = useUpdateSale(orderId)
   const [payOpen, setPayOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
 
   if (isLoading) return <DetailSkeleton />
 
@@ -88,13 +90,33 @@ export default function SaleDetailPage() {
         description={`${formatDate(sale.createdAt)} · ${sale.locationName} · ${sale.sellerName}`}
         action={
           <div className="flex items-center gap-2">
-            {sale.debt > 0 ? (
+            {sale.status === 'deleted' ? (
+              <Button
+                variant="secondary"
+                loading={update.isPending}
+                onClick={() =>
+                  update.mutate(
+                    { status: 'open' },
+                    { onSuccess: () => toast.success(`${sale.number} restored`) },
+                  )
+                }
+              >
+                <RotateCcw />
+                Restore
+              </Button>
+            ) : (
+              <Button variant="ghost" aria-label="Delete sale" onClick={() => setDeleteOpen(true)}>
+                <Trash2 />
+                Delete
+              </Button>
+            )}
+            {sale.debt > 0 && sale.status !== 'deleted' ? (
               <Button variant="secondary" onClick={() => setPayOpen(true)}>
                 <HandCoins />
                 Record payment
               </Button>
             ) : null}
-            {step ? (
+            {step && sale.status !== 'deleted' ? (
               <Button variant="primary" loading={update.isPending} onClick={advance}>
                 {step.label}
               </Button>
@@ -146,6 +168,31 @@ export default function SaleDetailPage() {
             ),
           },
         ]}
+      />
+
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete this sale?"
+        body={
+          <>
+            <strong className="text-fg font-medium">{sale.number}</strong> moves to Deleted sales.
+            It stays in the ledger for audit and can be restored.
+          </>
+        }
+        submitting={update.isPending}
+        onConfirm={() =>
+          update.mutate(
+            { status: 'deleted' },
+            {
+              onSuccess: () => {
+                toast.success(`${sale.number} deleted`)
+                setDeleteOpen(false)
+              },
+              onError: (error) => toast.error(error.message),
+            },
+          )
+        }
       />
 
       <RecordPaymentModal

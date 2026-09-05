@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { computeTotals, lineTotal, nextStep, type SaleLine, type SaleStatus } from './sale'
+import {
+  computeTotals,
+  lineTotal,
+  nextStep,
+  SALE_STATUSES,
+  type SaleLine,
+  type SaleStatus,
+} from './sale'
 
 const line = (over: Partial<SaleLine> = {}): SaleLine => ({
   id: 'l1',
@@ -83,5 +90,31 @@ describe('sale lifecycle', () => {
 
   it('treats a postponed sale as resumable', () => {
     expect(nextStep('postponed')?.to).toBe('processed')
+  })
+})
+
+describe('status catalogue', () => {
+  /**
+   * The chips, the badges and the detail page all read SALE_STATUSES. Adding a
+   * status to the union without adding it here would silently drop it from the
+   * filters, so the two are pinned together.
+   */
+  it('carries a label and tone for every status in the union', () => {
+    const every: Record<SaleStatus, true> = {
+      open: true,
+      new: true,
+      processed: true,
+      delivering: true,
+      delivered: true,
+      completed: true,
+      postponed: true,
+      deleted: true,
+    }
+    expect(SALE_STATUSES.map((s) => s.value).sort()).toEqual(Object.keys(every).sort())
+    expect(SALE_STATUSES.every((s) => s.label && s.tone)).toBe(true)
+  })
+
+  it('treats deleted as terminal — a deleted sale offers no next step', () => {
+    expect(nextStep('deleted')).toBeNull()
   })
 })

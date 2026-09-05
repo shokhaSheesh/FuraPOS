@@ -319,7 +319,7 @@ Plus two OX does not carry as columns: **Location** and **Debt**.
 | Кассовый терминал | Same — no POS terminals exist to record. |
 | Доп. статус | A second, unexplained status beside the first. If a real meaning turns up it earns a named field, not a generic slot. |
 | Менеджеры | A manager overseeing a sale, distinct from the seller who rang it. We model one person per sale. Real for wholesale — see open questions. |
-| Тариф доставки | A delivery *rate plan* (by zone, weight, etc.). We charge a flat per-sale delivery cost. Needs a tariff catalogue first. |
+| Тариф доставки | **Decided: not building it.** Delivery is a flat price entered on the sale. A rate plan by zone or weight would need a tariff catalogue behind it, and the business does not price that way. |
 | Фискализованный | Whether the receipt was registered with the tax authority. **This is the one that matters** — see open questions. |
 
 The four we already stored but never showed — Subtotal, Discount, Comment, Delivery date — are now
@@ -334,7 +334,7 @@ columns, hidden by default like the other rarely-needed ones.
    as the person who entered it?
 3. **Several sellers on one sale.** OX's column is plural, and Personnel has "Мотивация продавцов"
    (seller motivation) — commission split across sellers is the obvious reason. Does that apply?
-4. **Delivery tariffs.** Flat cost per sale, or a rate plan by zone/weight?
+4. ~~Delivery tariffs~~ — **settled: a flat price per sale, no tariffs.**
 
 ### Summary strip
 

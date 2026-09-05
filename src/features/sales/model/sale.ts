@@ -177,6 +177,7 @@ export function nextStep(status: SaleStatus): { to: SaleStatus; label: string } 
     case 'postponed':
     case 'new':
       return { to: 'processed', label: 'Mark as processed' }
+    // 'deleted' and 'completed' fall through to null: both are terminal.
     case 'processed':
       return { to: 'delivering', label: 'Send for delivery' }
     case 'delivering':

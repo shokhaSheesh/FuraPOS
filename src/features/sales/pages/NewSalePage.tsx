@@ -106,10 +106,24 @@ export default function NewSalePage() {
    * A sale that still has to be delivered is not finished, so completing it
    * moves to `processed` rather than `completed` — the delivery states then
    * carry it the rest of the way.
+   *
+   * Saving without completing splits by where the sale came from: something
+   * half-rung at the counter is `open` (the seller will come back to it),
+   * while an order taken by phone or online is `new` — it is complete as an
+   * order and waiting on someone to process it. Without this, `new` was a
+   * status the filters offered that nothing could ever produce.
    */
-  const submit = (intent: 'open' | 'postponed' | 'complete') => {
+  const submit = (intent: 'save' | 'postponed' | 'complete') => {
     const status: SaleStatus =
-      intent === 'complete' ? (deliveryOn ? 'processed' : 'completed') : intent
+      intent === 'complete'
+        ? deliveryOn
+          ? 'processed'
+          : 'completed'
+        : intent === 'postponed'
+          ? 'postponed'
+          : channel === 'desk'
+            ? 'open'
+            : 'new'
     const settling = intent === 'complete'
 
     createSale.mutate(
@@ -138,8 +152,8 @@ export default function NewSalePage() {
       {
         onSuccess: (sale) => {
           toast.success(
-            intent === 'open'
-              ? `Sale ${sale.number} saved`
+            intent === 'save'
+              ? `Sale ${sale.number} saved as ${status}`
               : intent === 'postponed'
                 ? `Sale ${sale.number} postponed`
                 : deliveryOn
@@ -147,8 +161,10 @@ export default function NewSalePage() {
                   : `Sale ${sale.number} completed`,
           )
           navigate(
-            intent === 'open'
-              ? paths.sales.drafts
+            intent === 'save'
+              ? status === 'open'
+                ? paths.sales.drafts
+                : paths.sales.orders
               : intent === 'postponed'
                 ? paths.sales.postponed
                 : paths.sales.orders,
@@ -176,8 +192,11 @@ export default function NewSalePage() {
             <Button
               variant="secondary"
               disabled={empty || createSale.isPending}
-              loading={createSale.isPending && createSale.variables?.status === 'open'}
-              onClick={() => submit('open')}
+              loading={
+                createSale.isPending &&
+                (createSale.variables?.status === 'open' || createSale.variables?.status === 'new')
+              }
+              onClick={() => submit('save')}
             >
               Save
             </Button>

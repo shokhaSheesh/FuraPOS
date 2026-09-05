@@ -165,3 +165,50 @@ Dropped, because the whole point is that the two navigations match:
 
 For reference only — we deliberately keep our top bar to account chrome (DESIGN_RULES § 3.2):
 a wallet balance, and a global search bound to `⌘K`.
+
+---
+
+## Dashboard — widget inventory
+
+Captured from the live tenant. The tenant has no sales data, so every figure read zero; the widget
+set and layout is what was copied, not the numbers.
+
+### Main tab (Дашборд)
+
+| OX widget | Ours | Note |
+| --- | --- | --- |
+| Period chips: По умолчанию / Вчера / Сегодня / За неделю / За месяц / Другое | Period filter | Ours drives **every** widget; OX bakes the period into card titles |
+| Оборот за сегодня | Revenue | |
+| Посетители за эту неделю | Visitors | |
+| Новые клиенты за неделю | New clients | |
+| Оборот по локациям (line chart) | Revenue by location | |
+| Кассовые смены | Cash shifts | |
+| Курс валют (paged, one at a time) | Exchange rates | All rates shown at once; nothing to page through |
+| История действий / Добро пожаловать | **replaced** by Needs attention | See below |
+| Per-widget `⋮` menus, `+` to add a dashboard tab | *(not built)* | OX dashboards are user-configurable |
+
+### Seller tab (Дашборд продавца)
+
+Not built as a separate tab. Its contents: turnover today, turnover this month, motivation total and
+count, a motivation-by-day table, top sellers, and **top products** — which we promoted onto the
+main dashboard.
+
+### What we changed, and why
+
+- **One period filter drives everything.** OX shows "Оборот за сегодня" beside "Посетители за эту
+  неделю" — two periods in one row — while a global period control sits above them. The row cannot
+  be read as a set. Ours restates the comparison basis on each card ("vs yesterday").
+- **Added Sales, Average check, Gross margin.** OX's dashboard has no profitability figure at all.
+  For a retail business margin is the second most important number after revenue.
+- **Replaced the welcome banner with "Needs attention."** OX spends its best real estate — top
+  right — on a gradient, the viewer's own name and a clock. Ours answers "what needs me today?":
+  out of stock, below reorder point, overdue payables, sales left open. Every row links to the
+  screen that clears it.
+- **Promoted Top products** from the seller tab.
+
+### Not built yet, deliberately
+
+- **Configurable dashboards** — OX lets a user add tabs and remove widgets via the `⋮` menus. Worth
+  revisiting once the widget set is settled; building it before then would freeze the wrong set.
+- **The seller dashboard tab**, including the motivation widgets, which depend on Personnel →
+  Seller motivation existing first.

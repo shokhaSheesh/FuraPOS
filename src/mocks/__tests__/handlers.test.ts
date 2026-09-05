@@ -62,8 +62,26 @@ describe('mock API', () => {
     expect(me.permissions.length).toBeGreaterThan(0)
   })
 
-  it('serves a dashboard summary with a 14-day series', async () => {
-    const summary = await get<{ revenueSeries: unknown[] }>('/dashboard/summary')
-    expect(summary.revenueSeries).toHaveLength(14)
+  it('serves a dashboard summary whose series length follows the period', async () => {
+    const week = await get<{ revenueByLocation: unknown[]; period: string }>(
+      '/dashboard/summary?period=week',
+    )
+    expect(week.period).toBe('week')
+    expect(week.revenueByLocation).toHaveLength(7)
+
+    const month = await get<{ revenueByLocation: unknown[] }>('/dashboard/summary?period=month')
+    expect(month.revenueByLocation).toHaveLength(30)
+  })
+
+  it('gives every dashboard metric a value and a comparison basis', async () => {
+    const s = await get<
+      Record<string, { value: number; change: number | null }> & {
+        comparedTo: string
+      }
+    >('/dashboard/summary?period=today')
+    for (const key of ['revenue', 'salesCount', 'averageCheck', 'grossMargin']) {
+      expect(s[key]!.value).toBeGreaterThan(0)
+    }
+    expect(s.comparedTo).toBe('yesterday')
   })
 })

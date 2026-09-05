@@ -31,7 +31,11 @@ Two very different surfaces, and this build is the first one:
 (Russian) to ours (English) and to the reference product's own route, captured from the live tenant.
 Do not rename a nav item or invent a screen without updating that map first.
 
-1. **Dashboard** — KPI cards + charts, read-only overview, drill-down links only.
+1. **Dashboard** — KPI cards + charts, read-only overview, drill-down links only. Built: mirrors
+   OX's widgets with three deliberate changes — one period filter drives every widget, three retail
+   KPIs are added (sales, average check, gross margin), and OX's welcome banner is replaced by a
+   "Needs attention" list. Widget-by-widget correspondence is in the Dashboard section of
+   docs/OX-NAVIGATION-MAP.md.
 2. **Sales** — POS terminal, all sales, cash shifts, closed / open / deleted / postponed sales.
    "New sale" hands off to the separate POS terminal app.
 3. **Products / Services** — product list, transfers, corrections, stocktaking, goods receipt,
@@ -126,6 +130,9 @@ Conventions that are load-bearing — follow them rather than inventing per-scre
   via `useListQuery()`. `src/features/catalog/pages/ProductsPage.tsx` is the reference to copy.
 - **All HTTP goes through `src/shared/lib/http.ts`.** All money/date/number rendering goes through
   `src/shared/lib/format.ts`.
+- **Charts do not use the brand palette.** Series colours come from the validated categorical
+  palette in `src/shared/lib/chart.ts` — brand yellow fails contrast as a mark (1.48:1 on white).
+  Never re-order it, and never eyeball a change: run the dataviz palette validator.
 - **Colors, radii and shadows live only in `src/styles/tokens.css`.** No hex values and no raw
   Tailwind palette classes (`slate-700`) in components — use the semantic tokens (`bg-surface`,
   `text-fg-muted`, `border-border`). Brand yellow `#FFCB00` always carries near-black text, and never

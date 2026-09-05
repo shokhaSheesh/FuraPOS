@@ -1,18 +1,32 @@
+import { useState } from 'react'
 import { Link } from 'react-router'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
 import { Button } from '@/shared/ui/Button'
-import { formatMoney, formatNumber, formatPercent } from '@/shared/lib/format'
 import { paths } from '@/shared/config/paths'
-import { useDashboardSummary } from '../api/summary'
+import { formatMoney, formatNumber, formatPercent } from '@/shared/lib/format'
+import { useDashboardSummary, type DashboardPeriod } from '../api/summary'
+import { PeriodFilter } from '../components/PeriodFilter'
 import { StatCard } from '../components/StatCard'
+import { ChartLegend, RevenueByLocationChart } from '../components/RevenueByLocationChart'
+import { CashShiftsCard } from '../components/CashShiftsCard'
+import { CurrencyRatesCard } from '../components/CurrencyRatesCard'
+import { TopProductsCard } from '../components/TopProductsCard'
+import { AttentionCard } from '../components/AttentionCard'
 
 /**
- * Read-only overview. Every number here links out to the screen that owns it —
- * the dashboard never becomes a place where you edit things.
+ * Read-only overview. Every number links out to the screen that owns it — the
+ * dashboard never becomes a place where you edit things.
+ *
+ * Mirrors OX's dashboard (see docs/OX-NAVIGATION-MAP.md) with three
+ * differences, all deliberate and listed in CLAUDE.md: every widget obeys one
+ * period filter, three retail KPIs are added, and OX's welcome banner is
+ * replaced by "Needs attention".
  */
 export default function DashboardPage() {
-  const { data, isLoading } = useDashboardSummary()
+  const [period, setPeriod] = useState<DashboardPeriod>('today')
+  const { data, isLoading } = useDashboardSummary(period)
+  const loading = isLoading && !data
 
   return (
     <>
@@ -24,68 +38,85 @@ export default function DashboardPage() {
             <Link to={paths.sales.newSale}>Open POS terminal</Link>
           </Button>
         }
+        below={<PeriodFilter value={period} onChange={setPeriod} />}
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
-          label="Revenue today"
-          value={data ? formatMoney(data.revenueToday) : '—'}
-          change={data?.revenueChange}
-          loading={isLoading}
+          label="Revenue"
+          value={data ? formatMoney(data.revenue.value) : '—'}
+          change={data?.revenue.change}
+          comparedTo={data?.comparedTo}
+          loading={loading}
         />
         <StatCard
           label="Sales"
-          value={data ? formatNumber(data.salesCount) : '—'}
-          change={data?.salesCountChange}
-          loading={isLoading}
+          value={data ? formatNumber(data.salesCount.value) : '—'}
+          change={data?.salesCount.change}
+          comparedTo={data?.comparedTo}
+          loading={loading}
         />
         <StatCard
           label="Average check"
-          value={data ? formatMoney(data.averageCheck) : '—'}
-          change={data?.averageCheckChange}
-          loading={isLoading}
+          value={data ? formatMoney(data.averageCheck.value) : '—'}
+          change={data?.averageCheck.change}
+          comparedTo={data?.comparedTo}
+          loading={loading}
         />
         <StatCard
           label="Gross margin"
-          value={data ? formatPercent(data.grossMargin) : '—'}
-          change={data?.grossMarginChange}
-          loading={isLoading}
+          value={data ? formatPercent(data.grossMargin.value) : '—'}
+          change={data?.grossMargin.change}
+          comparedTo={data?.comparedTo}
+          loading={loading}
+        />
+        <StatCard
+          label="Visitors"
+          value={data ? formatNumber(data.visitors.value) : '—'}
+          change={data?.visitors.change}
+          comparedTo={data?.comparedTo}
+          loading={loading}
+        />
+        <StatCard
+          label="New clients"
+          value={data ? formatNumber(data.newClients.value) : '—'}
+          change={data?.newClients.change}
+          comparedTo={data?.comparedTo}
+          loading={loading}
         />
       </div>
 
       <div className="grid gap-3 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Revenue, last 14 days</CardTitle>
+            <CardTitle>
+              Revenue by location&ensp;<span className="text-fg-subtle font-normal">UZS</span>
+            </CardTitle>
+            {data ? <ChartLegend locations={data.locations} data={data.revenueByLocation} /> : null}
           </CardHeader>
           <CardBody>
-            <p className="text-fg-muted py-12 text-center text-sm">
-              Revenue vs. cost chart — series colours and rules are defined in docs/DESIGN_RULES.md
-              § 9. Data is already served by{' '}
-              <code className="font-mono">/api/dashboard/summary</code>.
-            </p>
+            <RevenueByLocationChart
+              data={data?.revenueByLocation ?? []}
+              locations={data?.locations ?? []}
+              loading={loading}
+            />
           </CardBody>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Top products</CardTitle>
-            <Button variant="link" size="sm" asChild>
-              <Link to={paths.analytics.sales}>Full report</Link>
-            </Button>
-          </CardHeader>
-          <CardBody className="space-y-2">
-            {data?.topProducts.map((product) => (
-              <div key={product.id} className="flex items-center justify-between gap-3 text-sm">
-                <span className="text-fg truncate">{product.name}</span>
-                <span className="text-fg-muted shrink-0 tabular-nums">
-                  {formatMoney(product.revenue)}
-                </span>
-              </div>
-            ))}
-          </CardBody>
-        </Card>
+        <AttentionCard attention={data?.attention ?? EMPTY_ATTENTION} loading={loading} />
+      </div>
+
+      <div className="grid gap-3 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <TopProductsCard products={data?.topProducts ?? []} loading={loading} />
+        </div>
+        <div className="space-y-3">
+          <CashShiftsCard shifts={data?.cashShifts ?? []} loading={loading} />
+          <CurrencyRatesCard rates={data?.currencyRates ?? []} loading={loading} />
+        </div>
       </div>
     </>
   )
 }
+
+const EMPTY_ATTENTION = { outOfStock: 0, lowStock: 0, overduePayables: 0, draftSales: 0 }

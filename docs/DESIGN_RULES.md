@@ -111,7 +111,7 @@ Dense back-office. Base is **15px**, not 16px.
 | Body | `text-sm` | 14px / 400 | Table cells, form values, descriptions |
 | Label | `text-sm text-fg-muted` | 14px / 400 | Field labels, secondary lines |
 | Table header | `text-2xs font-semibold uppercase tracking-wide text-fg-muted` | 11px / 600 | Column headers only |
-| Metric | `text-xl font-semibold tabular-nums` | 20px / 600 | KPI card values |
+| Metric | `text-xl font-semibold` | 20px / 600 | KPI card values — **proportional** figures, see § 2.3 |
 | Micro | `text-2xs` | 11px | Badges, SKU, timestamps, helper text |
 
 Never introduce a size outside this scale. Never use `font-bold` (700) in the UI — 600 is the
@@ -120,7 +120,9 @@ heaviest weight; 700 belongs to the logo.
 ### 2.3 Numbers
 
 All numeric columns and all money use `tabular-nums` (applied globally to `td`/`th`) and are
-**right-aligned**. Text columns are left-aligned. Nothing is centered except a single icon or badge
+**right-aligned**. The exception is a **standalone** number — a KPI card value, a hero figure —
+which uses proportional figures: equal-width digits make a lone number look loose at display size.
+Tabular is for digits that must line up in a column, nothing else. Text columns are left-aligned. Nothing is centered except a single icon or badge
 in a fixed-width column.
 
 Money, dates and counts render **only** through `src/shared/lib/format.ts`. A raw `toLocaleString()`
@@ -474,30 +476,56 @@ The rule that matters most, restated because it is the one most often broken:
 Charts follow the same colour discipline as the rest of the UI: the brand carries the *main* series,
 everything else is a supporting neutral or a distinct hue.
 
-### 10.1 Series colours, in this order
+### 10.1 Series colours — a separate, validated palette
 
-| # | Hex | Use |
-| --- | --- | --- |
-| 1 | `#FFCB00` | The primary measure — revenue, the thing the chart is about |
-| 2 | `#141414` | Its comparison — cost, previous period, target (light mode) |
-| 3 | `#2C4FC9` | Third series |
-| 4 | `#0F7F52` | Fourth series |
-| 5 | `#C2410C` | Fifth series |
-| 6 | `#7A3FBF` | Sixth series |
+**Chart series do not use the brand palette, and this is not negotiable.** Brand yellow `#FFCB00`
+measures **1.48:1** against a white chart surface — far below the 3:1 floor a mark must clear — and
+`#141414` has zero chroma, so it reads as grey rather than as an identity. Both fail. A yellow line
+on a white card is genuinely unreadable, not merely off-guideline.
 
-Never more than six categorical series in one chart — beyond that, group the tail into "Other".
-In dark mode series 2 becomes `#9C9C9C` (black is the background there).
+Series colours come from this validated categorical palette. **The order is the colour-blindness
+safety mechanism — never re-order it.** (Leading with the gold to feel more on-brand was tried and
+failed the normal-vision floor: magenta↔orange ΔE 12.9 against a required 15.)
+
+| Slot | Hue | Light | Dark |
+| --- | --- | --- | --- |
+| 1 | blue | `#2a78d6` | `#3987e5` |
+| 2 | orange | `#eb6834` | `#d95926` |
+| 3 | aqua | `#1baf7a` | `#199e70` |
+| 4 | gold | `#eda100` | `#c98500` |
+| 5 | magenta | `#e87ba4` | `#d55181` |
+| 6 | green | `#008300` | `#008300` |
+| 7 | violet | `#4a3aa7` | `#9085e9` |
+| 8 | red | `#e34948` | `#e66767` |
+
+Live in `src/shared/lib/chart.ts` via `useChartTheme()`. Assign slots **in order, never cycled**.
+A ninth series is never a new hue — fold the tail into "Other", or facet.
+
+**Brand presence** comes from slot 4, the gold: it is the brand-adjacent hue and is what a
+single-series chart uses. Because it sits below 3:1, such a chart must carry direct labels or a
+tooltip plus a readable axis — that relief is required, not optional.
+
+Never eyeball a palette change. Run the validator:
+
+```
+node scripts/validate_palette.js "<hex,hex,...>" --mode light   # and --mode dark
+```
 
 ### 10.2 Rules
 
 - Money-over-time is a **line or area**, never a 3D or stacked-percentage chart.
 - Composition is a **stacked bar**, never a pie or donut with more than three slices.
-- Gridlines: horizontal only, `border` colour, 1px. No vertical gridlines, no chart borders.
-- Axis labels are `text-2xs text-fg-muted`. Y-axis money is compact (`formatMoneyCompact`).
-- Every chart has a tooltip giving exact values through `format.ts`.
-- Positive/negative deltas use `success`/`danger` — never yellow, and always with an arrow so the
-  meaning does not rest on colour alone.
-- A chart that is still loading shows a skeleton the size of the plot area, never a spinner.
+- **One y-axis, ever.** Two measures of different scale become two charts, not a second scale.
+- Gridlines: **horizontal only**, solid hairlines in `ink.grid`. Never dashed — dashing reads as
+  "projection" or "threshold" when it is only a grid. No vertical gridlines, no chart borders.
+- Lines are **2px**, with no dot on every point; the active point on hover is a 4px marker.
+- Axis labels are `text-2xs` in `ink.label`. **The unit is stated once** — in the card title — and
+  never repeated on every tick.
+- **No value reachable only by hovering.** Every series' number must also be readable somewhere
+  static: a direct end-label, the legend, or a table view. The tooltip enhances; it never gates.
+- For ≥2 series a legend is always present, so identity never rests on colour alone.
+- Positive/negative deltas use `success`/`danger` — never yellow, and always with an arrow.
+- A loading chart shows a skeleton the size of the plot area, never a spinner.
 
 ---
 

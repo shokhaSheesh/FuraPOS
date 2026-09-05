@@ -24,7 +24,14 @@ const percent = new Intl.NumberFormat(LOCALE, {
   maximumFractionDigits: 1,
 })
 
+const compactNumber = new Intl.NumberFormat(LOCALE, {
+  notation: 'compact',
+  maximumFractionDigits: 1,
+})
+
 export const formatMoney = (value: number) => money.format(value)
+/** Axis ticks: the unit is stated once on the chart, never on every tick. */
+export const formatNumberCompact = (value: number) => compactNumber.format(value)
 export const formatMoneyCompact = (value: number) => compactMoney.format(value)
 export const formatNumber = (value: number) => number.format(value)
 /** Takes a ratio: 0.125 -> "12,5 %" */

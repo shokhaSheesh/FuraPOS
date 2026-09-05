@@ -279,7 +279,7 @@ Captured by scrolling AG Grid's centre viewport (its columns are virtualised, so
 are in the DOM). Our session showed 23; three more — `Создано в`, `ID Кассовой смены`, `Подитог` —
 appear in the tenant's own saved column config. The union below is the real set.
 
-**Have it (13).**
+**Have it (16).**
 
 | OX | Ours |
 | --- | --- |

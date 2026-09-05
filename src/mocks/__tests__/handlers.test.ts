@@ -99,6 +99,40 @@ describe('mock API', () => {
     expect(ledger.items[0]!.id).toBe(sale.id)
   })
 
+  it('records a payment against a sale and reduces its debt', async () => {
+    const ledger = await get<Paginated<{ id: string; total: number; debt: number }>>(
+      '/sales?status=open&pageSize=1',
+    )
+    const sale = ledger.items[0]
+    if (!sale) return // no open sale in this seed run
+
+    const response = await fetch(`http://localhost/api/sales/${sale.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ paid: sale.debt }),
+    })
+    expect(response.status).toBe(200)
+    const updated = (await response.json()) as { debt: number; paid: number }
+    expect(updated.debt).toBe(0)
+    // A payment can never exceed the total, however much is sent.
+    expect(updated.paid).toBeLessThanOrEqual(sale.total)
+  })
+
+  it('stamps finishedAt when a sale reaches a terminal status', async () => {
+    const ledger = await get<Paginated<{ id: string }>>('/sales?status=processed&pageSize=1')
+    const sale = ledger.items[0]
+    if (!sale) return
+
+    const response = await fetch(`http://localhost/api/sales/${sale.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'completed' }),
+    })
+    const updated = (await response.json()) as { finishedAt: string | null; status: string }
+    expect(updated.status).toBe('completed')
+    expect(updated.finishedAt).toBeTruthy()
+  })
+
   it('refuses a sale with no lines', async () => {
     const response = await fetch('http://localhost/api/sales', {
       method: 'POST',

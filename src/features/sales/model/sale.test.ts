@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { computeTotals, lineTotal, type SaleLine } from './sale'
+import { computeTotals, lineTotal, nextStep, type SaleLine, type SaleStatus } from './sale'
 
 const line = (over: Partial<SaleLine> = {}): SaleLine => ({
   id: 'l1',
@@ -57,5 +57,31 @@ describe('sale totals', () => {
       change: 0,
       debt: 0,
     })
+  })
+})
+
+/**
+ * The detail page's single primary button is driven entirely by this, so a
+ * wrong step here is a wrong button on screen.
+ */
+describe('sale lifecycle', () => {
+  it('walks a delivery order to completion in fixed steps', () => {
+    const path: SaleStatus[] = ['open']
+    let guard = 0
+    while (guard++ < 10) {
+      const step = nextStep(path[path.length - 1]!)
+      if (!step) break
+      path.push(step.to)
+    }
+    expect(path).toEqual(['open', 'processed', 'delivering', 'delivered', 'completed'])
+  })
+
+  it('offers nothing further once a sale is finished or deleted', () => {
+    expect(nextStep('completed')).toBeNull()
+    expect(nextStep('deleted')).toBeNull()
+  })
+
+  it('treats a postponed sale as resumable', () => {
+    expect(nextStep('postponed')?.to).toBe('processed')
   })
 })

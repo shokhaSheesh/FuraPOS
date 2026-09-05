@@ -281,10 +281,24 @@ One layout for every entity (product, sale, client, employee, supplier, purchase
 2. **`PageHeader`** — entity name as the title, key identifier + status badge as the description,
    primary action top-right (`Edit`, or the entity's main verb).
 3. **Summary strip** — a row of `StatCard`s for the 3–5 numbers that matter for that entity.
-4. **Tabs** for sections. Tab one is always **Overview**. The tab set for entities that have a
-   wallet is: `Overview · Wallet · History · [entity-specific] · Activity`.
+4. **Tabs** for sections, via `shared/ui/Tabs` — an underline, never a filled pill, so tabs never
+   compete with the one yellow primary action above them. Tab one is always **Overview**. The tab
+   set for entities that have a wallet is: `Overview · Wallet · History · [entity-specific] ·
+   Activity`. **A tab whose section has no data is not rendered** — an empty "Delivery" tab on a
+   sale that is being collected in person is noise, not consistency.
 5. **Two-column body** on `lg+`: main content 2/3 left, metadata card 1/3 right. Single column below.
-6. **Activity/audit is always the last tab**, never a separate page.
+6. **Activity/audit is always the last tab**, never a separate page. Show only events you can
+   actually prove from stored data; inventing plausible entries is worse than a short timeline.
+
+### 6.1 The primary action follows the entity's state
+
+A detail page has **one** primary action, and which one it is depends on where the record stands —
+an open sale offers "Mark as processed", one out for delivery offers "Mark as delivered", a finished
+one offers none. Derive it from a single function in the feature's `model/` (for sales,
+`nextStep()`), never from a chain of conditionals in the page. One state, one next step, one button.
+
+Anything the **list** can show must be readable somewhere on the detail page: the list is a summary
+of this page, so a column with no home here is a column nobody can explain.
 
 Entities with money attached (Client, Employee, Supplier) share the *same* wallet tab component —
 balance, cashback, debt, transactions, AI insights. Build it once. See `src/shared/types/wallet.ts`.

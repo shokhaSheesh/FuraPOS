@@ -54,6 +54,7 @@ export default function NewSalePage() {
   const [channel, setChannel] = useState<SaleChannel>('desk')
   const [comment, setComment] = useState('')
   const [paidText, setPaidText] = useState('')
+  const [expiresAt, setExpiresAt] = useState<Date | null>(null)
 
   const [deliveryOn, setDeliveryOn] = useState(false)
   const [address, setAddress] = useState('')
@@ -129,7 +130,9 @@ export default function NewSalePage() {
             }
           : null,
         expiresAt:
-          intent === 'postponed' ? new Date(Date.now() + 3 * 86_400_000).toISOString() : null,
+          intent === 'postponed'
+            ? (expiresAt ?? new Date(Date.now() + 3 * 86_400_000)).toISOString()
+            : null,
         status,
       },
       {
@@ -269,6 +272,14 @@ export default function NewSalePage() {
                   value={comment}
                   onChange={(event) => setComment(event.target.value)}
                   placeholder="Optional"
+                />
+              </Field>
+              <Field label="Hold until">
+                <DatePicker
+                  value={expiresAt}
+                  onChange={setExpiresAt}
+                  placeholder="3 days by default"
+                  minDate={new Date()}
                 />
               </Field>
             </CardBody>

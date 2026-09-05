@@ -43,6 +43,23 @@ export function useSalesSummary(query: ListQuery) {
   })
 }
 
+export function useSale(id: string) {
+  return useQuery({
+    queryKey: [...saleKeys.all, 'detail', id],
+    queryFn: () => http.get<Sale>(`/sales/${id}`),
+  })
+}
+
+/** Moves a sale along its lifecycle, or records a payment against it. */
+export function useUpdateSale(id: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (patch: { status?: SaleStatus; paid?: number }) =>
+      http.patch<Sale>(`/sales/${id}`, patch),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: saleKeys.all }),
+  })
+}
+
 export function useClients(search: string) {
   return useQuery({
     queryKey: ['clients', search],

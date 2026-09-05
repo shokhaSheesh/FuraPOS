@@ -11,6 +11,7 @@ const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPag
 const ProductsPage = lazy(() => import('@/features/products/pages/ProductsPage'))
 const NewSalePage = lazy(() => import('@/features/sales/pages/NewSalePage'))
 const AllSalesPage = lazy(() => import('@/features/sales/pages/SalesListPage'))
+const SaleDetailPage = lazy(() => import('@/features/sales/pages/SaleDetailPage'))
 const OpenSalesPage = lazy(() =>
   import('@/features/sales/pages/SalesStatusPages').then((m) => ({ default: m.OpenSalesPage })),
 )
@@ -65,7 +66,7 @@ const routes: RouteObject[] = [
       { path: paths.sales.root, element: <Navigate to={paths.sales.orders} replace /> },
       { path: paths.sales.newSale, element: page(<NewSalePage />, 'sales.orders.create') },
       { path: paths.sales.orders, element: page(<AllSalesPage />, 'sales.orders.view') },
-      { path: paths.sales.orderDetail(), element: todo('Sale', 'sales.orders.view') },
+      { path: paths.sales.orderDetail(), element: page(<SaleDetailPage />, 'sales.orders.view') },
       { path: paths.sales.shifts, element: todo('Cash shifts', 'sales.shifts.view') },
       { path: paths.sales.closed, element: page(<ClosedSalesPage />, 'sales.closed.view') },
       { path: paths.sales.drafts, element: page(<OpenSalesPage />, 'sales.drafts.view') },

@@ -67,6 +67,25 @@ export const salesHandlers = [
     return HttpResponse.json(sale)
   }),
 
+  http.patch(api('/sales/:id'), async ({ params, request }) => {
+    const sale = sales.find((item) => item.id === params.id)
+    if (!sale) return HttpResponse.json({ message: 'Sale not found' }, { status: 404 })
+
+    const patch = (await request.json()) as { status?: SaleStatus; paid?: number }
+    await delay(600)
+
+    if (patch.status) sale.status = patch.status
+    if (patch.paid !== undefined) sale.paid = Math.min(sale.total, sale.paid + patch.paid)
+
+    sale.debt = Math.max(0, sale.total - sale.paid)
+    sale.updatedAt = new Date().toISOString()
+    if (sale.status === 'completed' || sale.status === 'delivered') {
+      sale.finishedAt = sale.finishedAt ?? new Date().toISOString()
+    }
+
+    return HttpResponse.json(sale)
+  }),
+
   http.post(api('/sales'), async ({ request }) => {
     const body = (await request.json()) as {
       clientId: string | null

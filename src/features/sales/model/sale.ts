@@ -164,3 +164,26 @@ export const saleDraftSchema = z.object({
 })
 
 export type SaleDraft = z.infer<typeof saleDraftSchema>
+
+/**
+ * The one step a sale can take from where it is. Driving the detail page's
+ * primary action from this keeps the lifecycle in the model rather than
+ * scattered through the UI — and there is only ever one next step, which is
+ * what makes a single primary button honest.
+ */
+export function nextStep(status: SaleStatus): { to: SaleStatus; label: string } | null {
+  switch (status) {
+    case 'open':
+    case 'postponed':
+    case 'new':
+      return { to: 'processed', label: 'Mark as processed' }
+    case 'processed':
+      return { to: 'delivering', label: 'Send for delivery' }
+    case 'delivering':
+      return { to: 'delivered', label: 'Mark as delivered' }
+    case 'delivered':
+      return { to: 'completed', label: 'Complete sale' }
+    default:
+      return null
+  }
+}

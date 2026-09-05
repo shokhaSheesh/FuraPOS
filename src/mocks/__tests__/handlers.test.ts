@@ -133,6 +133,29 @@ describe('mock API', () => {
     expect(updated.finishedAt).toBeTruthy()
   })
 
+  it('keeps deleted sales out of the ledger and its totals', async () => {
+    const before = await get<{ count: number; total: number }>('/sales/summary')
+    const page = await get<Paginated<{ id: string; total: number }>>('/sales?pageSize=1')
+    const victim = page.items[0]!
+
+    await fetch(`http://localhost/api/sales/${victim.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'deleted' }),
+    })
+
+    const after = await get<{ count: number; total: number }>('/sales/summary')
+    expect(after.count).toBe(before.count - 1)
+    expect(after.total).toBe(before.total - victim.total)
+
+    // Still reachable on its own screen, so nothing is actually lost.
+    const deleted = await get<Paginated<{ id: string }>>('/sales?status=deleted')
+    expect(deleted.items.map((s) => s.id)).toContain(victim.id)
+
+    const ledger = await get<Paginated<{ id: string }>>('/sales?pageSize=100')
+    expect(ledger.items.map((s) => s.id)).not.toContain(victim.id)
+  })
+
   it('refuses a sale with no lines', async () => {
     const response = await fetch('http://localhost/api/sales', {
       method: 'POST',

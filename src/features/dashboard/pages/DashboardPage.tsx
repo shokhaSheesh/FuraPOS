@@ -10,7 +10,6 @@ import type { DateRange } from '@/shared/ui/DateRangePicker'
 import { PeriodFilter } from '../components/PeriodFilter'
 import { StatCard } from '../components/StatCard'
 import { ChartLegend, RevenueByLocationChart } from '../components/RevenueByLocationChart'
-import { CashShiftsCard } from '../components/CashShiftsCard'
 import { CurrencyRatesCard } from '../components/CurrencyRatesCard'
 import { TopProductsCard } from '../components/TopProductsCard'
 import { AttentionCard } from '../components/AttentionCard'
@@ -121,10 +120,7 @@ export default function DashboardPage() {
         <div className="lg:col-span-2">
           <TopProductsCard products={data?.topProducts ?? []} loading={loading} />
         </div>
-        <div className="space-y-3">
-          <CashShiftsCard shifts={data?.cashShifts ?? []} loading={loading} />
-          <CurrencyRatesCard rates={data?.currencyRates ?? []} loading={loading} />
-        </div>
+        <CurrencyRatesCard rates={data?.currencyRates ?? []} loading={loading} />
       </div>
     </>
   )

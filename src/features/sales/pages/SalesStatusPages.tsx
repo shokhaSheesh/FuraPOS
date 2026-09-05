@@ -14,16 +14,6 @@ export function OpenSalesPage() {
   )
 }
 
-export function ClosedSalesPage() {
-  return (
-    <SalesListPage
-      title="Closed sales"
-      description="Finished and settled."
-      lockedStatus="completed"
-    />
-  )
-}
-
 export function PostponedSalesPage() {
   return (
     <SalesListPage

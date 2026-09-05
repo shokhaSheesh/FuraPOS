@@ -15,9 +15,6 @@ const SaleDetailPage = lazy(() => import('@/features/sales/pages/SaleDetailPage'
 const OpenSalesPage = lazy(() =>
   import('@/features/sales/pages/SalesStatusPages').then((m) => ({ default: m.OpenSalesPage })),
 )
-const ClosedSalesPage = lazy(() =>
-  import('@/features/sales/pages/SalesStatusPages').then((m) => ({ default: m.ClosedSalesPage })),
-)
 const PostponedSalesPage = lazy(() =>
   import('@/features/sales/pages/SalesStatusPages').then((m) => ({
     default: m.PostponedSalesPage,
@@ -67,8 +64,6 @@ const routes: RouteObject[] = [
       { path: paths.sales.newSale, element: page(<NewSalePage />, 'sales.orders.create') },
       { path: paths.sales.orders, element: page(<AllSalesPage />, 'sales.orders.view') },
       { path: paths.sales.orderDetail(), element: page(<SaleDetailPage />, 'sales.orders.view') },
-      { path: paths.sales.shifts, element: todo('Cash shifts', 'sales.shifts.view') },
-      { path: paths.sales.closed, element: page(<ClosedSalesPage />, 'sales.closed.view') },
       { path: paths.sales.drafts, element: page(<OpenSalesPage />, 'sales.drafts.view') },
       { path: paths.sales.deleted, element: page(<DeletedSalesPage />, 'sales.deleted.view') },
       {

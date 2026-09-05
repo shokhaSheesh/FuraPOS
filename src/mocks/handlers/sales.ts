@@ -15,6 +15,10 @@ function filterSales(url: URL) {
   const to = url.searchParams.get('to')
 
   return sales.filter((sale) => {
+    // Deleted sales are excluded unless explicitly asked for: a cancelled sale
+    // must not sit in the ledger inflating revenue. That exclusion is what
+    // makes "Deleted sales" a real view rather than one more status filter.
+    if (!status && sale.status === 'deleted') return false
     if (status && sale.status !== status) return false
     if (from && sale.createdAt.slice(0, 10) < from) return false
     if (to && sale.createdAt.slice(0, 10) > to) return false

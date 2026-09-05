@@ -21,8 +21,6 @@ export const paths = {
     newSale: '/sales/new',
     orders: '/sales/orders', // OX: /app/sells/orders
     orderDetail: (id = ':orderId') => `/sales/orders/${id}`,
-    shifts: '/sales/shifts', // OX: /app/sells/shifts
-    closed: '/sales/closed', // OX: /app/sells/closed
     drafts: '/sales/drafts', // OX: /app/sells/drafts
     deleted: '/sales/deleted', // OX: /app/sells/deleted
     postponed: '/sales/postponed', // OX: /app/sells/postpones

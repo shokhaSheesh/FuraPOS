@@ -38,8 +38,8 @@ OX shows badges on two sections: **Закупки** is `New`, **Финансы**
 | OX POS Касса | *(not in scope)* | `/app/sells/cashdesk-info` |
 | Новая продажа | New sale | *(no route — navigates to Cash shifts)* |
 | Все продажи | All sales | `/app/sells/orders` |
-| Кассовые смены | Cash shifts | `/app/sells/shifts` |
-| Закрытые продажи | Closed sales | `/app/sells/closed` |
+| Кассовые смены | *(not in scope)* | `/app/sells/shifts` |
+| Закрытые продажи | *(not in scope)* | `/app/sells/closed` |
 | Открытые продажи | Open sales | `/app/sells/drafts` |
 | Удалённые продажи | Deleted sales | `/app/sells/deleted` |
 | Отложки | Postponed sales | `/app/sells/postpones` |
@@ -152,6 +152,14 @@ where it is recorded so nobody "fixes" it by adding them back:
 - **Поддержка / Support**.
 - **Settings → Webhooks**.
 - **Settings → ИИ / MCP** — worth revisiting later as a differentiator, but not now.
+- **Кассовые смены / Cash shifts.** A shift exists to reconcile a physical cash drawer against a
+  register: a cashier opens one, rings sales into it, collects the cash and closes it. We have no
+  POS and no drawer, so there is nothing to open or reconcile. The real question underneath —
+  *how much cash do we hold* — belongs to Finance (Accounts, Cashflow), not to a POS-shaped screen
+  in Sales.
+- **Закрытые продажи / Closed sales.** It is All sales with the Completed chip selected. A nav
+  entry that duplicates a filter over the same rows earns its place only if it answers a different
+  question, and this one does not — completed sales are most of the ledger.
 - **The POS itself.** OX runs it as a separate app on another domain
   (`furasentr--ox-sys--com.oxpos.oxapp.io`, passed `userId`, `language`, `theme`, `subdomain`),
   embedded in the back office as a 375×700 draggable panel with minimise / maximise / close.
@@ -324,6 +332,17 @@ Plus two OX does not carry as columns: **Location** and **Debt**.
 
 The four we already stored but never showed — Subtotal, Discount, Comment, Delivery date — are now
 columns, hidden by default like the other rarely-needed ones.
+
+### Why Open, Postponed and Deleted stayed
+
+They are not "All sales plus a chip":
+
+- **Open sales** is a work queue — sales someone began and abandoned, waiting to be finished.
+- **Postponed sales** is a queue with a deadline: reservations lapse, and somebody has to chase
+  them before they do.
+- **Deleted sales** shows rows that are **excluded from All sales and from its totals**. That
+  exclusion is the point: a cancelled sale must not keep counting toward revenue. Without a screen
+  of its own, deleted sales would be unreachable.
 
 ### Open questions this raised
 

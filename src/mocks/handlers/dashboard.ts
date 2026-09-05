@@ -29,14 +29,6 @@ export interface DashboardSummary {
   /** One entry per day, with a value per location id. */
   revenueByLocation: { date: string; [locationId: string]: number | string }[]
   locations: { id: string; name: string }[]
-  cashShifts: {
-    id: string
-    terminal: string
-    locationName: string
-    total: number
-    openedAt: string
-    status: 'open' | 'closed'
-  }[]
   currencyRates: { code: string; base: string; rate: number; changedAt: string }[]
   topProducts: { id: string; name: string; quantity: number; revenue: number }[]
   attention: {
@@ -129,32 +121,6 @@ export const dashboardHandlers = [
       newClients: { value: Math.round(salesCount * 0.12), change: 0.19 },
       revenueByLocation,
       locations: locations.map((l) => ({ id: l.id, name: l.name })),
-      cashShifts: [
-        {
-          id: 'shift-1',
-          terminal: 'Kassa 1',
-          locationName: 'Shop — Chilonzor',
-          total: 4_180_000,
-          openedAt: new Date(Date.now() - 5 * 3_600_000).toISOString(),
-          status: 'open',
-        },
-        {
-          id: 'shift-2',
-          terminal: 'Kassa 2',
-          locationName: 'Shop — Yunusobod',
-          total: 2_640_000,
-          openedAt: new Date(Date.now() - 3 * 3_600_000).toISOString(),
-          status: 'open',
-        },
-        {
-          id: 'shift-3',
-          terminal: 'Kassa 1',
-          locationName: 'Central warehouse',
-          total: 0,
-          openedAt: new Date(Date.now() - 26 * 3_600_000).toISOString(),
-          status: 'closed',
-        },
-      ],
       currencyRates: [
         { code: 'USD', base: 'UZS', rate: 12_225, changedAt: new Date().toISOString() },
         { code: 'EUR', base: 'UZS', rate: 13_410, changedAt: new Date().toISOString() },

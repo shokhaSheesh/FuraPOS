@@ -28,7 +28,7 @@ export function Sidebar() {
     <aside
       data-chrome
       className={cn(
-        'flex shrink-0 flex-col bg-chrome transition-[width] duration-200',
+        'border-chrome-border bg-chrome flex shrink-0 flex-col border-r transition-[width] duration-200',
         collapsed ? 'w-14' : 'w-60',
       )}
     >
@@ -96,7 +96,7 @@ function SidebarSection({ section, collapsed }: { section: NavSection; collapsed
       </button>
 
       {open && !collapsed ? (
-        <div className="ml-4 border-l border-chrome-border pl-2">
+        <div className="border-chrome-border ml-4 border-l pl-2">
           {section.items?.map((item) => (
             <NavLink
               key={item.to}
@@ -104,8 +104,8 @@ function SidebarSection({ section, collapsed }: { section: NavSection; collapsed
               end={item.end}
               className={({ isActive }) =>
                 cn(
-                  'mt-0.5 flex items-center gap-2 rounded-control px-2.5 py-1.5 text-sm',
-                  isActive ? 'bg-primary/15 font-medium text-primary' : rowIdle,
+                  'rounded-control mt-0.5 flex items-center gap-2 px-2.5 py-1.5 text-sm',
+                  isActive ? 'bg-primary/15 text-primary font-medium' : rowIdle,
                 )
               }
             >
@@ -122,7 +122,7 @@ function SidebarSection({ section, collapsed }: { section: NavSection; collapsed
 /** `New` / `Beta` only — the sole yellow badges in the product (§ 8.1). */
 function LifecycleBadge({ children }: { children: string }) {
   return (
-    <span className="rounded-full bg-primary px-1.5 py-0.5 text-2xs font-medium capitalize leading-none text-primary-fg">
+    <span className="bg-primary text-2xs text-primary-fg rounded-full px-1.5 py-0.5 leading-none font-medium capitalize">
       {children}
     </span>
   )

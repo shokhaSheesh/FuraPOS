@@ -14,7 +14,7 @@ export const useUiStore = create<UiState>()(
     (set) => ({
       sidebarCollapsed: false,
       toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
-      openSections: ['sales', 'catalog'],
+      openSections: [],
       toggleSection: (id) =>
         set((state) => ({
           openSections: state.openSections.includes(id)

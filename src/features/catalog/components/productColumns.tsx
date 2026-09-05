@@ -24,21 +24,19 @@ export function buildProductColumns({
     {
       accessorKey: 'sku',
       header: 'SKU',
-      cell: ({ row }) => <span className="font-mono text-2xs">{row.original.sku}</span>,
+      cell: ({ row }) => <span className="text-2xs font-mono">{row.original.sku}</span>,
       enableHiding: false,
     },
     {
       accessorKey: 'name',
       header: 'Name',
-      cell: ({ row }) => (
-        <div className="min-w-48">
-          <p className="font-medium">{row.original.name}</p>
-          {row.original.brandName ? (
-            <p className="text-2xs text-fg-muted">{row.original.brandName}</p>
-          ) : null}
-        </div>
-      ),
+      cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
       enableHiding: false,
+    },
+    {
+      accessorKey: 'brandName',
+      header: 'Brand',
+      cell: ({ row }) => row.original.brandName || <Empty />,
     },
     {
       accessorKey: 'categoryName',
@@ -57,7 +55,9 @@ export function buildProductColumns({
         const out = stock === 0
         return (
           <span
-            className={out ? 'font-medium text-danger' : low ? 'font-medium text-warning' : undefined}
+            className={
+              out ? 'text-danger font-medium' : low ? 'text-warning font-medium' : undefined
+            }
           >
             {formatNumber(stock)} {unit}
           </span>

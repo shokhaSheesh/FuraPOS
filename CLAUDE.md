@@ -124,8 +124,8 @@ Conventions that are load-bearing — follow them rather than inventing per-scre
   `src/shared/lib/format.ts`.
 - **Colors, radii and shadows live only in `src/styles/tokens.css`.** No hex values and no raw
   Tailwind palette classes (`slate-700`) in components — use the semantic tokens (`bg-surface`,
-  `text-fg-muted`, `border-border`). Brand yellow `#FFCB00` always carries navy text, and never
-  means "warning".
+  `text-fg-muted`, `border-border`). Brand yellow `#FFCB00` always carries near-black text, and never
+  means "warning". Chrome and text are true neutrals; navy is the `info` tone only.
 - **Mock handlers in `src/mocks/` are the API contract.** Changing a screen's data shape means
   updating the handler and its test — that file is what the backend team gets handed.
 

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { Plus } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
-import { ListPage } from '@/shared/components/ListPage'
+import { SearchInput } from '@/shared/components/SearchInput'
 import { DataTable } from '@/shared/components/DataTable'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { Button } from '@/shared/ui/Button'
@@ -71,55 +71,54 @@ export default function ProductsPage() {
         }
       />
 
-      <ListPage
-        search={{
-          value: String(query.search ?? ''),
-          onChange: (search) => setQuery({ search }),
-          placeholder: 'Search by name, SKU or barcode…',
+      <DataTable
+        storageKey="products"
+        toolbar={
+          <SearchInput
+            value={String(query.search ?? '')}
+            onChange={(search) => setQuery({ search })}
+            placeholder="Search by name, SKU or barcode…"
+          />
+        }
+        columns={columns}
+        data={data?.items ?? []}
+        total={data?.total ?? 0}
+        isLoading={isLoading}
+        pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
+        onPaginationChange={({ page, pageSize }) => setQuery({ page, pageSize })}
+        sorting={query.sort ? [{ id: String(query.sort), desc: query.order === 'desc' }] : []}
+        onSortingChange={(sorting) => {
+          const next = sorting[0]
+          setQuery({ sort: next?.id ?? null, order: next ? (next.desc ? 'desc' : 'asc') : null })
         }}
-      >
-        <DataTable
-          storageKey="products"
-          columns={columns}
-          data={data?.items ?? []}
-          total={data?.total ?? 0}
-          isLoading={isLoading}
-          pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
-          onPaginationChange={({ page, pageSize }) => setQuery({ page, pageSize })}
-          sorting={query.sort ? [{ id: String(query.sort), desc: query.order === 'desc' }] : []}
-          onSortingChange={(sorting) => {
-            const next = sorting[0]
-            setQuery({ sort: next?.id ?? null, order: next ? (next.desc ? 'desc' : 'asc') : null })
-          }}
-          onRowClick={(product) => navigate(paths.catalog.productDetail(product.id))}
-          emptyState={
-            isFiltered ? (
-              <EmptyState
-                title="No products match these filters"
-                description="Try a different search term, or clear the filters to see everything."
-                action={
-                  <Button variant="secondary" onClick={() => setQuery({ search: null })}>
-                    Clear filters
+        onRowClick={(product) => navigate(paths.catalog.productDetail(product.id))}
+        emptyState={
+          isFiltered ? (
+            <EmptyState
+              title="No products match these filters"
+              description="Try a different search term, or clear the filters to see everything."
+              action={
+                <Button variant="secondary" onClick={() => setQuery({ search: null })}>
+                  Clear filters
+                </Button>
+              }
+            />
+          ) : (
+            <EmptyState
+              title="No products yet"
+              description="Products are everything you sell. Add the first one to start tracking stock and sales."
+              action={
+                can('catalog.products.create') ? (
+                  <Button variant="primary">
+                    <Plus />
+                    Add product
                   </Button>
-                }
-              />
-            ) : (
-              <EmptyState
-                title="No products yet"
-                description="Products are everything you sell. Add the first one to start tracking stock and sales."
-                action={
-                  can('catalog.products.create') ? (
-                    <Button variant="primary">
-                      <Plus />
-                      Add product
-                    </Button>
-                  ) : null
-                }
-              />
-            )
-          }
-        />
-      </ListPage>
+                ) : null
+              }
+            />
+          )
+        }
+      />
 
       <ConfirmDialog
         open={pendingDelete !== null}
@@ -127,7 +126,7 @@ export default function ProductsPage() {
         title="Delete product?"
         body={
           <>
-            <strong className="font-medium text-fg">{pendingDelete?.name}</strong> will be removed
+            <strong className="text-fg font-medium">{pendingDelete?.name}</strong> will be removed
             from the catalog. Sales history that references it is kept.
           </>
         }

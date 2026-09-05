@@ -14,8 +14,8 @@ export function PageHeader({ title, description, action, below }: PageHeaderProp
     <div className="space-y-3">
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-lg font-semibold tracking-tight text-fg">{title}</h1>
-          {description ? <p className="text-sm text-fg-muted">{description}</p> : null}
+          <h1 className="text-fg text-lg font-semibold tracking-tight">{title}</h1>
+          {description ? <p className="text-fg-muted text-sm">{description}</p> : null}
         </div>
         {action ? <div className="shrink-0">{action}</div> : null}
       </div>

@@ -59,9 +59,9 @@ export default function DashboardPage() {
             <CardTitle>Revenue, last 14 days</CardTitle>
           </CardHeader>
           <CardBody>
-            <p className="py-12 text-center text-sm text-fg-muted">
-              Revenue vs. cost chart — series colours and rules are defined in
-              docs/DESIGN_RULES.md § 9. Data is already served by{' '}
+            <p className="text-fg-muted py-12 text-center text-sm">
+              Revenue vs. cost chart — series colours and rules are defined in docs/DESIGN_RULES.md
+              § 9. Data is already served by{' '}
               <code className="font-mono">/api/dashboard/summary</code>.
             </p>
           </CardBody>
@@ -77,8 +77,8 @@ export default function DashboardPage() {
           <CardBody className="space-y-2">
             {data?.topProducts.map((product) => (
               <div key={product.id} className="flex items-center justify-between gap-3 text-sm">
-                <span className="truncate text-fg">{product.name}</span>
-                <span className="shrink-0 tabular-nums text-fg-muted">
+                <span className="text-fg truncate">{product.name}</span>
+                <span className="text-fg-muted shrink-0 tabular-nums">
                   {formatMoney(product.revenue)}
                 </span>
               </div>

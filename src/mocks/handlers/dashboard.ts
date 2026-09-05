@@ -38,7 +38,8 @@ export const dashboardHandlers = [
       grossMargin: 0.317,
       grossMarginChange: 0.012,
       lowStockCount: products.filter(
-        (product) => product.lowStockThreshold !== null && product.stock <= product.lowStockThreshold,
+        (product) =>
+          product.lowStockThreshold !== null && product.stock <= product.lowStockThreshold,
       ).length,
       revenueSeries,
       topProducts: products.slice(0, 5).map((product) => ({

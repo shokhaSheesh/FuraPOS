@@ -66,7 +66,7 @@ export function RowActions({ actions }: { actions: RowAction[] }) {
             align="end"
             sideOffset={4}
             onClick={(event) => event.stopPropagation()}
-            className="z-50 min-w-44 rounded-control border border-border bg-surface p-1 shadow-popover"
+            className="rounded-control border-border bg-surface shadow-popover z-50 min-w-44 border p-1"
           >
             {regular.map((action) => (
               <MenuItem key={action.label} onSelect={action.onSelect}>
@@ -76,7 +76,7 @@ export function RowActions({ actions }: { actions: RowAction[] }) {
             ))}
             {destructive.length > 0 ? (
               <>
-                <DropdownMenu.Separator className="my-1 h-px bg-border" />
+                <DropdownMenu.Separator className="bg-border my-1 h-px" />
                 {destructive.map((action) => (
                   <MenuItem key={action.label} onSelect={action.onSelect} destructive>
                     <action.icon className="size-4" />
@@ -104,7 +104,7 @@ function MenuItem({
   return (
     <DropdownMenu.Item
       onSelect={onSelect}
-      className={`flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm outline-none data-[highlighted]:bg-surface-muted ${
+      className={`data-[highlighted]:bg-surface-muted flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm outline-none ${
         destructive ? 'text-danger' : 'text-fg'
       }`}
     >

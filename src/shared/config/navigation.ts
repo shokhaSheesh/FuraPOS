@@ -87,7 +87,11 @@ export const navigation: NavSection[] = [
         to: paths.procurement.orders,
         permission: 'procurement.orders.view',
       },
-      { label: 'Suppliers', to: paths.procurement.suppliers, permission: 'procurement.suppliers.view' },
+      {
+        label: 'Suppliers',
+        to: paths.procurement.suppliers,
+        permission: 'procurement.suppliers.view',
+      },
       {
         label: 'Reorder suggestions',
         to: paths.procurement.reorder,
@@ -112,7 +116,11 @@ export const navigation: NavSection[] = [
     items: [
       { label: 'P&L', to: paths.finance.pnl, permission: 'finance.pnl.view' },
       { label: 'Cashflow', to: paths.finance.cashflow, permission: 'finance.cashflow.view' },
-      { label: 'Receivables', to: paths.finance.receivables, permission: 'finance.receivables.view' },
+      {
+        label: 'Receivables',
+        to: paths.finance.receivables,
+        permission: 'finance.receivables.view',
+      },
       { label: 'Payables', to: paths.finance.payables, permission: 'finance.payables.view' },
       { label: 'Cash forecast', to: paths.finance.forecast, permission: 'finance.forecast.view' },
       { label: 'Budgeting', to: paths.finance.budgets, permission: 'finance.budgets.view' },
@@ -139,7 +147,11 @@ export const navigation: NavSection[] = [
         to: paths.marketing.campaigns,
         permission: 'marketing.campaigns.view',
       },
-      { label: 'Promotions', to: paths.marketing.promotions, permission: 'marketing.promotions.view' },
+      {
+        label: 'Promotions',
+        to: paths.marketing.promotions,
+        permission: 'marketing.promotions.view',
+      },
       { label: 'Coupons', to: paths.marketing.coupons, permission: 'marketing.coupons.view' },
     ],
   },
@@ -148,7 +160,11 @@ export const navigation: NavSection[] = [
     label: 'Analytics',
     icon: BarChart3,
     items: [
-      { label: 'Report builder', to: paths.analytics.reports, permission: 'analytics.reports.view' },
+      {
+        label: 'Report builder',
+        to: paths.analytics.reports,
+        permission: 'analytics.reports.view',
+      },
       { label: 'Sales report', to: paths.analytics.sales, permission: 'analytics.sales.view' },
       {
         label: 'Customer analytics',
@@ -234,8 +250,11 @@ export const quickCreateActions: NavItem[] = [
   { label: 'New sale', to: paths.sales.newSaleLaunch, permission: 'sales.terminal.view' },
   { label: 'New product', to: paths.catalog.products, permission: 'catalog.products.create' },
   { label: 'Goods receipt', to: paths.catalog.receipts, permission: 'catalog.receipts.create' },
-  { label: 'Purchase order', to: paths.procurement.orders, permission: 'procurement.orders.create' },
+  {
+    label: 'Purchase order',
+    to: paths.procurement.orders,
+    permission: 'procurement.orders.create',
+  },
   { label: 'New client', to: paths.marketing.clients, permission: 'marketing.clients.create' },
   { label: 'New employee', to: paths.hr.employees, permission: 'hr.employees.create' },
 ]
-

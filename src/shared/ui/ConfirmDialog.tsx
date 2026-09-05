@@ -39,7 +39,7 @@ export function ConfirmDialog({
         onClick: onConfirm,
       }}
     >
-      <p className="text-sm text-fg-muted">{body}</p>
+      <p className="text-fg-muted text-sm">{body}</p>
     </Modal>
   )
 }

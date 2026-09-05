@@ -28,6 +28,11 @@ export interface DataTableProps<T extends RowData> {
   emptyState?: ReactNode
   /** Persists the user's column choices for this table across visits. */
   storageKey?: string
+  /**
+   * Search and filters, rendered in the table's own toolbar row so a table
+   * has exactly one toolbar: controls left, column visibility right.
+   */
+  toolbar?: ReactNode
 }
 
 function readStoredVisibility(storageKey?: string): ColumnVisibilityState {
@@ -51,6 +56,7 @@ export function DataTable<T extends RowData>({
   onRowClick,
   emptyState,
   storageKey,
+  toolbar,
 }: DataTableProps<T>) {
   const [columnVisibility, setColumnVisibility] = useState<ColumnVisibilityState>(() =>
     readStoredVisibility(storageKey),
@@ -79,11 +85,12 @@ export function DataTable<T extends RowData>({
   const rows = table.getRowModel().rows
 
   return (
-    <div className="overflow-hidden rounded-card border border-border bg-surface shadow-card">
-      <div className="flex items-center justify-end border-b border-border px-2 py-1.5">
+    <div className="rounded-card border-border bg-surface shadow-card overflow-hidden border">
+      <div className="border-border flex flex-wrap items-center gap-2 border-b p-2">
+        {toolbar}
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" className="ml-auto">
               <Settings2 />
               Columns
             </Button>
@@ -92,7 +99,7 @@ export function DataTable<T extends RowData>({
             <DropdownMenu.Content
               align="end"
               sideOffset={4}
-              className="z-50 min-w-48 rounded-control border border-border bg-surface p-1 shadow-popover"
+              className="rounded-control border-border bg-surface shadow-popover z-50 min-w-48 border p-1"
             >
               {table
                 .getAllLeafColumns()
@@ -103,11 +110,11 @@ export function DataTable<T extends RowData>({
                     checked={column.getIsVisible()}
                     onCheckedChange={(checked) => column.toggleVisibility(Boolean(checked))}
                     onSelect={(event) => event.preventDefault()}
-                    className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm text-fg outline-none data-[highlighted]:bg-surface-muted"
+                    className="text-fg data-[highlighted]:bg-surface-muted flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm outline-none"
                   >
-                    <span className="flex size-4 items-center justify-center rounded border border-border-strong">
+                    <span className="border-border-strong flex size-4 items-center justify-center rounded border">
                       <DropdownMenu.ItemIndicator>
-                        <span className="block size-2 rounded-[2px] bg-primary" />
+                        <span className="bg-primary block size-2 rounded-[2px]" />
                       </DropdownMenu.ItemIndicator>
                     </span>
                     {typeof column.columnDef.header === 'string'
@@ -134,7 +141,7 @@ export function DataTable<T extends RowData>({
                       key={header.id}
                       scope="col"
                       className={cn(
-                        'whitespace-nowrap px-3 py-2.5 text-2xs font-semibold uppercase tracking-wide text-fg-muted',
+                        'text-2xs text-fg-muted h-10 px-3 font-semibold tracking-wide whitespace-nowrap uppercase',
                         alignRight ? 'text-right' : 'text-left',
                       )}
                     >
@@ -142,12 +149,9 @@ export function DataTable<T extends RowData>({
                         <button
                           type="button"
                           onClick={() => header.column.toggleSorting()}
-                          className={cn(
-                            // Form controls do not inherit text-transform, so the
-                            // header typography is repeated here on purpose.
-                            'inline-flex items-center gap-1 uppercase tracking-wide hover:text-fg',
-                            alignRight && 'flex-row-reverse',
-                          )}
+                          // Form controls do not inherit text-transform, so the
+                          // header typography is repeated here on purpose.
+                          className="hover:text-fg inline-flex items-center gap-1 tracking-wide uppercase"
                         >
                           <table.FlexRender header={header} />
                           {sorted === 'asc' ? (
@@ -171,9 +175,9 @@ export function DataTable<T extends RowData>({
           <tbody>
             {isLoading ? (
               Array.from({ length: 8 }).map((_, rowIndex) => (
-                <tr key={rowIndex} className="border-t border-border">
+                <tr key={rowIndex} className="border-border border-t">
                   {Array.from({ length: visibleColumnCount }).map((__, cellIndex) => (
-                    <td key={cellIndex} className="px-3 py-2.5">
+                    <td key={cellIndex} className="h-11 px-3">
                       <Skeleton className="h-4 w-full max-w-40" />
                     </td>
                   ))}
@@ -196,15 +200,15 @@ export function DataTable<T extends RowData>({
                   key={row.id}
                   onClick={onRowClick ? () => onRowClick(row.original) : undefined}
                   className={cn(
-                    'border-t border-border',
-                    onRowClick && 'cursor-pointer hover:bg-surface-muted',
+                    'border-border border-t',
+                    onRowClick && 'hover:bg-surface-muted cursor-pointer',
                   )}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
                       className={cn(
-                        'px-3 py-2.5 text-fg',
+                        'text-fg h-11 px-3 py-0 whitespace-nowrap',
                         cell.column.columnDef.meta?.align === 'right' ? 'text-right' : 'text-left',
                       )}
                     >

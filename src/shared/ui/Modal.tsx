@@ -58,22 +58,22 @@ export function Modal({
   return (
     <Dialog.Root open={open} onOpenChange={(next) => (submitting ? undefined : onOpenChange(next))}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-chrome/40 backdrop-blur-[1px]" />
+        <Dialog.Overlay className="bg-chrome/40 fixed inset-0 z-50 backdrop-blur-[1px]" />
         <Dialog.Content
           onEscapeKeyDown={guard}
           onPointerDownOutside={guard}
           onInteractOutside={guard}
           className={cn(
-            'fixed left-1/2 top-1/2 z-50 flex max-h-[85vh] w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col',
-            'rounded-card border border-border bg-surface shadow-modal',
+            'fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col',
+            'rounded-card border-border bg-surface shadow-modal border',
             sizes[size],
           )}
         >
-          <header className="flex items-start justify-between gap-4 border-b border-border p-4">
+          <header className="border-border flex items-start justify-between gap-4 border-b p-4">
             <div className="space-y-1">
-              <Dialog.Title className="text-sm font-semibold text-fg">{title}</Dialog.Title>
+              <Dialog.Title className="text-fg text-sm font-semibold">{title}</Dialog.Title>
               {description ? (
-                <Dialog.Description className="text-sm text-fg-muted">
+                <Dialog.Description className="text-fg-muted text-sm">
                   {description}
                 </Dialog.Description>
               ) : null}
@@ -89,12 +89,8 @@ export function Modal({
           <div className="min-h-0 flex-1 overflow-y-auto p-4">{children}</div>
 
           {footer ?? (
-            <footer className="flex items-center justify-end gap-2 border-t border-border p-4">
-              <Button
-                variant="secondary"
-                disabled={submitting}
-                onClick={() => onOpenChange(false)}
-              >
+            <footer className="border-border flex items-center justify-end gap-2 border-t p-4">
+              <Button variant="secondary" disabled={submitting} onClick={() => onOpenChange(false)}>
                 {secondaryLabel}
               </Button>
               {primary ? (

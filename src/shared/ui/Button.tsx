@@ -15,7 +15,7 @@ const buttonVariants = cva(
         secondary: 'border border-border bg-surface text-fg hover:bg-surface-muted',
         ghost: 'text-fg-muted hover:bg-surface-muted hover:text-fg',
         /** Destructive confirmation inside a modal only — never on a list row. */
-        danger: 'bg-danger text-white hover:opacity-90',
+        danger: 'bg-danger text-fg-inverted hover:opacity-90',
         link: 'text-fg underline-offset-4 hover:underline',
       },
       size: {
@@ -30,8 +30,7 @@ const buttonVariants = cva(
 )
 
 export interface ButtonProps
-  extends ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+  extends ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
   asChild?: boolean
   /** Mandatory on anything that writes — see § 4.4. */
   loading?: boolean

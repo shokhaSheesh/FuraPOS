@@ -18,16 +18,20 @@ Implementation lives in `src/styles/tokens.css` (colors) and `src/shared/ui` + `
 
 | Color | Hex | Brand meaning | Where it is used in the app |
 | --- | --- | --- | --- |
-| Yellow | `#FFCB00` | energy & attention | Primary buttons, active nav, focus in dark mode, key highlights |
-| Navy | `#0F0F35` | stability & trust | All primary text, the sidebar, dark-mode surfaces |
-| Black | `#000000` | strength & precision | **Logo only.** Never a UI background or text color |
+| Yellow | `#FFCB00` | energy & attention | Primary buttons, active nav, focus ring in dark mode. Nothing else |
+| Black | `#000000` | strength & precision | The sidebar (as `#141414`), primary text, dark-mode surfaces |
 | Grey | `#D8D9D9` | metal & technology | Borders, dividers, table rules |
+| Navy | `#0F0F35` | stability & trust | **The `info` tone only.** Never chrome, never body text, never a surface |
+
+**The identity is the logo: yellow on black.** Everything else on screen is a true neutral grey —
+no blue, purple or warm cast anywhere, so the yellow is the only colour the eye lands on. Navy was
+tried as the chrome and read as purple next to the yellow; it is now confined to the `info` tone.
 
 ### 1.2 Two hard constraints
 
-1. **Yellow always carries navy text — never white.**
-   `#FFCB00` + white is 1.7:1 contrast (fails WCAG badly). `#FFCB00` + `#0F0F35` is ~11:1.
-   This is why `--color-primary-fg` is navy. Do not override it.
+1. **Yellow always carries near-black text — never white.**
+   `#FFCB00` + white is 1.7:1 contrast (fails WCAG badly). `#FFCB00` + `#141414` is ~13:1.
+   This is why `--color-primary-fg` is `#141414`. Do not override it.
 
 2. **Yellow can never mean "warning".**
    Yellow is the brand, so it is reserved for *primary action and active state*. A status chip,
@@ -40,30 +44,31 @@ Components use Tailwind classes generated from the tokens: `bg-surface`, `text-f
 `border-border`, `bg-primary text-primary-fg`. **A hex value or a stock Tailwind palette class
 (`bg-slate-700`, `text-gray-500`) in a component is a bug.**
 
-| Token | Light | Purpose |
-| --- | --- | --- |
-| `canvas` | `#F2F3F5` | Page background *behind* cards |
-| `surface` | `#FFFFFF` | Cards, tables, modals, popovers |
-| `surface-muted` | `#F4F5F7` | Table headers, row hover, inactive tabs |
-| `surface-inset` | `#EBECEF` | Inputs, wells, avatar placeholders |
-| `border` | `#D8D9D9` | Every 1px divider |
-| `border-strong` | `#B9BAC0` | Input borders on hover, checkbox outlines |
-| `fg` | `#0F0F35` | Primary text |
-| `fg-muted` | `#5A5B72` | Labels, secondary text, table headers |
-| `fg-subtle` | `#8A8B9C` | Placeholders, disabled text, icon-only affordances |
-| `primary` / `primary-fg` | `#FFCB00` / `#0F0F35` | Primary action |
-| `primary-soft` | `#FFF3CC` | Selected nav item background, soft brand badge |
-| `chrome` | `#0F0F35` | The sidebar, in **both** themes |
-| `success` | `#0F7F52` | Paid, active, in stock, completed |
-| `warning` | `#C2410C` | Low stock, pending, expiring, needs attention |
-| `danger` | `#C0242C` | Destructive actions, errors, overdue, out of stock |
-| `info` | `#2C4FC9` | Neutral informational notices, "new" system messages |
+| Token | Light | Dark | Purpose |
+| --- | --- | --- | --- |
+| `canvas` | `#F3F3F4` | `#0C0C0C` | Page background *behind* cards |
+| `surface` | `#FFFFFF` | `#161616` | Cards, tables, modals, popovers |
+| `surface-muted` | `#F6F6F7` | `#1C1C1C` | Table headers, row hover, inactive tabs |
+| `surface-inset` | `#EDEDEE` | `#222222` | Inputs, wells, avatar placeholders |
+| `border` | `#D8D9D9` | `#2A2A2A` | Every 1px divider |
+| `border-strong` | `#BDBEC1` | `#3A3A3A` | Input borders on hover, checkbox outlines |
+| `fg` | `#141414` | `#F0F0F0` | Primary text — near-black, never `#000` (it vibrates on white) |
+| `fg-muted` | `#626366` | `#A1A1A1` | Labels, secondary text, table headers |
+| `fg-subtle` | `#8F9094` | `#6F6F6F` | Placeholders, disabled text, em-dash empties |
+| `primary` / `primary-fg` | `#FFCB00` / `#141414` | same | The primary action |
+| `primary-soft` | `#FFF4CC` | `#2E2810` | Soft brand fill (rare) |
+| `chrome` | `#141414` | `#0A0A0A` | The sidebar, in **both** themes |
+| `success` | `#15803D` | `#4ADE80` | Paid, active, in stock, completed |
+| `warning` | `#C2410C` | `#FB923C` | Low stock, pending, expiring, needs attention |
+| `danger` | `#C81E1E` | `#F87171` | Destructive actions, errors, overdue, out of stock |
+| `info` | `#0F0F35` | `#A5A8D6` | Informational badges and notices — navy's only home |
 
 ### 1.4 Dark mode
 
-Dark mode is not an inverted greyscale — it is the **navy** theme. `--color-surface` becomes
-`#0F0F35` (the brand navy itself) on a darker `#08081C` canvas. Yellow stays `#FFCB00` in both
-themes because it is the brand.
+Dark mode is **true neutral**: `#0C0C0C` canvas, `#161616` surfaces, `#0A0A0A` sidebar. No tint.
+The sidebar sits one step darker than the surfaces and keeps a 1px `chrome-border` edge so it
+still reads as chrome rather than smearing into the canvas. Yellow stays `#FFCB00` in both themes
+because it is the brand; the status colours lift to their lighter variants so they hold contrast.
 
 Every color must be defined in **both** blocks in `tokens.css`. A color defined only in `:root` is
 a bug that will surface as an invisible element in dark mode.
@@ -72,7 +77,7 @@ a bug that will surface as an invisible element in dark mode.
 
 The brand book states the color ratio is mandatory. In UI terms:
 
-- **Navy and neutrals carry ~90% of the screen.** Text, chrome, borders, surfaces.
+- **Black and neutrals carry ~95% of the screen.** Text, chrome, borders, surfaces.
 - **Yellow is ≤5% of any screen.** Typically: one primary button + one active nav item.
 - If a screen has two yellow buttons, one of them is wrong — see §4.1.
 
@@ -142,8 +147,9 @@ Multiples of 4px, via Tailwind's default scale. The only values used are
 
 Fixed and identical on every screen — `AppShell`:
 
-- **Sidebar**, left, navy (`bg-chrome`) in both themes. 240px expanded / 56px collapsed.
-  Collapse state persists per user.
+- **Sidebar**, left, near-black (`bg-chrome`) in both themes. 240px expanded / 56px collapsed.
+  Collapse state persists per user. The logo sits on a white backing tile because its black
+  outlines would vanish on the chrome (brand guidelines p.9).
 - **Top bar**, 56px, `bg-surface`, bottom border. Contents left→right:
   collapse toggle → quick-create `+` → global search → *(spacer)* → wallet balance → theme toggle →
   notifications bell → avatar menu. This order never changes.
@@ -178,8 +184,8 @@ There is still only one.
 
 | Variant | Look | Use for |
 | --- | --- | --- |
-| `primary` | Yellow bg, navy text | The single main action: `+ Add product`, `Save`, `Confirm` |
-| `secondary` | Surface bg, grey border, navy text | Cancel, Export, Filter, secondary actions in a row |
+| `primary` | Yellow bg, near-black text | The single main action: `+ Add product`, `Save`, `Confirm` |
+| `secondary` | Surface bg, grey border, default text | Cancel, Export, Filter, secondary actions in a row |
 | `ghost` | Transparent, muted text, hover fill | Icon buttons, toolbar controls, table row actions |
 | `danger` | Danger bg, white text | Confirmed destructive action **inside a modal only** |
 | `link` | Yellow-free, primary-colored text, underline on hover | Inline navigation inside prose or a card header |
@@ -210,13 +216,21 @@ Every list screen in the app is the same three components stacked. Copy
 
 ```
 <PageHeader>   title + description + ONE primary action (top-right)
-<ListPage>     search box (left) then filters, in one row
-  <DataTable>  column-visibility control → table → pagination footer
+<DataTable>    toolbar row (search, filters … column visibility) → table → pagination footer
 ```
+
+Search and filters go into `DataTable`'s `toolbar` prop, so a table has **exactly one toolbar
+row**, inside its own card: controls on the left, the Columns control on the far right. A search
+box floating above the card and a second control row inside it is the mistake this prevents.
+`ListPage` exists only for list screens that are *not* a table (card grids such as Integrations).
 
 ### 5.1 Table anatomy
 
-- Header row: `bg-surface-muted`, 11px uppercase muted labels, sortable columns show a chevron.
+- Header row: 40px, `bg-surface-muted`, 11px uppercase muted labels. Sortable columns show a
+  chevron **after** the label, on every column including right-aligned ones.
+- **Every row is 44px, single line.** Cell content never wraps and never stacks a second line —
+  ragged row heights are the fastest way to make a table look broken. Data that wants a second
+  line (a brand under a name) gets its own column instead.
 - Rows: 1px `border-border` top border, `hover:bg-surface-muted` **only if the row is clickable**.
 - Row click opens the detail page. It never opens a modal and never toggles selection.
 - First column is the identifier (SKU / number / name). It and the name column cannot be hidden.
@@ -225,7 +239,7 @@ Every list screen in the app is the same three components stacked. Copy
 
 ### 5.2 Column order — same everywhere
 
-`identifier → name (+ secondary line) → categorisation → quantities → money → status → actions`
+`identifier → name → categorisation (brand, category…) → quantities → money → status → actions`
 
 Money right-aligned, quantities right-aligned, everything else left.
 
@@ -462,14 +476,14 @@ everything else is a supporting neutral or a distinct hue.
 | # | Hex | Use |
 | --- | --- | --- |
 | 1 | `#FFCB00` | The primary measure — revenue, the thing the chart is about |
-| 2 | `#0F0F35` | Its comparison — cost, previous period, target (light mode) |
+| 2 | `#141414` | Its comparison — cost, previous period, target (light mode) |
 | 3 | `#2C4FC9` | Third series |
 | 4 | `#0F7F52` | Fourth series |
 | 5 | `#C2410C` | Fifth series |
 | 6 | `#7A3FBF` | Sixth series |
 
 Never more than six categorical series in one chart — beyond that, group the tail into "Other".
-In dark mode series 2 becomes `#9A9ABF` (navy is the background there).
+In dark mode series 2 becomes `#A1A1A1` (near-black is the background there).
 
 ### 10.2 Rules
 
@@ -497,10 +511,10 @@ In dark mode series 2 becomes `#9A9ABF` (navy is the background there).
 
 ## 12. Navigation
 
-- Sidebar is navy in both themes. Section rows are icons + label; the active item is
-  `bg-primary-soft text-primary`, and in the navy sidebar the active item is yellow text on a
-  translucent yellow fill.
-- Sections expand in place. Only the section containing the current route auto-expands.
+- Sidebar is near-black in both themes. Section rows are icons + label; the active item is yellow
+  text on a 15% yellow fill. Nothing else in the sidebar is yellow except `New`/`Beta` badges.
+- Sections expand in place. **Nothing is expanded by default** — only the section containing the
+  current route opens automatically; anything else stays open only if the user opened it.
 - **Nav items the user has no permission for are not rendered.** Never a disabled or greyed item —
   see `useSession().can()`.
 - Collapsed sidebar shows icons with a tooltip on hover.
@@ -513,7 +527,7 @@ In dark mode series 2 becomes `#9A9ABF` (navy is the background there).
 
 Non-negotiable, because this is a tool people use eight hours a day:
 
-- Text contrast ≥ 4.5:1, UI borders ≥ 3:1. **Yellow only ever carries navy text.**
+- Text contrast ≥ 4.5:1, UI borders ≥ 3:1. **Yellow only ever carries near-black text.**
 - Every interactive element is keyboard-reachable, in visual order, with a visible focus ring.
 - Modals trap focus and restore it to the trigger on close.
 - Status is never communicated by color alone — a badge always has a word.

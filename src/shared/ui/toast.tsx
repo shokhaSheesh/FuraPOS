@@ -42,7 +42,7 @@ export function ToastViewport() {
   const toasts = useToastStore((state) => state.toasts)
 
   return (
-    <div className="pointer-events-none fixed bottom-4 right-4 z-100 flex flex-col gap-2">
+    <div className="pointer-events-none fixed right-4 bottom-4 z-100 flex flex-col gap-2">
       {toasts.map((item) => (
         <ToastRow key={item.id} toast={item} />
       ))}
@@ -69,10 +69,10 @@ function ToastRow({ toast: item }: { toast: Toast }) {
   return (
     <div
       role="status"
-      className="pointer-events-auto flex min-w-72 max-w-96 items-center gap-2.5 rounded-control border border-border bg-surface px-3 py-2.5 shadow-popover"
+      className="rounded-control border-border bg-surface shadow-popover pointer-events-auto flex max-w-96 min-w-72 items-center gap-2.5 border px-3 py-2.5"
     >
       <Icon className={cn('size-4 shrink-0', toneClasses[item.tone])} />
-      <p className="flex-1 text-sm text-fg">{item.message}</p>
+      <p className="text-fg flex-1 text-sm">{item.message}</p>
       {item.undo ? (
         <Button
           variant="link"
@@ -86,7 +86,13 @@ function ToastRow({ toast: item }: { toast: Toast }) {
           Undo
         </Button>
       ) : null}
-      <Button variant="ghost" size="icon" className="size-6" aria-label="Dismiss" onClick={() => dismiss(item.id)}>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="size-6"
+        aria-label="Dismiss"
+        onClick={() => dismiss(item.id)}
+      >
         <X />
       </Button>
     </div>

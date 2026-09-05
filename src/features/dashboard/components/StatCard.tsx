@@ -14,13 +14,7 @@ interface StatCardProps {
   loading?: boolean
 }
 
-export function StatCard({
-  label,
-  value,
-  change,
-  higherIsBetter = true,
-  loading,
-}: StatCardProps) {
+export function StatCard({ label, value, change, higherIsBetter = true, loading }: StatCardProps) {
   if (loading) {
     return (
       <Card className="space-y-2 p-4">
@@ -35,9 +29,9 @@ export function StatCard({
 
   return (
     <Card className="p-4">
-      <p className="text-sm text-fg-muted">{label}</p>
+      <p className="text-fg-muted text-sm">{label}</p>
       <div className="mt-1 flex items-baseline gap-2">
-        <p className="text-xl font-semibold tabular-nums tracking-tight">{value}</p>
+        <p className="text-xl font-semibold tracking-tight tabular-nums">{value}</p>
         {change !== undefined ? (
           <span
             className={cn(

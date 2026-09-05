@@ -14,7 +14,7 @@ function makeRandom(seed: number) {
 }
 
 const random = makeRandom(42)
-const pick = <T,>(values: readonly T[]): T => values[Math.floor(random() * values.length)]!
+const pick = <T>(values: readonly T[]): T => values[Math.floor(random() * values.length)]!
 const between = (min: number, max: number) => Math.floor(random() * (max - min + 1)) + min
 
 export const categories = [

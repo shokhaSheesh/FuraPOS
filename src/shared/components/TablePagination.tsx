@@ -22,18 +22,18 @@ export function TablePagination({ total, pagination, onChange }: TablePagination
   const to = Math.min(page * pageSize, total)
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-3 py-2">
-      <p className="text-sm text-fg-muted">
+    <div className="border-border flex flex-wrap items-center justify-between gap-3 border-t px-3 py-2">
+      <p className="text-fg-muted text-sm">
         {formatNumber(from)}–{formatNumber(to)} of {formatNumber(total)}
       </p>
 
       <div className="flex items-center gap-3">
-        <label className="flex items-center gap-2 text-sm text-fg-muted">
+        <label className="text-fg-muted flex items-center gap-2 text-sm">
           Rows
           <select
             value={pageSize}
             onChange={(event) => onChange({ page: 1, pageSize: Number(event.target.value) })}
-            className="h-8 rounded-control border border-border bg-surface px-2 text-sm text-fg"
+            className="rounded-control border-border bg-surface text-fg h-8 border px-2 text-sm"
           >
             {PAGE_SIZE_OPTIONS.map((option) => (
               <option key={option} value={option}>
@@ -53,7 +53,7 @@ export function TablePagination({ total, pagination, onChange }: TablePagination
           >
             <ChevronLeft />
           </Button>
-          <span className="min-w-16 text-center text-sm text-fg-muted">
+          <span className="text-fg-muted min-w-16 text-center text-sm">
             {page} / {pageCount}
           </span>
           <Button

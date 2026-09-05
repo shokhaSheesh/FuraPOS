@@ -58,15 +58,30 @@ const routes: RouteObject[] = [
       { path: paths.catalog.stock, element: todo('Stock levels', 'catalog.stock.view') },
       { path: paths.catalog.receipts, element: todo('Goods receipt', 'catalog.receipts.view') },
       { path: paths.catalog.receiptDetail(), element: todo('Receipt', 'catalog.receipts.view') },
-      { path: paths.catalog.adjustments, element: todo('Stock adjustment', 'catalog.adjustments.view') },
+      {
+        path: paths.catalog.adjustments,
+        element: todo('Stock adjustment', 'catalog.adjustments.view'),
+      },
       { path: paths.catalog.transfers, element: todo('Transfers', 'catalog.transfers.view') },
 
       // --- Procurement -------------------------------------------------
       { path: paths.procurement.root, element: <Navigate to={paths.procurement.orders} replace /> },
-      { path: paths.procurement.orders, element: todo('Purchase orders', 'procurement.orders.view') },
-      { path: paths.procurement.orderDetail(), element: todo('Purchase order', 'procurement.orders.view') },
-      { path: paths.procurement.suppliers, element: todo('Suppliers', 'procurement.suppliers.view') },
-      { path: paths.procurement.supplierDetail(), element: todo('Supplier', 'procurement.suppliers.view') },
+      {
+        path: paths.procurement.orders,
+        element: todo('Purchase orders', 'procurement.orders.view'),
+      },
+      {
+        path: paths.procurement.orderDetail(),
+        element: todo('Purchase order', 'procurement.orders.view'),
+      },
+      {
+        path: paths.procurement.suppliers,
+        element: todo('Suppliers', 'procurement.suppliers.view'),
+      },
+      {
+        path: paths.procurement.supplierDetail(),
+        element: todo('Supplier', 'procurement.suppliers.view'),
+      },
       {
         path: paths.procurement.reorder,
         element: todo('Reorder suggestions', 'procurement.reorder.view'),
@@ -87,19 +102,34 @@ const routes: RouteObject[] = [
       { path: paths.finance.payables, element: todo('Payables', 'finance.payables.view') },
       { path: paths.finance.forecast, element: todo('Cash forecast', 'finance.forecast.view') },
       { path: paths.finance.budgets, element: todo('Budgeting', 'finance.budgets.view') },
-      { path: paths.finance.settlements, element: todo('Employee settlements', 'finance.settlements.view') },
+      {
+        path: paths.finance.settlements,
+        element: todo('Employee settlements', 'finance.settlements.view'),
+      },
       { path: paths.finance.scenarios, element: todo('Scenarios', 'finance.scenarios.view') },
-      { path: paths.finance.categories, element: todo('Transaction categories', 'finance.categories.view') },
+      {
+        path: paths.finance.categories,
+        element: todo('Transaction categories', 'finance.categories.view'),
+      },
 
       // --- Marketing ----------------------------------------------------
       { path: paths.marketing.root, element: <Navigate to={paths.marketing.clients} replace /> },
       { path: paths.marketing.clients, element: todo('Clients', 'marketing.clients.view') },
       { path: paths.marketing.clientDetail(), element: todo('Client', 'marketing.clients.view') },
       { path: paths.marketing.segments, element: todo('Segments', 'marketing.segments.view') },
-      { path: paths.marketing.cashback, element: todo('Cashback program', 'marketing.cashback.view') },
+      {
+        path: paths.marketing.cashback,
+        element: todo('Cashback program', 'marketing.cashback.view'),
+      },
       { path: paths.marketing.sms, element: todo('SMS campaigns', 'marketing.sms.view') },
-      { path: paths.marketing.campaigns, element: todo('Digital campaigns', 'marketing.campaigns.view') },
-      { path: paths.marketing.promotions, element: todo('Promotions', 'marketing.promotions.view') },
+      {
+        path: paths.marketing.campaigns,
+        element: todo('Digital campaigns', 'marketing.campaigns.view'),
+      },
+      {
+        path: paths.marketing.promotions,
+        element: todo('Promotions', 'marketing.promotions.view'),
+      },
       { path: paths.marketing.coupons, element: todo('Coupons', 'marketing.coupons.view') },
 
       // --- Analytics ----------------------------------------------------
@@ -107,10 +137,22 @@ const routes: RouteObject[] = [
       { path: paths.analytics.reports, element: todo('Report builder', 'analytics.reports.view') },
       { path: paths.analytics.reportDetail(), element: todo('Report', 'analytics.reports.view') },
       { path: paths.analytics.sales, element: todo('Sales report', 'analytics.sales.view') },
-      { path: paths.analytics.customers, element: todo('Customer analytics', 'analytics.customers.view') },
-      { path: paths.analytics.inventoryLog, element: todo('Inventory change log', 'analytics.inventoryLog.view') },
-      { path: paths.analytics.promotions, element: todo('Promotions performance', 'analytics.promotions.view') },
-      { path: paths.analytics.storefront, element: todo('Online storefront', 'analytics.storefront.view') },
+      {
+        path: paths.analytics.customers,
+        element: todo('Customer analytics', 'analytics.customers.view'),
+      },
+      {
+        path: paths.analytics.inventoryLog,
+        element: todo('Inventory change log', 'analytics.inventoryLog.view'),
+      },
+      {
+        path: paths.analytics.promotions,
+        element: todo('Promotions performance', 'analytics.promotions.view'),
+      },
+      {
+        path: paths.analytics.storefront,
+        element: todo('Online storefront', 'analytics.storefront.view'),
+      },
       { path: paths.analytics.calls, element: todo('Call log', 'analytics.calls.view') },
 
       // --- Standalone sections -------------------------------------------
@@ -127,14 +169,32 @@ const routes: RouteObject[] = [
       { path: paths.settings.equipment, element: todo('Equipment', 'settings.equipment.view') },
       { path: paths.settings.locations, element: todo('Locations', 'settings.locations.view') },
       { path: paths.settings.terminals, element: todo('Kassa terminals', 'settings.sales.view') },
-      { path: paths.settings.paymentMethods, element: todo('Payment methods', 'settings.sales.view') },
+      {
+        path: paths.settings.paymentMethods,
+        element: todo('Payment methods', 'settings.sales.view'),
+      },
       { path: paths.settings.salesFunnel, element: todo('Sales funnel', 'settings.sales.view') },
-      { path: paths.settings.installments, element: todo('Installment plans', 'settings.sales.view') },
-      { path: paths.settings.productCategories, element: todo('Product categories', 'settings.products.view') },
-      { path: paths.settings.receiptOptions, element: todo('Receipt options', 'settings.products.view') },
+      {
+        path: paths.settings.installments,
+        element: todo('Installment plans', 'settings.sales.view'),
+      },
+      {
+        path: paths.settings.productCategories,
+        element: todo('Product categories', 'settings.products.view'),
+      },
+      {
+        path: paths.settings.receiptOptions,
+        element: todo('Receipt options', 'settings.products.view'),
+      },
       { path: paths.settings.bulkUpdate, element: todo('Bulk update', 'settings.products.view') },
-      { path: paths.settings.clientFields, element: todo('Client custom fields', 'settings.clientFields.view') },
-      { path: paths.settings.billing, element: todo('Billing & subscription', 'settings.billing.view') },
+      {
+        path: paths.settings.clientFields,
+        element: todo('Client custom fields', 'settings.clientFields.view'),
+      },
+      {
+        path: paths.settings.billing,
+        element: todo('Billing & subscription', 'settings.billing.view'),
+      },
       { path: paths.settings.profile, element: todo('My profile') },
       { path: paths.settings.notifications, element: todo('Notification preferences') },
       { path: paths.settings.webhooks, element: todo('Webhooks', 'settings.webhooks.view') },

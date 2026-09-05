@@ -37,7 +37,7 @@ export default function DashboardPage() {
         description="Today at a glance, across all locations."
         action={
           <Button variant="primary" asChild>
-            <Link to={paths.sales.newSale}>Open POS terminal</Link>
+            <Link to={paths.sales.newSale}>New sale</Link>
           </Button>
         }
         below={

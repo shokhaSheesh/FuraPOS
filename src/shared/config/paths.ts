@@ -17,7 +17,7 @@ export const paths = {
 
   sales: {
     root: '/sales',
-    /** Hands off to the separate POS terminal app — not an in-app route. */
+    /** Manual sale entry — this product has no cashier POS. */
     newSale: '/sales/new',
     orders: '/sales/orders', // OX: /app/sells/orders
     orderDetail: (id = ':orderId') => `/sales/orders/${id}`,

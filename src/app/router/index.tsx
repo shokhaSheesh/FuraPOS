@@ -9,6 +9,8 @@ import { RouteError } from './RouteError'
 
 const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPage'))
 const ProductsPage = lazy(() => import('@/features/products/pages/ProductsPage'))
+const NewSalePage = lazy(() => import('@/features/sales/pages/NewSalePage'))
+const AllSalesPage = lazy(() => import('@/features/sales/pages/SalesListPage'))
 
 function Loading() {
   return (
@@ -47,7 +49,8 @@ const routes: RouteObject[] = [
 
       // --- Sales ---------------------------------------------------------
       { path: paths.sales.root, element: <Navigate to={paths.sales.orders} replace /> },
-      { path: paths.sales.orders, element: todo('All sales', 'sales.orders.view') },
+      { path: paths.sales.newSale, element: page(<NewSalePage />, 'sales.orders.create') },
+      { path: paths.sales.orders, element: page(<AllSalesPage />, 'sales.orders.view') },
       { path: paths.sales.orderDetail(), element: todo('Sale', 'sales.orders.view') },
       { path: paths.sales.shifts, element: todo('Cash shifts', 'sales.shifts.view') },
       { path: paths.sales.closed, element: todo('Closed sales', 'sales.closed.view') },

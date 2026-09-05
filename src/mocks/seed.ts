@@ -3,6 +3,7 @@
  * meet — when the backend lands, these files are the spec to hand over.
  */
 import type { Product } from '@/features/products/model/product'
+import type { Sale } from '@/features/sales/model/sale'
 
 /** Seeded PRNG so the mock dataset is identical on every reload. */
 function makeRandom(seed: number) {
@@ -83,5 +84,73 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
     imageUrl: null,
     createdAt,
     updatedAt: createdAt,
+  }
+})
+
+const clientNames = [
+  'Автосервис "Дилшод"',
+  'ООО "Транс Логистик"',
+  'Бекзод Рахимов',
+  'Гулнора Каримова',
+  'ИП "Мотор Плюс"',
+  'Санжар Умаров',
+  'ООО "Фура Парк"',
+  'Азиз Тошматов',
+]
+
+export const clients = clientNames.map((name, index) => ({
+  id: `cli-${index + 1}`,
+  name,
+  phone: `+998 9${between(0, 9)} ${between(100, 999)} ${between(10, 99)} ${between(10, 99)}`,
+  debt: random() > 0.6 ? between(0, 4_000_000) : 0,
+}))
+
+/** Sales accumulate at runtime as the New sale screen posts them. */
+export const sales: Sale[] = Array.from({ length: 18 }, (_, index) => {
+  const location = pick(locations)
+  const client = random() > 0.35 ? pick(clients) : null
+  const lineCount = between(1, 4)
+  const lines = Array.from({ length: lineCount }, (__, lineIndex) => {
+    const product = pick(products)
+    const quantity = between(1, 6)
+    return {
+      id: `line-${index}-${lineIndex}`,
+      productId: product.id,
+      sku: product.sku,
+      name: product.name,
+      unit: product.unit,
+      quantity,
+      unitPrice: product.salePrice,
+      discountPercent: random() > 0.75 ? between(1, 10) : 0,
+    }
+  })
+
+  const subtotal = lines.reduce((sum, line) => sum + line.quantity * line.unitPrice, 0)
+  const discount = lines.reduce(
+    (sum, line) => sum + (line.quantity * line.unitPrice * line.discountPercent) / 100,
+    0,
+  )
+  const total = Math.round(subtotal - discount)
+  const status = random() > 0.82 ? 'draft' : 'completed'
+  const paid = status === 'completed' ? total : 0
+
+  return {
+    id: `sale-${index + 1}`,
+    number: `S-${String(index + 1).padStart(5, '0')}`,
+    status: status as Sale['status'],
+    clientId: client?.id ?? null,
+    clientName: client?.name ?? null,
+    locationId: location.id,
+    locationName: location.name,
+    sellerName: pick(['Akhmet Dauletmuratov', 'Mansurbek Akchaev', 'Dilshod Yusupov']),
+    paymentMethod: pick(['cash', 'card', 'transfer', 'credit'] as const),
+    comment: null,
+    lines,
+    subtotal,
+    discount,
+    total,
+    paid,
+    debt: Math.max(0, total - paid),
+    createdAt: new Date(Date.now() - between(0, 20) * 86_400_000).toISOString(),
   }
 })

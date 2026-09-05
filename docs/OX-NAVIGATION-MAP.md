@@ -36,7 +36,7 @@ OX shows badges on two sections: **Закупки** is `New`, **Финансы**
 | OX (ru) | Ours (en) | OX route |
 | --- | --- | --- |
 | OX POS Касса | *(not in scope)* | `/app/sells/cashdesk-info` |
-| Новая продажа | New sale | *(no route — launches the POS app)* |
+| Новая продажа | New sale | *(no route — navigates to Cash shifts)* |
 | Все продажи | All sales | `/app/sells/orders` |
 | Кассовые смены | Cash shifts | `/app/sells/shifts` |
 | Закрытые продажи | Closed sales | `/app/sells/closed` |
@@ -152,6 +152,11 @@ where it is recorded so nobody "fixes" it by adding them back:
 - **Поддержка / Support**.
 - **Settings → Webhooks**.
 - **Settings → ИИ / MCP** — worth revisiting later as a differentiator, but not now.
+- **The POS itself.** OX runs it as a separate app on another domain
+  (`furasentr--ox-sys--com.oxpos.oxapp.io`, passed `userId`, `language`, `theme`, `subdomain`),
+  embedded in the back office as a 375×700 draggable panel with minimise / maximise / close.
+  Their sidebar "Новая продажа" does not open it — it navigates to `/app/sells/shifts`, because a
+  sale needs an open shift. We build neither: sales are entered by hand on our New sale screen.
 
 ## What we had that OX does not
 

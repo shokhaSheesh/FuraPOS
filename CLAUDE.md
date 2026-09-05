@@ -19,10 +19,10 @@ Two very different surfaces, and this build is the first one:
 
 1. **Back-office web app** (this project) — the admin/manager dashboard: inventory, sales history,
    staff, finance, marketing, settings. Desktop-first, dense data tables, sidebar navigation.
-2. **POS terminal app** (separate product, not in scope yet) — a cashier-facing point-of-sale screen
-   (cart, product search, checkout, payment) that a seller logs into with a terminal key.
-   Architecturally decoupled from the back office in the reference product (opens as its own
-   app/window). Design the back office so it can *launch into* this later, but don't build it now.
+2. ~~POS terminal app~~ — **cut.** There is no cashier POS in this product. Sales are entered
+   manually in the back office on the New sale screen. OX does ship a separate POS (a different
+   domain, iframed into the back office as a floating panel) and its sidebar "Новая продажа" merely
+   navigates to the Cash shifts list; we do neither.
 
 ## Information architecture
 
@@ -36,8 +36,8 @@ Do not rename a nav item or invent a screen without updating that map first.
    KPIs are added (sales, average check, gross margin), and OX's welcome banner is replaced by a
    "Needs attention" list. Widget-by-widget correspondence is in the Dashboard section of
    docs/OX-NAVIGATION-MAP.md.
-2. **Sales** — POS terminal, all sales, cash shifts, closed / open / deleted / postponed sales.
-   "New sale" hands off to the separate POS terminal app.
+2. **Sales** — all sales, cash shifts, closed / open / deleted / postponed sales, and **New sale**,
+   the manual sale-entry screen. "+ New sale" is the primary action on every sales list.
 3. **Products / Services** — product list, transfers, corrections, stocktaking, goods receipt,
    repricing, print templates, and **suppliers** (which OX keeps here, not under Procurement).
 4. **Procurement** `New` — product selection (AI-driven reorder), orders, selection schedule.
@@ -96,9 +96,8 @@ These are the structural ideas worth carrying into a fresh build, not just cosme
 
 ## Explicit non-goals for this build (yet)
 
-- No real payment processing — integrations are config-only toggles for now.
-- No POS terminal / cashier checkout screen — that's a separate app, only the *launch point* from
-  Sales lives here.
+- No real payment processing — a sale records *how* it was paid, it does not charge anything.
+- **No cashier POS, at all.** Not a separate app, not an embedded one. Sales are typed in by hand.
 - **No Integrations, Partner program, Support, Webhooks or AI / MCP screens.** All five exist in
   OX and are cut from this build. The AI/MCP connector in particular is worth revisiting later —
   letting a business point Claude read-only at its own sales/stock/client data via a copyable

@@ -57,6 +57,57 @@ describe('mock API', () => {
     expect(missing.status).toBe(404)
   })
 
+  it('creates a sale and returns it in the ledger with server-computed totals', async () => {
+    const payload = {
+      clientId: null,
+      locationId: 'loc-2',
+      paymentMethod: 'cash',
+      comment: '',
+      paid: 0,
+      status: 'completed',
+      lines: [
+        {
+          id: 'l1',
+          productId: 'prd-1',
+          sku: 'SKU-00001',
+          name: 'Test product',
+          unit: 'pcs',
+          quantity: 2,
+          unitPrice: 500_000,
+          discountPercent: 10,
+        },
+      ],
+    }
+
+    const created = await fetch('http://localhost/api/sales', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    expect(created.status).toBe(201)
+    const sale = (await created.json()) as {
+      id: string
+      number: string
+      total: number
+      debt: number
+    }
+    // The server computes the money; the client never gets to assert it.
+    expect(sale.total).toBe(900_000)
+    expect(sale.debt).toBe(900_000)
+
+    const ledger = await get<Paginated<{ id: string }>>('/sales?pageSize=1')
+    expect(ledger.items[0]!.id).toBe(sale.id)
+  })
+
+  it('refuses a sale with no lines', async () => {
+    const response = await fetch('http://localhost/api/sales', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lines: [] }),
+    })
+    expect(response.status).toBe(422)
+  })
+
   it('serves the session with permissions', async () => {
     const me = await get<{ permissions: string[] }>('/me')
     expect(me.permissions.length).toBeGreaterThan(0)

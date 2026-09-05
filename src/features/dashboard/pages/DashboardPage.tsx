@@ -6,6 +6,7 @@ import { Button } from '@/shared/ui/Button'
 import { paths } from '@/shared/config/paths'
 import { formatMoney, formatNumber, formatPercent } from '@/shared/lib/format'
 import { useDashboardSummary, type DashboardPeriod } from '../api/summary'
+import type { DateRange } from '@/shared/ui/DateRangePicker'
 import { PeriodFilter } from '../components/PeriodFilter'
 import { StatCard } from '../components/StatCard'
 import { ChartLegend, RevenueByLocationChart } from '../components/RevenueByLocationChart'
@@ -25,7 +26,8 @@ import { AttentionCard } from '../components/AttentionCard'
  */
 export default function DashboardPage() {
   const [period, setPeriod] = useState<DashboardPeriod>('today')
-  const { data, isLoading } = useDashboardSummary(period)
+  const [range, setRange] = useState<DateRange>({ from: null, to: null })
+  const { data, isLoading } = useDashboardSummary(period, range)
   const loading = isLoading && !data
 
   return (
@@ -38,7 +40,16 @@ export default function DashboardPage() {
             <Link to={paths.sales.newSale}>Open POS terminal</Link>
           </Button>
         }
-        below={<PeriodFilter value={period} onChange={setPeriod} />}
+        below={
+          <PeriodFilter
+            period={period}
+            range={range}
+            onChange={(nextPeriod, nextRange) => {
+              setPeriod(nextPeriod)
+              setRange(nextRange)
+            }}
+          />
+        }
       />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

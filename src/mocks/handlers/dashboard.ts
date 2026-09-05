@@ -8,7 +8,7 @@ import { locations, products } from '../seed'
  * period filter, which is the main behavioural difference from OX, where the
  * KPI cards have periods baked into their titles.
  */
-export type DashboardPeriod = 'today' | 'yesterday' | 'week' | 'month'
+export type DashboardPeriod = 'today' | 'yesterday' | 'week' | 'month' | 'custom'
 
 export interface Metric {
   value: number
@@ -47,13 +47,22 @@ export interface DashboardSummary {
   }
 }
 
-const DAYS: Record<DashboardPeriod, number> = { today: 1, yesterday: 1, week: 7, month: 30 }
+const DAYS: Record<DashboardPeriod, number> = {
+  today: 1,
+  yesterday: 1,
+  week: 7,
+  month: 30,
+  custom: 0,
+}
 const COMPARED: Record<DashboardPeriod, string> = {
   today: 'yesterday',
   yesterday: 'the day before',
   week: 'the previous week',
   month: 'the previous month',
+  custom: 'the preceding period',
 }
+
+const DAY_MS = 86_400_000
 
 /** Seeded so the dashboard does not reshuffle on every render. */
 function pseudo(seed: number) {
@@ -68,16 +77,32 @@ export const dashboardHandlers = [
   http.get(api('/dashboard/summary'), ({ request }) => {
     const url = new URL(request.url)
     const period = (url.searchParams.get('period') ?? 'today') as DashboardPeriod
-    const days = DAYS[period] ?? 1
+    const from = url.searchParams.get('from')
+    const to = url.searchParams.get('to')
+
+    // A custom window is measured in days between the two dates, inclusive.
+    const days =
+      period === 'custom' && from && to
+        ? Math.max(1, Math.round((Date.parse(to) - Date.parse(from)) / DAY_MS) + 1)
+        : (DAYS[period] ?? 1)
     const random = pseudo(days * 7919)
 
     const revenueByLocation = Array.from({ length: days === 1 ? 7 : days }, (_, index) => {
-      const date = new Date(Date.now() - (days === 1 ? 6 - index : days - 1 - index) * 86_400_000)
+      const date =
+        period === 'custom' && from
+          ? new Date(Date.parse(from) + index * DAY_MS)
+          : new Date(Date.now() - (days === 1 ? 6 - index : days - 1 - index) * DAY_MS)
       const row: { date: string; [k: string]: number | string } = {
         date: date.toISOString().slice(0, 10),
       }
-      for (const location of locations) {
-        row[location.id] = Math.round(2_000_000 + random() * 6_000_000)
+      for (const [order, location] of locations.entries()) {
+        const base = 3_200_000 + order * 900_000
+        // Saturday and Sunday run hot; Monday is the trough.
+        const weekday = date.getDay()
+        const rhythm = [0.82, 0.94, 0.98, 1.0, 1.12, 1.28, 1.18][weekday] ?? 1
+        const trend = 1 + index * 0.004
+        const noise = 0.92 + random() * 0.16
+        row[location.id] = Math.round(base * rhythm * trend * noise)
       }
       return row
     })

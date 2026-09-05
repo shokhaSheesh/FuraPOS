@@ -23,7 +23,9 @@ interface Props {
  *
  * Deliberate choices, per the visualization rules: a single y-axis (never a
  * second scale), horizontal gridlines only, 2px lines with no dot on every
- * point, and a shared crosshair tooltip so exact values are always reachable —
+ * point, straight segments rather than a smoothed curve — daily revenue is
+ * discrete, and smoothing would draw values that were never measured — and a
+ * shared crosshair tooltip so exact values are always reachable —
  * which is also what supplies the "relief" the gold series needs, since it sits
  * below 3:1 against a white surface.
  */
@@ -83,7 +85,7 @@ export function RevenueByLocationChart({ data, locations, loading }: Props) {
           {locations.map((location, index) => (
             <Line
               key={location.id}
-              type="monotone"
+              type="linear"
               dataKey={location.id}
               name={location.name}
               stroke={series[index % series.length]}

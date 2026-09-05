@@ -128,6 +128,9 @@ Conventions that are load-bearing — follow them rather than inventing per-scre
   `useSession().can('module.section.action')` or `<RequirePermission>`.
 - **List screens** compose `<PageHeader>` + `<ListPage>` + `<DataTable>`, with list state in the URL
   via `useListQuery()`. `src/features/catalog/pages/ProductsPage.tsx` is the reference to copy.
+- **Overlays are ours.** Dropdowns, date pickers and menus all build on `shared/ui/Popover`;
+  `Select`, `Calendar` (three-step days → months → years) and `DateRangePicker` are the components.
+  Never a native `<select>`, never a stock library theme — see DESIGN_RULES § 11.
 - **All HTTP goes through `src/shared/lib/http.ts`.** All money/date/number rendering goes through
   `src/shared/lib/format.ts`.
 - **Charts do not use the brand palette.** Series colours come from the validated categorical

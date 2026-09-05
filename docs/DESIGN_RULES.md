@@ -529,7 +529,80 @@ node scripts/validate_palette.js "<hex,hex,...>" --mode light   # and --mode dar
 
 ---
 
-## 11. Icons
+## 11. Overlays, dropdowns & pickers
+
+Every floating panel in the product is ours — never a browser default, never a library's stock
+theme. They all sit on **one surface**, so a dropdown, a date picker and a row-action menu are
+visibly the same family.
+
+### 11.1 The overlay surface
+
+`Popover` (`src/shared/ui/Popover.tsx`) is that surface, and everything floating is built on it:
+`rounded-card`, 1px `border`, `bg-surface`, `shadow-popover`, **6px offset** from its trigger, 12px
+collision padding. Never hand-roll a positioned `div`.
+
+- Opens on click, never on hover — a hover-opened panel is unusable on touch and hostile on desktop.
+- Closes on `Esc`, on outside click, and on selection (except multi-select).
+- Focus moves into the panel on open and returns to the trigger on close.
+- Panels never nest. A control inside an overlay that needs its own overlay means the flow belongs
+  in a modal.
+
+### 11.2 Select
+
+`Select` matches `Input` exactly — 36px tall, `rounded-control`, 1px `border` — so a filter row
+lines up on a single baseline. Chevron right, muted. The panel mirrors the trigger's width, caps at
+`max-h-72` and scrolls; the selected row carries a **check on the right**, never a coloured
+background alone. Placeholder text is `fg-subtle`, never a fake option like "— none —".
+
+Use a native `<select>` nowhere. Use `Select` for 2–15 options; past that, the control needs a
+search field, which means a combobox, which is a different component.
+
+### 11.3 Calendar
+
+`Calendar` is **three-step: days → months → years.** The header title is a button that zooms *out*
+one step; picking a value zooms back *in*. Arrows step by month, year, or 12-year page depending on
+the level. This is the whole navigation model — there is no year dropdown, and no scrolling list of
+months.
+
+- Weeks start **Monday**.
+- Today carries a small dot under the date, never a fill — a fill would compete with selection.
+- Range fills: the two ends are solid `primary` with `primary-fg` text; the days between are
+  `primary-soft` with **square** corners, so a run reads as one continuous bar rather than a row of
+  separate pills. Only the outer edges are rounded.
+- While picking the second date, the range under the cursor is previewed live.
+- Clicking before the current start **restarts** the range rather than reversing it.
+- Dates outside the allowed window are dimmed and unclickable — never hidden.
+- Days are real buttons; **arrow keys** move by day and week, crossing month boundaries.
+
+### 11.4 Date range picker
+
+`DateRangePicker` is the from–to control, used anywhere a period is chosen. Three ways in, because
+different users reach for different ones:
+
+1. **Presets** down the left — Today, Yesterday, Last 7 days, Last 30 days, This month, Last month,
+   This year. These cover most asks in one click.
+2. **The calendar** for anything else.
+3. **Two text fields** (`DD.MM.YYYY`) for a date someone already knows and would rather type than
+   navigate to. Typing a valid date moves the calendar to it.
+
+**Nothing applies until Apply.** The panel edits a draft; the query fires on Apply and on nothing
+else, so a half-picked range can never trigger a fetch. Apply is disabled until both ends exist.
+Cancel — and dismissing the panel — discards the draft, and reopening starts again from the applied
+value, never from the abandoned edit.
+
+The trigger shows the applied range (`05.08.2026 – 19.08.2026`) or the placeholder, and takes the
+soft-brand fill when a custom range is the active selection.
+
+### 11.5 Period filters
+
+A screen that offers both presets and a custom range renders them as **one row**: a segmented
+control of presets, then the range picker as a peer. Selecting a preset clears the custom range;
+applying a range deselects the presets. Exactly one of them is active at any moment — never both,
+never neither.
+
+---
+
+## 12. Icons
 
 - **Lucide only**, 16px (`size-4`) in controls and tables, 20px (`size-5`) in empty states.
 - `1.5` stroke width, inherit `currentColor`. Never a filled icon, never a second icon library.
@@ -540,7 +613,7 @@ node scripts/validate_palette.js "<hex,hex,...>" --mode light   # and --mode dar
 
 ---
 
-## 12. Navigation
+## 13. Navigation
 
 - Sidebar is pure black in both themes. Section rows are icons + label; the active item is yellow
   text on a 15% yellow fill. Nothing else in the sidebar is yellow except `New`/`Beta` badges.
@@ -554,7 +627,7 @@ node scripts/validate_palette.js "<hex,hex,...>" --mode light   # and --mode dar
 
 ---
 
-## 13. Accessibility floor
+## 14. Accessibility floor
 
 Non-negotiable, because this is a tool people use eight hours a day:
 
@@ -567,7 +640,7 @@ Non-negotiable, because this is a tool people use eight hours a day:
 
 ---
 
-## 14. Checklist before a screen is "done"
+## 15. Checklist before a screen is "done"
 
 - [ ] Exactly one yellow button, top-right.
 - [ ] No hex value and no stock Tailwind palette class anywhere in the file.
@@ -583,3 +656,5 @@ Non-negotiable, because this is a tool people use eight hours a day:
 - [ ] Permission-gated at the route and on every action button.
 - [ ] Keyboard-navigable; icon-only buttons have labels.
 - [ ] Uses `PageHeader` / `ListPage` / `DataTable` rather than a bespoke layout.
+- [ ] Every floating panel is built on `Popover`; no bespoke dropdown or calendar.
+- [ ] A picker edits a draft and applies on Apply — never on every click.

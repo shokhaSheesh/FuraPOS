@@ -1,6 +1,7 @@
 import { Pencil, Trash2 } from 'lucide-react'
 import { Badge } from '@/shared/ui/Badge'
 import { RowActions } from '@/shared/components/RowActions'
+import { ProductThumb } from '@/shared/components/ProductThumb'
 import type { TableColumn } from '@/shared/components/table/features'
 import { formatMoney, formatNumber, formatPercent } from '@/shared/lib/format'
 import { marginRatio, type Product } from '../model/product'
@@ -30,7 +31,12 @@ export function buildProductColumns({
     {
       accessorKey: 'name',
       header: 'Name',
-      cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2.5">
+          <ProductThumb src={row.original.imageUrl} size="sm" />
+          <span className="font-medium">{row.original.name}</span>
+        </div>
+      ),
       enableHiding: false,
     },
     {

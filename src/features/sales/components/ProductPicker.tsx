@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { http } from '@/shared/lib/http'
 import { Input } from '@/shared/ui/Input'
 import { Skeleton } from '@/shared/ui/Skeleton'
+import { ProductThumb } from '@/shared/components/ProductThumb'
 import { cn } from '@/shared/lib/cn'
 import { formatMoney, formatNumber } from '@/shared/lib/format'
 import type { Paginated } from '@/shared/types'
@@ -103,6 +104,7 @@ export function ProductPicker({ onPick }: { onPick: (product: Product) => void }
                       index === highlight && 'bg-surface-muted',
                     )}
                   >
+                    <ProductThumb src={product.imageUrl} size="sm" />
                     <span className="text-fg-subtle text-2xs w-20 shrink-0 font-mono">
                       {product.sku}
                     </span>

@@ -248,13 +248,27 @@ box floating above the card and a second control row inside it is the mistake th
 
 Money right-aligned, quantities right-aligned, everything else left.
 
-### 5.3 Row actions
+### 5.3 Product identity cells
+
+Anywhere a product appears — a list row, a sale line, a picker result — it is shown the same way:
+**thumbnail, then name, then SKU beneath in mono**, via `ProductThumb`. One cell, one shape, so the
+same product is recognisable on every screen.
+
+The no-photo fallback is a **neutral tile with a package icon**, never a colour derived from the
+SKU: invented hues sit outside the token palette and, worse, read as meaning — a green tile beside
+a red one implies a status that is not there.
+
+Document lines (a sale, a receipt, a purchase order) **snapshot** the product's name, SKU, brand,
+category and image at the moment they are written. They are a record of what was sold that day;
+renaming or re-photographing a product later must never rewrite history.
+
+### 5.4 Row actions
 
 Ghost icon buttons, 16px icons, in this order, always: **view/edit → duplicate → …overflow →
 delete**. Delete is always last and always `text-danger` on hover. More than three actions collapse
 into a `⋯` overflow menu, with delete separated at the bottom of that menu.
 
-### 5.4 States
+### 5.5 States
 
 | State | What renders |
 | --- | --- |
@@ -266,7 +280,7 @@ into a `⋯` overflow menu, with delete separated at the bottom of that menu.
 
 Full rules, including what each empty state must say, are in § 9.
 
-### 5.5 List state lives in the URL
+### 5.6 List state lives in the URL
 
 Page, page size, search, sort and every filter are query params, via `useListQuery()`. A filtered
 table must be shareable and survive a refresh. Any filter change resets to page 1.

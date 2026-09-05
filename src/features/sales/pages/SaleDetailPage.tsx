@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router'
 import { ArrowLeft, HandCoins, MapPin, RotateCcw, Trash2, Truck } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { EmptyState } from '@/shared/components/EmptyState'
+import { ProductThumb } from '@/shared/components/ProductThumb'
 import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
 import { Badge } from '@/shared/ui/Badge'
 import { Button } from '@/shared/ui/Button'
@@ -231,6 +232,12 @@ function Overview({ sale }: { sale: Sale }) {
                 <th scope="col" className="h-9 px-3 text-left font-semibold">
                   Product
                 </th>
+                <th scope="col" className="h-9 px-3 text-left font-semibold">
+                  Brand
+                </th>
+                <th scope="col" className="h-9 px-3 text-left font-semibold">
+                  Category
+                </th>
                 <th scope="col" className="h-9 px-3 text-right font-semibold">
                   Qty
                 </th>
@@ -249,8 +256,19 @@ function Overview({ sale }: { sale: Sale }) {
               {sale.lines.map((line) => (
                 <tr key={line.id}>
                   <td className="px-3 py-2">
-                    <p className="text-fg font-medium">{line.name}</p>
-                    <p className="text-fg-subtle text-2xs font-mono">{line.sku}</p>
+                    <div className="flex items-center gap-2.5">
+                      <ProductThumb src={line.imageUrl} size="sm" />
+                      <div className="min-w-0">
+                        <p className="text-fg font-medium">{line.name}</p>
+                        <p className="text-fg-subtle text-2xs font-mono">{line.sku}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="text-fg-muted px-3 py-2">
+                    {line.brandName ?? <span className="text-fg-subtle">—</span>}
+                  </td>
+                  <td className="text-fg-muted px-3 py-2">
+                    {line.categoryName ?? <span className="text-fg-subtle">—</span>}
                   </td>
                   <td className="px-3 py-2 text-right tabular-nums">
                     {formatNumber(line.quantity)} {line.unit}

@@ -2,6 +2,7 @@ import { Trash2 } from 'lucide-react'
 import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
 import { EmptyState } from '@/shared/components/EmptyState'
+import { ProductThumb } from '@/shared/components/ProductThumb'
 import { formatMoney } from '@/shared/lib/format'
 import { lineTotal, type SaleLine } from '../model/sale'
 
@@ -53,8 +54,16 @@ export function SaleLinesTable({ lines, onChange, onRemove }: Props) {
           {lines.map((line) => (
             <tr key={line.id}>
               <td className="px-3 py-2">
-                <p className="text-fg font-medium">{line.name}</p>
-                <p className="text-fg-subtle text-2xs font-mono">{line.sku}</p>
+                <div className="flex items-center gap-2.5">
+                  <ProductThumb src={line.imageUrl} size="sm" />
+                  <div className="min-w-0">
+                    <p className="text-fg font-medium">{line.name}</p>
+                    <p className="text-fg-subtle text-2xs font-mono">
+                      {line.sku}
+                      {line.brandName ? ` · ${line.brandName}` : ''}
+                    </p>
+                  </div>
+                </div>
               </td>
               <td className="px-3 py-2">
                 <Input

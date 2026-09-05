@@ -53,6 +53,15 @@ export interface SaleLine {
   productId: Id
   sku: string
   name: string
+  /**
+   * Brand, category and image are snapshotted onto the line rather than looked
+   * up, for the same reason name and price already are: a sale is a record of
+   * what was sold that day, and renaming or re-photographing a product later
+   * must not rewrite history.
+   */
+  brandName: string | null
+  categoryName: string | null
+  imageUrl: string | null
   unit: string
   quantity: number
   unitPrice: number
@@ -138,6 +147,9 @@ export const saleLineSchema = z.object({
   productId: z.string(),
   sku: z.string(),
   name: z.string(),
+  brandName: z.string().nullable(),
+  categoryName: z.string().nullable(),
+  imageUrl: z.string().nullable(),
   unit: z.string(),
   quantity: z.number().positive('Quantity must be more than zero'),
   unitPrice: z.number().nonnegative(),

@@ -47,7 +47,6 @@ const routes: RouteObject[] = [
 
       // --- Sales ---------------------------------------------------------
       { path: paths.sales.root, element: <Navigate to={paths.sales.orders} replace /> },
-      { path: paths.sales.cashDesk, element: todo('POS terminal', 'sales.cashDesk.view') },
       { path: paths.sales.orders, element: todo('All sales', 'sales.orders.view') },
       { path: paths.sales.orderDetail(), element: todo('Sale', 'sales.orders.view') },
       { path: paths.sales.shifts, element: todo('Cash shifts', 'sales.shifts.view') },

@@ -17,7 +17,6 @@ export const paths = {
 
   sales: {
     root: '/sales',
-    cashDesk: '/sales/cash-desk', // OX: /app/sells/cashdesk-info
     /** Hands off to the separate POS terminal app — not an in-app route. */
     newSale: '/sales/new',
     orders: '/sales/orders', // OX: /app/sells/orders

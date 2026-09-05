@@ -59,7 +59,6 @@ export const navigation: NavSection[] = [
     label: 'Sales',
     icon: ShoppingCart,
     items: [
-      { label: 'POS terminal', to: paths.sales.cashDesk, permission: 'sales.cashDesk.view' },
       { label: 'All sales', to: paths.sales.orders, permission: 'sales.orders.view' },
       { label: 'Cash shifts', to: paths.sales.shifts, permission: 'sales.shifts.view' },
       { label: 'Closed sales', to: paths.sales.closed, permission: 'sales.closed.view' },

@@ -32,7 +32,6 @@ export const permissionTree: readonly PermissionNode[] = [
     key: 'sales',
     label: 'Sales',
     children: [
-      { key: 'sales.cashDesk', label: 'POS terminal', actions: readOnly },
       { key: 'sales.orders', label: 'All sales', actions: readExport },
       { key: 'sales.shifts', label: 'Cash shifts', actions: readExport },
       { key: 'sales.closed', label: 'Closed sales', actions: readExport },

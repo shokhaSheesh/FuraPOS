@@ -35,7 +35,7 @@ OX shows badges on two sections: **Закупки** is `New`, **Финансы**
 
 | OX (ru) | Ours (en) | OX route |
 | --- | --- | --- |
-| OX POS Касса | POS terminal | `/app/sells/cashdesk-info` |
+| OX POS Касса | *(not in scope)* | `/app/sells/cashdesk-info` |
 | Новая продажа | New sale | *(no route — launches the POS app)* |
 | Все продажи | All sales | `/app/sells/orders` |
 | Кассовые смены | Cash shifts | `/app/sells/shifts` |

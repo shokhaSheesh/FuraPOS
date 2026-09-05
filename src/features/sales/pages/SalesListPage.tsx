@@ -83,6 +83,23 @@ const columns: TableColumn<Sale>[] = [
       formatNumber(row.original.lines.reduce((sum, line) => sum + line.quantity, 0)),
   },
   {
+    accessorKey: 'subtotal',
+    header: 'Subtotal',
+    meta: { align: 'right' },
+    cell: ({ row }) => formatMoney(row.original.subtotal),
+  },
+  {
+    accessorKey: 'discount',
+    header: 'Discount',
+    meta: { align: 'right' },
+    cell: ({ row }) =>
+      row.original.discount > 0 ? (
+        <span className="text-warning">− {formatMoney(row.original.discount)}</span>
+      ) : (
+        <Empty />
+      ),
+  },
+  {
     accessorKey: 'total',
     header: 'Total',
     meta: { align: 'right' },
@@ -107,6 +124,28 @@ const columns: TableColumn<Sale>[] = [
       ),
   },
   {
+    id: 'deliveryDate',
+    header: 'Delivery date',
+    cell: ({ row }) =>
+      row.original.delivery?.scheduledFor ? (
+        formatDate(row.original.delivery.scheduledFor)
+      ) : (
+        <Empty />
+      ),
+  },
+  {
+    accessorKey: 'comment',
+    header: 'Comment',
+    cell: ({ row }) =>
+      row.original.comment ? (
+        <span title={row.original.comment} className="block max-w-48 truncate">
+          {row.original.comment}
+        </span>
+      ) : (
+        <Empty />
+      ),
+  },
+  {
     accessorKey: 'status',
     header: 'Status',
     cell: ({ row }) => {
@@ -117,7 +156,16 @@ const columns: TableColumn<Sale>[] = [
 ]
 
 /** Dense by design; the least-used columns are off until someone asks. */
-const HIDDEN_BY_DEFAULT = ['updatedAt', 'finishedAt', 'expiresAt', 'deliveryCost']
+const HIDDEN_BY_DEFAULT = [
+  'updatedAt',
+  'finishedAt',
+  'expiresAt',
+  'deliveryCost',
+  'deliveryDate',
+  'subtotal',
+  'discount',
+  'comment',
+]
 
 const statusOptions = [
   { value: null, label: 'All' },

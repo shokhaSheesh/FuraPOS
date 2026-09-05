@@ -273,25 +273,68 @@ add the subset that applies to us when the Sales lifecycle screens are built.
 Read off the live grid (AG Grid, scrolled horizontally to collect every virtualised column) and the
 summary carousel. This is the screen's full surface, not just its table.
 
-### Columns (OX's default set, 11)
+### Columns — all 26
 
-| OX | Ours | Decision |
-| --- | --- | --- |
-| ID Продажа | Number | kept |
-| Обновлено в | Updated | kept, hidden by default |
-| Закончено в | Finished | kept, hidden by default |
-| Время истечения | Expires | kept, hidden by default |
-| Позиция продажи | Items | kept — we show units sold rather than a line count |
-| Канал продаж | Channel | kept |
-| Статус | Status | kept |
-| Интернет-магазин | — | folded into Channel: an "online store" flag *is* a channel value |
-| ID заказа | — | dropped, see the field comparison above |
-| ID Возврат/Обмен | — | dropped, see the field comparison above |
-| Доп. статус | — | dropped, see the field comparison above |
+Captured by scrolling AG Grid's centre viewport (its columns are virtualised, so only rendered ones
+are in the DOM). Our session showed 23; three more — `Создано в`, `ID Кассовой смены`, `Подитог` —
+appear in the tenant's own saved column config. The union below is the real set.
 
-We additionally show Created, Client, Location, Seller, Payment, Total, Delivery and Debt, which
-OX keeps in its column chooser rather than its default view. Fifteen columns is a lot, so the four
-least-used start hidden and the Columns control brings them back — the choice then persists.
+**Have it (13).**
+
+| OX | Ours |
+| --- | --- |
+| ID Продажа | Number |
+| Создано в | Created |
+| Обновлено в | Updated |
+| Закончено в | Finished |
+| Время истечения | Expires |
+| Позиция продажи | Items |
+| Клиент | Client |
+| Канал продаж | Channel |
+| Метод платежа | Payment |
+| Статус | Status |
+| Сумма доставки | Delivery |
+| Цена | Total |
+| Время доставки | Delivery date |
+| Подитог | Subtotal |
+| Скидка | Discount |
+| Комментарий | Comment |
+
+Plus two OX does not carry as columns: **Location** and **Debt**.
+
+**Folded (2).**
+
+| OX | Where it went |
+| --- | --- |
+| Интернет-магазин | A value of **Channel**. A web-shop boolean *is* a channel; two fields for one fact drift apart. |
+| Продавцы | **Seller**, singular. OX's plural implies several sellers splitting one sale — see the open question below. |
+
+**Not built (8), and why.**
+
+| OX | Reason |
+| --- | --- |
+| ID заказа | OX splits a web/POS *order* from the *sale* it becomes. We have one manual record, so this column would repeat the sale number or sit empty on every row. |
+| ID Возврат/Обмен | We have no returns or exchanges. A return is its own document referencing a sale — a feature to plan, not a column to add. |
+| ID Кассовой смены | No cash shifts, because no POS: nothing opens or closes a drawer to belong to. |
+| Кассовый терминал | Same — no POS terminals exist to record. |
+| Доп. статус | A second, unexplained status beside the first. If a real meaning turns up it earns a named field, not a generic slot. |
+| Менеджеры | A manager overseeing a sale, distinct from the seller who rang it. We model one person per sale. Real for wholesale — see open questions. |
+| Тариф доставки | A delivery *rate plan* (by zone, weight, etc.). We charge a flat per-sale delivery cost. Needs a tariff catalogue first. |
+| Фискализованный | Whether the receipt was registered with the tax authority. **This is the one that matters** — see open questions. |
+
+The four we already stored but never showed — Subtotal, Discount, Comment, Delivery date — are now
+columns, hidden by default like the other rarely-needed ones.
+
+### Open questions this raised
+
+1. **Фискализация.** In Uzbekistan a retail sale must be registered with the tax authority (ОФД).
+   OX tracks it per sale. That is not a column we can bolt on — it is an integration and a legal
+   requirement, and if Fura sells retail we need to know whether it applies.
+2. **Managers vs sellers.** OX carries both, separately. Does a sale need an owning manager as well
+   as the person who entered it?
+3. **Several sellers on one sale.** OX's column is plural, and Personnel has "Мотивация продавцов"
+   (seller motivation) — commission split across sellers is the obvious reason. Does that apply?
+4. **Delivery tariffs.** Flat cost per sale, or a rate plan by zone/weight?
 
 ### Summary strip
 

@@ -1,0 +1,45 @@
+/* Inter carries full Cyrillic, which the brand's display faces do not.
+   See docs/DESIGN_RULES.md § Typography. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import 'tailwindcss';
+@import './tokens.css';
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  /* Dense back-office default: 15px base, not 16px. */
+  html {
+    font-size: 15px;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Numbers in tables must align on the decimal — always. */
+  td,
+  th {
+    font-variant-numeric: tabular-nums;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+
+  /* Elements on the navy sidebar need the light ring, not the navy one. */
+  [data-chrome] :focus-visible {
+    outline-color: var(--color-primary);
+  }
+}

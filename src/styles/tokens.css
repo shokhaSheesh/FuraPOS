@@ -1,0 +1,172 @@
+/*
+ * ============================================================================
+ * FURA SENTR — DESIGN TOKENS
+ * ============================================================================
+ *
+ * The ONLY place a raw color, radius or shadow is defined. Components use the
+ * semantic names below (bg-surface, text-fg-muted, border-border) and never a
+ * hex value or a stock Tailwind palette class like `slate-700`.
+ *
+ * Brand palette (Fura Sentr brand guidelines, p.8):
+ *   #FFCB00  yellow  — energy & attention   → primary actions, active state
+ *   #0F0F35  navy    — stability & trust    → text, chrome, dark surfaces
+ *   #000000  black   — strength & precision → logo only, never a UI surface
+ *   #D8D9D9  grey    — metal & technology   → borders, dividers, rules
+ *
+ * Two rules that follow from the palette and are not negotiable:
+ *   1. Yellow always carries NAVY text, never white. #FFCB00 on white is a
+ *      1.7:1 contrast failure; on navy it is ~11:1.
+ *   2. Yellow is the brand, so it can never also mean "warning". Warning is
+ *      orange (see --color-warning). Nothing yellow in the UI is a status.
+ *
+ * See docs/DESIGN_RULES.md for how these are applied.
+ * ============================================================================
+ */
+
+@theme {
+  --font-sans:
+    'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Brand display face. Latin-only — logo and short Latin display text ONLY,
+     never UI copy, which must render Cyrillic. See DESIGN_RULES.md § Type. */
+  --font-display: 'Designer', 'Inter', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace;
+
+  /* Dense back-office, not a marketing site. */
+  --spacing: 0.25rem;
+  --radius-card: 0.625rem;
+  --radius-control: 0.375rem;
+
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+}
+
+/* ---------------------------------------------------------------- LIGHT --- */
+:root {
+  color-scheme: light;
+
+  --color-canvas: #f2f3f5; /* app background behind cards */
+  --color-surface: #ffffff; /* cards, tables, modals */
+  --color-surface-muted: #f4f5f7; /* table headers, row hover */
+  --color-surface-inset: #ebecef; /* inputs, wells, avatars */
+
+  --color-border: #d8d9d9; /* brand grey, verbatim */
+  --color-border-strong: #b9bac0;
+
+  --color-fg: #0f0f35; /* brand navy — primary text, not pure black */
+  --color-fg-muted: #5a5b72;
+  --color-fg-subtle: #8a8b9c;
+  --color-fg-inverted: #ffffff;
+
+  --color-primary: #ffcb00; /* brand yellow, verbatim */
+  --color-primary-hover: #e8b800;
+  --color-primary-active: #cfa400;
+  --color-primary-fg: #0f0f35; /* NAVY on yellow. Never white. */
+  --color-primary-soft: #fff3cc; /* selected nav, soft badge */
+  --color-primary-border: #f0c000;
+
+  /* Navy chrome: sidebar and any dark surface, in BOTH themes. */
+  --color-chrome: #0f0f35;
+  --color-chrome-muted: #1c1c4a;
+  --color-chrome-fg: #e8e8ee;
+  --color-chrome-fg-muted: #9a9ab5;
+  --color-chrome-border: #2a2a5c;
+
+  /* Status. Deliberately NOT yellow — yellow is the brand. */
+  --color-success: #0f7f52;
+  --color-success-soft: #e2f5ec;
+  --color-warning: #c2410c; /* orange, so it cannot be read as brand */
+  --color-warning-soft: #fdece3;
+  --color-danger: #c0242c;
+  --color-danger-soft: #fdeaea;
+  --color-info: #2c4fc9;
+  --color-info-soft: #e8ecfd;
+
+  --color-ring: #0f0f35;
+
+  --shadow-card: 0 1px 2px rgb(15 15 53 / 0.07);
+  --shadow-popover: 0 8px 24px -6px rgb(15 15 53 / 0.18);
+  --shadow-modal: 0 24px 60px -12px rgb(15 15 53 / 0.35);
+}
+
+/* ----------------------------------------------------------------- DARK --- */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-canvas: #08081c;
+  --color-surface: #0f0f35; /* brand navy becomes the card surface */
+  --color-surface-muted: #17173f;
+  --color-surface-inset: #1c1c4a;
+
+  --color-border: #2a2a5c;
+  --color-border-strong: #3d3d75;
+
+  --color-fg: #f0f0f4;
+  --color-fg-muted: #a0a0bd;
+  --color-fg-subtle: #74748f;
+  --color-fg-inverted: #0f0f35;
+
+  --color-primary: #ffcb00;
+  --color-primary-hover: #ffd633;
+  --color-primary-active: #e8b800;
+  --color-primary-fg: #0f0f35;
+  --color-primary-soft: #33300f;
+  --color-primary-border: #5c5218;
+
+  --color-chrome: #0b0b28;
+  --color-chrome-muted: #17173f;
+  --color-chrome-fg: #e8e8ee;
+  --color-chrome-fg-muted: #9a9ab5;
+  --color-chrome-border: #24244f;
+
+  --color-success: #35b57e;
+  --color-success-soft: #10321f;
+  --color-warning: #f97316;
+  --color-warning-soft: #3a2010;
+  --color-danger: #f0555c;
+  --color-danger-soft: #3b1418;
+  --color-info: #6b8afd;
+  --color-info-soft: #17204a;
+
+  --color-ring: #ffcb00;
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-popover: 0 8px 24px -6px rgb(0 0 0 / 0.6);
+  --shadow-modal: 0 24px 60px -12px rgb(0 0 0 / 0.7);
+}
+
+/* Expose the semantic tokens to Tailwind utilities. */
+@theme inline {
+  --color-canvas: var(--color-canvas);
+  --color-surface: var(--color-surface);
+  --color-surface-muted: var(--color-surface-muted);
+  --color-surface-inset: var(--color-surface-inset);
+  --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
+  --color-fg: var(--color-fg);
+  --color-fg-muted: var(--color-fg-muted);
+  --color-fg-subtle: var(--color-fg-subtle);
+  --color-fg-inverted: var(--color-fg-inverted);
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-primary-active: var(--color-primary-active);
+  --color-primary-fg: var(--color-primary-fg);
+  --color-primary-soft: var(--color-primary-soft);
+  --color-primary-border: var(--color-primary-border);
+  --color-chrome: var(--color-chrome);
+  --color-chrome-muted: var(--color-chrome-muted);
+  --color-chrome-fg: var(--color-chrome-fg);
+  --color-chrome-fg-muted: var(--color-chrome-fg-muted);
+  --color-chrome-border: var(--color-chrome-border);
+  --color-success: var(--color-success);
+  --color-success-soft: var(--color-success-soft);
+  --color-warning: var(--color-warning);
+  --color-warning-soft: var(--color-warning-soft);
+  --color-danger: var(--color-danger);
+  --color-danger-soft: var(--color-danger-soft);
+  --color-info: var(--color-info);
+  --color-info-soft: var(--color-info-soft);
+  --color-ring: var(--color-ring);
+  --shadow-card: var(--shadow-card);
+  --shadow-popover: var(--shadow-popover);
+  --shadow-modal: var(--shadow-modal);
+}

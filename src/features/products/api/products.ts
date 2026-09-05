@@ -9,6 +9,33 @@ export const productKeys = {
   detail: (id: string) => [...productKeys.all, 'detail', id] as const,
 }
 
+export interface ProductsSummary {
+  total: number
+  active: number
+  archived: number
+  quantity: number
+  saleValue: number
+  costValue: number
+  zeroStock: number
+  withImage: number
+}
+
+export function useProductsSummary(query: ListQuery) {
+  return useQuery({
+    queryKey: [...productKeys.all, 'summary', query],
+    queryFn: () => http.get<ProductsSummary>('/products/summary', query),
+    placeholderData: (previous) => previous,
+  })
+}
+
+export function useProductStatusCounts(query: ListQuery) {
+  return useQuery({
+    queryKey: [...productKeys.all, 'status-counts', query],
+    queryFn: () => http.get<Record<string, number>>('/products/status-counts', query),
+    placeholderData: (previous) => previous,
+  })
+}
+
 export function useProducts(query: ListQuery) {
   return useQuery({
     queryKey: productKeys.list(query),

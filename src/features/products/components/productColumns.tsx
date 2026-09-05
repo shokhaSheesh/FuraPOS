@@ -1,25 +1,44 @@
-import { Pencil, Trash2 } from 'lucide-react'
+import { Check, Minus, Pencil, Trash2 } from 'lucide-react'
 import { Badge } from '@/shared/ui/Badge'
 import { RowActions } from '@/shared/components/RowActions'
 import { ProductThumb } from '@/shared/components/ProductThumb'
 import type { TableColumn } from '@/shared/components/table/features'
 import { formatMoney, formatNumber, formatPercent } from '@/shared/lib/format'
-import { marginRatio, type Product } from '../model/product'
+import { effectivePrice, marginRatio, PART_SIDES, type Product } from '../model/product'
+
+const Empty = () => <span className="text-fg-subtle">—</span>
+
+const Bool = ({ on }: { on: boolean }) =>
+  on ? (
+    <Check className="text-success size-4" aria-label="Yes" />
+  ) : (
+    <Minus className="text-fg-subtle size-4" aria-label="No" />
+  )
+
+/** Cost may be quoted in USD, so it is always shown with its currency. */
+const cost = (product: Product) =>
+  product.costCurrency === 'USD'
+    ? `${formatNumber(product.costPrice)} USD`
+    : formatMoney(product.costPrice)
 
 /**
  * Column order follows DESIGN_RULES § 5.2:
  * identifier → name → categorisation → quantities → money → status → actions.
  */
 export function buildProductColumns({
+  usdRate,
   onEdit,
   onDelete,
   canEdit,
   canDelete,
+  canSeeCost,
 }: {
+  usdRate: number
   onEdit: (product: Product) => void
   onDelete: (product: Product) => void
   canEdit: boolean
   canDelete: boolean
+  canSeeCost: boolean
 }): TableColumn<Product>[] {
   return [
     {
@@ -40,14 +59,65 @@ export function buildProductColumns({
       enableHiding: false,
     },
     {
-      accessorKey: 'brandName',
-      header: 'Brand',
-      cell: ({ row }) => row.original.brandName || <Empty />,
+      accessorKey: 'barcode',
+      header: 'Barcode',
+      cell: ({ row }) =>
+        row.original.barcode ? (
+          <span className="text-2xs font-mono">{row.original.barcode}</span>
+        ) : (
+          <Empty />
+        ),
     },
     {
-      accessorKey: 'categoryName',
+      accessorKey: 'description',
+      header: 'OEM / description',
+      cell: ({ row }) => row.original.description ?? <Empty />,
+    },
+    {
+      accessorKey: 'brandName',
+      header: 'Brand',
+      cell: ({ row }) => row.original.brandName ?? <Empty />,
+    },
+    {
+      accessorKey: 'categoryPath',
       header: 'Category',
-      cell: ({ row }) => row.original.categoryName || <Empty />,
+      cell: ({ row }) => <span title={row.original.categoryPath}>{row.original.categoryName}</span>,
+    },
+    {
+      accessorKey: 'vehicleMake',
+      header: 'Make',
+      cell: ({ row }) => row.original.vehicleMake ?? <Empty />,
+    },
+    {
+      id: 'vehicleModels',
+      header: 'Model',
+      cell: ({ row }) =>
+        row.original.vehicleModels.length ? row.original.vehicleModels.join(', ') : <Empty />,
+    },
+    {
+      accessorKey: 'partSide',
+      header: 'Side',
+      cell: ({ row }) =>
+        PART_SIDES.find((s) => s.value === row.original.partSide)?.label ?? <Empty />,
+    },
+    {
+      accessorKey: 'tags',
+      header: 'Tags',
+      cell: ({ row }) =>
+        row.original.tags.length ? (
+          <div className="flex gap-1">
+            {row.original.tags.map((tag) => (
+              <Badge key={tag}>{tag}</Badge>
+            ))}
+          </div>
+        ) : (
+          <Empty />
+        ),
+    },
+    {
+      accessorKey: 'shelfAddress',
+      header: 'Shelf',
+      cell: ({ row }) => row.original.shelfAddress ?? <Empty />,
     },
     {
       accessorKey: 'stock',
@@ -55,8 +125,8 @@ export function buildProductColumns({
       meta: { align: 'right' },
       cell: ({ row }) => {
         const { stock, lowStockThreshold, unit } = row.original
-        // Low stock is "needs attention", so it is warning-orange, never yellow
-        // (yellow is the brand) and never danger-red (that is out of stock).
+        // Low stock is "needs attention" (warning), out of stock is a problem
+        // (danger). Neither is yellow — yellow is the brand.
         const low = lowStockThreshold !== null && stock <= lowStockThreshold
         const out = stock === 0
         return (
@@ -71,11 +141,49 @@ export function buildProductColumns({
       },
     },
     {
-      accessorKey: 'costPrice',
-      header: 'Cost',
-      meta: { align: 'right' },
-      cell: ({ row }) => formatMoney(row.original.costPrice),
+      id: 'stockByLocation',
+      header: 'Locations',
+      cell: ({ row }) =>
+        row.original.stockByLocation.length ? (
+          <span
+            title={row.original.stockByLocation
+              .map((s) => `${s.locationName}: ${s.quantity}`)
+              .join('\n')}
+          >
+            {row.original.stockByLocation.length}
+          </span>
+        ) : (
+          <Empty />
+        ),
     },
+    {
+      accessorKey: 'moq',
+      header: 'MOQ',
+      meta: { align: 'right' },
+      cell: ({ row }) => (row.original.moq ? formatNumber(row.original.moq) : <Empty />),
+    },
+    ...(canSeeCost
+      ? ([
+          {
+            accessorKey: 'costPrice',
+            header: 'Cost',
+            meta: { align: 'right' },
+            cell: ({ row }) => cost(row.original),
+          },
+          {
+            id: 'costValue',
+            header: 'Stock at cost',
+            meta: { align: 'right' },
+            cell: ({ row }) => {
+              const unitCost =
+                row.original.costCurrency === 'USD'
+                  ? row.original.costPrice * usdRate
+                  : row.original.costPrice
+              return formatMoney(unitCost * row.original.stock)
+            },
+          },
+        ] as TableColumn<Product>[])
+      : []),
     {
       accessorKey: 'salePrice',
       header: 'Price',
@@ -83,12 +191,57 @@ export function buildProductColumns({
       cell: ({ row }) => formatMoney(row.original.salePrice),
     },
     {
-      id: 'margin',
-      header: 'Margin',
+      accessorKey: 'discountPrice',
+      header: 'Discounted',
       meta: { align: 'right' },
-      cell: ({ row }) => (
-        <span className="text-fg-muted">{formatPercent(marginRatio(row.original))}</span>
-      ),
+      cell: ({ row }) =>
+        row.original.discountPrice ? (
+          <span className="text-warning">{formatMoney(row.original.discountPrice)}</span>
+        ) : (
+          <Empty />
+        ),
+    },
+    {
+      id: 'saleValue',
+      header: 'Stock at sale',
+      meta: { align: 'right' },
+      cell: ({ row }) => formatMoney(effectivePrice(row.original) * row.original.stock),
+    },
+    ...(canSeeCost
+      ? ([
+          {
+            id: 'margin',
+            header: 'Margin',
+            meta: { align: 'right' },
+            cell: ({ row }) => (
+              <span className="text-fg-muted">
+                {formatPercent(marginRatio(row.original, usdRate))}
+              </span>
+            ),
+          },
+        ] as TableColumn<Product>[])
+      : []),
+    {
+      accessorKey: 'cargoWeightKg',
+      header: 'Weight',
+      meta: { align: 'right' },
+      cell: ({ row }) =>
+        row.original.cargoWeightKg ? `${formatNumber(row.original.cargoWeightKg)} kg` : <Empty />,
+    },
+    {
+      accessorKey: 'cargoSize',
+      header: 'Size',
+      cell: ({ row }) => row.original.cargoSize ?? <Empty />,
+    },
+    {
+      accessorKey: 'isShippable',
+      header: 'Shippable',
+      cell: ({ row }) => <Bool on={row.original.isShippable} />,
+    },
+    {
+      accessorKey: 'showOnline',
+      header: 'Online',
+      cell: ({ row }) => <Bool on={row.original.showOnline} />,
     },
     {
       accessorKey: 'status',
@@ -110,12 +263,7 @@ export function buildProductColumns({
       cell: ({ row }) => (
         <RowActions
           actions={[
-            {
-              label: 'Edit',
-              icon: Pencil,
-              onSelect: () => onEdit(row.original),
-              hidden: !canEdit,
-            },
+            { label: 'Edit', icon: Pencil, onSelect: () => onEdit(row.original), hidden: !canEdit },
             {
               label: 'Delete',
               icon: Trash2,
@@ -130,7 +278,20 @@ export function buildProductColumns({
   ]
 }
 
-/** Empty cells render an em dash, never a blank (DESIGN_RULES § 5.1). */
-function Empty() {
-  return <span className="text-fg-subtle">—</span>
-}
+/** Dense by design: the least-used columns are off until someone asks. */
+export const PRODUCT_COLUMNS_HIDDEN_BY_DEFAULT = [
+  'description',
+  'vehicleModels',
+  'partSide',
+  'tags',
+  'shelfAddress',
+  'stockByLocation',
+  'moq',
+  'costValue',
+  'discountPrice',
+  'saleValue',
+  'cargoWeightKg',
+  'cargoSize',
+  'isShippable',
+  'showOnline',
+]

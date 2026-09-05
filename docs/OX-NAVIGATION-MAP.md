@@ -380,3 +380,80 @@ rows on screen. A summary describing a different set than the table under it is 
 
 Not built: OX's row-selection checkboxes. A checkbox column with no bulk action behind it is
 decoration; it should arrive with the actions that need it.
+
+---
+
+## Product list — all 31 columns
+
+Captured from `/app/products/management`, which redirects to a **variations** view. Read with real
+data (4,989 active products), which mattered: several columns only make sense once you see a row.
+
+**Have it (20).**
+
+| OX | Ours |
+| --- | --- |
+| Рисунок | Image (inside the name cell, not its own column) |
+| Артикул | SKU |
+| Названия вариации | Name |
+| Штрих-код | Barcode |
+| Описание | OEM / description — the reference tenant keeps the OEM number here |
+| Категории | Category, with the full path in a tooltip |
+| Бренд | Brand |
+| Теги | Tags |
+| MOQ | MOQ |
+| Локация | Locations — count, with the per-location split in a tooltip |
+| Кол-во | Stock |
+| Цена продажи за ед. | Price |
+| Общая сумма продажи | Stock at sale |
+| Со скидкой | Discounted |
+| Цена поставщика за ед. | Cost — **with its currency** |
+| Общая сумма поставщ. | Stock at cost |
+| Марка | Make |
+| Модель | Model |
+| Часть | Side (left / right / universal) |
+| Вес карго, Размер карго | Weight, Size |
+| Отгружаемый | Shippable |
+| Показать в онлайн-магазине | Online |
+| Адрес товара | Shelf |
+
+Plus **Margin**, which OX does not show, and **Status**.
+
+**Not built (5), and why.**
+
+| OX | Reason |
+| --- | --- |
+| ID Вариации | We have no variations — see below. Our identifier is the SKU. |
+| С этим вместе покупают | "Frequently bought together" — a recommendation engine, not a field. |
+| Категория конечное, Бренд товара | A second category and a second brand alongside the first. In the data one row reads *Бренд = AKCHAEV INC* (the importer) and *Бренд товара = Space* (the manufacturer) — two real but different ideas that need naming properly, not duplicating. |
+| Артикул моб, Название продукта моб | A separate SKU and name "for mobile". A record should not carry two names; if the mobile app needs a shorter one, that is a display rule. |
+| Скидка | A discount *amount* beside the discounted price. We store the discounted price and derive the rest. |
+
+### What reading the real data changed
+
+- **Cost is quoted in USD, sale price in UZS.** One row: supplier price **85 USD**, sale price
+  **1 476 000 UZS**. That is how an importer works, so `costPrice` now carries `costCurrency`, and
+  margin converts before comparing. Assuming a single currency would have been silently wrong on
+  every margin in the product.
+- **Vehicle fitment is the catalogue's spine.** *Марка = DAF*, *Модель = XF 105, XF 95*,
+  *Часть = L (Левый)*. For truck parts this is how anything is found. OX carries it as
+  tenant-defined columns; we model it properly as `vehicleMake`, `vehicleModels`, `partSide`.
+- **Categories are hierarchical** — "Подножки и части > Подножки и части DAF 105-95".
+- **Stock is per location**, not one number.
+
+### Summary strip
+
+OX: Активные · Архивированные · Итого кол-во · Сумма продажной цены · Сумма цены поставщика ·
+С нулевым остатком · Артикулы с изображением.
+
+Ours condenses those into four tiles: **In stock** (quantity, active/archived), **Stock value**
+(at sale, at cost, and the margin between them), **Out of stock**, **With a photo**.
+
+### Two architectural questions this raised
+
+1. **Variations.** OX's catalogue is a list of *variations*, not products — one product can have
+   several (`ID Вариации`, `Названия вариации`, and a "view by variations" toggle). We model a flat
+   product. If Fura sells the same part in variants that need their own stock and price, this has to
+   be decided before the catalogue is built on, not after.
+2. **Custom fields.** Roughly ten of OX's columns are this tenant's own attributes. We modelled the
+   ones that matter for truck parts as real fields, which is better than a generic bag — but if
+   Fura wants to add attributes without a developer, that is a field builder, and a separate feature.

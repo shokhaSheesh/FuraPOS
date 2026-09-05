@@ -5,6 +5,9 @@
 import type { Product } from '@/features/products/model/product'
 import type { Sale } from '@/features/sales/model/sale'
 
+/** Kept in step with the dashboard's exchange-rate widget. */
+export const USD_RATE = 12_225
+
 /** Seeded PRNG so the mock dataset is identical on every reload. */
 function makeRandom(seed: number) {
   let state = seed
@@ -18,13 +21,22 @@ const random = makeRandom(42)
 const pick = <T>(values: readonly T[]): T => values[Math.floor(random() * values.length)]!
 const between = (min: number, max: number) => Math.floor(random() * (max - min + 1)) + min
 
+/** Hierarchical, as in the reference data ("Steps & parts > … DAF 105-95"). */
 export const categories = [
-  { id: 'cat-1', name: 'Engine parts' },
-  { id: 'cat-2', name: 'Brakes' },
-  { id: 'cat-3', name: 'Filters' },
-  { id: 'cat-4', name: 'Electrics' },
-  { id: 'cat-5', name: 'Oils & fluids' },
-  { id: 'cat-6', name: 'Accessories' },
+  { id: 'cat-1', name: 'Engine parts', path: 'Engine > Engine parts' },
+  { id: 'cat-2', name: 'Brakes', path: 'Chassis > Brakes' },
+  { id: 'cat-3', name: 'Filters', path: 'Engine > Filters' },
+  { id: 'cat-4', name: 'Electrics', path: 'Electrics > Electrics' },
+  { id: 'cat-5', name: 'Oils & fluids', path: 'Consumables > Oils & fluids' },
+  { id: 'cat-6', name: 'Accessories', path: 'Body > Accessories' },
+] as const
+
+const vehicleMakes = [
+  { make: 'DAF', models: ['XF 105', 'XF 95', 'CF 85'] },
+  { make: 'MAN', models: ['TGX', 'TGS'] },
+  { make: 'Volvo', models: ['FH12', 'FH16'] },
+  { make: 'Scania', models: ['R420', 'R440'] },
+  { make: 'Mercedes', models: ['Actros', 'Axor'] },
 ] as const
 
 export const brands = [
@@ -61,30 +73,59 @@ const productNouns = [
 export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
   const category = pick(categories)
   const brand = random() > 0.15 ? pick(brands) : null
-  const costPrice = between(15_000, 900_000)
-  const salePrice = Math.round(costPrice * (1.15 + random() * 0.6))
-  const stock = random() > 0.08 ? between(0, 240) : 0
+  // Suppliers invoice in USD, customers pay in UZS.
+  const costCurrency = random() > 0.35 ? 'USD' : 'UZS'
+  const costPrice = costCurrency === 'USD' ? between(5, 900) : between(15_000, 900_000)
+  const costInUzs = costCurrency === 'USD' ? costPrice * USD_RATE : costPrice
+  const salePrice = Math.round(costInUzs * (1.15 + random() * 0.6))
+  const vehicle = pick(vehicleMakes)
   const createdAt = new Date(Date.now() - between(1, 900) * 86_400_000).toISOString()
+
+  const stockByLocation = locations
+    .filter(() => random() > 0.35)
+    .map((location) => ({
+      locationId: location.id,
+      locationName: location.name,
+      quantity: between(0, 90),
+    }))
+  const stock = stockByLocation.reduce((sum, row) => sum + row.quantity, 0)
 
   return {
     id: `prd-${index + 1}`,
     sku: `SKU-${String(index + 1).padStart(5, '0')}`,
     barcode: random() > 0.3 ? String(4_600_000_000_000 + index) : null,
     name: `${pick(productNouns)} ${pick(['A', 'B', 'X', 'Pro', 'HD'])}${between(10, 99)}`,
+    // The reference data keeps the OEM number here.
+    description: random() > 0.4 ? String(between(1_000_000, 9_999_999)) : null,
     categoryId: category.id,
     categoryName: category.name,
+    categoryPath: category.path,
     brandId: brand?.id ?? null,
     brandName: brand?.name ?? null,
+    tags: random() > 0.6 ? [pick(['bestseller', 'import', 'oem', 'clearance'])] : [],
     unit: pick(['pcs', 'pcs', 'pcs', 'l', 'kg'] as const),
+    moq: random() > 0.7 ? between(2, 12) : null,
     costPrice,
+    costCurrency: costCurrency as Product['costCurrency'],
     salePrice,
+    discountPrice: random() > 0.85 ? Math.round(salePrice * 0.9) : null,
     stock,
+    stockByLocation,
     lowStockThreshold: random() > 0.5 ? between(5, 30) : null,
+    shelfAddress:
+      random() > 0.4 ? `${pick(['A', 'B', 'C'])}-${between(1, 20)}-${between(1, 9)}` : null,
+    vehicleMake: vehicle.make,
+    vehicleModels: [...vehicle.models].slice(0, between(1, vehicle.models.length)),
+    partSide: pick(['left', 'right', 'both', null] as const),
+    cargoWeightKg: random() > 0.5 ? between(1, 60) : null,
+    cargoSize: random() > 0.5 ? `${between(20, 160)}*${between(20, 90)}*${between(10, 60)}` : null,
+    isShippable: random() > 0.15,
+    showOnline: random() > 0.35,
     status: random() > 0.92 ? 'archived' : 'active',
     imageUrl: null,
     createdAt,
     updatedAt: createdAt,
-  }
+  } satisfies Product
 })
 
 const clientNames = [

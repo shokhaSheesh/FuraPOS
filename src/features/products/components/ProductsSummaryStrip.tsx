@@ -2,7 +2,7 @@ import { Boxes, Image, PackageX, Wallet } from 'lucide-react'
 import { Card } from '@/shared/ui/Card'
 import { Skeleton } from '@/shared/ui/Skeleton'
 import { formatMoney, formatNumber, formatPercent } from '@/shared/lib/format'
-import type { ProductsSummary } from '../api/products'
+import type { CatalogSummary } from '../api/products'
 
 /**
  * Mirrors OX's strip above the catalogue. Stock is valued twice — at what we
@@ -14,7 +14,7 @@ export function ProductsSummaryStrip({
   summary,
   loading,
 }: {
-  summary?: ProductsSummary
+  summary?: CatalogSummary
   loading?: boolean
 }) {
   if (loading || !summary) {
@@ -38,7 +38,7 @@ export function ProductsSummaryStrip({
       icon: Boxes,
       label: 'In stock',
       value: formatNumber(summary.quantity),
-      meta: `${formatNumber(summary.active)} active · ${formatNumber(summary.archived)} archived`,
+      meta: `${formatNumber(summary.total)} variations across ${formatNumber(summary.products)} products`,
     },
     {
       icon: Wallet,

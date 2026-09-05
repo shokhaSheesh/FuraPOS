@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw'
 import { api } from './api'
-import { locations, products } from '../seed'
+import { locations, variations } from '../seed'
 
 /**
  * Mirrors the OX dashboard (docs/OX-NAVIGATION-MAP.md), plus the metrics we
@@ -106,8 +106,8 @@ export const dashboardHandlers = [
     )
     const salesCount = Math.round(revenue / 78_400)
 
-    const lowStock = products.filter(
-      (p) => p.lowStockThreshold !== null && p.stock > 0 && p.stock <= p.lowStockThreshold,
+    const lowStock = variations.filter(
+      (v) => v.lowStockThreshold !== null && v.stock > 0 && v.stock <= v.lowStockThreshold,
     ).length
 
     const summary: DashboardSummary = {
@@ -126,17 +126,12 @@ export const dashboardHandlers = [
         { code: 'EUR', base: 'UZS', rate: 13_410, changedAt: new Date().toISOString() },
         { code: 'RUB', base: 'UZS', rate: 134.2, changedAt: new Date().toISOString() },
       ],
-      topProducts: products.slice(0, 6).map((product, index) => {
+      topProducts: variations.slice(0, 6).map((v, index) => {
         const quantity = 60 - index * 7
-        return {
-          id: product.id,
-          name: product.name,
-          quantity,
-          revenue: product.salePrice * quantity,
-        }
+        return { id: v.id, name: v.fullName, quantity, revenue: v.salePrice * quantity }
       }),
       attention: {
-        outOfStock: products.filter((p) => p.stock === 0).length,
+        outOfStock: variations.filter((v) => v.stock === 0).length,
         lowStock,
         overduePayables: 3,
         draftSales: 5,

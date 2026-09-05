@@ -4,7 +4,13 @@ import { RowActions } from '@/shared/components/RowActions'
 import { ProductThumb } from '@/shared/components/ProductThumb'
 import type { TableColumn } from '@/shared/components/table/features'
 import { formatMoney, formatNumber, formatPercent } from '@/shared/lib/format'
-import { effectivePrice, marginRatio, PART_SIDES, type Product } from '../model/product'
+import {
+  costInUzs,
+  effectivePrice,
+  marginRatio,
+  PART_SIDES,
+  type VariationRow,
+} from '../model/product'
 
 const Empty = () => <span className="text-fg-subtle">—</span>
 
@@ -16,10 +22,8 @@ const Bool = ({ on }: { on: boolean }) =>
   )
 
 /** Cost may be quoted in USD, so it is always shown with its currency. */
-const cost = (product: Product) =>
-  product.costCurrency === 'USD'
-    ? `${formatNumber(product.costPrice)} USD`
-    : formatMoney(product.costPrice)
+const cost = (v: VariationRow) =>
+  v.costCurrency === 'USD' ? `${formatNumber(v.costPrice)} USD` : formatMoney(v.costPrice)
 
 /**
  * Column order follows DESIGN_RULES § 5.2:
@@ -34,12 +38,12 @@ export function buildProductColumns({
   canSeeCost,
 }: {
   usdRate: number
-  onEdit: (product: Product) => void
-  onDelete: (product: Product) => void
+  onEdit: (row: VariationRow) => void
+  onDelete: (row: VariationRow) => void
   canEdit: boolean
   canDelete: boolean
   canSeeCost: boolean
-}): TableColumn<Product>[] {
+}): TableColumn<VariationRow>[] {
   return [
     {
       accessorKey: 'sku',
@@ -48,12 +52,17 @@ export function buildProductColumns({
       enableHiding: false,
     },
     {
-      accessorKey: 'name',
+      accessorKey: 'fullName',
       header: 'Name',
       cell: ({ row }) => (
         <div className="flex items-center gap-2.5">
           <ProductThumb src={row.original.imageUrl} size="sm" />
-          <span className="font-medium">{row.original.name}</span>
+          <div className="min-w-0">
+            <span className="font-medium">{row.original.productName}</span>
+            {row.original.name !== 'Standard' ? (
+              <span className="text-fg-muted"> · {row.original.name}</span>
+            ) : null}
+          </div>
         </div>
       ),
       enableHiding: false,
@@ -175,14 +184,10 @@ export function buildProductColumns({
             header: 'Stock at cost',
             meta: { align: 'right' },
             cell: ({ row }) => {
-              const unitCost =
-                row.original.costCurrency === 'USD'
-                  ? row.original.costPrice * usdRate
-                  : row.original.costPrice
-              return formatMoney(unitCost * row.original.stock)
+              return formatMoney(costInUzs(row.original, usdRate) * row.original.stock)
             },
           },
-        ] as TableColumn<Product>[])
+        ] as TableColumn<VariationRow>[])
       : []),
     {
       accessorKey: 'salePrice',
@@ -219,7 +224,7 @@ export function buildProductColumns({
               </span>
             ),
           },
-        ] as TableColumn<Product>[])
+        ] as TableColumn<VariationRow>[])
       : []),
     {
       accessorKey: 'cargoWeightKg',

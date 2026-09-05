@@ -26,7 +26,7 @@ import {
   type SaleLine,
   type SaleStatus,
 } from '../model/sale'
-import type { Product } from '@/features/products/model/product'
+import type { VariationRow } from '@/features/products/model/product'
 
 const LOCATIONS = [
   { value: 'loc-1', label: 'Central warehouse' },
@@ -70,11 +70,11 @@ export default function NewSalePage() {
   const empty = lines.length === 0
   const deliveryIncomplete = deliveryOn && address.trim().length < 3
 
-  const addProduct = (product: Product) => {
+  const addProduct = (product: VariationRow) => {
     setLines((previous) => {
       // Same product picked twice bumps the quantity rather than adding a
       // duplicate row — that is what the person is actually doing.
-      const existing = previous.find((line) => line.productId === product.id)
+      const existing = previous.find((line) => line.variationId === product.id)
       if (existing) {
         return previous.map((line) =>
           line.id === existing.id ? { ...line, quantity: line.quantity + 1 } : line,
@@ -84,9 +84,10 @@ export default function NewSalePage() {
         ...previous,
         {
           id: `${product.id}-${Date.now()}`,
-          productId: product.id,
+          variationId: product.id,
+          productId: product.productId,
           sku: product.sku,
-          name: product.name,
+          name: product.fullName,
           brandName: product.brandName,
           categoryName: product.categoryName,
           imageUrl: product.imageUrl,

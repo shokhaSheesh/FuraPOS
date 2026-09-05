@@ -10,6 +10,7 @@ import {
 
 const line = (over: Partial<SaleLine> = {}): SaleLine => ({
   id: 'l1',
+  variationId: 'v1',
   productId: 'p1',
   sku: 'SKU-1',
   name: 'Brake disc',

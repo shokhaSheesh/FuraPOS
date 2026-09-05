@@ -2,7 +2,12 @@
  * Deterministic seed data. Shapes here are the contract the real API must
  * meet — when the backend lands, these files are the spec to hand over.
  */
-import type { Product } from '@/features/products/model/product'
+import type {
+  CostCurrency,
+  PartSide,
+  Product,
+  VariationRow,
+} from '@/features/products/model/product'
 import type { Sale } from '@/features/sales/model/sale'
 
 /** Kept in step with the dashboard's exchange-rate widget. */
@@ -70,32 +75,67 @@ const productNouns = [
   'Shock absorber',
 ]
 
+/**
+ * Products carry what a part *is*; variations carry what is actually sold.
+ * Most parts have one variation; side-specific ones (steps, mirrors, wings)
+ * have a left and a right, which is exactly the split the reference data shows.
+ */
 export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
   const category = pick(categories)
   const brand = random() > 0.15 ? pick(brands) : null
-  // Suppliers invoice in USD, customers pay in UZS.
-  const costCurrency = random() > 0.35 ? 'USD' : 'UZS'
-  const costPrice = costCurrency === 'USD' ? between(5, 900) : between(15_000, 900_000)
-  const costInUzs = costCurrency === 'USD' ? costPrice * USD_RATE : costPrice
-  const salePrice = Math.round(costInUzs * (1.15 + random() * 0.6))
   const vehicle = pick(vehicleMakes)
   const createdAt = new Date(Date.now() - between(1, 900) * 86_400_000).toISOString()
+  const productId = `prd-${index + 1}`
+  const name = `${pick(productNouns)} ${pick(['A', 'B', 'X', 'Pro', 'HD'])}${between(10, 99)}`
 
-  const stockByLocation = locations
-    .filter(() => random() > 0.35)
-    .map((location) => ({
-      locationId: location.id,
-      locationName: location.name,
-      quantity: between(0, 90),
-    }))
-  const stock = stockByLocation.reduce((sum, row) => sum + row.quantity, 0)
+  const sided = random() > 0.65
+  const specs: { name: string; side: PartSide | null }[] = sided
+    ? [
+        { name: 'Left', side: 'left' },
+        { name: 'Right', side: 'right' },
+      ]
+    : [{ name: 'Standard', side: null }]
+
+  const variations = specs.map((spec, vIndex) => {
+    // Suppliers invoice in USD, customers pay in UZS.
+    const costCurrency = random() > 0.35 ? 'USD' : 'UZS'
+    const costPrice = costCurrency === 'USD' ? between(5, 900) : between(15_000, 900_000)
+    const costUzs = costCurrency === 'USD' ? costPrice * USD_RATE : costPrice
+    const salePrice = Math.round(costUzs * (1.15 + random() * 0.6))
+
+    const stockByLocation = locations
+      .filter(() => random() > 0.35)
+      .map((location) => ({
+        locationId: location.id,
+        locationName: location.name,
+        quantity: between(0, 90),
+      }))
+
+    return {
+      id: `var-${index + 1}-${vIndex + 1}`,
+      productId,
+      name: spec.name,
+      sku: `SKU-${String(index + 1).padStart(5, '0')}${sided ? `-${spec.side === 'left' ? 'L' : 'R'}` : ''}`,
+      barcode: random() > 0.3 ? String(4_600_000_000_000 + index * 10 + vIndex) : null,
+      partSide: spec.side,
+      costPrice,
+      costCurrency: costCurrency as CostCurrency,
+      salePrice,
+      discountPrice: random() > 0.85 ? Math.round(salePrice * 0.9) : null,
+      stock: stockByLocation.reduce((sum, row) => sum + row.quantity, 0),
+      stockByLocation,
+      lowStockThreshold: random() > 0.5 ? between(5, 30) : null,
+      shelfAddress:
+        random() > 0.4 ? `${pick(['A', 'B', 'C'])}-${between(1, 20)}-${between(1, 9)}` : null,
+      moq: random() > 0.7 ? between(2, 12) : null,
+      imageUrl: null,
+      status: 'active' as const,
+    }
+  })
 
   return {
-    id: `prd-${index + 1}`,
-    sku: `SKU-${String(index + 1).padStart(5, '0')}`,
-    barcode: random() > 0.3 ? String(4_600_000_000_000 + index) : null,
-    name: `${pick(productNouns)} ${pick(['A', 'B', 'X', 'Pro', 'HD'])}${between(10, 99)}`,
-    // The reference data keeps the OEM number here.
+    id: productId,
+    name,
     description: random() > 0.4 ? String(between(1_000_000, 9_999_999)) : null,
     categoryId: category.id,
     categoryName: category.name,
@@ -104,29 +144,41 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
     brandName: brand?.name ?? null,
     tags: random() > 0.6 ? [pick(['bestseller', 'import', 'oem', 'clearance'])] : [],
     unit: pick(['pcs', 'pcs', 'pcs', 'l', 'kg'] as const),
-    moq: random() > 0.7 ? between(2, 12) : null,
-    costPrice,
-    costCurrency: costCurrency as Product['costCurrency'],
-    salePrice,
-    discountPrice: random() > 0.85 ? Math.round(salePrice * 0.9) : null,
-    stock,
-    stockByLocation,
-    lowStockThreshold: random() > 0.5 ? between(5, 30) : null,
-    shelfAddress:
-      random() > 0.4 ? `${pick(['A', 'B', 'C'])}-${between(1, 20)}-${between(1, 9)}` : null,
     vehicleMake: vehicle.make,
     vehicleModels: [...vehicle.models].slice(0, between(1, vehicle.models.length)),
-    partSide: pick(['left', 'right', 'both', null] as const),
     cargoWeightKg: random() > 0.5 ? between(1, 60) : null,
     cargoSize: random() > 0.5 ? `${between(20, 160)}*${between(20, 90)}*${between(10, 60)}` : null,
     isShippable: random() > 0.15,
     showOnline: random() > 0.35,
+    variations,
     status: random() > 0.92 ? 'archived' : 'active',
-    imageUrl: null,
     createdAt,
     updatedAt: createdAt,
   } satisfies Product
 })
+
+/** The flat, sellable list: what the catalogue shows and what a sale points at. */
+export const variations: VariationRow[] = products.flatMap((product) =>
+  product.variations.map((variation) => ({
+    ...variation,
+    // An archived product archives everything under it.
+    status: product.status === 'archived' ? ('archived' as const) : variation.status,
+    productName: product.name,
+    fullName: product.variations.length > 1 ? `${product.name} — ${variation.name}` : product.name,
+    description: product.description,
+    categoryName: product.categoryName,
+    categoryPath: product.categoryPath,
+    brandName: product.brandName,
+    tags: product.tags,
+    unit: product.unit,
+    vehicleMake: product.vehicleMake,
+    vehicleModels: product.vehicleModels,
+    cargoWeightKg: product.cargoWeightKg,
+    cargoSize: product.cargoSize,
+    isShippable: product.isShippable,
+    showOnline: product.showOnline,
+  })),
+)
 
 const clientNames = [
   'Автосервис "Дилшод"',
@@ -152,19 +204,20 @@ export const sales: Sale[] = Array.from({ length: 18 }, (_, index) => {
   const client = random() > 0.35 ? pick(clients) : null
   const lineCount = between(1, 4)
   const lines = Array.from({ length: lineCount }, (__, lineIndex) => {
-    const product = pick(products)
+    const variation = pick(variations)
     const quantity = between(1, 6)
     return {
       id: `line-${index}-${lineIndex}`,
-      productId: product.id,
-      sku: product.sku,
-      name: product.name,
-      brandName: product.brandName,
-      categoryName: product.categoryName,
-      imageUrl: product.imageUrl,
-      unit: product.unit,
+      variationId: variation.id,
+      productId: variation.productId,
+      sku: variation.sku,
+      name: variation.fullName,
+      brandName: variation.brandName,
+      categoryName: variation.categoryName,
+      imageUrl: variation.imageUrl,
+      unit: variation.unit,
       quantity,
-      unitPrice: product.salePrice,
+      unitPrice: variation.salePrice,
       discountPercent: random() > 0.75 ? between(1, 10) : 0,
     }
   })

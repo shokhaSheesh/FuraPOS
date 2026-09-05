@@ -448,12 +448,21 @@ OX: Активные · Архивированные · Итого кол-во �
 Ours condenses those into four tiles: **In stock** (quantity, active/archived), **Stock value**
 (at sale, at cost, and the margin between them), **Out of stock**, **With a photo**.
 
-### Two architectural questions this raised
+### Two architectural questions — both now settled
 
-1. **Variations.** OX's catalogue is a list of *variations*, not products — one product can have
-   several (`ID Вариации`, `Названия вариации`, and a "view by variations" toggle). We model a flat
-   product. If Fura sells the same part in variants that need their own stock and price, this has to
-   be decided before the catalogue is built on, not after.
-2. **Custom fields.** Roughly ten of OX's columns are this tenant's own attributes. We modelled the
-   ones that matter for truck parts as real fields, which is better than a generic bag — but if
-   Fura wants to add attributes without a developer, that is a field builder, and a separate feature.
+1. **Variations: yes, built.** The sellable unit is a *variation*, not a product. A product says
+   what a part is — name, OEM, category, brand, which vehicle it fits, cargo dimensions. A variation
+   carries everything that can differ between variants of that part: its own SKU, barcode, cost and
+   currency, price, stock per location, shelf address, MOQ, image, status. The reference data shows
+   exactly why: one row reads *Названия вариации = "DAF XF 105 Подножка основа крыло L"* against
+   *Название продукта = "DAF XF 105 Подножка основа крыло"* — the same part, left and right.
+
+   The catalogue lists variations by default and offers a **by-product** view, mirroring OX's
+   "Вид по вариаций" toggle. The parent view aggregates rather than pretending a product has one
+   price: a variation count, total stock, and a price **range**.
+
+   Sale lines point at a `variationId`, keeping `productId` for reporting.
+
+2. **Custom fields: no, and not planned.** The attributes that matter for truck parts — vehicle
+   make, models, part side — are modelled as real, typed fields. A generic field builder is not
+   being built; if a new attribute is needed it gets a real column.

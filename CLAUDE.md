@@ -44,6 +44,11 @@ Do not rename a nav item or invent a screen without updating that map first.
    Field-by-field correspondence with OX is in docs/OX-NAVIGATION-MAP.md.
 3. **Products / Services** — product list, transfers, corrections, stocktaking, goods receipt,
    repricing, print templates, and **suppliers** (which OX keeps here, not under Procurement).
+   **The sellable unit is a variation, not a product.** A product says what a part is; a variation
+   carries the SKU, barcode, cost, price, stock and shelf. The catalogue lists variations, with a
+   by-product view that aggregates. Sale lines point at a variation. There is deliberately **no
+   custom-field builder** — attributes that matter (vehicle make, models, part side) are real,
+   typed fields.
 4. **Procurement** `New` — product selection (AI-driven reorder), orders, selection schedule.
 5. **Personnel management** — employees, seller motivation, planning, access & roles (granular
    per-module tree, supports partial/indeterminate access, not just on/off).

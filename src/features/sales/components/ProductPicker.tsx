@@ -8,14 +8,14 @@ import { ProductThumb } from '@/shared/components/ProductThumb'
 import { cn } from '@/shared/lib/cn'
 import { formatMoney, formatNumber } from '@/shared/lib/format'
 import type { Paginated } from '@/shared/types'
-import type { Product } from '@/features/products/model/product'
+import type { VariationRow } from '@/features/products/model/product'
 
 /**
  * Searchable product picker. `Select` is for a short fixed list; a catalog of
  * thousands needs search, so this is a combobox: type, arrow through results,
  * Enter to add. Built to be reused by goods receipt and purchase orders.
  */
-export function ProductPicker({ onPick }: { onPick: (product: Product) => void }) {
+export function ProductPicker({ onPick }: { onPick: (variation: VariationRow) => void }) {
   const [term, setTerm] = useState('')
   const [debounced, setDebounced] = useState('')
   const [highlight, setHighlight] = useState(0)
@@ -27,9 +27,9 @@ export function ProductPicker({ onPick }: { onPick: (product: Product) => void }
   }, [term])
 
   const { data, isFetching } = useQuery({
-    queryKey: ['product-picker', debounced],
+    queryKey: ['variation-picker', debounced],
     queryFn: () =>
-      http.get<Paginated<Product>>('/products', {
+      http.get<Paginated<VariationRow>>('/variations', {
         search: debounced,
         pageSize: 8,
         status: 'active',
@@ -40,7 +40,7 @@ export function ProductPicker({ onPick }: { onPick: (product: Product) => void }
   const results = useMemo(() => data?.items ?? [], [data])
   useEffect(() => setHighlight(0), [debounced])
 
-  const add = (product: Product) => {
+  const add = (product: VariationRow) => {
     onPick(product)
     setTerm('')
     setDebounced('')
@@ -108,7 +108,7 @@ export function ProductPicker({ onPick }: { onPick: (product: Product) => void }
                     <span className="text-fg-subtle text-2xs w-20 shrink-0 font-mono">
                       {product.sku}
                     </span>
-                    <span className="text-fg min-w-0 flex-1 truncate">{product.name}</span>
+                    <span className="text-fg min-w-0 flex-1 truncate">{product.fullName}</span>
                     <span
                       className={cn(
                         'text-2xs shrink-0',

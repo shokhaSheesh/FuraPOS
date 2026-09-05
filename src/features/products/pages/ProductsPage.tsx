@@ -15,17 +15,19 @@ import { paths } from '@/shared/config/paths'
 import { downloadCsv } from '@/shared/lib/csv'
 import { USD_RATE } from '@/mocks/seed'
 import {
-  useDeleteProduct,
+  useCatalogStatusCounts,
+  useCatalogSummary,
+  useDeleteVariation,
   useProducts,
-  useProductsSummary,
-  useProductStatusCounts,
+  useVariations,
 } from '../api/products'
 import {
   buildProductColumns,
   PRODUCT_COLUMNS_HIDDEN_BY_DEFAULT,
 } from '../components/productColumns'
 import { ProductsSummaryStrip } from '../components/ProductsSummaryStrip'
-import { effectivePrice, type Product } from '../model/product'
+import { productParentColumns } from '../components/productParentColumns'
+import { effectivePrice, type VariationRow } from '../model/product'
 
 /**
  * The catalogue. Reference implementation of the list-page pattern: PageHeader
@@ -40,13 +42,22 @@ export default function ProductsPage() {
   const { can } = useSession()
   const { query, setQuery } = useListQuery()
 
-  const { data, isLoading } = useProducts(query)
+  /**
+   * Two ways to read the same catalogue, as in the reference product: by
+   * variation (the sellable rows) or by product (the parent). Variations is
+   * the default because that is what has a price, a barcode and stock.
+   */
+  const byProduct = query.view === 'products'
+  // `enabled` is a React Query option, not a request param — passing it in the
+  // query object would send ?enabled=false to the server and still fetch.
+  const { data, isLoading } = useVariations(query, { enabled: !byProduct })
+  const { data: parents, isLoading: parentsLoading } = useProducts(query, { enabled: byProduct })
   const scope = { search: query.search, status: query.status, stock: query.stock }
-  const { data: summary, isLoading: summaryLoading } = useProductsSummary(scope)
-  const { data: counts } = useProductStatusCounts({ search: query.search, stock: query.stock })
-  const deleteProduct = useDeleteProduct()
+  const { data: summary, isLoading: summaryLoading } = useCatalogSummary(scope)
+  const { data: counts } = useCatalogStatusCounts({ search: query.search, stock: query.stock })
+  const deleteVariation = useDeleteVariation()
 
-  const [pendingDelete, setPendingDelete] = useState<Product | null>(null)
+  const [pendingDelete, setPendingDelete] = useState<VariationRow | null>(null)
 
   const columns = useMemo(
     () =>
@@ -56,7 +67,7 @@ export default function ProductsPage() {
         canSeeCost: can('products.cost.view'),
         canEdit: can('products.list.edit'),
         canDelete: can('products.list.delete'),
-        onEdit: (product) => navigate(paths.products.detail(product.id)),
+        onEdit: (variation) => navigate(paths.products.detail(variation.productId)),
         onDelete: setPendingDelete,
       }),
     [can, navigate],
@@ -66,7 +77,7 @@ export default function ProductsPage() {
 
   const confirmDelete = () => {
     if (!pendingDelete) return
-    deleteProduct.mutate(pendingDelete.id, {
+    deleteVariation.mutate(pendingDelete.id, {
       onSuccess: () => {
         toast.success(`${pendingDelete.name} deleted`)
         setPendingDelete(null)
@@ -97,7 +108,7 @@ export default function ProductsPage() {
       rows.map((p) => [
         p.sku,
         p.barcode,
-        p.name,
+        p.fullName,
         p.brandName,
         p.categoryPath,
         p.vehicleMake,
@@ -144,6 +155,15 @@ export default function ProductsPage() {
               counts={counts}
             />
             <StatusChips
+              ariaLabel="View"
+              options={[
+                { value: null, label: 'By variation' },
+                { value: 'products', label: 'By product' },
+              ]}
+              value={(query.view as string | null) ?? null}
+              onChange={(next) => setQuery({ view: next, page: null })}
+            />
+            <StatusChips
               ariaLabel="Filter by stock"
               options={[
                 { value: null, label: 'Any stock' },
@@ -159,58 +179,79 @@ export default function ProductsPage() {
 
       <ProductsSummaryStrip summary={summary} loading={summaryLoading} />
 
-      <DataTable
-        storageKey="products"
-        columns={columns}
-        initialHidden={PRODUCT_COLUMNS_HIDDEN_BY_DEFAULT}
-        data={data?.items ?? []}
-        total={data?.total ?? 0}
-        isLoading={isLoading}
-        toolbar={
-          <SearchInput
-            value={String(query.search ?? '')}
-            onChange={(search) => setQuery({ search })}
-            placeholder="Search by name, SKU, barcode or OEM…"
-          />
-        }
-        pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
-        onPaginationChange={({ page, pageSize }) => setQuery({ page, pageSize })}
-        sorting={query.sort ? [{ id: String(query.sort), desc: query.order === 'desc' }] : []}
-        onSortingChange={(sorting) => {
-          const next = sorting[0]
-          setQuery({ sort: next?.id ?? null, order: next ? (next.desc ? 'desc' : 'asc') : null })
-        }}
-        onRowClick={(product) => navigate(paths.products.detail(product.id))}
-        emptyState={
-          isFiltered ? (
-            <EmptyState
-              title="No products match these filters"
-              description="Try a different search term, or clear the filters to see everything."
-              action={
-                <Button
-                  variant="secondary"
-                  onClick={() => setQuery({ search: null, status: null, stock: null })}
-                >
-                  Clear filters
-                </Button>
-              }
+      {byProduct ? (
+        <DataTable
+          storageKey="products-parents"
+          columns={productParentColumns}
+          data={parents?.items ?? []}
+          total={parents?.total ?? 0}
+          isLoading={parentsLoading}
+          toolbar={
+            <SearchInput
+              value={String(query.search ?? '')}
+              onChange={(search) => setQuery({ search })}
+              placeholder="Search by name, OEM, brand or vehicle…"
             />
-          ) : (
-            <EmptyState
-              title="No products yet"
-              description="Products are everything you sell. Add the first one to start tracking stock and sales."
-              action={
-                can('products.list.create') ? (
-                  <Button variant="primary">
-                    <Plus />
-                    Add product
+          }
+          pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
+          onPaginationChange={({ page, pageSize }) => setQuery({ page, pageSize })}
+          onRowClick={(product) => navigate(paths.products.detail(product.id))}
+          emptyState={<EmptyState title="No products match these filters" />}
+        />
+      ) : (
+        <DataTable
+          storageKey="products"
+          columns={columns}
+          initialHidden={PRODUCT_COLUMNS_HIDDEN_BY_DEFAULT}
+          data={data?.items ?? []}
+          total={data?.total ?? 0}
+          isLoading={isLoading}
+          toolbar={
+            <SearchInput
+              value={String(query.search ?? '')}
+              onChange={(search) => setQuery({ search })}
+              placeholder="Search by name, SKU, barcode or OEM…"
+            />
+          }
+          pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
+          onPaginationChange={({ page, pageSize }) => setQuery({ page, pageSize })}
+          sorting={query.sort ? [{ id: String(query.sort), desc: query.order === 'desc' }] : []}
+          onSortingChange={(sorting) => {
+            const next = sorting[0]
+            setQuery({ sort: next?.id ?? null, order: next ? (next.desc ? 'desc' : 'asc') : null })
+          }}
+          onRowClick={(variation) => navigate(paths.products.detail(variation.productId))}
+          emptyState={
+            isFiltered ? (
+              <EmptyState
+                title="No products match these filters"
+                description="Try a different search term, or clear the filters to see everything."
+                action={
+                  <Button
+                    variant="secondary"
+                    onClick={() => setQuery({ search: null, status: null, stock: null })}
+                  >
+                    Clear filters
                   </Button>
-                ) : null
-              }
-            />
-          )
-        }
-      />
+                }
+              />
+            ) : (
+              <EmptyState
+                title="No products yet"
+                description="Products are everything you sell. Add the first one to start tracking stock and sales."
+                action={
+                  can('products.list.create') ? (
+                    <Button variant="primary">
+                      <Plus />
+                      Add product
+                    </Button>
+                  ) : null
+                }
+              />
+            )
+          }
+        />
+      )}
 
       <ConfirmDialog
         open={pendingDelete !== null}
@@ -222,7 +263,7 @@ export default function ProductsPage() {
             from the catalog. Sales history that references it is kept.
           </>
         }
-        submitting={deleteProduct.isPending}
+        submitting={deleteVariation.isPending}
         onConfirm={confirmDelete}
       />
     </>

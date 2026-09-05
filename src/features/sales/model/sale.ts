@@ -50,6 +50,8 @@ export const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
 export interface SaleLine {
   /** Client-side row id; a product can legitimately appear twice. */
   id: string
+  /** The sellable unit. The parent product is kept for reporting. */
+  variationId: Id
   productId: Id
   sku: string
   name: string
@@ -144,6 +146,7 @@ export function computeTotals(lines: SaleLine[], paid: number, deliveryCost = 0)
 
 export const saleLineSchema = z.object({
   id: z.string(),
+  variationId: z.string(),
   productId: z.string(),
   sku: z.string(),
   name: z.string(),

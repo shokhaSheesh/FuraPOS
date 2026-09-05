@@ -1,12 +1,11 @@
 import { Link } from 'react-router'
-import { Bell, Moon, PanelLeft, Plus, Search, Sun, Wallet } from 'lucide-react'
+import { Bell, Moon, PanelLeft, Sun, Wallet } from 'lucide-react'
 import { DropdownMenu } from 'radix-ui'
 import { Button } from '@/shared/ui/Button'
 import { Badge } from '@/shared/ui/Badge'
 import { useUiStore } from '@/shared/hooks/useUiStore'
 import { useSession } from '@/app/providers/SessionProvider'
 import { useTheme } from '@/app/providers/ThemeProvider'
-import { quickCreateActions } from '@/shared/config/navigation'
 import { paths } from '@/shared/config/paths'
 import { formatMoney } from '@/shared/lib/format'
 
@@ -25,16 +24,6 @@ export function Topbar() {
       <Button variant="ghost" size="icon" aria-label="Toggle sidebar" onClick={toggleSidebar}>
         <PanelLeft />
       </Button>
-
-      <QuickCreateMenu />
-
-      <div className="relative mx-2 hidden max-w-md flex-1 md:block">
-        <Search className="text-fg-subtle pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
-        <input
-          placeholder="Search products, sales, clients…"
-          className="rounded-control border-border bg-surface-inset text-fg placeholder:text-fg-subtle h-9 w-full border pr-3 pl-8 text-sm"
-        />
-      </div>
 
       <div className="ml-auto flex items-center gap-1">
         {can('settings.billing.view') ? (
@@ -59,33 +48,6 @@ export function Topbar() {
         <UserMenu name={user?.name ?? '—'} plan={user?.company.plan ?? 'free'} />
       </div>
     </header>
-  )
-}
-
-function QuickCreateMenu() {
-  const { can } = useSession()
-  const actions = quickCreateActions.filter(
-    (action) => !action.permission || can(action.permission),
-  )
-  if (actions.length === 0) return null
-
-  return (
-    <DropdownMenu.Root>
-      <DropdownMenu.Trigger asChild>
-        <Button variant="secondary" size="icon" aria-label="Create">
-          <Plus />
-        </Button>
-      </DropdownMenu.Trigger>
-      <DropdownMenu.Portal>
-        <DropdownMenu.Content align="start" sideOffset={6} className={menuContentClass}>
-          {actions.map((action) => (
-            <DropdownMenu.Item key={action.label} asChild className={menuItemClass}>
-              <Link to={action.to}>{action.label}</Link>
-            </DropdownMenu.Item>
-          ))}
-        </DropdownMenu.Content>
-      </DropdownMenu.Portal>
-    </DropdownMenu.Root>
   )
 }
 

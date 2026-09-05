@@ -152,8 +152,10 @@ Fixed and identical on every screen — `AppShell`:
   Collapse state persists per user. The logo sits on a white backing tile because its black
   outlines would vanish on the chrome (brand guidelines p.9).
 - **Top bar**, 56px, `bg-surface`, bottom border. Contents left→right:
-  collapse toggle → quick-create `+` → global search → *(spacer)* → wallet balance → theme toggle →
-  notifications bell → avatar menu. This order never changes.
+  collapse toggle → *(spacer)* → wallet balance → theme toggle → notifications bell → avatar menu.
+  This order never changes. The top bar holds **account and app-level chrome only** — it never
+  carries a create action or a search field, because both belong to the screen the user is on
+  (the primary action lives in `PageHeader`, search lives in the table's toolbar).
 - **Content**, scrolls independently, `max-w-[1600px]`, centered.
 
 ### 3.3 Radii and elevation

@@ -244,17 +244,3 @@ export const navigation: NavSection[] = [
     ],
   },
 ]
-
-/** Quick-create "+" menu in the top bar. */
-export const quickCreateActions: NavItem[] = [
-  { label: 'New sale', to: paths.sales.newSaleLaunch, permission: 'sales.terminal.view' },
-  { label: 'New product', to: paths.catalog.products, permission: 'catalog.products.create' },
-  { label: 'Goods receipt', to: paths.catalog.receipts, permission: 'catalog.receipts.create' },
-  {
-    label: 'Purchase order',
-    to: paths.procurement.orders,
-    permission: 'procurement.orders.create',
-  },
-  { label: 'New client', to: paths.marketing.clients, permission: 'marketing.clients.create' },
-  { label: 'New employee', to: paths.hr.employees, permission: 'hr.employees.create' },
-]

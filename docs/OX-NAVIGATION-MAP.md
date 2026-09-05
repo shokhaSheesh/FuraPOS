@@ -265,3 +265,56 @@ have to reach the customer are not a finished sale.
 OX shows a **summary strip** above the sales table for the filtered range — sales count, sales total,
 units sold, returns, debts, deliveries, clients, sellers. That is a genuinely good idea and we should
 add the subset that applies to us when the Sales lifecycle screens are built.
+
+---
+
+## All sales screen — what OX puts on it
+
+Read off the live grid (AG Grid, scrolled horizontally to collect every virtualised column) and the
+summary carousel. This is the screen's full surface, not just its table.
+
+### Columns (OX's default set, 11)
+
+| OX | Ours | Decision |
+| --- | --- | --- |
+| ID Продажа | Number | kept |
+| Обновлено в | Updated | kept, hidden by default |
+| Закончено в | Finished | kept, hidden by default |
+| Время истечения | Expires | kept, hidden by default |
+| Позиция продажи | Items | kept — we show units sold rather than a line count |
+| Канал продаж | Channel | kept |
+| Статус | Status | kept |
+| Интернет-магазин | — | folded into Channel: an "online store" flag *is* a channel value |
+| ID заказа | — | dropped, see the field comparison above |
+| ID Возврат/Обмен | — | dropped, see the field comparison above |
+| Доп. статус | — | dropped, see the field comparison above |
+
+We additionally show Created, Client, Location, Seller, Payment, Total, Delivery and Debt, which
+OX keeps in its column chooser rather than its default view. Fifteen columns is a lot, so the four
+least-used start hidden and the Columns control brings them back — the choice then persists.
+
+### Summary strip
+
+| OX card | Ours |
+| --- | --- |
+| Продажи / Сумма продаж / Продано шт. | **Sales** — total, with count and items beneath |
+| Долги / Сумма долга | **Debt** — total outstanding, with unpaid count |
+| Доставки / Сумма доставки | **Delivery** — total, with count still to deliver |
+| Клиенты / Продавцы | **People** — distinct clients / sellers |
+| Возвраты / Сумма возврата | *(not built — we have no returns concept)* |
+| Обмены / Разница обмена | *(not built — we have no exchanges concept)* |
+| Дата и время от / до | replaced by our own date-range picker in the filter row |
+
+The strip answers **the same filters as the table**, so the figures always describe exactly the
+rows on screen. A summary describing a different set than the table under it is worse than none.
+
+### Filters
+
+- **Status chips** — All plus the eight statuses, single-select, written to the URL.
+- **Date range** — OX embeds from/to date-time fields in a card; we use our own range picker.
+- **Search** — in the table toolbar, over number, client, location and seller.
+- **Export** — OX has a download icon top-right; ours exports the current filtered rows to CSV
+  (RFC 4180 quoting, UTF-8 BOM so Excel opens Cyrillic correctly).
+
+Not built: OX's row-selection checkboxes. A checkbox column with no bulk action behind it is
+decoration; it should arrive with the actions that need it.

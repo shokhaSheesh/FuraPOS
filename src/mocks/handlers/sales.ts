@@ -7,6 +7,21 @@ import { computeTotals } from '@/features/sales/model/sale'
 
 let sequence = sales.length
 
+/** Shared by the list and the summary so they can never disagree. */
+function filterSales(url: URL) {
+  const search = url.searchParams.get('search')
+  const status = url.searchParams.get('status')
+  const from = url.searchParams.get('from')
+  const to = url.searchParams.get('to')
+
+  return sales.filter((sale) => {
+    if (status && sale.status !== status) return false
+    if (from && sale.createdAt.slice(0, 10) < from) return false
+    if (to && sale.createdAt.slice(0, 10) > to) return false
+    return matches([sale.number, sale.clientName, sale.locationName, sale.sellerName], search)
+  })
+}
+
 export const salesHandlers = [
   http.get(api('/clients'), ({ request }) => {
     const url = new URL(request.url)
@@ -17,15 +32,33 @@ export const salesHandlers = [
 
   http.get(api('/sales'), ({ request }) => {
     const url = new URL(request.url)
-    const search = url.searchParams.get('search')
-    const status = url.searchParams.get('status')
+    return HttpResponse.json(paginate([...filterSales(url)].reverse(), url))
+  }),
 
-    const filtered = sales.filter((sale) => {
-      if (status && sale.status !== status) return false
-      return matches([sale.number, sale.clientName, sale.locationName], search)
+  /**
+   * The strip above the table. Same filters as the list, so the figures always
+   * describe exactly the rows on screen.
+   */
+  http.get(api('/sales/summary'), ({ request }) => {
+    const filtered = filterSales(new URL(request.url))
+    const units = filtered.reduce(
+      (sum, sale) => sum + sale.lines.reduce((n, line) => n + line.quantity, 0),
+      0,
+    )
+    const withDebt = filtered.filter((sale) => sale.debt > 0)
+    const withDelivery = filtered.filter((sale) => sale.delivery)
+
+    return HttpResponse.json({
+      count: filtered.length,
+      total: filtered.reduce((sum, sale) => sum + sale.total, 0),
+      units,
+      debtCount: withDebt.length,
+      debtTotal: withDebt.reduce((sum, sale) => sum + sale.debt, 0),
+      deliveryCount: withDelivery.length,
+      deliveryTotal: withDelivery.reduce((sum, sale) => sum + sale.deliveryCost, 0),
+      clients: new Set(filtered.map((s) => s.clientId).filter(Boolean)).size,
+      sellers: new Set(filtered.map((s) => s.sellerName)).size,
     })
-
-    return HttpResponse.json(paginate([...filtered].reverse(), url))
   }),
 
   http.get(api('/sales/:id'), ({ params }) => {

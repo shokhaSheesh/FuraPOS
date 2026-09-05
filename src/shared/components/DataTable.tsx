@@ -29,18 +29,29 @@ export interface DataTableProps<T extends RowData> {
   /** Persists the user's column choices for this table across visits. */
   storageKey?: string
   /**
+   * Columns that start hidden. A dense table can carry more columns than it
+   * shows, so the ones most people never need are off until asked for.
+   */
+  initialHidden?: string[]
+  /**
    * Search and filters, rendered in the table's own toolbar row so a table
    * has exactly one toolbar: controls left, column visibility right.
    */
   toolbar?: ReactNode
 }
 
-function readStoredVisibility(storageKey?: string): ColumnVisibilityState {
-  if (!storageKey) return {}
+function readStoredVisibility(
+  storageKey: string | undefined,
+  initialHidden: string[] | undefined,
+): ColumnVisibilityState {
+  const defaults = Object.fromEntries((initialHidden ?? []).map((id) => [id, false]))
+  if (!storageKey) return defaults
   try {
-    return JSON.parse(localStorage.getItem(`cols:${storageKey}`) ?? '{}') as ColumnVisibilityState
+    const stored = localStorage.getItem(`cols:${storageKey}`)
+    // A stored choice is the user's; defaults only apply on a first visit.
+    return stored ? (JSON.parse(stored) as ColumnVisibilityState) : defaults
   } catch {
-    return {}
+    return defaults
   }
 }
 
@@ -56,10 +67,11 @@ export function DataTable<T extends RowData>({
   onRowClick,
   emptyState,
   storageKey,
+  initialHidden,
   toolbar,
 }: DataTableProps<T>) {
   const [columnVisibility, setColumnVisibility] = useState<ColumnVisibilityState>(() =>
-    readStoredVisibility(storageKey),
+    readStoredVisibility(storageKey, initialHidden),
   )
 
   const table = useTable({

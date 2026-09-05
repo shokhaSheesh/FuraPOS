@@ -11,6 +11,20 @@ const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPag
 const ProductsPage = lazy(() => import('@/features/products/pages/ProductsPage'))
 const NewSalePage = lazy(() => import('@/features/sales/pages/NewSalePage'))
 const AllSalesPage = lazy(() => import('@/features/sales/pages/SalesListPage'))
+const OpenSalesPage = lazy(() =>
+  import('@/features/sales/pages/SalesStatusPages').then((m) => ({ default: m.OpenSalesPage })),
+)
+const ClosedSalesPage = lazy(() =>
+  import('@/features/sales/pages/SalesStatusPages').then((m) => ({ default: m.ClosedSalesPage })),
+)
+const PostponedSalesPage = lazy(() =>
+  import('@/features/sales/pages/SalesStatusPages').then((m) => ({
+    default: m.PostponedSalesPage,
+  })),
+)
+const DeletedSalesPage = lazy(() =>
+  import('@/features/sales/pages/SalesStatusPages').then((m) => ({ default: m.DeletedSalesPage })),
+)
 
 function Loading() {
   return (
@@ -53,10 +67,13 @@ const routes: RouteObject[] = [
       { path: paths.sales.orders, element: page(<AllSalesPage />, 'sales.orders.view') },
       { path: paths.sales.orderDetail(), element: todo('Sale', 'sales.orders.view') },
       { path: paths.sales.shifts, element: todo('Cash shifts', 'sales.shifts.view') },
-      { path: paths.sales.closed, element: todo('Closed sales', 'sales.closed.view') },
-      { path: paths.sales.drafts, element: todo('Open sales', 'sales.drafts.view') },
-      { path: paths.sales.deleted, element: todo('Deleted sales', 'sales.deleted.view') },
-      { path: paths.sales.postponed, element: todo('Postponed sales', 'sales.postponed.view') },
+      { path: paths.sales.closed, element: page(<ClosedSalesPage />, 'sales.closed.view') },
+      { path: paths.sales.drafts, element: page(<OpenSalesPage />, 'sales.drafts.view') },
+      { path: paths.sales.deleted, element: page(<DeletedSalesPage />, 'sales.deleted.view') },
+      {
+        path: paths.sales.postponed,
+        element: page(<PostponedSalesPage />, 'sales.postponed.view'),
+      },
 
       // --- Products / Services -------------------------------------------
       { path: paths.products.root, element: <Navigate to={paths.products.list} replace /> },

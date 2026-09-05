@@ -176,9 +176,7 @@ export const sales: Sale[] = Array.from({ length: 18 }, (_, index) => {
     paid,
     debt: Math.max(0, total + deliveryCost - paid),
     expiresAt:
-      status === 'postponed'
-        ? new Date(createdAt.getTime() + 3 * 86_400_000).toISOString()
-        : null,
+      status === 'postponed' ? new Date(createdAt.getTime() + 3 * 86_400_000).toISOString() : null,
     createdAt: createdAt.toISOString(),
     updatedAt: createdAt.toISOString(),
     finishedAt: settled ? createdAt.toISOString() : null,

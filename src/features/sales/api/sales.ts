@@ -23,6 +23,26 @@ export function useSales(query: ListQuery) {
   })
 }
 
+export interface SalesSummary {
+  count: number
+  total: number
+  units: number
+  debtCount: number
+  debtTotal: number
+  deliveryCount: number
+  deliveryTotal: number
+  clients: number
+  sellers: number
+}
+
+export function useSalesSummary(query: ListQuery) {
+  return useQuery({
+    queryKey: [...saleKeys.all, 'summary', query],
+    queryFn: () => http.get<SalesSummary>('/sales/summary', query),
+    placeholderData: (previous) => previous,
+  })
+}
+
 export function useClients(search: string) {
   return useQuery({
     queryKey: ['clients', search],

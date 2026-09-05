@@ -2,7 +2,7 @@
  * Deterministic seed data. Shapes here are the contract the real API must
  * meet — when the backend lands, these files are the spec to hand over.
  */
-import type { Product } from '@/features/catalog/model/product'
+import type { Product } from '@/features/products/model/product'
 
 /** Seeded PRNG so the mock dataset is identical on every reload. */
 function makeRandom(seed: number) {

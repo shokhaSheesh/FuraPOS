@@ -35,9 +35,9 @@ export default function ProductsPage() {
   const columns = useMemo(
     () =>
       buildProductColumns({
-        canEdit: can('catalog.products.edit'),
-        canDelete: can('catalog.products.delete'),
-        onEdit: (product) => navigate(paths.catalog.productDetail(product.id)),
+        canEdit: can('products.list.edit'),
+        canDelete: can('products.list.delete'),
+        onEdit: (product) => navigate(paths.products.detail(product.id)),
         onDelete: setPendingDelete,
       }),
     [can, navigate],
@@ -62,7 +62,7 @@ export default function ProductsPage() {
         title="Products"
         description="Everything you sell, across every location."
         action={
-          can('catalog.products.create') ? (
+          can('products.list.create') ? (
             <Button variant="primary">
               <Plus />
               Add product
@@ -91,7 +91,7 @@ export default function ProductsPage() {
           const next = sorting[0]
           setQuery({ sort: next?.id ?? null, order: next ? (next.desc ? 'desc' : 'asc') : null })
         }}
-        onRowClick={(product) => navigate(paths.catalog.productDetail(product.id))}
+        onRowClick={(product) => navigate(paths.products.detail(product.id))}
         emptyState={
           isFiltered ? (
             <EmptyState
@@ -108,7 +108,7 @@ export default function ProductsPage() {
               title="No products yet"
               description="Products are everything you sell. Add the first one to start tracking stock and sales."
               action={
-                can('catalog.products.create') ? (
+                can('products.list.create') ? (
                   <Button variant="primary">
                     <Plus />
                     Add product

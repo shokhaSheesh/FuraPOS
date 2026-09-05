@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import { NavLink, useLocation } from 'react-router'
 import { ChevronDown } from 'lucide-react'
 import { cn } from '@/shared/lib/cn'
@@ -29,7 +30,7 @@ export function Sidebar() {
       data-chrome
       className={cn(
         'border-chrome-border bg-chrome flex shrink-0 flex-col border-r transition-[width] duration-200',
-        collapsed ? 'w-14' : 'w-60',
+        collapsed ? 'w-14' : 'w-64',
       )}
     >
       <div className="flex h-14 items-center px-3.5">
@@ -90,6 +91,7 @@ function SidebarSection({ section, collapsed }: { section: NavSection; collapsed
         {!collapsed ? (
           <>
             <span className="flex-1 truncate text-left">{section.label}</span>
+            {section.badge ? <LifecycleBadge>{section.badge}</LifecycleBadge> : null}
             <ChevronDown className={cn('size-3.5 transition-transform', open && 'rotate-180')} />
           </>
         ) : null}
@@ -98,20 +100,27 @@ function SidebarSection({ section, collapsed }: { section: NavSection; collapsed
       {open && !collapsed ? (
         <div className="border-chrome-border ml-4 border-l pl-2">
           {section.items?.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                cn(
-                  'rounded-control mt-0.5 flex items-center gap-2 px-2.5 py-1.5 text-sm',
-                  isActive ? 'bg-primary/15 text-primary font-medium' : rowIdle,
-                )
-              }
-            >
-              <span className="flex-1 truncate">{item.label}</span>
-              {item.badge ? <LifecycleBadge>{item.badge}</LifecycleBadge> : null}
-            </NavLink>
+            <Fragment key={item.to}>
+              {/* Finance mirrors OX's "Reports" / "Setup" headings. */}
+              {item.group ? (
+                <p className="text-chrome-fg-muted text-2xs mt-3 mb-1 px-2.5 font-semibold tracking-wide uppercase">
+                  {item.group}
+                </p>
+              ) : null}
+              <NavLink
+                to={item.to}
+                end={item.end}
+                className={({ isActive }) =>
+                  cn(
+                    'rounded-control mt-0.5 flex items-center gap-2 px-2.5 py-1.5 text-sm',
+                    isActive ? 'bg-primary/15 text-primary font-medium' : rowIdle,
+                  )
+                }
+              >
+                <span className="flex-1 truncate">{item.label}</span>
+                {item.badge ? <LifecycleBadge>{item.badge}</LifecycleBadge> : null}
+              </NavLink>
+            </Fragment>
           ))}
         </div>
       ) : null}

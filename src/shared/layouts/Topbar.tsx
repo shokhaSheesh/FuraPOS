@@ -67,7 +67,7 @@ function NotificationsMenu() {
           <p className="text-fg-muted px-2 py-6 text-center text-sm">You're all caught up.</p>
           <DropdownMenu.Separator className="bg-border my-1 h-px" />
           <DropdownMenu.Item asChild className={menuItemClass}>
-            <Link to={paths.settings.notifications}>Notification preferences</Link>
+            <Link to={paths.settings.general}>Notification preferences</Link>
           </DropdownMenu.Item>
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
@@ -94,7 +94,7 @@ function UserMenu({ name, plan }: { name: string; plan: string }) {
           </div>
           <DropdownMenu.Separator className="bg-border my-1 h-px" />
           <DropdownMenu.Item asChild className={menuItemClass}>
-            <Link to={paths.settings.profile}>Profile</Link>
+            <Link to={paths.settings.personal}>Profile</Link>
           </DropdownMenu.Item>
           <DropdownMenu.Item asChild className={menuItemClass}>
             <Link to={paths.settings.root}>Settings</Link>

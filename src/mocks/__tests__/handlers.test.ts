@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { server } from '../node'
 import { DEFAULT_PAGE_SIZE } from '@/shared/types'
 import type { Paginated } from '@/shared/types'
-import type { Product } from '@/features/catalog/model/product'
+import type { Product } from '@/features/products/model/product'
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
 afterAll(() => server.close())

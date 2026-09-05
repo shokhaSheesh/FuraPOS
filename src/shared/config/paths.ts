@@ -2,6 +2,10 @@
  * Every route path in the app, in one place. Never hardcode a URL string in a
  * component — import from here so renames are a single edit and the nav tree,
  * the router and any <Link> can never drift apart.
+ *
+ * The structure mirrors OX System one-for-one; see docs/OX-NAVIGATION-MAP.md
+ * for the label and route correspondence. The `OX:` comments give the
+ * reference product's own route, for cross-checking a screen while building it.
  */
 export const paths = {
   auth: {
@@ -13,107 +17,117 @@ export const paths = {
 
   sales: {
     root: '/sales',
-    all: '/sales',
-    held: '/sales/held',
-    detail: (id = ':saleId') => `/sales/${id}`,
+    cashDesk: '/sales/cash-desk', // OX: /app/sells/cashdesk-info
     /** Hands off to the separate POS terminal app — not an in-app route. */
-    newSaleLaunch: '/sales/new',
+    newSale: '/sales/new',
+    orders: '/sales/orders', // OX: /app/sells/orders
+    orderDetail: (id = ':orderId') => `/sales/orders/${id}`,
+    shifts: '/sales/shifts', // OX: /app/sells/shifts
+    closed: '/sales/closed', // OX: /app/sells/closed
+    drafts: '/sales/drafts', // OX: /app/sells/drafts
+    deleted: '/sales/deleted', // OX: /app/sells/deleted
+    postponed: '/sales/postponed', // OX: /app/sells/postpones
   },
 
-  catalog: {
-    root: '/catalog',
-    products: '/catalog/products',
-    productDetail: (id = ':productId') => `/catalog/products/${id}`,
-    categories: '/catalog/categories',
-    stock: '/catalog/stock',
-    receipts: '/catalog/receipts',
-    receiptDetail: (id = ':receiptId') => `/catalog/receipts/${id}`,
-    adjustments: '/catalog/adjustments',
-    transfers: '/catalog/transfers',
+  products: {
+    root: '/products',
+    list: '/products/list', // OX: /app/products/management
+    detail: (id = ':productId') => `/products/list/${id}`,
+    transfers: '/products/transfers', // OX: /app/products/transfers
+    corrections: '/products/corrections', // OX: /app/products/corrections
+    stocktaking: '/products/stocktaking', // OX: /app/products/reviews
+    goodsReceipt: '/products/goods-receipt', // OX: /app/products/imports
+    repricing: '/products/repricing', // OX: /app/products/reprices
+    printTemplates: '/products/print-templates', // OX: /app/products/stickers
+    suppliers: '/products/suppliers', // OX: /app/products/suppliers
+    supplierDetail: (id = ':supplierId') => `/products/suppliers/${id}`,
   },
 
   procurement: {
     root: '/procurement',
-    orders: '/procurement/orders',
+    selection: '/procurement/selection', // OX: /app/procurement/selection
+    orders: '/procurement/orders', // OX: /app/procurement/orders
     orderDetail: (id = ':orderId') => `/procurement/orders/${id}`,
-    suppliers: '/procurement/suppliers',
-    supplierDetail: (id = ':supplierId') => `/procurement/suppliers/${id}`,
-    reorder: '/procurement/reorder',
+    schedules: '/procurement/schedules', // OX: /app/procurement/schedules
   },
 
-  hr: {
-    root: '/hr',
-    employees: '/hr/employees',
-    employeeDetail: (id = ':employeeId') => `/hr/employees/${id}`,
-    roles: '/hr/roles',
-    roleDetail: (id = ':roleId') => `/hr/roles/${id}`,
+  personnel: {
+    root: '/personnel',
+    employees: '/personnel/employees', // OX: /app/personal-management/users
+    employeeDetail: (id = ':employeeId') => `/personnel/employees/${id}`,
+    motivation: '/personnel/motivation', // OX: /app/personal-management/motivations
+    planning: '/personnel/planning', // OX: /app/personal-management/list/target
+    roles: '/personnel/roles', // OX: /app/personal-management/roles
+    roleDetail: (id = ':roleId') => `/personnel/roles/${id}`,
   },
 
+  /** OX nests these under a second in-module menu; we surface them directly. */
   finance: {
     root: '/finance',
-    pnl: '/finance/pnl',
-    cashflow: '/finance/cashflow',
-    receivables: '/finance/receivables',
-    payables: '/finance/payables',
-    forecast: '/finance/forecast',
-    budgets: '/finance/budgets',
-    settlements: '/finance/settlements',
+    dashboard: '/finance/dashboard',
+    transactions: '/finance/transactions',
+    contracts: '/finance/contracts',
+    invoices: '/finance/invoices',
+    budget: '/finance/budget',
     scenarios: '/finance/scenarios',
+    pnl: '/finance/reports/pnl',
+    cashflow: '/finance/reports/cashflow',
+    receivables: '/finance/reports/receivables',
+    payables: '/finance/reports/payables',
+    forecast: '/finance/reports/forecast',
+    settlements: '/finance/reports/employee-settlements',
+    accounts: '/finance/accounts',
     categories: '/finance/categories',
+    periodLock: '/finance/period-lock',
+    taxes: '/finance/taxes',
   },
 
   marketing: {
     root: '/marketing',
-    clients: '/marketing/clients',
+    clients: '/marketing/clients', // OX: /app/marketing/customers
     clientDetail: (id = ':clientId') => `/marketing/clients/${id}`,
-    segments: '/marketing/segments',
-    cashback: '/marketing/cashback',
-    sms: '/marketing/sms',
-    campaigns: '/marketing/campaigns',
-    promotions: '/marketing/promotions',
-    coupons: '/marketing/coupons',
+    groups: '/marketing/groups', // OX: /app/marketing/groups
+    cashback: '/marketing/cashback', // OX: /app/marketing/cashbacks
+    sms: '/marketing/sms', // OX: /app/marketing/newsletters
+    digital: '/marketing/digital', // OX: /app/marketing/digital-mass-messaging
+    promotions: '/marketing/promotions', // OX: /app/marketing/promotions
+    coupons: '/marketing/coupons', // OX: /app/marketing/coupon-collections
   },
 
   analytics: {
     root: '/analytics',
-    reports: '/analytics/reports',
+    reportBuilder: '/analytics/reports', // OX: /app/statistics/reports
     reportDetail: (id = ':reportId') => `/analytics/reports/${id}`,
-    inventoryLog: '/analytics/inventory-log',
-    storefront: '/analytics/storefront',
-    sales: '/analytics/sales',
-    customers: '/analytics/customers',
-    promotions: '/analytics/promotions',
-    calls: '/analytics/calls',
+    productLogs: '/analytics/product-logs', // OX: /app/statistics/stock-count-histories
+    storefront: '/analytics/storefront', // OX: /app/statistics/utm-reports
+    sales: '/analytics/sales', // OX: /app/statistics/sell-reports
+    customers: '/analytics/customers', // OX: /app/statistics/customer-reports
+    promotions: '/analytics/promotions', // OX: /app/statistics/promotion-report
+    calls: '/analytics/calls', // OX: /app/statistics/call-history
   },
 
   integrations: {
-    root: '/integrations',
+    root: '/integrations', // OX: /app/integration
     detail: (id = ':integrationId') => `/integrations/${id}`,
   },
 
-  uploads: '/uploads',
-
-  referral: '/referral',
+  uploads: '/uploads', // OX: /app/exports
+  partnerProgram: '/partner-program', // OX: /app/partner-program
+  support: '/support',
 
   settings: {
     root: '/settings',
-    company: '/settings/company',
+    general: '/settings/general', // OX: Основные
     brands: '/settings/brands',
     equipment: '/settings/equipment',
     locations: '/settings/locations',
-    terminals: '/settings/sales/terminals',
-    paymentMethods: '/settings/sales/payment-methods',
-    salesFunnel: '/settings/sales/funnel',
-    installments: '/settings/sales/installments',
-    productCategories: '/settings/products/categories',
-    receiptOptions: '/settings/products/receipt',
-    bulkUpdate: '/settings/products/bulk-update',
-    clientFields: '/settings/clients/fields',
+    sales: '/settings/sales',
+    products: '/settings/products',
+    clients: '/settings/clients',
     billing: '/settings/billing',
-    profile: '/settings/profile',
-    notifications: '/settings/notifications',
+    personal: '/settings/personal', // OX: Личные данные
     webhooks: '/settings/webhooks',
-    aiConnector: '/settings/ai-connector',
+    aiConnector: '/settings/ai-mcp', // OX: ИИ / MCP
   },
 
   activityLog: '/activity-log',

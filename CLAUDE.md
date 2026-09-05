@@ -24,43 +24,46 @@ Two very different surfaces, and this build is the first one:
    Architecturally decoupled from the back office in the reference product (opens as its own
    app/window). Design the back office so it can *launch into* this later, but don't build it now.
 
-## Information architecture (sidebar, top to bottom)
+## Information architecture
+
+**The sidebar mirrors OX System one-for-one** — same modules, same order, same names, same badges.
+[docs/OX-NAVIGATION-MAP.md](docs/OX-NAVIGATION-MAP.md) is the authority: it maps every OX label
+(Russian) to ours (English) and to the reference product's own route, captured from the live tenant.
+Do not rename a nav item or invent a screen without updating that map first.
 
 1. **Dashboard** — KPI cards + charts, read-only overview, drill-down links only.
-2. **Sales** — sales ledger ("all sales"), a status filter view for postponed/held sales, entry
-   point to start a new sale (which hands off to the POS terminal app).
-3. **Products / Inventory** — product catalog with categories (drag-reorderable tree), stock levels
-   per location, goods receipt, stock adjustment, transfer between locations.
-4. **Procurement** — purchase orders, supplier directory (shares the wallet/loyalty component, see
-   below), an AI-driven reorder suggestion feature.
-5. **HR / Staff** — employee directory (also gets the wallet component), roles & permissions editor
-   (granular per-module tree, supports partial/indeterminate access, not just on/off).
-6. **Finance** — P&L, cashflow, accounts receivable/payable, cash forecast, budgeting, employee
-   settlements/payroll, custom "scenarios", and a transaction-categories config screen that
-   distinguishes system-locked default categories from user-created ones.
-7. **Marketing** — clients (CRM, gets the wallet + AI-insights component), client segmentation
-   groups, cashback program rules, SMS campaigns, push/digital campaigns, promotions, coupons.
-8. **Analytics** — a custom report builder (save/share named reports), an inventory change audit
-   log, an online-storefront report, a sales report, a customer analytics report (RFM-style: who
-   they are, what they're worth, where they churn), a promotions-performance report, and a call log
-   (if telephony is ever integrated).
+2. **Sales** — POS terminal, all sales, cash shifts, closed / open / deleted / postponed sales.
+   "New sale" hands off to the separate POS terminal app.
+3. **Products / Services** — product list, transfers, corrections, stocktaking, goods receipt,
+   repricing, print templates, and **suppliers** (which OX keeps here, not under Procurement).
+4. **Procurement** `New` — product selection (AI-driven reorder), orders, selection schedule.
+5. **Personnel management** — employees, seller motivation, planning, access & roles (granular
+   per-module tree, supports partial/indeterminate access, not just on/off).
+6. **Finance** `beta` — dashboard, transactions, contracts, invoices, budget, scenarios; then a
+   **Reports** group (P&L, cashflow, receivables, payables, cash forecast, employee settlements)
+   and a **Setup** group (accounts, categories, period lock, taxes). OX nests these behind a second
+   in-module menu; we surface them directly in the sidebar under those two headings.
+7. **Marketing** — clients (CRM, gets the wallet + AI-insights component), groups, cashback, SMS
+   campaigns, digital campaigns, promotions, coupons.
+8. **Analytics** — report generator, product logs, online storefront report, sales report, customer
+   report, promotions report, call history.
 9. **Integrations** — a marketplace grid of third-party connectors (payment gateways,
    BNPL/installment providers, delivery/logistics), each a card with logo + settings + on/off
    toggle, organized into category tabs.
-10. **My Uploads** — an async job log for bulk imports (not a file manager) — filename, user, job
+10. **My uploads** — an async job log for bulk imports (not a file manager) — filename, user, job
     type, status.
-11. **Referral program** — a simple landing page for a "refer another company, earn a % of their
+11. **Partner program** — a landing page for a "refer another company, earn a % of their
     subscription" affiliate mechanic. Low priority, build last.
-12. **Settings** — company profile, brands, equipment/devices, locations, sales config (kassa
-    terminals, payment methods, sales funnel, installment plans), product config (categories,
-    receipt options, bulk update), client custom-field builder, billing (wallet balance,
-    subscription plan, invoice history), personal profile + notification preferences, webhooks, and
-    an AI/MCP connector page (see below — this one is genuinely differentiated, worth prioritizing).
+12. **Settings** — general, brands, equipment, locations, sales, products, clients, billing,
+    personal data, webhooks, and **AI / MCP** (see below — genuinely differentiated, worth
+    prioritizing).
+13. **Support**.
 
-Persistent top bar on every screen: sidebar collapse toggle, a quick-create "+", a wallet/credit
-balance indicator, global search, notifications bell (dropdown, not a page), and a user avatar menu
-(plan/tier badge, theme toggle, language, activity log, profile, settings shortcut, download
-desktop/mobile app, sign out).
+Persistent top bar on every screen: sidebar collapse toggle, then — right-aligned — a wallet/credit
+balance indicator, theme toggle, notifications bell (dropdown, not a page), and a user avatar menu.
+It carries **account and app-level chrome only**: no create action and no search field, because both
+belong to the screen (DESIGN_RULES § 3.2). OX does put a global `⌘K` search there; we deliberately
+do not.
 
 ## Cross-cutting patterns to bake in from day one
 

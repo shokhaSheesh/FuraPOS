@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { http } from '@/shared/lib/http'
 import type { ListQuery, Paginated } from '@/shared/types'
 import type { Product } from '../model/product'
@@ -14,5 +14,15 @@ export function useProducts(query: ListQuery) {
     queryKey: productKeys.list(query),
     queryFn: () => http.get<Paginated<Product>>('/products', query),
     placeholderData: (previous) => previous,
+  })
+}
+
+export function useDeleteProduct() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => http.delete<void>(`/products/${id}`),
+    // No optimistic removal: the row disappears only once the server confirms
+    // (docs/DESIGN_RULES.md § 9.4).
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: productKeys.all }),
   })
 }

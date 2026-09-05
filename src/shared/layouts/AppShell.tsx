@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router'
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
+import { ToastViewport } from '@/shared/ui/toast'
 
 export function AppShell() {
   return (
@@ -14,6 +15,7 @@ export function AppShell() {
           </div>
         </main>
       </div>
+      <ToastViewport />
     </div>
   )
 }

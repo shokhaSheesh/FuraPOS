@@ -45,6 +45,18 @@ describe('mock API', () => {
     expect(found.items.map((product) => product.id)).toContain(target.id)
   })
 
+  // Runs last on purpose: it mutates the seed array.
+  it('deletes a product and then reports it missing', async () => {
+    const page = await get<Paginated<Product>>('/products?pageSize=1&sort=id&order=desc')
+    const target = page.items[0]!
+
+    const deleted = await fetch(`http://localhost/api/products/${target.id}`, { method: 'DELETE' })
+    expect(deleted.status).toBe(204)
+
+    const missing = await fetch(`http://localhost/api/products/${target.id}`)
+    expect(missing.status).toBe(404)
+  })
+
   it('serves the session with permissions', async () => {
     const me = await get<{ permissions: string[] }>('/me')
     expect(me.permissions.length).toBeGreaterThan(0)

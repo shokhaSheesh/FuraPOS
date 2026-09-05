@@ -245,6 +245,8 @@ into a `⋯` overflow menu, with delete separated at the bottom of that menu.
 | Error | `EmptyState` with the error and a Retry button |
 | Heavy report, not yet run | `FilterGate` — "choose your filters, then Apply". Never auto-run |
 
+Full rules, including what each empty state must say, are in § 9.
+
 ### 5.5 List state lives in the URL
 
 Page, page size, search, sort and every filter are query params, via `useListQuery()`. A filtered
@@ -314,11 +316,27 @@ Helper text or error             ← 11px; text-fg-subtle, or text-danger when i
 - Errors are specific: "SKU already exists", not "Invalid input".
 - Schemas are `zod`, colocated in the feature's `model/` folder, shared between form and API type.
 
-### 7.4 Save behaviour
+### 7.4 Submitting — the modal stays open until the action finishes
 
-Primary button shows a spinner and disables while in flight. On success: close the modal (or stay on
-the page), show a toast, and invalidate the affected query keys. On failure: keep the form open with
-its values intact and surface the server message near the failing field, or at the top of the form.
+**A modal or detail page is never dismissed while its action is in flight, and never dismissed
+optimistically.** It closes only after the server has confirmed. Until then:
+
+- The **primary button carries the spinner** — it replaces the leading icon, the label stays
+  readable ("Save", not "Saving…" jumping the width), and the button is disabled.
+- **Esc, backdrop click and the ✕ are all disabled** while submitting. The user cannot half-close a
+  modal mid-write and be left guessing whether it saved.
+- Every other control in the modal is disabled too, so a second submit is impossible.
+- The overlay does **not** get a spinner of its own, and the page behind it does not grey out
+  further. One spinner, on the button that started the action. Nothing else moves.
+
+On **success**: close, toast, invalidate the affected query keys so the list behind it refreshes.
+On **failure**: stay open, keep every value the user typed, re-enable everything, and put the server
+message next to the failing field — or at the top of the form if it is not field-specific.
+
+The same rules apply to a full-page form: the page does not navigate away until the save confirms,
+and the primary button carries the spinner.
+
+Full state rules for every surface are in § 9.
 
 ---
 
@@ -346,20 +364,100 @@ they are removed once a module is mature. Badges are never decorative.
 Bottom-right, auto-dismiss after 4s, one line, with an Undo action where the operation is reversible.
 Success toasts confirm writes. Errors that block the user belong **in the form**, not in a toast.
 
-### 8.3 Loading
+### 8.3 Loading and empty states
 
-- Page/section load → **skeletons** shaped like the content that is coming.
-- In-place action → spinner **inside the button** that started it.
-- Background refetch → nothing. Never flash a skeleton over data the user is already reading.
+See § 9 — every data surface in the product owes the user four states, and they are prescribed.
 
 ---
 
-## 9. Charts
+## 9. Loading, empty & in-flight states
+
+Most of the time a screen is *not* showing a happy, full table. These states are the product, not an
+afterthought, and they are the first thing that drifts between screens — so they are fixed here.
+
+### 9.1 Every data surface owes four states
+
+A "surface" is anything that fetches: a list, a detail page, a card, a report, a chart, a dropdown
+that loads options. Each one must handle all four. A screen is not done if any of them is missing.
+
+| State | What the user sees |
+| --- | --- |
+| **Loading** | A skeleton shaped like the content that is coming |
+| **Empty** | An `EmptyState` — icon, one-line explanation, and the action that resolves it |
+| **Error** | An `EmptyState` with the actual message and a **Retry** button |
+| **Loaded** | The content |
+
+### 9.2 Loading — skeletons, not spinners
+
+- **Page or section load → skeletons.** They mirror the layout that is coming: a table renders 8
+  skeleton rows *inside the real table chrome* (header and pagination stay put); KPI cards render
+  card-shaped blocks; a chart renders a block the size of its plot area.
+- **Never a centered spinner for a page load.** A spinner tells the user nothing about what is
+  arriving and makes the layout jump when it does.
+- **Never a full-screen loading overlay.** The app shell — sidebar, top bar — renders immediately
+  and never flashes; only the content region loads.
+- **Background refetch shows nothing.** Never replace data the user is already reading with a
+  skeleton. Pagination and filter changes keep the previous page visible until the new one lands
+  (`placeholderData` in the query hook).
+- Skeletons must not shift the layout when they resolve. If the skeleton is a different height from
+  the real row, that is a bug.
+- If a fetch resolves in under ~200ms, no skeleton should ever have flashed.
+
+### 9.3 Empty — four different empties, four different messages
+
+Getting this wrong is the most common way a screen feels broken. These are not interchangeable:
+
+| Situation | Message | Action offered |
+| --- | --- | --- |
+| **Never had data** | "No products yet" + what this screen is for | The primary create action, repeated |
+| **Filters excluded everything** | "No products match these filters" | **Clear filters** — *never* the create action |
+| **No permission** | "You don't have access to this screen" | None; tell them to ask an administrator |
+| **Not run yet** (heavy report) | "Choose your filters, then press Apply" | None; the Apply button is already on screen |
+
+- The filtered-empty state must be distinguishable from the never-had-data state. Offering
+  "+ Add product" to someone whose search simply matched nothing is a bug.
+- Empty states are one short line. No illustrations, no marketing copy, no exclamation marks.
+- An empty state lives **inside** the surface's chrome — inside the table's borders, inside the
+  card — never floating on the page canvas.
+- A zero value is not an empty state. `0` renders as `0`; an empty cell renders `—`.
+
+### 9.4 In-flight — the action owns the UI until it resolves
+
+The rule that matters most, restated because it is the one most often broken:
+
+> **Until the write confirms, the modal or detail page stays open, everything in it is disabled, and
+> the spinner lives on the button that started it.**
+
+- The spinner is **always on the triggering control** — the save button, the row's delete button,
+  the toggle. Never a page overlay, never the top bar.
+- The triggering control is disabled for the whole round trip, so nothing can be double-submitted.
+- Nothing is closed, navigated or removed from a list before the server confirms. No optimistic
+  deletes. (Optimistic updates are allowed only for cheap, self-evident toggles — a switch, a
+  favourite — and must roll back visibly on failure.)
+- A row action that opens a confirmation: the spinner goes on the modal's danger button, and the row
+  disappears only after the response.
+- Anything expected to take longer than ~10s (bulk import, export, report build) is **not** a
+  blocking spinner. It becomes a job: close the dialog, toast "We'll tell you when it's ready", and
+  track it in **My uploads**.
+
+### 9.5 Forbidden
+
+- A spinner where a skeleton belongs.
+- A modal that closes before its save confirms.
+- A modal that can be dismissed mid-write with Esc or a backdrop click.
+- A full-page loading overlay, or a top-bar progress bar for an ordinary fetch.
+- Blank space while something loads, and layout that jumps when it arrives.
+- The create action offered on a filtered-empty result.
+- A disabled button with no explanation of why it is disabled.
+
+---
+
+## 10. Charts
 
 Charts follow the same colour discipline as the rest of the UI: the brand carries the *main* series,
 everything else is a supporting neutral or a distinct hue.
 
-### 9.1 Series colours, in this order
+### 10.1 Series colours, in this order
 
 | # | Hex | Use |
 | --- | --- | --- |
@@ -373,7 +471,7 @@ everything else is a supporting neutral or a distinct hue.
 Never more than six categorical series in one chart — beyond that, group the tail into "Other".
 In dark mode series 2 becomes `#9A9ABF` (navy is the background there).
 
-### 9.2 Rules
+### 10.2 Rules
 
 - Money-over-time is a **line or area**, never a 3D or stacked-percentage chart.
 - Composition is a **stacked bar**, never a pie or donut with more than three slices.
@@ -386,7 +484,7 @@ In dark mode series 2 becomes `#9A9ABF` (navy is the background there).
 
 ---
 
-## 10. Icons
+## 11. Icons
 
 - **Lucide only**, 16px (`size-4`) in controls and tables, 20px (`size-5`) in empty states.
 - `1.5` stroke width, inherit `currentColor`. Never a filled icon, never a second icon library.
@@ -397,7 +495,7 @@ In dark mode series 2 becomes `#9A9ABF` (navy is the background there).
 
 ---
 
-## 11. Navigation
+## 12. Navigation
 
 - Sidebar is navy in both themes. Section rows are icons + label; the active item is
   `bg-primary-soft text-primary`, and in the navy sidebar the active item is yellow text on a
@@ -411,7 +509,7 @@ In dark mode series 2 becomes `#9A9ABF` (navy is the background there).
 
 ---
 
-## 12. Accessibility floor
+## 13. Accessibility floor
 
 Non-negotiable, because this is a tool people use eight hours a day:
 
@@ -424,12 +522,17 @@ Non-negotiable, because this is a tool people use eight hours a day:
 
 ---
 
-## 13. Checklist before a screen is "done"
+## 14. Checklist before a screen is "done"
 
 - [ ] Exactly one yellow button, top-right.
 - [ ] No hex value and no stock Tailwind palette class anywhere in the file.
 - [ ] Renders correctly in light **and** dark.
-- [ ] Loading, empty, filtered-empty and error states all exist.
+- [ ] Loading, empty, filtered-empty and error states all exist, per § 9.
+- [ ] Loading uses skeletons, not spinners; no layout jump when data lands.
+- [ ] Filtered-empty offers "clear filters", not the create action.
+- [ ] Every write disables its control and shows the spinner on that control.
+- [ ] Modals and detail pages stay open until the server confirms; Esc and backdrop are
+      disabled while submitting.
 - [ ] Money/dates/numbers go through `format.ts`; numeric columns are right-aligned.
 - [ ] List state is in the URL.
 - [ ] Permission-gated at the route and on every action button.

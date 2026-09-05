@@ -20,10 +20,12 @@ export const paths = {
     /** Manual sale entry — this product has no cashier POS. */
     newSale: '/sales/new',
     orders: '/sales/orders', // OX: /app/sells/orders
+    /**
+     * A status view is the ledger with a filter, not a page of its own — the
+     * chips on All sales write exactly this, so links and chips agree.
+     */
+    ordersByStatus: (status: string) => `/sales/orders?status=${status}`,
     orderDetail: (id = ':orderId') => `/sales/orders/${id}`,
-    drafts: '/sales/drafts', // OX: /app/sells/drafts
-    deleted: '/sales/deleted', // OX: /app/sells/deleted
-    postponed: '/sales/postponed', // OX: /app/sells/postpones
   },
 
   products: {

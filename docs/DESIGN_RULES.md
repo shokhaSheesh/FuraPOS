@@ -280,7 +280,17 @@ into a `⋯` overflow menu, with delete separated at the bottom of that menu.
 
 Full rules, including what each empty state must say, are in § 9.
 
-### 5.6 List state lives in the URL
+### 5.6 Filter chips carry counts
+
+A row of status chips shows **how many rows each one would reveal**, computed with every other
+filter applied but **ignoring the status filter itself** — otherwise every chip but the active one
+reads zero. A status with none shows `0`, never a blank: a missing number reads as *unknown*, and
+"there are none" is the more useful fact.
+
+Counts are what let a chip replace a nav entry. A saved filter in the sidebar earns its place only
+by telling you there is work waiting; a counted chip does that without spending a nav row.
+
+### 5.7 List state lives in the URL
 
 Page, page size, search, sort and every filter are query params, via `useListQuery()`. A filtered
 table must be shareable and survive a refresh. Any filter change resets to page 1.

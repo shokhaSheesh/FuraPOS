@@ -16,7 +16,7 @@ import { useSession } from '@/app/providers/SessionProvider'
 import { paths } from '@/shared/config/paths'
 import { downloadCsv } from '@/shared/lib/csv'
 import { formatDate, formatDateTime, formatMoney, formatNumber } from '@/shared/lib/format'
-import { useSales, useSalesSummary } from '../api/sales'
+import { useSaleStatusCounts, useSales, useSalesSummary } from '../api/sales'
 import { SalesSummaryStrip } from '../components/SalesSummaryStrip'
 import {
   PAYMENT_METHODS,
@@ -177,26 +177,18 @@ const statusOptions = [
  * are the same table over a different status filter, so they must not drift
  * into four hand-built screens.
  */
-export function SalesListPage({
-  title,
-  description,
-  lockedStatus,
-}: {
-  title: string
-  description: string
-  /** Set on the dedicated sub-pages, which are one status and hide the chips. */
-  lockedStatus?: SaleStatus
-}) {
+export function SalesListPage({ title, description }: { title: string; description: string }) {
   const navigate = useNavigate()
   const { can } = useSession()
   const { query, setQuery } = useListQuery()
 
-  const status = lockedStatus ?? (query.status as SaleStatus | undefined) ?? undefined
+  const status = (query.status as SaleStatus | undefined) ?? undefined
   const from = query.from ? String(query.from) : undefined
   const to = query.to ? String(query.to) : undefined
 
   const filters = useMemo(() => ({ ...query, status, from, to }), [query, status, from, to])
   const { data, isLoading } = useSales(filters)
+  const { data: counts } = useSaleStatusCounts({ search: query.search, from, to })
   const { data: summary, isLoading: summaryLoading } = useSalesSummary({
     search: query.search,
     status,
@@ -268,13 +260,12 @@ export function SalesListPage({
         }
         below={
           <div className="flex flex-wrap items-center gap-2">
-            {lockedStatus ? null : (
-              <StatusChips
-                options={statusOptions}
-                value={(query.status as SaleStatus | null) ?? null}
-                onChange={(next) => setQuery({ status: next })}
-              />
-            )}
+            <StatusChips
+              options={statusOptions}
+              value={(query.status as SaleStatus | null) ?? null}
+              onChange={(next) => setQuery({ status: next })}
+              counts={counts}
+            />
             <DateRangePicker
               value={range}
               onChange={(next) =>
@@ -293,7 +284,7 @@ export function SalesListPage({
       <SalesSummaryStrip summary={summary} loading={summaryLoading} />
 
       <DataTable
-        storageKey={`sales-${lockedStatus ?? 'all'}`}
+        storageKey="sales"
         columns={columns}
         initialHidden={HIDDEN_BY_DEFAULT}
         data={data?.items ?? []}

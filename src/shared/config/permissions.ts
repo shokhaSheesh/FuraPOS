@@ -31,12 +31,7 @@ export const permissionTree: readonly PermissionNode[] = [
   {
     key: 'sales',
     label: 'Sales',
-    children: [
-      { key: 'sales.orders', label: 'Sales', actions: crudExport },
-      { key: 'sales.drafts', label: 'Open sales', actions: ['view', 'edit', 'delete'] },
-      { key: 'sales.deleted', label: 'Deleted sales', actions: readOnly },
-      { key: 'sales.postponed', label: 'Postponed sales', actions: ['view', 'edit', 'delete'] },
-    ],
+    children: [{ key: 'sales.orders', label: 'Sales', actions: crudExport }],
   },
   {
     key: 'products',

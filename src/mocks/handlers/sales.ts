@@ -8,7 +8,7 @@ import { computeTotals } from '@/features/sales/model/sale'
 let sequence = sales.length
 
 /** Shared by the list and the summary so they can never disagree. */
-function filterSales(url: URL) {
+function filterSales(url: URL, options: { includeDeleted?: boolean } = {}) {
   const search = url.searchParams.get('search')
   const status = url.searchParams.get('status')
   const from = url.searchParams.get('from')
@@ -18,7 +18,7 @@ function filterSales(url: URL) {
     // Deleted sales are excluded unless explicitly asked for: a cancelled sale
     // must not sit in the ledger inflating revenue. That exclusion is what
     // makes "Deleted sales" a real view rather than one more status filter.
-    if (!status && sale.status === 'deleted') return false
+    if (!status && !options.includeDeleted && sale.status === 'deleted') return false
     if (status && sale.status !== status) return false
     if (from && sale.createdAt.slice(0, 10) < from) return false
     if (to && sale.createdAt.slice(0, 10) > to) return false
@@ -37,6 +37,24 @@ export const salesHandlers = [
   http.get(api('/sales'), ({ request }) => {
     const url = new URL(request.url)
     return HttpResponse.json(paginate([...filterSales(url)].reverse(), url))
+  }),
+
+  /**
+   * Counts per status for the filter chips. Deliberately ignores the status
+   * filter itself — a chip must show how many rows it *would* reveal, not how
+   * many are showing now, or every chip but the active one would read zero.
+   */
+  http.get(api('/sales/status-counts'), ({ request }) => {
+    const url = new URL(request.url)
+    url.searchParams.delete('status')
+    const scoped = filterSales(url, { includeDeleted: true })
+
+    const counts: Record<string, number> = {}
+    for (const sale of scoped) counts[sale.status] = (counts[sale.status] ?? 0) + 1
+    // "All" excludes deleted, matching what the ledger actually shows.
+    counts.all = scoped.filter((sale) => sale.status !== 'deleted').length
+
+    return HttpResponse.json(counts)
   }),
 
   /**

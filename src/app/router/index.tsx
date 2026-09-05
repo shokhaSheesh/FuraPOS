@@ -12,17 +12,6 @@ const ProductsPage = lazy(() => import('@/features/products/pages/ProductsPage')
 const NewSalePage = lazy(() => import('@/features/sales/pages/NewSalePage'))
 const AllSalesPage = lazy(() => import('@/features/sales/pages/SalesListPage'))
 const SaleDetailPage = lazy(() => import('@/features/sales/pages/SaleDetailPage'))
-const OpenSalesPage = lazy(() =>
-  import('@/features/sales/pages/SalesStatusPages').then((m) => ({ default: m.OpenSalesPage })),
-)
-const PostponedSalesPage = lazy(() =>
-  import('@/features/sales/pages/SalesStatusPages').then((m) => ({
-    default: m.PostponedSalesPage,
-  })),
-)
-const DeletedSalesPage = lazy(() =>
-  import('@/features/sales/pages/SalesStatusPages').then((m) => ({ default: m.DeletedSalesPage })),
-)
 
 function Loading() {
   return (
@@ -64,12 +53,6 @@ const routes: RouteObject[] = [
       { path: paths.sales.newSale, element: page(<NewSalePage />, 'sales.orders.create') },
       { path: paths.sales.orders, element: page(<AllSalesPage />, 'sales.orders.view') },
       { path: paths.sales.orderDetail(), element: page(<SaleDetailPage />, 'sales.orders.view') },
-      { path: paths.sales.drafts, element: page(<OpenSalesPage />, 'sales.drafts.view') },
-      { path: paths.sales.deleted, element: page(<DeletedSalesPage />, 'sales.deleted.view') },
-      {
-        path: paths.sales.postponed,
-        element: page(<PostponedSalesPage />, 'sales.postponed.view'),
-      },
 
       // --- Products / Services -------------------------------------------
       { path: paths.products.root, element: <Navigate to={paths.products.list} replace /> },

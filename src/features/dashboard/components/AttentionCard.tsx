@@ -51,7 +51,7 @@ export function AttentionCard({
       tone: 'warning' as const,
       count: attention?.draftSales ?? 0,
       label: 'sales left open',
-      to: paths.sales.drafts,
+      to: paths.sales.ordersByStatus('open'),
     },
   ].filter((row) => row.count > 0)
 

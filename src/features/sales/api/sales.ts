@@ -60,6 +60,14 @@ export function useUpdateSale(id: string) {
   })
 }
 
+export function useSaleStatusCounts(query: ListQuery) {
+  return useQuery({
+    queryKey: [...saleKeys.all, 'status-counts', query],
+    queryFn: () => http.get<Record<string, number>>('/sales/status-counts', query),
+    placeholderData: (previous) => previous,
+  })
+}
+
 export function useClients(search: string) {
   return useQuery({
     queryKey: ['clients', search],

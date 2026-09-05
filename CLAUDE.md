@@ -36,8 +36,8 @@ Do not rename a nav item or invent a screen without updating that map first.
    KPIs are added (sales, average check, gross margin), and OX's welcome banner is replaced by a
    "Needs attention" list. Widget-by-widget correspondence is in the Dashboard section of
    docs/OX-NAVIGATION-MAP.md.
-2. **Sales** — all sales, open / postponed / deleted sales, and **New sale**,
-   the manual sale-entry screen. "+ New sale" is the primary action on every sales list. The status
+2. **Sales** — one ledger plus **New sale**, the manual sale-entry screen. The lifecycle views are
+   counted filter chips on the ledger (`/sales/orders?status=open`), not separate nav entries. The status
    set is OX's, verbatim: open / new / processed / delivering / delivered / completed / postponed /
    deleted — a fulfilment lifecycle, not POS leftovers. Deleted sales are excluded from All sales
    and its totals, so a cancelled sale never counts toward revenue.

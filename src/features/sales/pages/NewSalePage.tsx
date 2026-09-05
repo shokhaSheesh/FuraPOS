@@ -166,10 +166,10 @@ export default function NewSalePage() {
           navigate(
             intent === 'save'
               ? status === 'open'
-                ? paths.sales.drafts
+                ? paths.sales.ordersByStatus(status)
                 : paths.sales.orders
               : intent === 'postponed'
-                ? paths.sales.postponed
+                ? paths.sales.ordersByStatus('postponed')
                 : paths.sales.orders,
           )
         },

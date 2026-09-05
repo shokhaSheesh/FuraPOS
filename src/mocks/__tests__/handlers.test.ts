@@ -156,6 +156,18 @@ describe('mock API', () => {
     expect(ledger.items.map((s) => s.id)).not.toContain(victim.id)
   })
 
+  it('counts every status independently of the active status filter', async () => {
+    const plain = await get<Record<string, number>>('/sales/status-counts')
+    // Asking for one status must not zero out the others, or the chips would
+    // only ever show a number on the one already selected.
+    const filtered = await get<Record<string, number>>('/sales/status-counts?status=open')
+    expect(filtered).toEqual(plain)
+
+    // "All" matches the ledger, which excludes deleted.
+    const ledger = await get<Paginated<unknown>>('/sales?pageSize=200')
+    expect(plain.all).toBe(ledger.total)
+  })
+
   it('refuses a sale with no lines', async () => {
     const response = await fetch('http://localhost/api/sales', {
       method: 'POST',

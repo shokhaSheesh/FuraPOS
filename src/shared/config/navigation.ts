@@ -58,12 +58,8 @@ export const navigation: NavSection[] = [
     id: 'sales',
     label: 'Sales',
     icon: ShoppingCart,
-    items: [
-      { label: 'All sales', to: paths.sales.orders, permission: 'sales.orders.view' },
-      { label: 'Open sales', to: paths.sales.drafts, permission: 'sales.drafts.view' },
-      { label: 'Deleted sales', to: paths.sales.deleted, permission: 'sales.deleted.view' },
-      { label: 'Postponed sales', to: paths.sales.postponed, permission: 'sales.postponed.view' },
-    ],
+    to: paths.sales.orders,
+    permission: 'sales.orders.view',
   },
   {
     id: 'products',

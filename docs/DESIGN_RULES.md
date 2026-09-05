@@ -574,6 +574,10 @@ collision padding. Never hand-roll a positioned `div`.
 - Focus moves into the panel on open and returns to the trigger on close.
 - Panels never nest. A control inside an overlay that needs its own overlay means the flow belongs
   in a modal.
+- **A panel is never taller than about 18rem.** Past that it scrolls inside itself, capped by the
+  space actually available on screen (`--radix-*-content-available-height`). A menu that opens as a
+  full-height wall of options is harder to scan than a short list you scroll — and on a short
+  viewport it gets clipped instead of scrolling.
 
 ### 11.2 Select
 

@@ -111,7 +111,9 @@ export function DataTable<T extends RowData>({
             <DropdownMenu.Content
               align="end"
               sideOffset={4}
-              className="rounded-control border-border bg-surface shadow-popover z-50 min-w-48 border p-1"
+              // Capped so a 19-column table does not open a full-height wall
+              // of checkboxes; it never grows past the space actually available.
+              className="rounded-control border-border bg-surface shadow-popover z-50 max-h-[min(18rem,var(--radix-dropdown-menu-content-available-height))] min-w-48 overflow-y-auto overscroll-contain border p-1"
             >
               {table
                 .getAllLeafColumns()

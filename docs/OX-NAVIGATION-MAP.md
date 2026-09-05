@@ -25,11 +25,11 @@ OX shows badges on two sections: **Закупки** is `New`, **Финансы**
 | 6 | Финансы `beta` | Finance `beta` | `/app/finance` |
 | 7 | Маркетинг | Marketing | — |
 | 8 | Аналитика | Analytics | — |
-| 9 | Интеграции | Integrations | `/app/integration` |
+| 9 | Интеграции | *(not in scope)* | `/app/integration` |
 | 10 | Мои загрузки | My uploads | `/app/exports` |
-| 11 | Партнёрская программа | Partner program | `/app/partner-program` |
+| 11 | Партнёрская программа | *(not in scope)* | `/app/partner-program` |
 | 12 | Настройки | Settings | `/app/settings` |
-| 13 | Поддержка | Support | — |
+| 13 | Поддержка | *(not in scope)* | — |
 
 ## 2. Продажи — Sales
 
@@ -139,8 +139,19 @@ Rendered in OX as tabs inside one page; we keep them as sidebar children.
 | Клиенты | Clients |
 | Биллинг | Billing |
 | Личные данные | Personal data |
-| Webhooks | Webhooks |
-| ИИ / MCP | AI / MCP |
+| Webhooks | *(not in scope)* |
+| ИИ / MCP | *(not in scope)* |
+
+## What OX has that we deliberately do not
+
+Cut from this build. Every one of these exists in OX; leaving them out is a decision, and this is
+where it is recorded so nobody "fixes" it by adding them back:
+
+- **Интеграции / Integrations** — the third-party connector marketplace.
+- **Партнёрская программа / Partner program** — the affiliate mechanic.
+- **Поддержка / Support**.
+- **Settings → Webhooks**.
+- **Settings → ИИ / MCP** — worth revisiting later as a differentiator, but not now.
 
 ## What we had that OX does not
 

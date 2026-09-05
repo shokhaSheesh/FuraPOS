@@ -199,11 +199,7 @@ const routes: RouteObject[] = [
       { path: paths.analytics.calls, element: todo('Call history', 'analytics.calls.view') },
 
       // --- Standalone sections ------------------------------------------------
-      { path: paths.integrations.root, element: todo('Integrations', 'integrations.view') },
-      { path: paths.integrations.detail(), element: todo('Integration', 'integrations.view') },
       { path: paths.uploads, element: todo('My uploads', 'uploads.view') },
-      { path: paths.partnerProgram, element: todo('Partner program', 'partnerProgram.view') },
-      { path: paths.support, element: todo('Support') },
       { path: paths.activityLog, element: todo('Activity log') },
 
       // --- Settings -------------------------------------------------------------
@@ -223,15 +219,6 @@ const routes: RouteObject[] = [
       },
       { path: paths.settings.billing, element: todo('Billing', 'settings.billing.view') },
       { path: paths.settings.personal, element: todo('Personal data') },
-      { path: paths.settings.webhooks, element: todo('Webhooks', 'settings.webhooks.view') },
-      {
-        path: paths.settings.aiConnector,
-        element: todo(
-          'AI / MCP',
-          'settings.aiConnector.view',
-          'Connect Claude or another assistant read-only to your own data.',
-        ),
-      },
 
       { path: '*', element: todo('Page not found') },
     ],

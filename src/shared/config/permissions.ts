@@ -124,9 +124,7 @@ export const permissionTree: readonly PermissionNode[] = [
       { key: 'analytics.calls', label: 'Call history', actions: readExport },
     ],
   },
-  { key: 'integrations', label: 'Integrations', actions: ['view', 'edit'] },
   { key: 'uploads', label: 'My uploads', actions: ['view', 'create'] },
-  { key: 'partnerProgram', label: 'Partner program', actions: readOnly },
   {
     key: 'settings',
     label: 'Settings',
@@ -139,8 +137,6 @@ export const permissionTree: readonly PermissionNode[] = [
       { key: 'settings.products', label: 'Product configuration', actions: crud },
       { key: 'settings.clients', label: 'Client configuration', actions: crud },
       { key: 'settings.billing', label: 'Billing', actions: ['view', 'edit'] },
-      { key: 'settings.webhooks', label: 'Webhooks', actions: crud },
-      { key: 'settings.aiConnector', label: 'AI / MCP', actions: ['view', 'edit'] },
     ],
   },
 ]

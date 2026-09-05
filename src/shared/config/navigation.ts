@@ -1,11 +1,8 @@
 import type { LucideIcon } from 'lucide-react'
 import {
   BarChart3,
-  Blocks,
   Boxes,
-  Handshake,
   LayoutDashboard,
-  LifeBuoy,
   Megaphone,
   Settings,
   ShoppingCart,
@@ -238,25 +235,11 @@ export const navigation: NavSection[] = [
     ],
   },
   {
-    id: 'integrations',
-    label: 'Integrations',
-    icon: Blocks,
-    to: paths.integrations.root,
-    permission: 'integrations.view',
-  },
-  {
     id: 'uploads',
     label: 'My uploads',
     icon: UploadCloud,
     to: paths.uploads,
     permission: 'uploads.view',
-  },
-  {
-    id: 'partner',
-    label: 'Partner program',
-    icon: Handshake,
-    to: paths.partnerProgram,
-    permission: 'partnerProgram.view',
   },
   {
     id: 'settings',
@@ -272,13 +255,6 @@ export const navigation: NavSection[] = [
       { label: 'Clients', to: paths.settings.clients, permission: 'settings.clients.view' },
       { label: 'Billing', to: paths.settings.billing, permission: 'settings.billing.view' },
       { label: 'Personal data', to: paths.settings.personal },
-      { label: 'Webhooks', to: paths.settings.webhooks, permission: 'settings.webhooks.view' },
-      {
-        label: 'AI / MCP',
-        to: paths.settings.aiConnector,
-        permission: 'settings.aiConnector.view',
-      },
     ],
   },
-  { id: 'support', label: 'Support', icon: LifeBuoy, to: paths.support },
 ]

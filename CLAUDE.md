@@ -47,17 +47,14 @@ Do not rename a nav item or invent a screen without updating that map first.
    campaigns, digital campaigns, promotions, coupons.
 8. **Analytics** — report generator, product logs, online storefront report, sales report, customer
    report, promotions report, call history.
-9. **Integrations** — a marketplace grid of third-party connectors (payment gateways,
-   BNPL/installment providers, delivery/logistics), each a card with logo + settings + on/off
-   toggle, organized into category tabs.
-10. **My uploads** — an async job log for bulk imports (not a file manager) — filename, user, job
-    type, status.
-11. **Partner program** — a landing page for a "refer another company, earn a % of their
-    subscription" affiliate mechanic. Low priority, build last.
-12. **Settings** — general, brands, equipment, locations, sales, products, clients, billing,
-    personal data, webhooks, and **AI / MCP** (see below — genuinely differentiated, worth
-    prioritizing).
-13. **Support**.
+9. **My uploads** — an async job log for bulk imports (not a file manager) — filename, user, job
+   type, status.
+10. **Settings** — general, brands, equipment, locations, sales, products, clients, billing,
+    personal data.
+
+OX also has Integrations, Partner program, Support, and Settings entries for Webhooks and AI / MCP.
+**Those five are deliberately out of scope** — see non-goals below. The map records them so the
+omission reads as a decision rather than an oversight.
 
 Persistent top bar on every screen: sidebar collapse toggle, then — right-aligned — a wallet/credit
 balance indicator, theme toggle, notifications bell (dropdown, not a page), and a user avatar menu.
@@ -98,6 +95,10 @@ These are the structural ideas worth carrying into a fresh build, not just cosme
 - No real payment processing — integrations are config-only toggles for now.
 - No POS terminal / cashier checkout screen — that's a separate app, only the *launch point* from
   Sales lives here.
+- **No Integrations, Partner program, Support, Webhooks or AI / MCP screens.** All five exist in
+  OX and are cut from this build. The AI/MCP connector in particular is worth revisiting later —
+  letting a business point Claude read-only at its own sales/stock/client data via a copyable
+  server URL and a scoped token would be a genuine differentiator — but it is not in scope now.
 - No live backend — build against mocked/seeded data structured to match the entities above (Sale,
   Product, Category, Location, Employee, Supplier, Client, Campaign, Report, Integration, Webhook)
   so a real API can be swapped in later without restructuring the UI.

@@ -225,7 +225,7 @@ Every list screen in the app is the same three components stacked. Copy
 Search and filters go into `DataTable`'s `toolbar` prop, so a table has **exactly one toolbar
 row**, inside its own card: controls on the left, the Columns control on the far right. A search
 box floating above the card and a second control row inside it is the mistake this prevents.
-`ListPage` exists only for list screens that are *not* a table (card grids such as Integrations).
+`ListPage` exists only for list screens that are *not* a table (a card grid rather than rows).
 
 ### 5.1 Table anatomy
 

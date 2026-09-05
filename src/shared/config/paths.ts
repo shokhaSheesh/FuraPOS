@@ -106,14 +106,7 @@ export const paths = {
     calls: '/analytics/calls', // OX: /app/statistics/call-history
   },
 
-  integrations: {
-    root: '/integrations', // OX: /app/integration
-    detail: (id = ':integrationId') => `/integrations/${id}`,
-  },
-
   uploads: '/uploads', // OX: /app/exports
-  partnerProgram: '/partner-program', // OX: /app/partner-program
-  support: '/support',
 
   settings: {
     root: '/settings',
@@ -126,8 +119,6 @@ export const paths = {
     clients: '/settings/clients',
     billing: '/settings/billing',
     personal: '/settings/personal', // OX: Личные данные
-    webhooks: '/settings/webhooks',
-    aiConnector: '/settings/ai-mcp', // OX: ИИ / MCP
   },
 
   activityLog: '/activity-log',

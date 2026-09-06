@@ -188,6 +188,14 @@ export default function ProductFormPage() {
   const variations = form.watch('variations')
   const mode = form.watch('variationMode')
   const single = mode === 'single'
+  const productName = form.watch('name')
+
+  /** What a variation will actually be called once it is saved. */
+  const sellableName = (index: number) => {
+    const label = variations[index]?.name?.trim()
+    const base = productName.trim() || 'Product'
+    return label ? `${base} — ${label}` : base
+  }
 
   const setMode = (next: VariationMode) => {
     if (next === mode) return
@@ -295,13 +303,44 @@ export default function ProductFormPage() {
       />
 
       <div className="mt-4 space-y-3">
+        {/*
+          Above every section, because the answer changes what they all mean:
+          in `single` the Product section describes the thing being sold, in
+          `multiple` it describes a family that is not sellable by itself.
+        */}
+        <Card>
+          <CardBody className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-fg text-sm font-semibold">This product is sold as</p>
+              <p className="text-fg-subtle text-2xs">
+                {single
+                  ? 'One sellable thing — it carries its own SKU, price and stock.'
+                  : `Several sellable things. Each gets a short label that extends the product name — “${
+                      productName || 'Brake disc HD72'
+                    } — Left”.`}
+              </p>
+            </div>
+            <SegmentedControl
+              aria-label="How many variations"
+              value={mode}
+              onChange={setMode}
+              options={MODES}
+            />
+          </CardBody>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Product</CardTitle>
           </CardHeader>
           <CardBody className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <Field label="Name" required error={form.formState.errors.name?.message}>
-              {(p) => <Input {...p} {...form.register('name')} />}
+            <Field
+              label="Product name"
+              required
+              hint={single ? undefined : 'Shared by every variation below'}
+              error={form.formState.errors.name?.message}
+            >
+              {(p) => <Input {...p} placeholder="Brake disc HD72" {...form.register('name')} />}
             </Field>
             <Field label="OEM number" hint="Or any reference text">
               {(p) => <Input {...p} {...form.register('description')} />}
@@ -436,25 +475,17 @@ export default function ProductFormPage() {
                   : 'Each one has its own barcode, price and stock.'}
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <SegmentedControl
-                aria-label="How many variations"
-                value={mode}
-                onChange={setMode}
-                options={MODES}
-              />
-              {single ? null : (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => append(emptyVariation(locations))}
-                >
-                  <Plus />
-                  Add variation
-                </Button>
-              )}
-            </div>
+            {single ? null : (
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => append(emptyVariation(locations))}
+              >
+                <Plus />
+                Add variation
+              </Button>
+            )}
           </CardHeader>
           <CardBody className="space-y-3">
             {form.formState.errors.variations?.root ? (
@@ -470,8 +501,13 @@ export default function ProductFormPage() {
               >
                 {single ? null : (
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-fg-muted text-2xs font-semibold tracking-wide uppercase">
-                      {variations[index]?.name?.trim() || `Variation ${index + 1}`}
+                    <p className="text-fg text-sm font-medium">
+                      {sellableName(index)}
+                      {variations[index]?.name?.trim() ? null : (
+                        <span className="text-fg-subtle text-2xs ml-2 font-normal">
+                          — add a label
+                        </span>
+                      )}
                     </p>
                     <div className="flex items-center gap-1">
                       <Button
@@ -516,9 +552,9 @@ export default function ProductFormPage() {
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   {single ? null : (
                     <Field
-                      label="Name"
+                      label="Variation label"
                       required
-                      hint="What tells it apart"
+                      hint="Only what tells this one apart, not the whole name"
                       error={form.formState.errors.variations?.[index]?.name?.message}
                     >
                       {(p) => (
@@ -550,7 +586,16 @@ export default function ProductFormPage() {
                             {...p}
                             className="w-full"
                             value={f.value ?? undefined}
-                            onChange={(v) => f.onChange(v)}
+                            onChange={(v) => {
+                              f.onChange(v)
+                              // Side is the label for most parts here, so
+                              // picking one fills an empty label rather than
+                              // making the user type "Left" a second time.
+                              if (single || form.getValues(`variations.${index}.name`).trim())
+                                return
+                              const side = PART_SIDES.find((s) => s.value === v)
+                              if (side) form.setValue(`variations.${index}.name`, side.label)
+                            }}
                             options={PART_SIDES}
                             placeholder="Not sided"
                           />

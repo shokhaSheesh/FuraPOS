@@ -32,6 +32,7 @@ export function ProductStockSection({
   const locationIds = form.watch('locationIds')
   const variations = form.watch('variations')
   const single = form.watch('variationMode') === 'single'
+  const productName = form.watch('name').trim()
   const selected = locations.filter((location) => locationIds.includes(location.id))
 
   const toggle = (id: string) => {
@@ -115,9 +116,11 @@ export function ProductStockSection({
                   return (
                     <tr key={index} className="border-border border-t">
                       <td className="text-fg px-3 py-2">
+                        {/* The same name the catalogue will list it under. */}
                         {single
-                          ? form.watch('name') || 'This product'
-                          : variation.name || `Variation ${index + 1}`}
+                          ? productName || 'This product'
+                          : [productName, variation.name.trim()].filter(Boolean).join(' — ') ||
+                            `Variation ${index + 1}`}
                         <span className="text-fg-subtle text-2xs ml-2">
                           {variation.sku || 'no SKU'}
                         </span>

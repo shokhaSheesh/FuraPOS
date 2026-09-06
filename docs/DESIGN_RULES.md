@@ -390,16 +390,36 @@ announces looks like a dead button.
 
 ### 7.3.2 A structural choice comes first, and is a segmented control
 
-When one answer changes what the rest of the form asks for, ask it at the top of the section it
-governs, as a `<SegmentedControl>` — not a `Select`, because the user is choosing a shape of form
-and both options must be readable at once.
+When one answer changes what the rest of the form asks for, ask it as a `<SegmentedControl>` — not a
+`Select`, because the user is choosing a shape of form and both options must be readable at once —
+and **place it above every section it governs, not inside one of them.** A control that reaches
+across sections cannot live in one of them; put it in its own strip at the top of the form, with a
+one-line explanation that changes with the answer.
 
-The catalogue's case is the reference: a product is sold one way or several. In `single` mode the
-form does not ask for a variation name at all — the product's own name is the only name there is —
-and identity, pricing and stock read as the product's. Storage does not change: a single product is
-still one variation. (Shopify makes the same split, though it happens as a side effect of adding an
-option; we make it an explicit switch, because switching back discards variations and the user must
-see that first. Collapsing to one always confirms, and names what it keeps.)
+The catalogue's case is the reference: a product is sold one way or several. The switch sits above
+the Product section because it changes what that section _means_ — in `single` mode Product
+describes the thing being sold, in `multiple` it describes a family that is not sellable by itself.
+In `single` the form does not ask for a variation name at all, and identity, pricing and stock read
+as the product's own. Storage does not change: a single product is still one variation. (Shopify
+makes the same split, though it happens as a side effect of adding an option; we make it an explicit
+switch, because switching back discards variations and the user must see that first. Collapsing to
+one always confirms, and names what it keeps.)
+
+### 7.3.3 Two names on one form must never both be called "Name"
+
+A product name and a variation label are different things — "Brake disc HD72" and "Left" — but a
+form that labels both fields _Name_ reads as asking the same question twice. Three rules:
+
+- **Name each field for the thing it names**: "Product name" and "Variation label", never "Name".
+- **The label is the difference, not the whole name.** Say so in the hint: "Only what tells this one
+  apart, not the whole name".
+- **Show the result.** Wherever a variation is titled — its card header, its stock row — render the
+  joined name the catalogue will actually list, `Product — Label`, live as it is typed. The user
+  should never have to imagine what the two fields combine into.
+
+Where a real typed field already carries the distinction, use it: picking a **Side** fills an empty
+variation label, because typing "Left" twice on one screen is exactly the duplication this section
+exists to prevent.
 
 ### 7.4 Submitting — the modal stays open until the action finishes
 

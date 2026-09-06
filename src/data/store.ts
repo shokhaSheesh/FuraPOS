@@ -31,6 +31,8 @@ interface CatalogState {
   createSale: (input: CreateSaleInput) => Sale
   updateSale: (id: string, patch: { status?: SaleStatus; paid?: number }) => Sale | undefined
   deleteVariation: (id: string) => void
+  /** Inline toggles on the catalogue row, as in the reference product. */
+  setProductFlag: (productId: string, flag: 'isShippable' | 'showOnline', value: boolean) => void
   createProduct: (input: ProductInput) => Product
   updateProduct: (id: string, input: ProductInput) => Product | undefined
 }
@@ -66,6 +68,7 @@ function flatten(product: Product): VariationRow[] {
     categoryName: product.categoryName,
     categoryPath: product.categoryPath,
     brandName: product.brandName,
+    manufacturer: product.manufacturer,
     tags: product.tags,
     unit: product.unit,
     vehicleMake: product.vehicleMake,
@@ -133,7 +136,8 @@ export const useDataStore = create<CatalogState>((set, get) => ({
     set({
       sales: get().sales.map((sale) => {
         if (sale.id !== id) return sale
-        const paid = patch.paid !== undefined ? Math.min(sale.total, sale.paid + patch.paid) : sale.paid
+        const paid =
+          patch.paid !== undefined ? Math.min(sale.total, sale.paid + patch.paid) : sale.paid
         const status = patch.status ?? sale.status
         updated = {
           ...sale,
@@ -153,6 +157,15 @@ export const useDataStore = create<CatalogState>((set, get) => ({
   },
 
   deleteVariation: (id) => set({ variations: get().variations.filter((v) => v.id !== id) }),
+
+  setProductFlag: (productId, flag, value) =>
+    set({
+      products: get().products.map((p) => (p.id === productId ? { ...p, [flag]: value } : p)),
+      // The flag lives on the product, so every one of its rows moves together.
+      variations: get().variations.map((v) =>
+        v.productId === productId ? { ...v, [flag]: value } : v,
+      ),
+    }),
 
   createProduct: (input) => {
     const id = `prd-${get().products.length + 1}`

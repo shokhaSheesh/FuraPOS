@@ -113,6 +113,7 @@ describe('data store', () => {
       description: null,
       categoryId: 'cat-2',
       brandId: null,
+      manufacturer: null,
       tags: [],
       unit: 'pcs',
       vehicleMake: 'DAF',

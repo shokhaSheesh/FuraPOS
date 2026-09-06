@@ -73,7 +73,14 @@ export interface Product {
   /** Full hierarchy, e.g. "Chassis > Brakes". */
   categoryPath: string
   brandId: Id | null
+  /** Who we buy from — "AKCHAEV INC" in the reference data. */
   brandName: string | null
+  /**
+   * Who made the part — "Space" in the reference data. OX keeps these as two
+   * separate columns (Бренд and Бренд товара) because for an importer they are
+   * genuinely different companies.
+   */
+  manufacturer: string | null
   tags: string[]
   unit: UnitOfMeasure
 
@@ -106,6 +113,7 @@ export interface VariationRow extends ProductVariation {
   categoryName: string
   categoryPath: string
   brandName: string | null
+  manufacturer: string | null
   tags: string[]
   unit: UnitOfMeasure
   vehicleMake: string | null
@@ -117,6 +125,10 @@ export interface VariationRow extends ProductVariation {
 }
 
 /* --- money -------------------------------------------------------------- */
+
+/** What the discount takes off, in money. OX shows this beside the net price. */
+export const discountAmount = (v: Pick<ProductVariation, 'salePrice' | 'discountPrice'>) =>
+  v.discountPrice === null ? 0 : v.salePrice - v.discountPrice
 
 export const effectivePrice = (v: Pick<ProductVariation, 'salePrice' | 'discountPrice'>) =>
   v.discountPrice ?? v.salePrice
@@ -150,6 +162,8 @@ export function productPriceRange(product: Product): { min: number; max: number 
 /* --- validation --------------------------------------------------------- */
 
 export const variationFormSchema = z.object({
+  /** Present when editing an existing variation, absent for a new one. */
+  id: z.string().optional(),
   name: z.string().min(1, 'Every variation needs a name'),
   sku: z.string().min(1, 'SKU is required'),
   barcode: z.string().nullable(),
@@ -169,6 +183,7 @@ export const productFormSchema = z.object({
   description: z.string().nullable(),
   categoryId: z.string().min(1, 'Pick a category'),
   brandId: z.string().nullable(),
+  manufacturer: z.string().nullable(),
   tags: z.array(z.string()),
   unit: z.enum(['pcs', 'kg', 'l', 'm', 'pack']),
   vehicleMake: z.string().nullable(),

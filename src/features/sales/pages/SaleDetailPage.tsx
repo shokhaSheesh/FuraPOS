@@ -71,7 +71,7 @@ export default function SaleDetailPage() {
     update.mutate(
       { status: step.to },
       {
-        onSuccess: () => toast.success(`${sale.number} → ${step.label.toLowerCase()}`)
+        onSuccess: () => toast.success(`${sale.number} → ${step.label.toLowerCase()}`),
       },
     )
   }
@@ -188,7 +188,7 @@ export default function SaleDetailPage() {
               onSuccess: () => {
                 toast.success(`${sale.number} deleted`)
                 setDeleteOpen(false)
-              }
+              },
             },
           )
         }
@@ -206,7 +206,7 @@ export default function SaleDetailPage() {
               onSuccess: () => {
                 toast.success(`${formatMoney(amount)} recorded against ${sale.number}`)
                 setPayOpen(false)
-              }
+              },
             },
           )
         }

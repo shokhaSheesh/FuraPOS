@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 
 .env
+
+# Reference recordings dropped in for comparison, not source
+*.mp4

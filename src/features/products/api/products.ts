@@ -125,7 +125,10 @@ export function useCreateProduct() {
   const create = useDataStore((s) => s.createProduct)
   return {
     isPending: false,
-    mutate: (input: ProductInput, opts?: { onSuccess?: (p: ReturnType<typeof create>) => void }) => {
+    mutate: (
+      input: ProductInput,
+      opts?: { onSuccess?: (p: ReturnType<typeof create>) => void },
+    ) => {
       opts?.onSuccess?.(create(input))
     },
   }

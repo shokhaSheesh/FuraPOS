@@ -1,11 +1,14 @@
-import { Check, Minus, Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Trash2 } from 'lucide-react'
 import { Badge } from '@/shared/ui/Badge'
 import { RowActions } from '@/shared/components/RowActions'
+import { Switch } from '@/shared/ui/Switch'
+import { useDataStore } from '@/data/store'
 import { ProductThumb } from '@/shared/components/ProductThumb'
 import type { TableColumn } from '@/shared/components/table/features'
 import { formatMoney, formatNumber, formatPercent } from '@/shared/lib/format'
 import {
   costInUzs,
+  discountAmount,
   effectivePrice,
   marginRatio,
   PART_SIDES,
@@ -13,13 +16,6 @@ import {
 } from '../model/product'
 
 const Empty = () => <span className="text-fg-subtle">—</span>
-
-const Bool = ({ on }: { on: boolean }) =>
-  on ? (
-    <Check className="text-success size-4" aria-label="Yes" />
-  ) : (
-    <Minus className="text-fg-subtle size-4" aria-label="No" />
-  )
 
 /** Cost may be quoted in USD, so it is always shown with its currency. */
 const cost = (v: VariationRow) =>
@@ -68,6 +64,13 @@ export function buildProductColumns({
       enableHiding: false,
     },
     {
+      accessorKey: 'id',
+      header: 'Variation ID',
+      cell: ({ row }) => (
+        <span className="text-fg-muted text-2xs font-mono">{row.original.id}</span>
+      ),
+    },
+    {
       accessorKey: 'barcode',
       header: 'Barcode',
       cell: ({ row }) =>
@@ -86,6 +89,11 @@ export function buildProductColumns({
       accessorKey: 'brandName',
       header: 'Brand',
       cell: ({ row }) => row.original.brandName ?? <Empty />,
+    },
+    {
+      accessorKey: 'manufacturer',
+      header: 'Manufacturer',
+      cell: ({ row }) => row.original.manufacturer ?? <Empty />,
     },
     {
       accessorKey: 'categoryPath',
@@ -150,20 +158,21 @@ export function buildProductColumns({
       },
     },
     {
-      id: 'stockByLocation',
-      header: 'Locations',
-      cell: ({ row }) =>
-        row.original.stockByLocation.length ? (
-          <span
-            title={row.original.stockByLocation
-              .map((s) => `${s.locationName}: ${s.quantity}`)
-              .join('\n')}
-          >
-            {row.original.stockByLocation.length}
-          </span>
+      id: 'location',
+      header: 'Location',
+      cell: ({ row }) => {
+        const at = row.original.stockByLocation
+        if (!at.length) return <Empty />
+        // One location reads as itself; several read as a count, with the
+        // breakdown on hover rather than a cell nobody can fit.
+        return at.length === 1 ? (
+          at[0]!.locationName
         ) : (
-          <Empty />
-        ),
+          <span title={at.map((s) => `${s.locationName}: ${s.quantity}`).join('\n')}>
+            {at.length} locations
+          </span>
+        )
+      },
     },
     {
       accessorKey: 'moq',
@@ -207,6 +216,15 @@ export function buildProductColumns({
         ),
     },
     {
+      accessorKey: 'discount',
+      header: 'Discount',
+      meta: { align: 'right' },
+      cell: ({ row }) => {
+        const off = discountAmount(row.original)
+        return off > 0 ? <span className="text-warning">− {formatMoney(off)}</span> : <Empty />
+      },
+    },
+    {
       id: 'saleValue',
       header: 'Stock at sale',
       meta: { align: 'right' },
@@ -241,12 +259,12 @@ export function buildProductColumns({
     {
       accessorKey: 'isShippable',
       header: 'Shippable',
-      cell: ({ row }) => <Bool on={row.original.isShippable} />,
+      cell: ({ row }) => <FlagToggle row={row.original} flag="isShippable" label="Shippable" />,
     },
     {
       accessorKey: 'showOnline',
       header: 'Online',
-      cell: ({ row }) => <Bool on={row.original.showOnline} />,
+      cell: ({ row }) => <FlagToggle row={row.original} flag="showOnline" label="Show online" />,
     },
     {
       accessorKey: 'status',
@@ -285,12 +303,15 @@ export function buildProductColumns({
 
 /** Dense by design: the least-used columns are off until someone asks. */
 export const PRODUCT_COLUMNS_HIDDEN_BY_DEFAULT = [
+  'id',
+  'manufacturer',
+  'discount',
+  'location',
   'description',
   'vehicleModels',
   'partSide',
   'tags',
   'shelfAddress',
-  'stockByLocation',
   'moq',
   'costValue',
   'discountPrice',
@@ -300,3 +321,27 @@ export const PRODUCT_COLUMNS_HIDDEN_BY_DEFAULT = [
   'isShippable',
   'showOnline',
 ]
+
+/**
+ * Shippable and Online are edited in place, as in the reference product. Both
+ * live on the *product*, so flipping one moves every variation of that part —
+ * which is why the store updates them together rather than per row.
+ */
+function FlagToggle({
+  row,
+  flag,
+  label,
+}: {
+  row: VariationRow
+  flag: 'isShippable' | 'showOnline'
+  label: string
+}) {
+  const setFlag = useDataStore((s) => s.setProductFlag)
+  return (
+    <Switch
+      checked={row[flag]}
+      onCheckedChange={(value) => setFlag(row.productId, flag, value)}
+      aria-label={`${label} — ${row.fullName}`}
+    />
+  )
+}

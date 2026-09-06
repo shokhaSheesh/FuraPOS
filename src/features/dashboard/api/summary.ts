@@ -61,7 +61,9 @@ export function useDashboardSummary(period: DashboardPeriod, range?: DateRange) 
       for (const [order, location] of locations.entries()) {
         const base = 3_200_000 + order * 900_000
         const rhythm = [0.82, 0.94, 0.98, 1, 1.12, 1.28, 1.18][date.getDay()] ?? 1
-        row[location.id] = Math.round(base * rhythm * (1 + index * 0.004) * (0.92 + random() * 0.16))
+        row[location.id] = Math.round(
+          base * rhythm * (1 + index * 0.004) * (0.92 + random() * 0.16),
+        )
       }
       return row
     })

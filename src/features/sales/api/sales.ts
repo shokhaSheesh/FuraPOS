@@ -108,10 +108,7 @@ export function useUpdateSale(id: string) {
   const update = useDataStore((s) => s.updateSale)
   return {
     isPending: false,
-    mutate: (
-      patch: { status?: SaleStatus; paid?: number },
-      opts?: { onSuccess?: () => void },
-    ) => {
+    mutate: (patch: { status?: SaleStatus; paid?: number }, opts?: { onSuccess?: () => void }) => {
       update(id, patch)
       opts?.onSuccess?.()
     },

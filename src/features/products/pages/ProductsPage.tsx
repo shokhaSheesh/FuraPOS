@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { Download, Plus } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
@@ -81,7 +81,7 @@ export default function ProductsPage() {
       onSuccess: () => {
         toast.success(`${pendingDelete.name} deleted`)
         setPendingDelete(null)
-      }
+      },
     })
   }
 
@@ -134,9 +134,11 @@ export default function ProductsPage() {
               Export
             </Button>
             {can('products.list.create') ? (
-              <Button variant="primary">
-                <Plus />
-                Add product
+              <Button variant="primary" asChild>
+                <Link to={paths.products.new}>
+                  <Plus />
+                  Add product
+                </Link>
               </Button>
             ) : null}
           </div>

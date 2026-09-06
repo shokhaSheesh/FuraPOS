@@ -9,6 +9,8 @@ import { RouteError } from './RouteError'
 
 const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPage'))
 const ProductsPage = lazy(() => import('@/features/products/pages/ProductsPage'))
+const ProductDetailPage = lazy(() => import('@/features/products/pages/ProductDetailPage'))
+const ProductFormPage = lazy(() => import('@/features/products/pages/ProductFormPage'))
 const NewSalePage = lazy(() => import('@/features/sales/pages/NewSalePage'))
 const AllSalesPage = lazy(() => import('@/features/sales/pages/SalesListPage'))
 const SaleDetailPage = lazy(() => import('@/features/sales/pages/SaleDetailPage'))
@@ -57,7 +59,9 @@ const routes: RouteObject[] = [
       // --- Products / Services -------------------------------------------
       { path: paths.products.root, element: <Navigate to={paths.products.list} replace /> },
       { path: paths.products.list, element: page(<ProductsPage />, 'products.list.view') },
-      { path: paths.products.detail(), element: todo('Product', 'products.list.view') },
+      { path: paths.products.new, element: page(<ProductFormPage />, 'products.list.create') },
+      { path: paths.products.detail(), element: page(<ProductDetailPage />, 'products.list.view') },
+      { path: paths.products.edit(), element: page(<ProductFormPage />, 'products.list.edit') },
       { path: paths.products.transfers, element: todo('Transfers', 'products.transfers.view') },
       {
         path: paths.products.corrections,

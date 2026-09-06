@@ -31,7 +31,9 @@ export const paths = {
   products: {
     root: '/products',
     list: '/products/list', // OX: /app/products/management
+    new: '/products/list/new',
     detail: (id = ':productId') => `/products/list/${id}`,
+    edit: (id = ':productId') => `/products/list/${id}/edit`,
     transfers: '/products/transfers', // OX: /app/products/transfers
     corrections: '/products/corrections', // OX: /app/products/corrections
     stocktaking: '/products/stocktaking', // OX: /app/products/reviews

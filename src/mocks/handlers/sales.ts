@@ -1,5 +1,6 @@
 import { delay, http, HttpResponse } from 'msw'
 import { api } from './api'
+import { MOCK_LATENCY } from '../latency'
 import { clients, locations, sales } from '../seed'
 import { matches, paginate } from '../utils'
 import type { Sale, SaleDelivery, SaleLine, SaleStatus } from '@/features/sales/model/sale'
@@ -94,7 +95,7 @@ export const salesHandlers = [
     if (!sale) return HttpResponse.json({ message: 'Sale not found' }, { status: 404 })
 
     const patch = (await request.json()) as { status?: SaleStatus; paid?: number }
-    await delay(600)
+    await delay(MOCK_LATENCY)
 
     if (patch.status) sale.status = patch.status
     if (patch.paid !== undefined) sale.paid = Math.min(sale.total, sale.paid + patch.paid)
@@ -125,9 +126,7 @@ export const salesHandlers = [
     if (!body.lines?.length) {
       return HttpResponse.json({ message: 'A sale needs at least one product' }, { status: 422 })
     }
-
-    // Deliberate latency so the in-flight state is visible in development.
-    await delay(700)
+    await delay(MOCK_LATENCY)
 
     const totals = computeTotals(body.lines, body.paid, body.delivery?.cost ?? 0)
     const now = new Date().toISOString()

@@ -1,5 +1,6 @@
 import { delay, http, HttpResponse } from 'msw'
 import { api } from './api'
+import { MOCK_LATENCY } from '../latency'
 import { brands, categories, locations, products, USD_RATE, variations } from '../seed'
 import { matches, paginate } from '../utils'
 import { costInUzs, effectivePrice, productStock } from '@/features/products/model/product'
@@ -99,8 +100,7 @@ export const catalogHandlers = [
   http.delete(api('/variations/:id'), async ({ params }) => {
     const index = variations.findIndex((item) => item.id === params.id)
     if (index === -1) return HttpResponse.json({ message: 'Not found' }, { status: 404 })
-    // Deliberate latency: the in-flight state is a feature, not an edge case.
-    await delay(700)
+    await delay(MOCK_LATENCY)
     variations.splice(index, 1)
     return new HttpResponse(null, { status: 204 })
   }),

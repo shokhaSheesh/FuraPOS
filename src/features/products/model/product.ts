@@ -161,10 +161,25 @@ export function productPriceRange(product: Product): { min: number; max: number 
 
 /* --- validation --------------------------------------------------------- */
 
+/**
+ * How many sellable things this product is. A product sold one way — one
+ * barcode, one price — should not have to invent a variation name for itself,
+ * so the form asks for the mode first and hides the name field in `single`.
+ * Storage is unchanged either way: a single product is still one variation.
+ */
+export type VariationMode = 'single' | 'multiple'
+
+/** What a form holds for one location's opening or on-hand quantity. */
+export const stockAtLocationFormSchema = z.object({
+  locationId: z.string(),
+  quantity: z.number().int().nonnegative(),
+})
+
 export const variationFormSchema = z.object({
   /** Present when editing an existing variation, absent for a new one. */
   id: z.string().optional(),
-  name: z.string().min(1, 'Every variation needs a name'),
+  /** Empty in `single` mode — see VariationMode. */
+  name: z.string(),
   sku: z.string().min(1, 'SKU is required'),
   barcode: z.string().nullable(),
   partSide: z.enum(['left', 'right', 'both']).nullable(),
@@ -176,25 +191,46 @@ export const variationFormSchema = z.object({
   shelfAddress: z.string().nullable(),
   moq: z.number().int().positive().nullable(),
   status: z.enum(['active', 'archived', 'draft']),
+  stockByLocation: z.array(stockAtLocationFormSchema),
 })
 
-export const productFormSchema = z.object({
-  name: z.string().min(2, 'Name is required'),
-  description: z.string().nullable(),
-  categoryId: z.string().min(1, 'Pick a category'),
-  brandId: z.string().nullable(),
-  manufacturer: z.string().nullable(),
-  tags: z.array(z.string()),
-  unit: z.enum(['pcs', 'kg', 'l', 'm', 'pack']),
-  vehicleMake: z.string().nullable(),
-  vehicleModels: z.array(z.string()),
-  cargoWeightKg: z.number().nonnegative().nullable(),
-  cargoSize: z.string().nullable(),
-  isShippable: z.boolean(),
-  showOnline: z.boolean(),
-  status: z.enum(['active', 'archived', 'draft']),
-  // A product with no variations is not sellable.
-  variations: z.array(variationFormSchema).min(1, 'Add at least one variation'),
-})
+export const productFormSchema = z
+  .object({
+    name: z.string().min(2, 'Name is required'),
+    description: z.string().nullable(),
+    categoryId: z.string().min(1, 'Pick a category'),
+    brandId: z.string().nullable(),
+    manufacturer: z.string().nullable(),
+    tags: z.array(z.string()),
+    unit: z.enum(['pcs', 'kg', 'l', 'm', 'pack']),
+    vehicleMake: z.string().nullable(),
+    vehicleModels: z.array(z.string()),
+    cargoWeightKg: z.number().nonnegative().nullable(),
+    cargoSize: z.string().nullable(),
+    isShippable: z.boolean(),
+    showOnline: z.boolean(),
+    status: z.enum(['active', 'archived', 'draft']),
+    variationMode: z.enum(['single', 'multiple']),
+    /**
+     * Which locations stock this product. Quantities are only asked for these,
+     * and a location dropped here loses its stock rows on save.
+     */
+    locationIds: z.array(z.string()).min(1, 'Stock it at one location at least'),
+    // A product with no variations is not sellable.
+    variations: z.array(variationFormSchema).min(1, 'Add at least one variation'),
+  })
+  .superRefine((values, ctx) => {
+    // A name only distinguishes one variation from another, so it is required
+    // exactly when there is another one to distinguish it from.
+    if (values.variationMode !== 'multiple') return
+    values.variations.forEach((variation, index) => {
+      if (variation.name.trim()) return
+      ctx.addIssue({
+        code: 'custom',
+        path: ['variations', index, 'name'],
+        message: 'Every variation needs a name',
+      })
+    })
+  })
 
 export type ProductFormValues = z.infer<typeof productFormSchema>

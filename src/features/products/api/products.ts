@@ -108,6 +108,12 @@ export function useBrands() {
   return { data: { items }, isLoading: false }
 }
 
+/** Warehouses and shops a product can be stocked at. */
+export function useLocations() {
+  const items = useDataStore((s) => s.locations)
+  return { data: { items }, isLoading: false }
+}
+
 /* --- writes -------------------------------------------------------------- */
 
 export function useDeleteVariation() {

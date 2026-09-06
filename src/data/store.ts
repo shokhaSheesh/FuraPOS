@@ -50,11 +50,37 @@ export interface CreateSaleInput {
   delivery: Sale['delivery']
 }
 
+type VariationInput = Omit<
+  Product['variations'][number],
+  'id' | 'productId' | 'stock' | 'stockByLocation' | 'imageUrl'
+> & {
+  id?: string
+  /** Quantity per location; `stock` is the sum and is never sent. */
+  stockByLocation: { locationId: string; quantity: number }[]
+}
+
 export type ProductInput = Omit<
   Product,
   'id' | 'categoryName' | 'categoryPath' | 'brandName' | 'createdAt' | 'updatedAt' | 'variations'
 > & {
-  variations: (Omit<Product['variations'][number], 'id' | 'productId'> & { id?: string })[]
+  variations: VariationInput[]
+}
+
+/**
+ * Turns a form's `{ locationId, quantity }` rows into stored stock: names are
+ * resolved here so screens never have to join, and `stock` is always the sum
+ * so the two can never disagree.
+ */
+function resolveStock(
+  rows: { locationId: string; quantity: number }[],
+  locationList: readonly { id: string; name: string }[],
+) {
+  const stockByLocation = rows.map((row) => ({
+    locationId: row.locationId,
+    locationName: locationList.find((l) => l.id === row.locationId)?.name ?? '—',
+    quantity: row.quantity,
+  }))
+  return { stockByLocation, stock: stockByLocation.reduce((sum, r) => sum + r.quantity, 0) }
 }
 
 /** Keeps the flat sellable list in step with a product's variations. */
@@ -182,9 +208,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
         ...variation,
         id: variation.id ?? `var-${id}-${index + 1}`,
         productId: id,
-        // Stock arrives through goods receipt, never through the product form.
-        stock: 0,
-        stockByLocation: [],
+        ...resolveStock(variation.stockByLocation, get().locations),
         imageUrl: null,
       })),
       createdAt: now,
@@ -216,8 +240,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
           ...variation,
           id: variation.id ?? `var-${id}-${Date.now()}-${index}`,
           productId: id,
-          stock: previous?.stock ?? 0,
-          stockByLocation: previous?.stockByLocation ?? [],
+          ...resolveStock(variation.stockByLocation, get().locations),
           imageUrl: previous?.imageUrl ?? null,
         }
       }),

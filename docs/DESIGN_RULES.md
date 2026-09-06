@@ -16,12 +16,12 @@ Implementation lives in `src/styles/tokens.css` (colors) and `src/shared/ui` + `
 
 ### 1.1 Brand palette (from the brand book, p.8)
 
-| Color | Hex | Brand meaning | Where it is used in the app |
-| --- | --- | --- | --- |
-| Yellow | `#FFCB00` | energy & attention | Primary buttons, active nav, focus ring in dark mode. Nothing else |
-| Black | `#000000` | strength & precision | The sidebar and the dark-mode canvas, **verbatim** |
-| Grey | `#D8D9D9` | metal & technology | Borders, dividers, table rules |
-| Navy | `#0F0F35` | stability & trust | **The `info` tone only.** Never chrome, never body text, never a surface |
+| Color  | Hex       | Brand meaning        | Where it is used in the app                                              |
+| ------ | --------- | -------------------- | ------------------------------------------------------------------------ |
+| Yellow | `#FFCB00` | energy & attention   | Primary buttons, active nav, focus ring in dark mode. Nothing else       |
+| Black  | `#000000` | strength & precision | The sidebar and the dark-mode canvas, **verbatim**                       |
+| Grey   | `#D8D9D9` | metal & technology   | Borders, dividers, table rules                                           |
+| Navy   | `#0F0F35` | stability & trust    | **The `info` tone only.** Never chrome, never body text, never a surface |
 
 **The identity is the logo: yellow on black.** Everything else on screen is a true neutral grey —
 no blue, purple or warm cast anywhere, so the yellow is the only colour the eye lands on. Navy was
@@ -34,7 +34,7 @@ tried as the chrome and read as purple next to the yellow; it is now confined to
    This is why `--color-primary-fg` is `#141414`. Do not override it.
 
 2. **Yellow can never mean "warning".**
-   Yellow is the brand, so it is reserved for *primary action and active state*. A status chip,
+   Yellow is the brand, so it is reserved for _primary action and active state_. A status chip,
    an alert, or a low-stock badge must never be yellow or the user cannot tell the brand from a
    problem. Warning is **orange** `#C2410C`. Nothing yellow in this UI is a status.
 
@@ -44,24 +44,24 @@ Components use Tailwind classes generated from the tokens: `bg-surface`, `text-f
 `border-border`, `bg-primary text-primary-fg`. **A hex value or a stock Tailwind palette class
 (`bg-slate-700`, `text-gray-500`) in a component is a bug.**
 
-| Token | Light | Dark | Purpose |
-| --- | --- | --- | --- |
-| `canvas` | `#F3F3F4` | `#000000` | Page background *behind* cards |
-| `surface` | `#FFFFFF` | `#121212` | Cards, tables, modals, popovers |
-| `surface-muted` | `#F6F6F7` | `#1A1A1A` | Table headers, row hover, inactive tabs |
-| `surface-inset` | `#EDEDEE` | `#202020` | Inputs, wells, avatar placeholders |
-| `border` | `#D8D9D9` | `#262626` | Every 1px divider |
-| `border-strong` | `#BDBEC1` | `#383838` | Input borders on hover, checkbox outlines |
-| `fg` | `#141414` | `#E8E8E8` | Primary text. Near-black on white and off-white on black — the extremes glare in both directions |
-| `fg-muted` | `#626366` | `#9C9C9C` | Labels, secondary text, table headers |
-| `fg-subtle` | `#8F9094` | `#6A6A6A` | Placeholders, disabled text, em-dash empties |
-| `primary` / `primary-fg` | `#FFCB00` / `#141414` | same | The primary action |
-| `primary-soft` | `#FFF4CC` | `#2E2810` | Soft brand fill (rare) |
-| `chrome` | `#000000` | `#000000` | The sidebar, in **both** themes — the brand's black, verbatim |
-| `success` | `#15803D` | `#4ADE80` | Paid, active, in stock, completed |
-| `warning` | `#C2410C` | `#FB923C` | Low stock, pending, expiring, needs attention |
-| `danger` | `#C81E1E` | `#F87171` | Destructive actions, errors, overdue, out of stock |
-| `info` | `#0F0F35` | `#A5A8D6` | Informational badges and notices — navy's only home |
+| Token                    | Light                 | Dark      | Purpose                                                                                          |
+| ------------------------ | --------------------- | --------- | ------------------------------------------------------------------------------------------------ |
+| `canvas`                 | `#F3F3F4`             | `#000000` | Page background _behind_ cards                                                                   |
+| `surface`                | `#FFFFFF`             | `#121212` | Cards, tables, modals, popovers                                                                  |
+| `surface-muted`          | `#F6F6F7`             | `#1A1A1A` | Table headers, row hover, inactive tabs                                                          |
+| `surface-inset`          | `#EDEDEE`             | `#202020` | Inputs, wells, avatar placeholders                                                               |
+| `border`                 | `#D8D9D9`             | `#262626` | Every 1px divider                                                                                |
+| `border-strong`          | `#BDBEC1`             | `#383838` | Input borders on hover, checkbox outlines                                                        |
+| `fg`                     | `#141414`             | `#E8E8E8` | Primary text. Near-black on white and off-white on black — the extremes glare in both directions |
+| `fg-muted`               | `#626366`             | `#9C9C9C` | Labels, secondary text, table headers                                                            |
+| `fg-subtle`              | `#8F9094`             | `#6A6A6A` | Placeholders, disabled text, em-dash empties                                                     |
+| `primary` / `primary-fg` | `#FFCB00` / `#141414` | same      | The primary action                                                                               |
+| `primary-soft`           | `#FFF4CC`             | `#2E2810` | Soft brand fill (rare)                                                                           |
+| `chrome`                 | `#000000`             | `#000000` | The sidebar, in **both** themes — the brand's black, verbatim                                    |
+| `success`                | `#15803D`             | `#4ADE80` | Paid, active, in stock, completed                                                                |
+| `warning`                | `#C2410C`             | `#FB923C` | Low stock, pending, expiring, needs attention                                                    |
+| `danger`                 | `#C81E1E`             | `#F87171` | Destructive actions, errors, overdue, out of stock                                               |
+| `info`                   | `#0F0F35`             | `#A5A8D6` | Informational badges and notices — navy's only home                                              |
 
 ### 1.4 Dark mode
 
@@ -98,21 +98,21 @@ The brand fonts are **Designer** (display) and **Kinetika Light** (secondary). B
   It is a close geometric-grotesque match to Kinetika's character.
 - **`Designer` is reserved for the logo lockup and short Latin display text only.** Never body
   copy, never a table, never a label. It is loaded as `--font-display`.
-- Revisit only if someone licenses a Cyrillic web cut of Kinetika. *(Open question — confirm.)*
+- Revisit only if someone licenses a Cyrillic web cut of Kinetika. _(Open question — confirm.)_
 
 ### 2.2 Type scale
 
 Dense back-office. Base is **15px**, not 16px.
 
-| Role | Class | Size / weight | Used for |
-| --- | --- | --- | --- |
-| Page title | `text-lg font-semibold tracking-tight` | 18px / 600 | The one `<h1>` per screen, in `PageHeader` |
-| Section title | `text-sm font-semibold` | 14px / 600 | `CardTitle`, modal titles, form group headings |
-| Body | `text-sm` | 14px / 400 | Table cells, form values, descriptions |
-| Label | `text-sm text-fg-muted` | 14px / 400 | Field labels, secondary lines |
-| Table header | `text-2xs font-semibold uppercase tracking-wide text-fg-muted` | 11px / 600 | Column headers only |
-| Metric | `text-xl font-semibold` | 20px / 600 | KPI card values — **proportional** figures, see § 2.3 |
-| Micro | `text-2xs` | 11px | Badges, SKU, timestamps, helper text |
+| Role          | Class                                                          | Size / weight | Used for                                              |
+| ------------- | -------------------------------------------------------------- | ------------- | ----------------------------------------------------- |
+| Page title    | `text-lg font-semibold tracking-tight`                         | 18px / 600    | The one `<h1>` per screen, in `PageHeader`            |
+| Section title | `text-sm font-semibold`                                        | 14px / 600    | `CardTitle`, modal titles, form group headings        |
+| Body          | `text-sm`                                                      | 14px / 400    | Table cells, form values, descriptions                |
+| Label         | `text-sm text-fg-muted`                                        | 14px / 400    | Field labels, secondary lines                         |
+| Table header  | `text-2xs font-semibold uppercase tracking-wide text-fg-muted` | 11px / 600    | Column headers only                                   |
+| Metric        | `text-xl font-semibold`                                        | 20px / 600    | KPI card values — **proportional** figures, see § 2.3 |
+| Micro         | `text-2xs`                                                     | 11px          | Badges, SKU, timestamps, helper text                  |
 
 Never introduce a size outside this scale. Never use `font-bold` (700) in the UI — 600 is the
 heaviest weight; 700 belongs to the logo.
@@ -137,14 +137,14 @@ or a hand-built date string in a component is a bug.
 Multiples of 4px, via Tailwind's default scale. The only values used are
 **1, 1.5, 2, 3, 4, 6, 8** (4px → 32px). Nothing else.
 
-| Context | Value |
-| --- | --- |
-| Icon ↔ its label | `gap-2` (8px) |
-| Between form fields | `gap-4` (16px) |
-| Table cell padding | `px-3 py-2.5` |
-| Card padding | `p-4` |
-| Page padding | `p-4` mobile, `lg:p-6` desktop |
-| Between page sections | `space-y-4` |
+| Context               | Value                          |
+| --------------------- | ------------------------------ |
+| Icon ↔ its label      | `gap-2` (8px)                  |
+| Between form fields   | `gap-4` (16px)                 |
+| Table cell padding    | `px-3 py-2.5`                  |
+| Card padding          | `p-4`                          |
+| Page padding          | `p-4` mobile, `lg:p-6` desktop |
+| Between page sections | `space-y-4`                    |
 
 ### 3.2 App frame
 
@@ -154,7 +154,7 @@ Fixed and identical on every screen — `AppShell`:
   Collapse state persists per user. The logo sits on a white backing tile because its black
   outlines would vanish on the chrome (brand guidelines p.9).
 - **Top bar**, 56px, `bg-surface`, bottom border. Contents left→right:
-  collapse toggle → *(spacer)* → wallet balance → theme toggle → notifications bell → avatar menu.
+  collapse toggle → _(spacer)_ → wallet balance → theme toggle → notifications bell → avatar menu.
   This order never changes. The top bar holds **account and app-level chrome only** — it never
   carries a create action or a search field, because both belong to the screen the user is on
   (the primary action lives in `PageHeader`, search lives in the table's toolbar).
@@ -162,13 +162,13 @@ Fixed and identical on every screen — `AppShell`:
 
 ### 3.3 Radii and elevation
 
-| Element | Radius | Shadow |
-| --- | --- | --- |
-| Cards, tables, modals | `rounded-card` (10px) | `shadow-card` |
-| Buttons, inputs, badges-on-controls | `rounded-control` (6px) | none |
-| Popovers, dropdowns | `rounded-control` | `shadow-popover` |
-| Modals | `rounded-card` | `shadow-modal` |
-| Avatars, status dots, pills | `rounded-full` | none |
+| Element                             | Radius                  | Shadow           |
+| ----------------------------------- | ----------------------- | ---------------- |
+| Cards, tables, modals               | `rounded-card` (10px)   | `shadow-card`    |
+| Buttons, inputs, badges-on-controls | `rounded-control` (6px) | none             |
+| Popovers, dropdowns                 | `rounded-control`       | `shadow-popover` |
+| Modals                              | `rounded-card`          | `shadow-modal`   |
+| Avatars, status dots, pills         | `rounded-full`          | none             |
 
 Three shadow levels exist. Do not invent a fourth, and never put a shadow on a button.
 
@@ -187,13 +187,13 @@ There is still only one.
 
 ### 4.2 Variants
 
-| Variant | Look | Use for |
-| --- | --- | --- |
-| `primary` | Yellow bg, near-black text | The single main action: `+ Add product`, `Save`, `Confirm` |
-| `secondary` | Surface bg, grey border, default text | Cancel, Export, Filter, secondary actions in a row |
-| `ghost` | Transparent, muted text, hover fill | Icon buttons, toolbar controls, table row actions |
-| `danger` | Danger bg, white text | Confirmed destructive action **inside a modal only** |
-| `link` | Yellow-free, primary-colored text, underline on hover | Inline navigation inside prose or a card header |
+| Variant     | Look                                                  | Use for                                                    |
+| ----------- | ----------------------------------------------------- | ---------------------------------------------------------- |
+| `primary`   | Yellow bg, near-black text                            | The single main action: `+ Add product`, `Save`, `Confirm` |
+| `secondary` | Surface bg, grey border, default text                 | Cancel, Export, Filter, secondary actions in a row         |
+| `ghost`     | Transparent, muted text, hover fill                   | Icon buttons, toolbar controls, table row actions          |
+| `danger`    | Danger bg, white text                                 | Confirmed destructive action **inside a modal only**       |
+| `link`      | Yellow-free, primary-colored text, underline on hover | Inline navigation inside prose or a card header            |
 
 A destructive action is **never** a red button on a list page. It is a ghost icon in the row, which
 opens a confirmation modal whose primary action is the red one.
@@ -227,7 +227,7 @@ Every list screen in the app is the same three components stacked. Copy
 Search and filters go into `DataTable`'s `toolbar` prop, so a table has **exactly one toolbar
 row**, inside its own card: controls on the left, the Columns control on the far right. A search
 box floating above the card and a second control row inside it is the mistake this prevents.
-`ListPage` exists only for list screens that are *not* a table (a card grid rather than rows).
+`ListPage` exists only for list screens that are _not_ a table (a card grid rather than rows).
 
 ### 5.1 Table anatomy
 
@@ -270,13 +270,13 @@ into a `⋯` overflow menu, with delete separated at the bottom of that menu.
 
 ### 5.5 States
 
-| State | What renders |
-| --- | --- |
-| Loading | 8 skeleton rows inside the table chrome — **never** a spinner that replaces the table |
-| Empty (no data at all) | `EmptyState` with icon, one line of explanation, and the primary action repeated |
-| Empty (filters excluded everything) | `EmptyState` with "clear filters" wording, **not** the add action |
-| Error | `EmptyState` with the error and a Retry button |
-| Heavy report, not yet run | `FilterGate` — "choose your filters, then Apply". Never auto-run |
+| State                               | What renders                                                                          |
+| ----------------------------------- | ------------------------------------------------------------------------------------- |
+| Loading                             | 8 skeleton rows inside the table chrome — **never** a spinner that replaces the table |
+| Empty (no data at all)              | `EmptyState` with icon, one line of explanation, and the primary action repeated      |
+| Empty (filters excluded everything) | `EmptyState` with "clear filters" wording, **not** the add action                     |
+| Error                               | `EmptyState` with the error and a Retry button                                        |
+| Heavy report, not yet run           | `FilterGate` — "choose your filters, then Apply". Never auto-run                      |
 
 Full rules, including what each empty state must say, are in § 9.
 
@@ -284,7 +284,7 @@ Full rules, including what each empty state must say, are in § 9.
 
 A row of status chips shows **how many rows each one would reveal**, computed with every other
 filter applied but **ignoring the status filter itself** — otherwise every chip but the active one
-reads zero. A status with none shows `0`, never a blank: a missing number reads as *unknown*, and
+reads zero. A status with none shows `0`, never a blank: a missing number reads as _unknown_, and
 "there are none" is the more useful fact.
 
 Counts are what let a chip replace a nav entry. A saved filter in the sidebar earns its place only
@@ -308,7 +308,7 @@ One layout for every entity (product, sale, client, employee, supplier, purchase
 4. **Tabs** for sections, via `shared/ui/Tabs` — an underline, never a filled pill, so tabs never
    compete with the one yellow primary action above them. Tab one is always **Overview**. The tab
    set for entities that have a wallet is: `Overview · Wallet · History · [entity-specific] ·
-   Activity`. **A tab whose section has no data is not rendered** — an empty "Delivery" tab on a
+Activity`. **A tab whose section has no data is not rendered** — an empty "Delivery" tab on a
    sale that is being collected in person is noise, not consistency.
 5. **Two-column body** on `lg+`: main content 2/3 left, metadata card 1/3 right. Single column below.
 6. **Activity/audit is always the last tab**, never a separate page. Show only events you can
@@ -324,7 +324,7 @@ one offers none. Derive it from a single function in the feature's `model/` (for
 Anything the **list** can show must be readable somewhere on the detail page: the list is a summary
 of this page, so a column with no home here is a column nobody can explain.
 
-Entities with money attached (Client, Employee, Supplier) share the *same* wallet tab component —
+Entities with money attached (Client, Employee, Supplier) share the _same_ wallet tab component —
 balance, cashback, debt, transactions, AI insights. Build it once. See `src/shared/types/wallet.ts`.
 
 ---
@@ -373,6 +373,34 @@ Helper text or error             ← 11px; text-fg-subtle, or text-danger when i
 - Errors are specific: "SKU already exists", not "Invalid input".
 - Schemas are `zod`, colocated in the feature's `model/` folder, shared between form and API type.
 
+### 7.3.1 A number field that can be empty must actually be empty
+
+An empty `type="number"` input registered with react-hook-form reads back as `0`, not as blank.
+That is not a cosmetic problem: "no reorder point" becomes a reorder point of 0, "no discount"
+becomes a price of zero, and an empty MOQ fails a `positive()` check with an error no field on
+screen renders — the save is silently refused.
+
+**Every nullable number goes through `<NumberField>` in a `Controller`**, never
+`register(..., { setValueAs })`. Blank means `null` and stays `null`. Where the field must always
+hold a number, pass `nullable={false}` and blank reads as 0.
+
+Alongside this: **a rejected submit is never silent.** Give every field an `error` slot, and when
+`handleSubmit`'s invalid branch fires, toast as well — an error below the fold that nothing
+announces looks like a dead button.
+
+### 7.3.2 A structural choice comes first, and is a segmented control
+
+When one answer changes what the rest of the form asks for, ask it at the top of the section it
+governs, as a `<SegmentedControl>` — not a `Select`, because the user is choosing a shape of form
+and both options must be readable at once.
+
+The catalogue's case is the reference: a product is sold one way or several. In `single` mode the
+form does not ask for a variation name at all — the product's own name is the only name there is —
+and identity, pricing and stock read as the product's. Storage does not change: a single product is
+still one variation. (Shopify makes the same split, though it happens as a side effect of adding an
+option; we make it an explicit switch, because switching back discards variations and the user must
+see that first. Collapsing to one always confirms, and names what it keeps.)
+
 ### 7.4 Submitting — the modal stays open until the action finishes
 
 **A modal or detail page is never dismissed while its action is in flight, and never dismissed
@@ -404,16 +432,16 @@ Full state rules for every surface are in § 9.
 Rounded-full, 11px, medium weight, soft background + solid text of the same hue. **Text only — no
 dot, no icon inside a badge.** Sentence case.
 
-| Meaning | Tone | Examples |
-| --- | --- | --- |
-| Positive / settled | `success` | Active, Paid, Completed, In stock |
-| Needs attention | `warning` | Low stock, Pending, Expiring |
-| Failed / negative | `danger` | Overdue, Out of stock, Cancelled, Failed |
-| Informational | `info` | Scheduled, Draft sent |
-| Inert | `neutral` | Archived, Draft, Closed |
-| Product lifecycle | `primary` | `New`, `Beta` — **only** these two, only on nav items |
+| Meaning            | Tone      | Examples                                              |
+| ------------------ | --------- | ----------------------------------------------------- |
+| Positive / settled | `success` | Active, Paid, Completed, In stock                     |
+| Needs attention    | `warning` | Low stock, Pending, Expiring                          |
+| Failed / negative  | `danger`  | Overdue, Out of stock, Cancelled, Failed              |
+| Informational      | `info`    | Scheduled, Draft sent                                 |
+| Inert              | `neutral` | Archived, Draft, Closed                               |
+| Product lifecycle  | `primary` | `New`, `Beta` — **only** these two, only on nav items |
 
-Lifecycle badges (`New`, `Beta`) are the *only* yellow badges, they only appear in the sidebar, and
+Lifecycle badges (`New`, `Beta`) are the _only_ yellow badges, they only appear in the sidebar, and
 they are removed once a module is mature. Badges are never decorative.
 
 ### 8.2 Toasts
@@ -429,7 +457,7 @@ See § 9 — every data surface in the product owes the user four states, and th
 
 ## 9. Loading, empty & in-flight states
 
-Most of the time a screen is *not* showing a happy, full table. These states are the product, not an
+Most of the time a screen is _not_ showing a happy, full table. These states are the product, not an
 afterthought, and they are the first thing that drifts between screens — so they are fixed here.
 
 ### 9.1 Every data surface owes four states
@@ -437,17 +465,17 @@ afterthought, and they are the first thing that drifts between screens — so th
 A "surface" is anything that fetches: a list, a detail page, a card, a report, a chart, a dropdown
 that loads options. Each one must handle all four. A screen is not done if any of them is missing.
 
-| State | What the user sees |
-| --- | --- |
-| **Loading** | A skeleton shaped like the content that is coming |
-| **Empty** | An `EmptyState` — icon, one-line explanation, and the action that resolves it |
-| **Error** | An `EmptyState` with the actual message and a **Retry** button |
-| **Loaded** | The content |
+| State       | What the user sees                                                            |
+| ----------- | ----------------------------------------------------------------------------- |
+| **Loading** | A skeleton shaped like the content that is coming                             |
+| **Empty**   | An `EmptyState` — icon, one-line explanation, and the action that resolves it |
+| **Error**   | An `EmptyState` with the actual message and a **Retry** button                |
+| **Loaded**  | The content                                                                   |
 
 ### 9.2 Loading — skeletons, not spinners
 
 - **Page or section load → skeletons.** They mirror the layout that is coming: a table renders 8
-  skeleton rows *inside the real table chrome* (header and pagination stay put); KPI cards render
+  skeleton rows _inside the real table chrome_ (header and pagination stay put); KPI cards render
   card-shaped blocks; a chart renders a block the size of its plot area.
 - **Never a centered spinner for a page load.** A spinner tells the user nothing about what is
   arriving and makes the layout jump when it does.
@@ -464,12 +492,12 @@ that loads options. Each one must handle all four. A screen is not done if any o
 
 Getting this wrong is the most common way a screen feels broken. These are not interchangeable:
 
-| Situation | Message | Action offered |
-| --- | --- | --- |
-| **Never had data** | "No products yet" + what this screen is for | The primary create action, repeated |
-| **Filters excluded everything** | "No products match these filters" | **Clear filters** — *never* the create action |
-| **No permission** | "You don't have access to this screen" | None; tell them to ask an administrator |
-| **Not run yet** (heavy report) | "Choose your filters, then press Apply" | None; the Apply button is already on screen |
+| Situation                       | Message                                     | Action offered                                |
+| ------------------------------- | ------------------------------------------- | --------------------------------------------- |
+| **Never had data**              | "No products yet" + what this screen is for | The primary create action, repeated           |
+| **Filters excluded everything** | "No products match these filters"           | **Clear filters** — _never_ the create action |
+| **No permission**               | "You don't have access to this screen"      | None; tell them to ask an administrator       |
+| **Not run yet** (heavy report)  | "Choose your filters, then press Apply"     | None; the Apply button is already on screen   |
 
 - The filtered-empty state must be distinguishable from the never-had-data state. Offering
   "+ Add product" to someone whose search simply matched nothing is a bug.
@@ -511,7 +539,7 @@ The rule that matters most, restated because it is the one most often broken:
 
 ## 10. Charts
 
-Charts follow the same colour discipline as the rest of the UI: the brand carries the *main* series,
+Charts follow the same colour discipline as the rest of the UI: the brand carries the _main_ series,
 everything else is a supporting neutral or a distinct hue.
 
 ### 10.1 Series colours — a separate, validated palette
@@ -525,16 +553,16 @@ Series colours come from this validated categorical palette. **The order is the 
 safety mechanism — never re-order it.** (Leading with the gold to feel more on-brand was tried and
 failed the normal-vision floor: magenta↔orange ΔE 12.9 against a required 15.)
 
-| Slot | Hue | Light | Dark |
-| --- | --- | --- | --- |
-| 1 | blue | `#2a78d6` | `#3987e5` |
-| 2 | orange | `#eb6834` | `#d95926` |
-| 3 | aqua | `#1baf7a` | `#199e70` |
-| 4 | gold | `#eda100` | `#c98500` |
-| 5 | magenta | `#e87ba4` | `#d55181` |
-| 6 | green | `#008300` | `#008300` |
-| 7 | violet | `#4a3aa7` | `#9085e9` |
-| 8 | red | `#e34948` | `#e66767` |
+| Slot | Hue     | Light     | Dark      |
+| ---- | ------- | --------- | --------- |
+| 1    | blue    | `#2a78d6` | `#3987e5` |
+| 2    | orange  | `#eb6834` | `#d95926` |
+| 3    | aqua    | `#1baf7a` | `#199e70` |
+| 4    | gold    | `#eda100` | `#c98500` |
+| 5    | magenta | `#e87ba4` | `#d55181` |
+| 6    | green   | `#008300` | `#008300` |
+| 7    | violet  | `#4a3aa7` | `#9085e9` |
+| 8    | red     | `#e34948` | `#e66767` |
 
 Live in `src/shared/lib/chart.ts` via `useChartTheme()`. Assign slots **in order, never cycled**.
 A ninth series is never a new hue — fold the tail into "Other", or facet.
@@ -601,8 +629,8 @@ search field, which means a combobox, which is a different component.
 
 ### 11.3 Calendar
 
-`Calendar` is **three-step: days → months → years.** The header title is a button that zooms *out*
-one step; picking a value zooms back *in*. Arrows step by month, year, or 12-year page depending on
+`Calendar` is **three-step: days → months → years.** The header title is a button that zooms _out_
+one step; picking a value zooms back _in_. Arrows step by month, year, or 12-year page depending on
 the level. This is the whole navigation model — there is no year dropdown, and no scrolling list of
 months.
 
@@ -640,7 +668,7 @@ soft-brand fill when a custom range is the active selection.
 `DatePicker` is one date, on the same popover and the same three-step calendar. **Never a native
 `<input type="date">`** — its popup is the browser's, not ours, and it looks different on every OS.
 
-Unlike the range picker there is no Apply: with one date the pick *is* the decision, so it commits
+Unlike the range picker there is no Apply: with one date the pick _is_ the decision, so it commits
 and closes. Dates outside the allowed window are dimmed, not hidden.
 
 ### 11.6 Period filters

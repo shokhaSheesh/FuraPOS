@@ -136,9 +136,7 @@ describe('data store', () => {
           lowStockThreshold: null,
           shelfAddress: null,
           moq: null,
-          stock: 0,
-          stockByLocation: [],
-          imageUrl: null,
+          stockByLocation: [{ locationId: 'loc-1', quantity: 4 }],
           status: 'active',
         },
         {
@@ -153,9 +151,10 @@ describe('data store', () => {
           lowStockThreshold: null,
           shelfAddress: null,
           moq: null,
-          stock: 0,
-          stockByLocation: [],
-          imageUrl: null,
+          stockByLocation: [
+            { locationId: 'loc-1', quantity: 4 },
+            { locationId: 'loc-3', quantity: 6 },
+          ],
           status: 'active',
         },
       ],
@@ -169,8 +168,14 @@ describe('data store', () => {
       'Test bracket — Left',
       'Test bracket — Right',
     ])
-    // Stock never comes from the product form; it arrives via goods receipt.
-    expect(product.variations.every((v) => v.stock === 0)).toBe(true)
+    // Opening stock is per location, and `stock` is always the sum of it.
+    expect(product.variations[0]!.stock).toBe(4)
+    expect(product.variations[1]!.stock).toBe(10)
+    // Location names are resolved on write so screens never have to join.
+    expect(product.variations[1]!.stockByLocation.map((r) => r.locationName)).toEqual([
+      'Central warehouse',
+      'Shop — Yunusobod',
+    ])
   })
 
   it('removes a variation from the catalogue', () => {

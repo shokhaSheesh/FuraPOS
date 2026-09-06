@@ -1,26 +1,39 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { http } from '@/shared/lib/http'
-import type { ListQuery, Paginated } from '@/shared/types'
-import type { Sale, SaleDelivery, SaleLine, SaleStatus } from '../model/sale'
+import { useMemo } from 'react'
+import { useDataStore, type Client, type CreateSaleInput } from '@/data/store'
+import { matches, paginate } from '@/data/query'
+import type { ListQuery } from '@/shared/types'
+import type { Sale, SaleStatus } from '../model/sale'
 
-export const saleKeys = {
-  all: ['sales'] as const,
-  list: (query: ListQuery) => [...saleKeys.all, 'list', query] as const,
-}
+export type { Client, CreateSaleInput }
 
-export interface Client {
-  id: string
-  name: string
-  phone: string
-  debt: number
+/**
+ * Reads the in-memory store. No network, so nothing loads and nothing fails —
+ * the hooks keep the shape the screens already expect.
+ */
+
+function filterSales(all: Sale[], query: ListQuery, includeDeleted = false) {
+  return all.filter((sale) => {
+    // A cancelled sale must not sit in the ledger inflating revenue.
+    if (!query.status && !includeDeleted && sale.status === 'deleted') return false
+    if (query.status && sale.status !== query.status) return false
+    if (query.from && sale.createdAt.slice(0, 10) < String(query.from)) return false
+    if (query.to && sale.createdAt.slice(0, 10) > String(query.to)) return false
+    return matches([sale.number, sale.clientName, sale.locationName, sale.sellerName], query.search)
+  })
 }
 
 export function useSales(query: ListQuery) {
-  return useQuery({
-    queryKey: saleKeys.list(query),
-    queryFn: () => http.get<Paginated<Sale>>('/sales', query),
-    placeholderData: (previous) => previous,
-  })
+  const sales = useDataStore((s) => s.sales)
+  const data = useMemo(
+    () => paginate([...filterSales(sales, query)].reverse(), query),
+    [sales, query],
+  )
+  return { data, isLoading: false }
+}
+
+export function useSale(id: string) {
+  const sale = useDataStore((s) => s.sales.find((item) => item.id === id))
+  return { data: sale, isLoading: false, isError: !sale }
 }
 
 export interface SalesSummary {
@@ -36,62 +49,71 @@ export interface SalesSummary {
 }
 
 export function useSalesSummary(query: ListQuery) {
-  return useQuery({
-    queryKey: [...saleKeys.all, 'summary', query],
-    queryFn: () => http.get<SalesSummary>('/sales/summary', query),
-    placeholderData: (previous) => previous,
-  })
-}
-
-export function useSale(id: string) {
-  return useQuery({
-    queryKey: [...saleKeys.all, 'detail', id],
-    queryFn: () => http.get<Sale>(`/sales/${id}`),
-  })
-}
-
-/** Moves a sale along its lifecycle, or records a payment against it. */
-export function useUpdateSale(id: string) {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (patch: { status?: SaleStatus; paid?: number }) =>
-      http.patch<Sale>(`/sales/${id}`, patch),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: saleKeys.all }),
-  })
+  const sales = useDataStore((s) => s.sales)
+  const data = useMemo<SalesSummary>(() => {
+    const scoped = filterSales(sales, query)
+    const withDebt = scoped.filter((s) => s.debt > 0)
+    const withDelivery = scoped.filter((s) => s.delivery)
+    return {
+      count: scoped.length,
+      total: scoped.reduce((sum, s) => sum + s.total, 0),
+      units: scoped.reduce((sum, s) => sum + s.lines.reduce((n, l) => n + l.quantity, 0), 0),
+      debtCount: withDebt.length,
+      debtTotal: withDebt.reduce((sum, s) => sum + s.debt, 0),
+      deliveryCount: withDelivery.length,
+      deliveryTotal: withDelivery.reduce((sum, s) => sum + s.deliveryCost, 0),
+      clients: new Set(scoped.map((s) => s.clientId).filter(Boolean)).size,
+      sellers: new Set(scoped.map((s) => s.sellerName)).size,
+    }
+  }, [sales, query])
+  return { data, isLoading: false }
 }
 
 export function useSaleStatusCounts(query: ListQuery) {
-  return useQuery({
-    queryKey: [...saleKeys.all, 'status-counts', query],
-    queryFn: () => http.get<Record<string, number>>('/sales/status-counts', query),
-    placeholderData: (previous) => previous,
-  })
+  const sales = useDataStore((s) => s.sales)
+  const data = useMemo(() => {
+    const scoped = filterSales(sales, { ...query, status: undefined }, true)
+    const counts: Record<string, number> = {}
+    for (const sale of scoped) counts[sale.status] = (counts[sale.status] ?? 0) + 1
+    // "All" excludes deleted, matching what the ledger actually shows.
+    counts.all = scoped.filter((sale) => sale.status !== 'deleted').length
+    return counts
+  }, [sales, query])
+  return { data, isLoading: false }
 }
 
 export function useClients(search: string) {
-  return useQuery({
-    queryKey: ['clients', search],
-    queryFn: () => http.get<Paginated<Client>>('/clients', { search, pageSize: 20 }),
-  })
+  const clients = useDataStore((s) => s.clients)
+  const data = useMemo(
+    () => ({ items: clients.filter((c) => matches([c.name, c.phone], search)) }),
+    [clients, search],
+  )
+  return { data, isLoading: false }
 }
 
-export interface CreateSalePayload {
-  clientId: string | null
-  locationId: string
-  paymentMethod: Sale['paymentMethod']
-  channel: Sale['channel']
-  comment: string
-  paid: number
-  lines: SaleLine[]
-  delivery: SaleDelivery | null
-  expiresAt: string | null
-  status: SaleStatus
-}
+/* --- writes -------------------------------------------------------------- */
 
 export function useCreateSale() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (payload: CreateSalePayload) => http.post<Sale>('/sales', payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: saleKeys.all }),
-  })
+  const create = useDataStore((s) => s.createSale)
+  return {
+    isPending: false,
+    variables: undefined as CreateSaleInput | undefined,
+    mutate: (input: CreateSaleInput, opts?: { onSuccess?: (sale: Sale) => void }) => {
+      opts?.onSuccess?.(create(input))
+    },
+  }
+}
+
+export function useUpdateSale(id: string) {
+  const update = useDataStore((s) => s.updateSale)
+  return {
+    isPending: false,
+    mutate: (
+      patch: { status?: SaleStatus; paid?: number },
+      opts?: { onSuccess?: () => void },
+    ) => {
+      update(id, patch)
+      opts?.onSuccess?.()
+    },
+  }
 }

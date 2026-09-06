@@ -173,8 +173,7 @@ export default function NewSalePage() {
                 ? paths.sales.ordersByStatus('postponed')
                 : paths.sales.orders,
           )
-        },
-        onError: (error) => toast.error(error.message),
+        }
       },
     )
   }

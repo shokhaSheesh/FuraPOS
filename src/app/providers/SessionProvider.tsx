@@ -1,6 +1,4 @@
 import { createContext, use, useMemo, type ReactNode } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { http } from '@/shared/lib/http'
 import type { Id } from '@/shared/types'
 
 export interface CurrentUser {
@@ -23,12 +21,22 @@ interface SessionContextValue {
 
 const SessionContext = createContext<SessionContextValue | null>(null)
 
+const CURRENT_USER: CurrentUser = {
+  id: 'usr-1',
+  name: 'Akhmet Dauletmuratov',
+  email: 'akhmet@fura.uz',
+  avatarUrl: null,
+  role: { id: 'role-1', name: 'Owner' },
+  company: { id: 'cmp-1', name: 'Fura Retail', plan: 'pro' },
+  locationIds: ['loc-1', 'loc-2', 'loc-3'],
+  // '*' = everything. Swap for a narrow list to exercise the permission guards.
+  permissions: ['*'],
+}
+
 export function SessionProvider({ children }: { children: ReactNode }) {
-  const { data, isLoading } = useQuery({
-    queryKey: ['session'],
-    queryFn: () => http.get<CurrentUser>('/me'),
-    staleTime: Infinity,
-  })
+  /** No auth yet: a fixed user with every permission. */
+  const data = CURRENT_USER
+  const isLoading = false
 
   const value = useMemo<SessionContextValue>(() => {
     const granted = new Set(data?.permissions ?? [])

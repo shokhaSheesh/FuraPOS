@@ -1,14 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Search } from 'lucide-react'
-import { useQuery } from '@tanstack/react-query'
-import { http } from '@/shared/lib/http'
 import { Input } from '@/shared/ui/Input'
 import { Skeleton } from '@/shared/ui/Skeleton'
 import { ProductThumb } from '@/shared/components/ProductThumb'
 import { cn } from '@/shared/lib/cn'
 import { formatMoney, formatNumber } from '@/shared/lib/format'
-import type { Paginated } from '@/shared/types'
 import type { VariationRow } from '@/features/products/model/product'
+import { useVariations } from '@/features/products/api/products'
 
 /**
  * Searchable product picker. `Select` is for a short fixed list; a catalog of
@@ -26,16 +24,11 @@ export function ProductPicker({ onPick }: { onPick: (variation: VariationRow) =>
     return () => clearTimeout(timer)
   }, [term])
 
-  const { data, isFetching } = useQuery({
-    queryKey: ['variation-picker', debounced],
-    queryFn: () =>
-      http.get<Paginated<VariationRow>>('/variations', {
-        search: debounced,
-        pageSize: 8,
-        status: 'active',
-      }),
-    enabled: debounced.length > 0,
-  })
+  const { data } = useVariations(
+    { search: debounced, pageSize: 8, status: 'active' },
+    { enabled: debounced.length > 0 },
+  )
+  const isFetching = false
 
   const results = useMemo(() => data?.items ?? [], [data])
   useEffect(() => setHighlight(0), [debounced])

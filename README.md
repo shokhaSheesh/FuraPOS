@@ -11,14 +11,9 @@ npm install
 npm run dev        # http://localhost:5173
 ```
 
-There is no backend yet. Every request is answered in the browser by
-[MSW](https://mswjs.io) using the seeded data in `src/mocks/`. To point at a real API:
-
-```bash
-# .env
-VITE_USE_MOCKS=false
-VITE_API_BASE_URL=https://api.example.com
-```
+**There is no backend and no API layer.** This is a design build: every screen reads an in-memory
+dataset in [src/data/](src/data/) through a Zustand store. No fetch, no service worker, no requests
+— open the Network tab and it stays empty.
 
 ## Scripts
 
@@ -40,7 +35,7 @@ src/
 │   └── router/          Route tree, permission guards, error boundary
 ├── features/            One folder per module of the IA
 │   └── <module>/
-│       ├── api/         TanStack Query hooks + query keys
+│       ├── api/         Synchronous hooks over the data store
 │       ├── components/  Screen-specific components (incl. table column defs)
 │       ├── model/       Types + zod schemas + derived helpers
 │       └── pages/       Route components (default export, lazy-loaded)
@@ -52,7 +47,7 @@ src/
 │   ├── lib/             http client, formatters, cn
 │   ├── types/           Cross-cutting domain types (pagination, wallet)
 │   └── ui/              Primitives: Button, Input, Badge, Card, Skeleton
-├── mocks/               MSW handlers + seed data — the API contract
+├── data/                seed dataset + in-memory store — the only data source
 └── styles/              tokens.css (the only place colors are defined)
 ```
 

@@ -1,13 +1,57 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { http } from '@/shared/lib/http'
-import type { ListQuery, Paginated } from '@/shared/types'
-import type { Product, VariationRow } from '../model/product'
+import { useMemo } from 'react'
+import { useDataStore, type ProductInput } from '@/data/store'
+import { matches, paginate } from '@/data/query'
+import { USD_RATE } from '@/data/seed'
+import type { ListQuery } from '@/shared/types'
+import { costInUzs, effectivePrice, type VariationRow } from '../model/product'
 
-export const productKeys = {
-  all: ['products'] as const,
-  variations: (query: ListQuery) => [...productKeys.all, 'variations', query] as const,
-  list: (query: ListQuery) => [...productKeys.all, 'list', query] as const,
-  detail: (id: string) => [...productKeys.all, 'detail', id] as const,
+/**
+ * Everything here reads the in-memory store directly. There is no network, so
+ * nothing is ever loading and nothing can fail — the hooks keep the shape the
+ * screens already expect so they did not have to change.
+ */
+
+function filterVariations(all: VariationRow[], query: ListQuery) {
+  return all.filter((v) => {
+    if (query.status && v.status !== query.status) return false
+    if (query.stock === 'zero' && v.stock !== 0) return false
+    if (query.stock === 'low') {
+      if (v.lowStockThreshold === null || v.stock === 0 || v.stock > v.lowStockThreshold) {
+        return false
+      }
+    }
+    return matches(
+      [v.fullName, v.sku, v.barcode, v.brandName, v.description, v.vehicleMake],
+      query.search,
+    )
+  })
+}
+
+export function useVariations(query: ListQuery, options: { enabled?: boolean } = {}) {
+  const variations = useDataStore((s) => s.variations)
+  const data = useMemo(() => {
+    if (options.enabled === false) return undefined
+    return paginate(filterVariations(variations, query), query)
+  }, [variations, query, options.enabled])
+  return { data, isLoading: false }
+}
+
+export function useProducts(query: ListQuery, options: { enabled?: boolean } = {}) {
+  const products = useDataStore((s) => s.products)
+  const data = useMemo(() => {
+    if (options.enabled === false) return undefined
+    const filtered = products.filter((p) => {
+      if (query.status && p.status !== query.status) return false
+      return matches([p.name, p.description, p.brandName, p.vehicleMake], query.search)
+    })
+    return paginate(filtered, query)
+  }, [products, query, options.enabled])
+  return { data, isLoading: false }
+}
+
+export function useProduct(id: string) {
+  const product = useDataStore((s) => s.products.find((p) => p.id === id))
+  return { data: product, isLoading: false, isError: !product }
 }
 
 export interface CatalogSummary {
@@ -22,54 +66,78 @@ export interface CatalogSummary {
   withImage: number
 }
 
-/** The catalogue: one row per sellable variation. */
-export function useVariations(query: ListQuery, options: { enabled?: boolean } = {}) {
-  return useQuery({
-    queryKey: productKeys.variations(query),
-    queryFn: () => http.get<Paginated<VariationRow>>('/variations', query),
-    placeholderData: (previous) => previous,
-    ...options,
-  })
-}
-
-/** The parent view: one row per product. */
-export function useProducts(query: ListQuery, options: { enabled?: boolean } = {}) {
-  return useQuery({
-    queryKey: productKeys.list(query),
-    queryFn: () => http.get<Paginated<Product>>('/products', query),
-    placeholderData: (previous) => previous,
-    ...options,
-  })
-}
-
-export function useProduct(id: string) {
-  return useQuery({
-    queryKey: productKeys.detail(id),
-    queryFn: () => http.get<Product>(`/products/${id}`),
-  })
-}
-
 export function useCatalogSummary(query: ListQuery) {
-  return useQuery({
-    queryKey: [...productKeys.all, 'summary', query],
-    queryFn: () => http.get<CatalogSummary>('/variations/summary', query),
-    placeholderData: (previous) => previous,
-  })
+  const variations = useDataStore((s) => s.variations)
+  const data = useMemo<CatalogSummary>(() => {
+    const scoped = filterVariations(variations, query)
+    return {
+      total: scoped.length,
+      products: new Set(scoped.map((v) => v.productId)).size,
+      active: scoped.filter((v) => v.status === 'active').length,
+      archived: scoped.filter((v) => v.status === 'archived').length,
+      quantity: scoped.reduce((sum, v) => sum + v.stock, 0),
+      saleValue: scoped.reduce((sum, v) => sum + v.stock * effectivePrice(v), 0),
+      costValue: scoped.reduce((sum, v) => sum + v.stock * costInUzs(v, USD_RATE), 0),
+      zeroStock: scoped.filter((v) => v.stock === 0).length,
+      withImage: scoped.filter((v) => v.imageUrl).length,
+    }
+  }, [variations, query])
+  return { data, isLoading: false }
 }
 
 export function useCatalogStatusCounts(query: ListQuery) {
-  return useQuery({
-    queryKey: [...productKeys.all, 'status-counts', query],
-    queryFn: () => http.get<Record<string, number>>('/variations/status-counts', query),
-    placeholderData: (previous) => previous,
-  })
+  const variations = useDataStore((s) => s.variations)
+  const data = useMemo(() => {
+    // Counts ignore the status filter itself, or every chip but the active one
+    // would read zero.
+    const scoped = filterVariations(variations, { ...query, status: undefined })
+    const counts: Record<string, number> = { all: scoped.length }
+    for (const v of scoped) counts[v.status] = (counts[v.status] ?? 0) + 1
+    return counts
+  }, [variations, query])
+  return { data, isLoading: false }
 }
 
+export function useCategories() {
+  const items = useDataStore((s) => s.categories)
+  return { data: { items }, isLoading: false }
+}
+
+export function useBrands() {
+  const items = useDataStore((s) => s.brands)
+  return { data: { items }, isLoading: false }
+}
+
+/* --- writes -------------------------------------------------------------- */
+
 export function useDeleteVariation() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (id: string) => http.delete<void>(`/variations/${id}`),
-    // No optimistic removal: the row goes only once the server confirms.
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: productKeys.all }),
-  })
+  const remove = useDataStore((s) => s.deleteVariation)
+  return {
+    isPending: false,
+    mutate: (id: string, opts?: { onSuccess?: () => void }) => {
+      remove(id)
+      opts?.onSuccess?.()
+    },
+  }
+}
+
+export function useCreateProduct() {
+  const create = useDataStore((s) => s.createProduct)
+  return {
+    isPending: false,
+    mutate: (input: ProductInput, opts?: { onSuccess?: (p: ReturnType<typeof create>) => void }) => {
+      opts?.onSuccess?.(create(input))
+    },
+  }
+}
+
+export function useUpdateProduct(id: string) {
+  const update = useDataStore((s) => s.updateProduct)
+  return {
+    isPending: false,
+    mutate: (input: ProductInput, opts?: { onSuccess?: () => void }) => {
+      update(id, input)
+      opts?.onSuccess?.()
+    },
+  }
 }

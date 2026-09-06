@@ -111,9 +111,9 @@ These are the structural ideas worth carrying into a fresh build, not just cosme
   OX and are cut from this build. The AI/MCP connector in particular is worth revisiting later —
   letting a business point Claude read-only at its own sales/stock/client data via a copyable
   server URL and a scoped token would be a genuine differentiator — but it is not in scope now.
-- No live backend — build against mocked/seeded data structured to match the entities above (Sale,
-  Product, Category, Location, Employee, Supplier, Client, Campaign, Report, Integration, Webhook)
-  so a real API can be swapped in later without restructuring the UI.
+- **No backend, and no API layer at all.** This build is a design deliverable: the real product is
+  not this codebase. All data lives in `src/data/` and is held in memory by a Zustand store, read
+  synchronously. There is no HTTP client, no fetch, no service worker and no request caching.
 
 ## Working in this codebase
 
@@ -139,8 +139,10 @@ Conventions that are load-bearing — follow them rather than inventing per-scre
 - **Overlays are ours.** Dropdowns, date pickers and menus all build on `shared/ui/Popover`;
   `Select`, `Calendar` (three-step days → months → years) and `DateRangePicker` are the components.
   Never a native `<select>`, never a stock library theme — see DESIGN_RULES § 11.
-- **All HTTP goes through `src/shared/lib/http.ts`.** All money/date/number rendering goes through
-  `src/shared/lib/format.ts`.
+- **Data comes from `src/data/`.** `store.ts` holds it and owns every write; `query.ts` has the
+  list helpers. Feature `api/` folders are thin synchronous hooks over that store — they keep the
+  `{ data, isLoading }` and `{ mutate, isPending }` shapes so screens read the same either way.
+  All money/date/number rendering goes through `src/shared/lib/format.ts`.
 - **Charts do not use the brand palette.** Series colours come from the validated categorical
   palette in `src/shared/lib/chart.ts` — brand yellow fails contrast as a mark (1.48:1 on white).
   Never re-order it, and never eyeball a change: run the dataviz palette validator.
@@ -148,8 +150,8 @@ Conventions that are load-bearing — follow them rather than inventing per-scre
   Tailwind palette classes (`slate-700`) in components — use the semantic tokens (`bg-surface`,
   `text-fg-muted`, `border-border`). Brand yellow `#FFCB00` always carries near-black text, and never
   means "warning". Chrome and text are true neutrals; navy is the `info` tone only.
-- **Mock handlers in `src/mocks/` are the API contract.** Changing a screen's data shape means
-  updating the handler and its test — that file is what the backend team gets handed.
+- **`src/data/seed.ts` is the dataset.** Changing a screen's data shape means changing the seed and
+  its test.
 
 ## Known open questions (ask the user, don't guess)
 

@@ -13,7 +13,7 @@ import { useListQuery } from '@/shared/hooks/useListQuery'
 import { useSession } from '@/app/providers/SessionProvider'
 import { paths } from '@/shared/config/paths'
 import { downloadCsv } from '@/shared/lib/csv'
-import { USD_RATE } from '@/mocks/seed'
+import { USD_RATE } from '@/data/seed'
 import {
   useCatalogStatusCounts,
   useCatalogSummary,
@@ -81,8 +81,7 @@ export default function ProductsPage() {
       onSuccess: () => {
         toast.success(`${pendingDelete.name} deleted`)
         setPendingDelete(null)
-      },
-      onError: (error) => toast.error(error.message),
+      }
     })
   }
 

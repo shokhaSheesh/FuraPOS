@@ -47,9 +47,17 @@ function readStoredVisibility(
   const defaults = Object.fromEntries((initialHidden ?? []).map((id) => [id, false]))
   if (!storageKey) return defaults
   try {
-    const stored = localStorage.getItem(`cols:${storageKey}`)
-    // A stored choice is the user's; defaults only apply on a first visit.
-    return stored ? (JSON.parse(stored) as ColumnVisibilityState) : defaults
+    const stored = JSON.parse(
+      localStorage.getItem(`cols:${storageKey}`) ?? 'null',
+    ) as ColumnVisibilityState | null
+    if (!stored) return defaults
+    /**
+     * Defaults first, the stored choice on top. A column added after the user
+     * last touched this table is absent from their stored state, and without
+     * this it would appear regardless of its default — which is how Stock got
+     * pushed off-screen by four columns that were supposed to be hidden.
+     */
+    return { ...defaults, ...stored }
   } catch {
     return defaults
   }

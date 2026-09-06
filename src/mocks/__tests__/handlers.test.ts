@@ -172,6 +172,22 @@ describe('mock API', () => {
     expect(plain.all).toBe(ledger.total)
   })
 
+  /**
+   * A wildcard route registered before a literal one swallows it: ':id' was
+   * matching "summary" and returning 404. Every literal endpoint that sits
+   * under a wildcard path is asserted here so that cannot recur silently.
+   */
+  it.each([
+    '/variations/summary',
+    '/variations/status-counts',
+    '/sales/summary',
+    '/sales/status-counts',
+  ])('serves %s rather than letting a wildcard route swallow it', async (path) => {
+    const response = await fetch(`http://localhost/api${path}`)
+    expect(response.status).toBe(200)
+    expect(await response.json()).toBeTypeOf('object')
+  })
+
   it('refuses a sale with no lines', async () => {
     const response = await fetch('http://localhost/api/sales', {
       method: 'POST',

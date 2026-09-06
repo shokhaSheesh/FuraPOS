@@ -59,12 +59,6 @@ export const catalogHandlers = [
     return HttpResponse.json(product)
   }),
 
-  http.get(api('/variations/:id'), ({ params }) => {
-    const variation = variations.find((item) => item.id === params.id)
-    if (!variation) return HttpResponse.json({ message: 'Variation not found' }, { status: 404 })
-    return HttpResponse.json(variation)
-  }),
-
   /** Counts for the filter chips, ignoring the status filter itself. */
   http.get(api('/variations/status-counts'), ({ request }) => {
     const u = url(request)
@@ -95,6 +89,14 @@ export const catalogHandlers = [
       zeroStock: scoped.filter((v) => v.stock === 0).length,
       withImage: scoped.filter((v) => v.imageUrl).length,
     })
+  }),
+
+  // Registered AFTER the literal routes: ':id' is a wildcard and would
+  // otherwise swallow /variations/summary and /variations/status-counts.
+  http.get(api('/variations/:id'), ({ params }) => {
+    const variation = variations.find((item) => item.id === params.id)
+    if (!variation) return HttpResponse.json({ message: 'Variation not found' }, { status: 404 })
+    return HttpResponse.json(variation)
   }),
 
   http.delete(api('/variations/:id'), async ({ params }) => {

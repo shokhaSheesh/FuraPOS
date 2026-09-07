@@ -45,7 +45,15 @@ interface CatalogState {
    * Advances a transfer and moves the stock that goes with it. Returns the
    * reason it could not, so the screen can say so rather than failing quietly.
    */
-  setTransferStatus: (id: string, to: TransferStatus) => { ok: true } | { ok: false; error: string }
+  setTransferStatus: (
+    id: string,
+    to: TransferStatus,
+    /**
+     * Per-line quantities for this step, keyed by line id: what is actually
+     * being sent, or what actually arrived. Omitted means "all of it".
+     */
+    quantities?: Record<string, number>,
+  ) => { ok: true } | { ok: false; error: string }
 }
 
 export interface CreateTransferInput {
@@ -332,6 +340,8 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       lines: input.lines,
       comment: input.comment || null,
       createdBy: 'Akhmet Dauletmuratov',
+      sentBy: null,
+      receivedBy: null,
       createdAt: now,
       sentAt: null,
       receivedAt: null,
@@ -345,15 +355,22 @@ export const useDataStore = create<CatalogState>((set, get) => ({
     return get().transfers.find((t) => t.id === transfer.id) ?? transfer
   },
 
-  setTransferStatus: (id, to) => {
+  setTransferStatus: (id, to, quantities) => {
     const transfer = get().transfers.find((t) => t.id === id)
     if (!transfer) return { ok: false, error: 'That transfer no longer exists' }
 
-    /** Moves every line by `delta` at one end of the transfer. */
-    const move = (locationId: string, locationName: string, sign: 1 | -1) => {
+    /** Moves the given per-line amounts at one end of the transfer. */
+    const move = (
+      locationId: string,
+      locationName: string,
+      sign: 1 | -1,
+      amount: (line: TransferLine) => number,
+    ) => {
       const byVariation = new Map<string, number>()
-      for (const line of transfer.lines) {
-        byVariation.set(line.variationId, (byVariation.get(line.variationId) ?? 0) + line.quantity)
+      for (const line of lines) {
+        const quantity = amount(line)
+        if (quantity <= 0) continue
+        byVariation.set(line.variationId, (byVariation.get(line.variationId) ?? 0) + quantity)
       }
       set({
         products: get().products.map((product) => {
@@ -387,29 +404,55 @@ export const useDataStore = create<CatalogState>((set, get) => ({
     }
 
     const now = new Date().toISOString()
+    const actor = 'Akhmet Dauletmuratov'
+    let lines = transfer.lines
 
     if (to === 'in_transit') {
       if (transfer.status !== 'draft') return { ok: false, error: 'This transfer has already left' }
+
+      // What is actually being sent — the warehouse may not have found all of
+      // what was asked for. Defaults to the full request.
+      lines = transfer.lines.map((line) => ({
+        ...line,
+        sentQuantity: Math.max(0, quantities?.[line.id] ?? line.requestedQuantity),
+      }))
+
+      const nothing = lines.every((line) => (line.sentQuantity ?? 0) === 0)
+      if (nothing) return { ok: false, error: 'Nothing to send — every line is zero' }
+
       // Checked against live stock, not against what was available when the
       // draft was written — a sale may have taken the last one since.
-      const short = transfer.lines.find((line) => {
+      const short = lines.find((line) => {
         const row = get().variations.find((v) => v.id === line.variationId)
-        return !row || quantityAt(row.stockByLocation, transfer.fromLocationId) < line.quantity
+        return (
+          !row ||
+          quantityAt(row.stockByLocation, transfer.fromLocationId) < (line.sentQuantity ?? 0)
+        )
       })
       if (short) {
         return {
           ok: false,
-          error: `${transfer.fromLocationName} no longer has ${short.quantity} × ${short.name}`,
+          error: `${transfer.fromLocationName} no longer has ${short.sentQuantity} × ${short.name}`,
         }
       }
-      move(transfer.fromLocationId, transfer.fromLocationName, -1)
+      move(transfer.fromLocationId, transfer.fromLocationName, -1, (line) => line.sentQuantity ?? 0)
     }
 
     if (to === 'received') {
       if (transfer.status !== 'in_transit') {
         return { ok: false, error: 'Only a transfer in transit can be received' }
       }
-      move(transfer.toLocationId, transfer.toLocationName, 1)
+      // What actually turned up. Anything sent but not received never arrives
+      // anywhere: it left the source shelf and is simply gone, which is exactly
+      // what the shortfall on the document records.
+      lines = transfer.lines.map((line) => ({
+        ...line,
+        receivedQuantity: Math.min(
+          line.sentQuantity ?? 0,
+          Math.max(0, quantities?.[line.id] ?? line.sentQuantity ?? 0),
+        ),
+      }))
+      move(transfer.toLocationId, transfer.toLocationName, 1, (line) => line.receivedQuantity ?? 0)
     }
 
     if (to === 'cancelled') {
@@ -419,7 +462,12 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       // Goods already on the truck go back where they came from; a draft never
       // moved anything, so there is nothing to undo.
       if (transfer.status === 'in_transit') {
-        move(transfer.fromLocationId, transfer.fromLocationName, 1)
+        move(
+          transfer.fromLocationId,
+          transfer.fromLocationName,
+          1,
+          (line) => line.sentQuantity ?? 0,
+        )
       }
     }
 
@@ -429,8 +477,11 @@ export const useDataStore = create<CatalogState>((set, get) => ({
           ? {
               ...t,
               status: to,
+              lines,
               sentAt: to === 'in_transit' ? now : t.sentAt,
+              sentBy: to === 'in_transit' ? actor : t.sentBy,
               receivedAt: to === 'received' ? now : t.receivedAt,
+              receivedBy: to === 'received' ? actor : t.receivedBy,
               updatedAt: now,
             }
           : t,

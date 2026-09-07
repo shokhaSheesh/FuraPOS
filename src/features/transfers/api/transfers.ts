@@ -113,10 +113,10 @@ export function useSetTransferStatus(id: string) {
   return {
     isPending: false,
     mutate: (
-      to: TransferStatus,
+      input: { to: TransferStatus; quantities?: Record<string, number> },
       opts?: { onSuccess?: () => void; onError?: (message: string) => void },
     ) => {
-      const result = setStatus(id, to)
+      const result = setStatus(id, input.to, input.quantities)
       if (result.ok) opts?.onSuccess?.()
       else opts?.onError?.(result.error)
     },

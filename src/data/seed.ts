@@ -315,8 +315,27 @@ export const transfers: Transfer[] = Array.from({ length: 14 }, (_, index) => {
   const to = pick(locations.filter((location) => location.id !== from.id))
 
   const createdAt = new Date(Date.now() - between(1, 60) * 86_400_000)
+  // Only parts the source actually carries, so a seeded draft is sendable and
+  // the "At source" column is not a wall of zeroes.
+  const stockedHere = variations.filter((variation) =>
+    variation.stockByLocation.some((row) => row.locationId === from.id && row.quantity > 0),
+  )
+
   const lines = Array.from({ length: between(1, 5) }, (_, lineIndex) => {
-    const variation = pick(variations)
+    const variation = pick(stockedHere.length ? stockedHere : variations)
+    const here = variation.stockByLocation.find((row) => row.locationId === from.id)?.quantity ?? 1
+    const requested = between(1, Math.max(1, Math.min(12, here)))
+    // The warehouse usually finds everything, occasionally not; and most of
+    // what ships arrives, but not always — which is the point of tracking all
+    // three separately.
+    const sent = status === 'draft' ? null : random() > 0.85 ? between(1, requested) : requested
+    const received =
+      status === 'received'
+        ? random() > 0.9
+          ? Math.max(0, (sent ?? 0) - between(1, 2))
+          : sent
+        : null
+
     return {
       id: `trl-${sequence}-${lineIndex + 1}`,
       variationId: variation.id,
@@ -325,7 +344,12 @@ export const transfers: Transfer[] = Array.from({ length: 14 }, (_, index) => {
       name: variation.fullName,
       imageUrl: variation.imageUrl,
       unit: variation.unit,
-      quantity: between(1, 12),
+      requestedQuantity: requested,
+      sentQuantity: sent,
+      receivedQuantity: received,
+      unitCost: variation.costPrice,
+      costCurrency: variation.costCurrency,
+      unitPrice: variation.salePrice,
     }
   })
 
@@ -345,6 +369,8 @@ export const transfers: Transfer[] = Array.from({ length: 14 }, (_, index) => {
     comment:
       random() > 0.7 ? pick(['Weekly top-up', 'Shop request', 'Rebalancing slow movers']) : null,
     createdBy: pick(['Akhmet Dauletmuratov', 'Mansurbek', 'Dilnoza']),
+    sentBy: status === 'draft' ? null : pick(['Mansurbek', 'Dilnoza', 'Sardor']),
+    receivedBy: status === 'received' ? pick(['Jasur', 'Otabek', 'Dilnoza']) : null,
     createdAt: createdAt.toISOString(),
     sentAt,
     receivedAt,

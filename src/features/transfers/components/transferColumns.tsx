@@ -2,10 +2,16 @@ import { ArrowRight, Trash2 } from 'lucide-react'
 import { Badge } from '@/shared/ui/Badge'
 import { RowActions } from '@/shared/components/RowActions'
 import type { TableColumn } from '@/shared/components/table/features'
-import { formatDate, formatNumber } from '@/shared/lib/format'
+import { formatDate, formatMoney, formatNumber } from '@/shared/lib/format'
 import {
   canCancel,
-  transferQuantity,
+  transferCostValue,
+  transferInTransit,
+  transferReceived,
+  transferRequested,
+  transferSaleValue,
+  transferSent,
+  transferShortfall,
   transferStatusLabel,
   transferStatusTone,
   type Transfer,
@@ -22,9 +28,13 @@ const Empty = () => <span className="text-fg-subtle">—</span>
 export function buildTransferColumns({
   onCancel,
   canCancelTransfers,
+  canSeeCost,
+  usdRate,
 }: {
   onCancel: (transfer: Transfer) => void
   canCancelTransfers: boolean
+  canSeeCost: boolean
+  usdRate: number
 }): TableColumn<Transfer>[] {
   return [
     {
@@ -56,11 +66,47 @@ export function buildTransferColumns({
       meta: { align: 'right' },
       cell: ({ row }) => formatNumber(row.original.lines.length),
     },
+    /*
+      OX's four quantity columns, kept as four because the gaps between them
+      are the information: ordered vs sent is what the warehouse could not
+      meet, sent vs received is what went missing on the road.
+    */
     {
-      id: 'quantity',
-      header: 'Units',
+      id: 'requested',
+      header: 'Ordered',
       meta: { align: 'right' },
-      cell: ({ row }) => formatNumber(transferQuantity(row.original)),
+      cell: ({ row }) => formatNumber(transferRequested(row.original)),
+    },
+    {
+      id: 'sent',
+      header: 'Sent',
+      meta: { align: 'right' },
+      cell: ({ row }) =>
+        row.original.status === 'draft' ? <Empty /> : formatNumber(transferSent(row.original)),
+    },
+    {
+      id: 'received',
+      header: 'Received',
+      meta: { align: 'right' },
+      cell: ({ row }) => {
+        const short = transferShortfall(row.original)
+        if (row.original.receivedAt === null) return <Empty />
+        return (
+          <span className={short > 0 ? 'text-danger font-medium' : undefined}>
+            {formatNumber(transferReceived(row.original))}
+            {short > 0 ? ` (−${formatNumber(short)})` : ''}
+          </span>
+        )
+      },
+    },
+    {
+      id: 'inTransit',
+      header: 'In transit',
+      meta: { align: 'right' },
+      cell: ({ row }) => {
+        const moving = transferInTransit(row.original)
+        return moving > 0 ? formatNumber(moving) : <Empty />
+      },
     },
     {
       accessorKey: 'status',
@@ -85,6 +131,35 @@ export function buildTransferColumns({
     {
       accessorKey: 'createdBy',
       header: 'Created by',
+    },
+    {
+      accessorKey: 'sentBy',
+      header: 'Sent by',
+      cell: ({ row }) => row.original.sentBy ?? <Empty />,
+    },
+    {
+      accessorKey: 'receivedBy',
+      header: 'Received by',
+      cell: ({ row }) => row.original.receivedBy ?? <Empty />,
+    },
+    // What is riding on the truck, valued. Cost is permission-gated exactly as
+    // it is in the catalogue.
+    ...(canSeeCost
+      ? [
+          {
+            id: 'costValue',
+            header: 'Value at cost',
+            meta: { align: 'right' as const },
+            cell: ({ row }: { row: { original: Transfer } }) =>
+              formatMoney(transferCostValue(row.original, usdRate)),
+          },
+        ]
+      : []),
+    {
+      id: 'saleValue',
+      header: 'Value at sale',
+      meta: { align: 'right' },
+      cell: ({ row }) => formatMoney(transferSaleValue(row.original)),
     },
     {
       accessorKey: 'comment',
@@ -115,5 +190,18 @@ export function buildTransferColumns({
   ]
 }
 
-/** Dates and provenance start hidden: the route and its state are the story. */
-export const TRANSFER_COLUMNS_HIDDEN_BY_DEFAULT = ['sentAt', 'receivedAt', 'createdBy', 'comment']
+/**
+ * The route, its state and what is moving are the story; timestamps, the people
+ * and the money are one click away in the Columns menu.
+ */
+export const TRANSFER_COLUMNS_HIDDEN_BY_DEFAULT = [
+  'sentAt',
+  'receivedAt',
+  'createdBy',
+  'sentBy',
+  'receivedBy',
+  'comment',
+  'requested',
+  'costValue',
+  'saleValue',
+]

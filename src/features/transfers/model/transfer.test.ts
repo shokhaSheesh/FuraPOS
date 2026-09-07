@@ -1,6 +1,14 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useDataStore } from '@/data/store'
-import { nextStep, transferDraftSchema, transferQuantity } from './transfer'
+import {
+  lineShortfall,
+  lineUnfulfilled,
+  nextStep,
+  transferDraftSchema,
+  transferInTransit,
+  transferQuantity,
+  transferShortfall,
+} from './transfer'
 
 const LINE = {
   id: 'l1',
@@ -10,7 +18,12 @@ const LINE = {
   name: 'Timing belt A50',
   imageUrl: null,
   unit: 'pcs',
-  quantity: 3,
+  requestedQuantity: 3,
+  sentQuantity: null,
+  receivedQuantity: null,
+  unitCost: 85,
+  costCurrency: 'USD' as const,
+  unitPrice: 1_476_000,
 }
 
 /** What one location holds of one variation, read back from the store. */
@@ -39,7 +52,25 @@ describe('transfer lifecycle', () => {
   })
 
   it('counts units, not lines', () => {
-    expect(transferQuantity({ lines: [LINE, { ...LINE, id: 'l2', quantity: 4 }] })).toBe(7)
+    expect(transferQuantity({ lines: [LINE, { ...LINE, id: 'l2', requestedQuantity: 4 }] })).toBe(7)
+  })
+
+  it('reports the most concrete quantity it has for a line', () => {
+    // Ordered until it ships, shipped until it lands, then what actually landed.
+    expect(transferQuantity({ lines: [LINE] })).toBe(3)
+    expect(transferQuantity({ lines: [{ ...LINE, sentQuantity: 2 }] })).toBe(2)
+    expect(transferQuantity({ lines: [{ ...LINE, sentQuantity: 2, receivedQuantity: 1 }] })).toBe(1)
+  })
+
+  it('separates what the warehouse could not find from what went missing', () => {
+    const line = { ...LINE, requestedQuantity: 10, sentQuantity: 7, receivedQuantity: 6 }
+    expect(lineUnfulfilled(line)).toBe(3)
+    expect(lineShortfall(line)).toBe(1)
+    // Nothing is "in transit" once the far end has counted: the missing unit
+    // is a loss, not a parcel still travelling.
+    expect(transferInTransit({ lines: [line] })).toBe(0)
+    expect(transferShortfall({ lines: [line] })).toBe(1)
+    expect(transferInTransit({ lines: [{ ...LINE, sentQuantity: 7 }] })).toBe(7)
   })
 })
 
@@ -79,7 +110,7 @@ describe('moving stock', () => {
       fromLocationId: 'loc-1',
       toLocationId: 'loc-2',
       comment: '',
-      lines: [{ ...LINE, quantity: 2 }],
+      lines: [{ ...LINE, requestedQuantity: 2 }],
       status: 'in_transit',
     })
 
@@ -99,7 +130,7 @@ describe('moving stock', () => {
       fromLocationId: 'loc-1',
       toLocationId: 'loc-2',
       comment: '',
-      lines: [{ ...LINE, quantity: 2 }],
+      lines: [{ ...LINE, requestedQuantity: 2 }],
       status: 'in_transit',
     })
     expect(useDataStore.getState().setTransferStatus(transfer.id, 'received')).toEqual({ ok: true })
@@ -116,7 +147,7 @@ describe('moving stock', () => {
       fromLocationId: 'loc-1',
       toLocationId: 'loc-2',
       comment: '',
-      lines: [{ ...LINE, quantity: startAtSource + 1 }],
+      lines: [{ ...LINE, requestedQuantity: startAtSource + 1 }],
       status: 'draft',
     })
 
@@ -134,7 +165,7 @@ describe('moving stock', () => {
       fromLocationId: 'loc-1',
       toLocationId: 'loc-2',
       comment: '',
-      lines: [{ ...LINE, quantity: 2 }],
+      lines: [{ ...LINE, requestedQuantity: 2 }],
       status: 'in_transit',
     })
     expect(at('var-1-1', 'loc-1')).toBe(startAtSource - 2)
@@ -150,7 +181,7 @@ describe('moving stock', () => {
       fromLocationId: 'loc-1',
       toLocationId: 'loc-2',
       comment: '',
-      lines: [{ ...LINE, quantity: 2 }],
+      lines: [{ ...LINE, requestedQuantity: 2 }],
       status: 'draft',
     })
 
@@ -165,7 +196,7 @@ describe('moving stock', () => {
       fromLocationId: 'loc-1',
       toLocationId: 'loc-2',
       comment: '',
-      lines: [{ ...LINE, quantity: 1 }],
+      lines: [{ ...LINE, requestedQuantity: 1 }],
       status: 'draft',
     })
     const result = useDataStore.getState().setTransferStatus(transfer.id, 'received')
@@ -178,7 +209,7 @@ describe('moving stock', () => {
       fromLocationId: 'loc-1',
       toLocationId: 'loc-3',
       comment: '',
-      lines: [{ ...LINE, quantity: 1 }],
+      lines: [{ ...LINE, requestedQuantity: 1 }],
       status: 'in_transit',
     })
 
@@ -192,5 +223,87 @@ describe('moving stock', () => {
     expect(nested?.stockByLocation.find((r) => r.locationId === 'loc-1')?.quantity).toBe(
       flat?.stockByLocation.find((r) => r.locationId === 'loc-1')?.quantity,
     )
+  })
+})
+
+describe('partial fulfilment', () => {
+  it('sends only what the warehouse says it found, leaving the rest on the shelf', () => {
+    const store = useDataStore.getState()
+    const startAtSource = at('var-1-1', 'loc-1')
+    const transfer = store.createTransfer({
+      fromLocationId: 'loc-1',
+      toLocationId: 'loc-2',
+      comment: '',
+      lines: [{ ...LINE, requestedQuantity: 5 }],
+      status: 'draft',
+    })
+
+    const lineId = transfer.lines[0]!.id
+    useDataStore.getState().setTransferStatus(transfer.id, 'in_transit', { [lineId]: 3 })
+
+    // Only 3 left; the other 2 never moved.
+    expect(at('var-1-1', 'loc-1')).toBe(startAtSource - 3)
+    const sent = useDataStore.getState().transfers.find((t) => t.id === transfer.id)!
+    expect(sent.lines[0]!.sentQuantity).toBe(3)
+    expect(lineUnfulfilled(sent.lines[0]!)).toBe(2)
+  })
+
+  it('writes off what was sent and never arrived', () => {
+    const store = useDataStore.getState()
+    const startTotal = total('var-1-1')
+    const startAtDestination = at('var-1-1', 'loc-2')
+
+    const transfer = store.createTransfer({
+      fromLocationId: 'loc-1',
+      toLocationId: 'loc-2',
+      comment: '',
+      lines: [{ ...LINE, requestedQuantity: 4 }],
+      status: 'in_transit',
+    })
+    const lineId = transfer.lines[0]!.id
+    useDataStore.getState().setTransferStatus(transfer.id, 'received', { [lineId]: 3 })
+
+    // Three landed, one is gone: total stock is down by exactly the shortfall.
+    expect(at('var-1-1', 'loc-2')).toBe(startAtDestination + 3)
+    expect(total('var-1-1')).toBe(startTotal - 1)
+
+    const done = useDataStore.getState().transfers.find((t) => t.id === transfer.id)!
+    expect(transferShortfall(done)).toBe(1)
+    expect(transferInTransit(done)).toBe(0)
+  })
+
+  it('cannot receive more than was sent', () => {
+    const store = useDataStore.getState()
+    const transfer = store.createTransfer({
+      fromLocationId: 'loc-1',
+      toLocationId: 'loc-2',
+      comment: '',
+      lines: [{ ...LINE, requestedQuantity: 2 }],
+      status: 'in_transit',
+    })
+    const lineId = transfer.lines[0]!.id
+    useDataStore.getState().setTransferStatus(transfer.id, 'received', { [lineId]: 99 })
+
+    const done = useDataStore.getState().transfers.find((t) => t.id === transfer.id)!
+    expect(done.lines[0]!.receivedQuantity).toBe(2)
+  })
+
+  it('records who sent and who received', () => {
+    const store = useDataStore.getState()
+    const transfer = store.createTransfer({
+      fromLocationId: 'loc-1',
+      toLocationId: 'loc-2',
+      comment: '',
+      lines: [{ ...LINE, requestedQuantity: 1 }],
+      status: 'draft',
+    })
+    expect(transfer.sentBy).toBeNull()
+
+    useDataStore.getState().setTransferStatus(transfer.id, 'in_transit')
+    expect(useDataStore.getState().transfers.find((t) => t.id === transfer.id)!.sentBy).toBeTruthy()
+
+    useDataStore.getState().setTransferStatus(transfer.id, 'received')
+    const done = useDataStore.getState().transfers.find((t) => t.id === transfer.id)!
+    expect(done.receivedBy).toBeTruthy()
   })
 })

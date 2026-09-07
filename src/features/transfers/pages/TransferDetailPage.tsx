@@ -11,13 +11,22 @@ import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 import { toast } from '@/shared/ui/toast'
 import { useSession } from '@/app/providers/SessionProvider'
 import { paths } from '@/shared/config/paths'
-import { formatDateTime, formatNumber } from '@/shared/lib/format'
+import { formatDateTime, formatMoney, formatNumber } from '@/shared/lib/format'
 import { useDataStore } from '@/data/store'
+import { USD_RATE } from '@/data/seed'
 import { useSetTransferStatus, useTransfer } from '../api/transfers'
+import { TransferQuantityDialog } from '../components/TransferQuantityDialog'
 import {
   canCancel,
+  lineInTransit,
+  lineShortfall,
+  lineUnfulfilled,
   nextStep,
+  transferCostValue,
+  transferInTransit,
   transferQuantity,
+  transferSaleValue,
+  transferShortfall,
   transferStatusLabel,
   transferStatusTone,
 } from '../model/transfer'
@@ -30,25 +39,32 @@ export default function TransferDetailPage() {
   const setStatus = useSetTransferStatus(transferId ?? '')
   const variations = useDataStore((s) => s.variations)
   const [confirmCancel, setConfirmCancel] = useState(false)
+  // Both hand-offs ask what actually moved rather than assuming the paperwork.
+  const [quantityStep, setQuantityStep] = useState<'send' | 'receive' | null>(null)
 
   if (!transfer) {
     return <EmptyState title="Transfer not found" description="It may have been deleted." />
   }
 
   const step = nextStep(transfer.status)
-  const advance = () => {
+  const advance = (quantities: Record<string, number>) => {
     if (!step) return
-    setStatus.mutate(step.to, {
-      onSuccess: () =>
-        toast.success(
-          step.to === 'in_transit'
-            ? `${transfer.number} sent — stock has left ${transfer.fromLocationName}`
-            : `${transfer.number} received into ${transfer.toLocationName}`,
-        ),
-      // The stock check happens at dispatch, so this is where a shortfall
-      // surfaces. It has to say which product, or it is not actionable.
-      onError: (message) => toast.error(message),
-    })
+    setStatus.mutate(
+      { to: step.to, quantities },
+      {
+        onSuccess: () => {
+          setQuantityStep(null)
+          toast.success(
+            step.to === 'in_transit'
+              ? `${transfer.number} sent — stock has left ${transfer.fromLocationName}`
+              : `${transfer.number} received into ${transfer.toLocationName}`,
+          )
+        },
+        // The stock check happens at dispatch, so this is where a shortfall
+        // surfaces. It has to say which product, or it is not actionable.
+        onError: (message) => toast.error(message),
+      },
+    )
   }
 
   /** What the source shelf holds right now, for the shortfall warning. */
@@ -59,8 +75,12 @@ export default function TransferDetailPage() {
 
   const timeline = [
     { label: 'Created', at: transfer.createdAt, by: transfer.createdBy },
-    { label: `Sent from ${transfer.fromLocationName}`, at: transfer.sentAt, by: null },
-    { label: `Received at ${transfer.toLocationName}`, at: transfer.receivedAt, by: null },
+    { label: `Sent from ${transfer.fromLocationName}`, at: transfer.sentAt, by: transfer.sentBy },
+    {
+      label: `Received at ${transfer.toLocationName}`,
+      at: transfer.receivedAt,
+      by: transfer.receivedBy,
+    },
   ]
 
   return (
@@ -85,7 +105,10 @@ export default function TransferDetailPage() {
               </Button>
             ) : null}
             {step && can('products.transfers.edit') ? (
-              <Button variant="primary" onClick={advance}>
+              <Button
+                variant="primary"
+                onClick={() => setQuantityStep(step.to === 'in_transit' ? 'send' : 'receive')}
+              >
                 {step.to === 'in_transit' ? <Truck /> : <Check />}
                 {step.label}
               </Button>
@@ -114,9 +137,26 @@ export default function TransferDetailPage() {
           <CardBody className="flex items-start gap-3 p-4">
             <Truck className="text-warning mt-0.5 size-4 shrink-0" />
             <p className="text-fg-muted text-sm">
-              These {formatNumber(transferQuantity(transfer))} units have left{' '}
-              {transfer.fromLocationName} and are not yet counted at {transfer.toLocationName}. They
-              will not appear in either location's stock until receipt is confirmed.
+              {transferInTransit(transfer) === 1
+                ? 'This unit has'
+                : `These ${formatNumber(transferInTransit(transfer))} units have`}{' '}
+              left {transfer.fromLocationName} and{' '}
+              {transferInTransit(transfer) === 1 ? 'is' : 'are'} not yet counted at{' '}
+              {transfer.toLocationName}. It will not appear in either location's stock until receipt
+              is confirmed.
+            </p>
+          </CardBody>
+        </Card>
+      ) : null}
+
+      {transferShortfall(transfer) > 0 ? (
+        <Card className="border-danger-border bg-danger-subtle">
+          <CardBody className="flex items-start gap-3 p-4">
+            <Check className="text-danger mt-0.5 size-4 shrink-0" />
+            <p className="text-fg-muted text-sm">
+              {formatNumber(transferShortfall(transfer))} units left {transfer.fromLocationName} and
+              never arrived at {transfer.toLocationName}. They are on neither shelf and have been
+              written off against this transfer.
             </p>
           </CardBody>
         </Card>
@@ -126,6 +166,24 @@ export default function TransferDetailPage() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Items</CardTitle>
+            {/* What is riding on the truck, in money. Cost is permission-gated
+                exactly as it is in the catalogue. */}
+            <div className="text-2xs flex items-center gap-3">
+              {can('products.cost.view') ? (
+                <span className="text-fg-muted">
+                  At cost{' '}
+                  <span className="text-fg font-medium">
+                    {formatMoney(transferCostValue(transfer, USD_RATE))}
+                  </span>
+                </span>
+              ) : null}
+              <span className="text-fg-muted">
+                At sale{' '}
+                <span className="text-fg font-medium">
+                  {formatMoney(transferSaleValue(transfer))}
+                </span>
+              </span>
+            </div>
           </CardHeader>
           <CardBody className="p-0">
             <div className="overflow-x-auto">
@@ -133,17 +191,27 @@ export default function TransferDetailPage() {
                 <thead className="bg-canvas">
                   <tr className="text-fg-muted text-2xs tracking-wide uppercase">
                     <th className="px-4 py-2 text-left font-semibold">Product</th>
-                    <th className="px-4 py-2 text-left font-semibold">SKU</th>
-                    <th className="px-4 py-2 text-right font-semibold">Quantity</th>
+                    <th className="px-4 py-2 text-right font-semibold">Ordered</th>
                     {transfer.status === 'draft' ? (
                       <th className="px-4 py-2 text-right font-semibold">At source</th>
+                    ) : (
+                      <th className="px-4 py-2 text-right font-semibold">Sent</th>
+                    )}
+                    {transfer.receivedAt ? (
+                      <th className="px-4 py-2 text-right font-semibold">Received</th>
+                    ) : null}
+                    {transfer.status === 'in_transit' ? (
+                      <th className="px-4 py-2 text-right font-semibold">In transit</th>
                     ) : null}
                   </tr>
                 </thead>
                 <tbody>
                   {transfer.lines.map((line) => {
                     const available = availableAtSource(line.variationId)
-                    const short = transfer.status === 'draft' && available < line.quantity
+                    const cannotFill =
+                      transfer.status === 'draft' && available < line.requestedQuantity
+                    const unfulfilled = lineUnfulfilled(line)
+                    const missing = lineShortfall(line)
                     return (
                       <tr key={line.id} className="border-border border-t">
                         <td className="px-4 py-2">
@@ -152,21 +220,50 @@ export default function TransferDetailPage() {
                             className="flex items-center gap-2.5 hover:underline"
                           >
                             <ProductThumb src={line.imageUrl} size="sm" />
-                            <span className="font-medium">{line.name}</span>
+                            <div className="min-w-0">
+                              <p className="font-medium">{line.name}</p>
+                              <p className="text-fg-subtle text-2xs font-mono">{line.sku}</p>
+                            </div>
                           </Link>
                         </td>
-                        <td className="text-fg-muted text-2xs px-4 py-2 font-mono">{line.sku}</td>
-                        <td className="px-4 py-2 text-right font-medium tabular-nums">
-                          {formatNumber(line.quantity)} {line.unit}
+                        <td className="text-fg-muted px-4 py-2 text-right tabular-nums">
+                          {formatNumber(line.requestedQuantity)} {line.unit}
                         </td>
                         {transfer.status === 'draft' ? (
                           <td
                             className={`px-4 py-2 text-right tabular-nums ${
-                              short ? 'text-danger font-medium' : 'text-fg-muted'
+                              cannotFill ? 'text-danger font-medium' : 'text-fg-muted'
                             }`}
                           >
                             {formatNumber(available)}
-                            {short ? ' — not enough' : ''}
+                            {cannotFill ? ' — not enough' : ''}
+                          </td>
+                        ) : (
+                          <td className="text-fg px-4 py-2 text-right font-medium tabular-nums">
+                            {formatNumber(line.sentQuantity ?? 0)}
+                            {/* What the warehouse could not find stayed put. */}
+                            {unfulfilled > 0 ? (
+                              <span className="text-fg-subtle text-2xs ml-1">
+                                (−{formatNumber(unfulfilled)} not found)
+                              </span>
+                            ) : null}
+                          </td>
+                        )}
+                        {transfer.receivedAt ? (
+                          <td
+                            className={`px-4 py-2 text-right font-medium tabular-nums ${
+                              missing > 0 ? 'text-danger' : 'text-fg'
+                            }`}
+                          >
+                            {formatNumber(line.receivedQuantity ?? 0)}
+                            {missing > 0 ? (
+                              <span className="text-2xs ml-1">(−{formatNumber(missing)} lost)</span>
+                            ) : null}
+                          </td>
+                        ) : null}
+                        {transfer.status === 'in_transit' ? (
+                          <td className="text-warning px-4 py-2 text-right font-medium tabular-nums">
+                            {formatNumber(lineInTransit(line))}
                           </td>
                         ) : null}
                       </tr>
@@ -227,16 +324,30 @@ export default function TransferDetailPage() {
             : `${transfer.number} has not been sent, so no stock changes.`
         }
         onConfirm={() =>
-          setStatus.mutate('cancelled', {
-            onSuccess: () => {
-              toast.success(`${transfer.number} cancelled`)
-              setConfirmCancel(false)
-              navigate(paths.products.transfers)
+          setStatus.mutate(
+            { to: 'cancelled' },
+            {
+              onSuccess: () => {
+                toast.success(`${transfer.number} cancelled`)
+                setConfirmCancel(false)
+                navigate(paths.products.transfers)
+              },
+              onError: (message) => toast.error(message),
             },
-            onError: (message) => toast.error(message),
-          })
+          )
         }
       />
+
+      {step ? (
+        <TransferQuantityDialog
+          open={quantityStep !== null}
+          onOpenChange={(open) => setQuantityStep(open ? quantityStep : null)}
+          transfer={transfer}
+          mode={quantityStep ?? 'send'}
+          availableAtSource={availableAtSource}
+          onConfirm={advance}
+        />
+      ) : null}
     </>
   )
 }

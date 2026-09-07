@@ -77,6 +77,43 @@ difference and we should hear which behaviour the business expects.
 Stock is validated against the source **at dispatch, not at drafting**, since a sale may have taken
 the last one in between.
 
+#### Columns, against OX's
+
+OX's list carries 19 columns. Ours and theirs, with the reasoning for the four we did not take:
+
+| OX (ru)             | Ours           | Note                                                                                                                                                                                                               |
+| ------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| ID                  | Number         | `TR-00001`                                                                                                                                                                                                         |
+| Время начала        | Sent           | We keep three timestamps, not two: created, sent, received                                                                                                                                                         |
+| Время завершения    | Received       |                                                                                                                                                                                                                    |
+| Статус              | Status         | draft / in transit / received / cancelled                                                                                                                                                                          |
+| Место отправления   | Route (from)   | Shown as one `From → To` column; a movement reads as one phrase                                                                                                                                                    |
+| Место получения     | Route (to)     |                                                                                                                                                                                                                    |
+| Кол-во              | Units          | The most concrete quantity a line has yet                                                                                                                                                                          |
+| **Заказано**        | **Ordered**    | What was asked for                                                                                                                                                                                                 |
+| **Отправлено**      | **Sent**       | What actually left — the warehouse may not have found it all                                                                                                                                                       |
+| **Принято**         | **Received**   | What actually arrived                                                                                                                                                                                              |
+| **В пути**          | **In transit** | Sent and not yet counted; zero once the far end has counted                                                                                                                                                        |
+| Отправил            | Sent by        |                                                                                                                                                                                                                    |
+| Получил             | Received by    |                                                                                                                                                                                                                    |
+| Создатель           | Created by     |                                                                                                                                                                                                                    |
+| Заказал             | —              | **Not built.** Distinct from the creator only with a request-and-approve flow, where a shop raises the order and someone else writes the transfer. Revisit if shops request stock in-app.                          |
+| Сумма поставщика    | —              | **Not built.** Would duplicate "Value at cost": we have one cost concept, the supplier's invoice price plus its currency. It becomes a real second number only once landed costs (freight, duty) exist separately. |
+| Сумма себестоимости | Value at cost  | Permission-gated on `products.cost.view`, as in the catalogue                                                                                                                                                      |
+| Сумма продажи       | Value at sale  |                                                                                                                                                                                                                    |
+| Заметка             | Comment        |                                                                                                                                                                                                                    |
+
+**The four quantity columns are the reason to look at OX's screen at all.** A single "quantity"
+silently asserts that what was ordered, what shipped and what arrived are the same number. They
+routinely are not, and the two gaps mean opposite things:
+
+- **ordered − sent** stayed on the source shelf. Nothing is lost; the request was under-filled.
+- **sent − received** left one shelf and reached no other. That is stock the business paid for and
+  no longer has, so it is written off against the transfer, and total stock drops by exactly it.
+
+Both hand-offs therefore _ask_ rather than assume, pre-filled with the optimistic answer so the
+ordinary case stays one click.
+
 ## 4. Закупки — Procurement
 
 | OX (ru)            | Ours (en)          | OX route                     |

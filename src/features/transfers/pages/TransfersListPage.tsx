@@ -16,6 +16,7 @@ import { useSession } from '@/app/providers/SessionProvider'
 import { paths } from '@/shared/config/paths'
 import { formatNumber } from '@/shared/lib/format'
 import { useDataStore } from '@/data/store'
+import { USD_RATE } from '@/data/seed'
 import {
   useSetTransferStatus,
   useTransferStatusCounts,
@@ -54,6 +55,8 @@ export default function TransfersListPage() {
     () =>
       buildTransferColumns({
         canCancelTransfers: can('products.transfers.delete'),
+        canSeeCost: can('products.cost.view'),
+        usdRate: USD_RATE,
         onCancel: setPendingCancel,
       }),
     [can],
@@ -198,13 +201,16 @@ export default function TransfersListPage() {
           ) : null
         }
         onConfirm={() =>
-          cancelTransfer.mutate('cancelled', {
-            onSuccess: () => {
-              toast.success(`${pendingCancel?.number} cancelled`)
-              setPendingCancel(null)
+          cancelTransfer.mutate(
+            { to: 'cancelled' },
+            {
+              onSuccess: () => {
+                toast.success(`${pendingCancel?.number} cancelled`)
+                setPendingCancel(null)
+              },
+              onError: (message) => toast.error(message),
             },
-            onError: (message) => toast.error(message),
-          })
+          )
         }
       />
     </>

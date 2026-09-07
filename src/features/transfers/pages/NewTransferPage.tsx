@@ -61,7 +61,7 @@ export default function NewTransferPage() {
   )
 
   const totalUnits = lines.reduce(
-    (sum, line) => sum + (Number.isFinite(line.quantity) ? line.quantity : 0),
+    (sum, line) => sum + (Number.isFinite(line.requestedQuantity) ? line.requestedQuantity : 0),
     0,
   )
 
@@ -70,9 +70,11 @@ export default function NewTransferPage() {
       (values) => {
         // Checked here as well as in the store: the store refuses the move, but
         // the form can point at the offending row instead of a toast.
-        const over = values.lines.findIndex((line) => line.quantity > availableAt(line.variationId))
+        const over = values.lines.findIndex(
+          (line) => line.requestedQuantity > availableAt(line.variationId),
+        )
         if (over > -1) {
-          form.setError(`lines.${over}.quantity`, {
+          form.setError(`lines.${over}.requestedQuantity`, {
             message: `Only ${formatNumber(availableAt(values.lines[over]!.variationId))} here`,
           })
           return
@@ -211,8 +213,8 @@ export default function NewTransferPage() {
                 if (existing > -1) {
                   // Adding the same part twice means "one more", not a second row.
                   form.setValue(
-                    `lines.${existing}.quantity`,
-                    (lines[existing]?.quantity ?? 0) + 1,
+                    `lines.${existing}.requestedQuantity`,
+                    (lines[existing]?.requestedQuantity ?? 0) + 1,
                     { shouldDirty: true },
                   )
                   return
@@ -225,7 +227,14 @@ export default function NewTransferPage() {
                   name: variation.fullName,
                   imageUrl: variation.imageUrl,
                   unit: variation.unit,
-                  quantity: 1,
+                  requestedQuantity: 1,
+                  // Filled in at dispatch and at receipt, when reality is known.
+                  sentQuantity: null,
+                  receivedQuantity: null,
+                  // Snapshotted now, so the document keeps its value later.
+                  unitCost: variation.costPrice,
+                  costCurrency: variation.costCurrency,
+                  unitPrice: variation.salePrice,
                 })
               }}
             />
@@ -246,7 +255,7 @@ export default function NewTransferPage() {
                       <th className="px-3 py-2 text-left font-semibold">Product</th>
                       <th className="px-3 py-2 text-left font-semibold">SKU</th>
                       <th className="px-3 py-2 text-right font-semibold">At source</th>
-                      <th className="px-3 py-2 text-right font-semibold">Move</th>
+                      <th className="px-3 py-2 text-right font-semibold">Order</th>
                       <th className="w-10" />
                     </tr>
                   </thead>
@@ -254,7 +263,7 @@ export default function NewTransferPage() {
                     {fields.map((field, index) => {
                       const line = lines[index]
                       const here = line ? availableAt(line.variationId) : 0
-                      const error = form.formState.errors.lines?.[index]?.quantity?.message
+                      const error = form.formState.errors.lines?.[index]?.requestedQuantity?.message
                       return (
                         <tr key={field.id} className="border-border border-t">
                           <td className="px-3 py-2">
@@ -272,7 +281,7 @@ export default function NewTransferPage() {
                           <td className="px-2 py-1.5 text-right">
                             <Controller
                               control={form.control}
-                              name={`lines.${index}.quantity`}
+                              name={`lines.${index}.requestedQuantity`}
                               render={({ field: f }) => (
                                 <NumberField
                                   className="w-24"

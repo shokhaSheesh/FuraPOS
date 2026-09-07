@@ -15,7 +15,6 @@ import type { GoodsReceipt } from '@/features/receipts/model/receipt'
 import type { Stocktake } from '@/features/stocktaking/model/stocktake'
 import type { Repricing, RuleKind } from '@/features/repricing/model/repricing'
 import type { Supplier } from '@/features/suppliers/model/supplier'
-import type { ProductSelection } from '@/features/procurement/model/selection'
 import type { WalletTransaction } from '@/shared/types/wallet'
 
 /** Kept in step with the dashboard's exchange-rate widget. */
@@ -857,47 +856,3 @@ export const walletTransactions: WalletTransaction[] = suppliers
       },
     ]
   })
-
-/**
- * Past selection runs. Their lines are left empty: a run freezes the answer it
- * produced at the time, and inventing plausible-looking frozen recommendations
- * would put numbers in the app that no calculation ever produced. Opening one
- * shows an empty run, which is the truthful state for a document restored from
- * a seed rather than computed.
- */
-export const selections: ProductSelection[] = [
-  {
-    id: 'sel-1',
-    number: 'PS-00001',
-    source: 'suppliers',
-    status: 'ordered',
-    supplierId: 'sup-1',
-    supplierName: 'AKCHAEV INC',
-    locationIds: [],
-    locationNames: [],
-    settings: { salesWindowDays: 90, leadTimeDays: 30, orderIntervalDays: 14, safetyDays: 7 },
-    lines: [],
-    comment: 'Monthly container',
-    createdBy: 'Akhmet Dauletmuratov',
-    createdAt: new Date(Date.now() - 34 * 86_400_000).toISOString(),
-    orderedAt: new Date(Date.now() - 33 * 86_400_000).toISOString(),
-    failureReason: null,
-  },
-  {
-    id: 'sel-2',
-    number: 'PS-00002',
-    source: 'marketplace',
-    status: 'failed',
-    supplierId: null,
-    supplierName: null,
-    locationIds: [],
-    locationNames: [],
-    settings: { salesWindowDays: 90, leadTimeDays: 30, orderIntervalDays: 14, safetyDays: 7 },
-    lines: [],
-    comment: null,
-    createdBy: 'Mansurbek',
-    createdAt: new Date(Date.now() - 9 * 86_400_000).toISOString(),
-    orderedAt: null,
-    failureReason: 'Marketplace discovery is not connected in this build',
-  },
-]

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import { ArrowLeft, Ban, PackageCheck } from 'lucide-react'
+import { ArrowLeft, Ban, ClipboardList, PackageCheck } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { ProductThumb } from '@/shared/components/ProductThumb'
@@ -102,6 +102,16 @@ export default function GoodsReceiptDetailPage() {
               <span className="text-fg-subtle text-2xs font-mono">
                 Invoice {receipt.invoiceNumber}
               </span>
+            ) : null}
+            {receipt.orderId && receipt.orderNumber ? (
+              // A delivery that came from an order should say so, and get you
+              // back to what was ordered — otherwise the check is one-way.
+              <Button variant="link" size="sm" className="h-auto px-0" asChild>
+                <Link to={paths.procurement.orderDetail(receipt.orderId)}>
+                  <ClipboardList />
+                  Against {receipt.orderNumber}
+                </Link>
+              </Button>
             ) : null}
             {receipt.comment ? (
               <span className="text-fg-subtle text-sm">· {receipt.comment}</span>

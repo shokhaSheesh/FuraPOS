@@ -432,6 +432,41 @@ saved-run shape. Recorded rather than quietly dropped, because the reasoning is 
 needs an artefact to produce. That page should either go too, or become something else entirely —
 it is not a screen that can stand on its own.
 
+### Orders — built without an OX reference
+
+Built like Transfers, Corrections, Goods receipt, Stocktaking and Repricing: **no OX screenshot was
+supplied**, so this is our shape rather than a comparison. Flagged so a later screenshot is read as
+new information, not a contradiction.
+
+**Why it exists.** Until now goods receipts appeared from nowhere — stock turned up and someone
+typed what was in the box, with nothing to check it against. An order is the other half: the
+commitment made weeks earlier. It is what makes *where is it* and *is it late* answerable, and what
+turns a receipt from a recording into a check.
+
+**The decisions worth keeping:**
+
+- **Receiving is not a status.** `draft → sent → confirmed` are steps a person takes; a delivery is
+  an event that can happen as many times as the supplier ships. So the detail page offers exactly
+  one "next step" button, and "Book a delivery" sits beside it rather than in the sequence.
+  `partial` and `received` are then *derived* from what has arrived, never picked from a menu.
+- **A delivery is a real goods receipt.** `receiveAgainstOrder` builds one and posts it through the
+  same path as any other, so stock, landed cost and the adjustment ledger behave identically
+  whether or not an order was involved. The order stores the receipt ids; the receipt links back.
+- **`receivedQuantity` is never typed on an order.** It is written by the receipts, so an order can
+  never claim more arrived than a document recorded.
+- **Over-shipping is clamped to what is outstanding.** A supplier who sends more than was ordered
+  has sent something nobody asked for; that belongs on its own receipt rather than silently
+  inflating this one and the order's completion.
+- **Cancelling is refused once anything has arrived** — it would leave stock on a shelf with no
+  order behind it.
+- **Nothing is late without a promised date.** `expectedAt` is optional, and `daysLate` returns
+  null without it, when nothing is outstanding, and once the order is closed.
+- **The list sorts late first, then still-open, then by date**, and leads with *Still coming* rather
+  than what was ordered — nobody opens an orders screen to admire the completed ones.
+- **The agreed price is editable per line**, defaulting to the last known cost. An order is where a
+  price is agreed; taking it from the catalogue with no way to change it would make the check
+  against the delivery meaningless.
+
 ## 5. Управление персоналом — Personnel management
 
 | OX (ru)             | Ours (en)         | OX route                               |

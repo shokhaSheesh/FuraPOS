@@ -15,6 +15,7 @@ import type { GoodsReceipt } from '@/features/receipts/model/receipt'
 import type { Stocktake } from '@/features/stocktaking/model/stocktake'
 import type { Repricing, RuleKind } from '@/features/repricing/model/repricing'
 import type { Supplier } from '@/features/suppliers/model/supplier'
+import type { PurchaseOrder } from '@/features/orders/model/order'
 import type { WalletTransaction } from '@/shared/types/wallet'
 
 /** Kept in step with the dashboard's exchange-rate widget. */
@@ -627,6 +628,8 @@ export const receipts: GoodsReceipt[] = Array.from({ length: 46 }, (_, index) =>
     status,
     supplierId: supplier.id,
     supplierName: supplier.name,
+    orderId: null,
+    orderNumber: null,
     invoiceNumber: random() > 0.2 ? `INV-${between(10_000, 99_999)}` : null,
     locationId: location.id,
     locationName: location.name,
@@ -856,3 +859,74 @@ export const walletTransactions: WalletTransaction[] = suppliers
       },
     ]
   })
+
+/**
+ * Purchase orders. Their receipts are not linked back, because the receipts
+ * above were seeded independently — a seeded order that claimed a delivery it
+ * cannot point at would be worse than one honestly still waiting.
+ *
+ * A spread of states, including one that is late and one only part delivered,
+ * because those are the two an order screen exists to surface.
+ */
+export const orders: PurchaseOrder[] = Array.from({ length: 11 }, (_, index) => {
+  const sequence = index + 1
+  const status = pick(['draft', 'sent', 'sent', 'confirmed', 'partial', 'received'] as const)
+  const supplier = pick(suppliers)
+  const location = random() > 0.25 ? locations[0]! : pick(locations)
+  const createdAt = new Date(Date.now() - between(3, 70) * 86_400_000)
+
+  const lines = Array.from({ length: between(2, 7) }, (_, lineIndex) => {
+    const variation = pick(variations)
+    const ordered = between(5, 80)
+    // Partly delivered orders are the interesting ones: some lines complete,
+    // some short, which is what makes "what is still coming" a real question.
+    const receivedQuantity =
+      status === 'received'
+        ? ordered
+        : status === 'partial'
+          ? (random() > 0.4 ? ordered : between(0, ordered - 1))
+          : 0
+
+    return {
+      id: `pol-${sequence}-${lineIndex + 1}`,
+      variationId: variation.id,
+      productId: variation.productId,
+      sku: variation.sku,
+      name: variation.fullName,
+      imageUrl: variation.imageUrl,
+      unit: variation.unit,
+      orderedQuantity: ordered,
+      receivedQuantity,
+      unitCost: variation.costPrice,
+      costCurrency: variation.costCurrency,
+    }
+  })
+
+  const sentAt =
+    status === 'draft' ? null : new Date(createdAt.getTime() + 3_600_000).toISOString()
+  // Some are promised for a date that has already passed, which is the whole
+  // point of tracking one.
+  const expectedAt =
+    status === 'draft'
+      ? null
+      : new Date(createdAt.getTime() + between(14, 55) * 86_400_000).toISOString()
+
+  return {
+    id: `po-${sequence}`,
+    number: `PO-${String(sequence).padStart(5, '0')}`,
+    status,
+    supplierId: supplier.id,
+    supplierName: supplier.name,
+    locationId: location.id,
+    locationName: location.name,
+    expectedAt,
+    lines,
+    comment: random() > 0.65 ? pick(['Container 4', 'Urgent — air freight', 'Q3 restock']) : null,
+    receiptIds: [],
+    createdBy: pick(['Akhmet Dauletmuratov', 'Mansurbek']),
+    createdAt: createdAt.toISOString(),
+    sentAt,
+    closedAt: status === 'received' ? new Date(createdAt.getTime() + 40 * 86_400_000).toISOString() : null,
+    updatedAt: createdAt.toISOString(),
+  } satisfies PurchaseOrder
+})

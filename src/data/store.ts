@@ -9,6 +9,8 @@ import type {
 } from '@/features/corrections/model/correction'
 import type { Stocktake, StocktakeLine } from '@/features/stocktaking/model/stocktake'
 import type { Supplier } from '@/features/suppliers/model/supplier'
+import type { OrderLine, OrderStatus, PurchaseOrder } from '@/features/orders/model/order'
+import { outstandingUnits } from '@/features/orders/model/order'
 import type { WalletTransaction } from '@/shared/types/wallet'
 import {
   priceUnder,
@@ -35,6 +37,7 @@ import {
   receipts as seedReceipts,
   repricings as seedRepricings,
   stocktakes as seedStocktakes,
+  orders as seedOrders,
   suppliers as seedSuppliers,
   walletTransactions as seedWalletTransactions,
   transfers as seedTransfers,
@@ -59,6 +62,7 @@ interface CatalogState {
   stocktakes: Stocktake[]
   repricings: Repricing[]
   suppliers: Supplier[]
+  orders: PurchaseOrder[]
   /** One ledger for every wallet owner, filtered by owner on read. */
   walletTransactions: WalletTransaction[]
   clients: Client[]
@@ -99,6 +103,18 @@ interface CatalogState {
   ) => { ok: true } | { ok: false; error: string }
 
   /** Prepares a price change: works out every new price but changes nothing yet. */
+  createOrder: (input: CreateOrderInput) => PurchaseOrder
+  setOrderStatus: (id: string, to: OrderStatus) => { ok: true } | { ok: false; error: string }
+  /**
+   * Books a delivery against an order: creates the goods receipt, posts it, and
+   * writes the received quantities back onto the order.
+   */
+  receiveAgainstOrder: (
+    id: string,
+    quantities: Record<string, number>,
+    invoiceNumber: string,
+  ) => { ok: true; receiptId: string } | { ok: false; error: string }
+
   createSupplier: (input: SupplierInput) => Supplier
   updateSupplier: (id: string, input: SupplierInput) => Supplier | undefined
   /** Records money paid to a supplier: reduces the debt, writes the movement. */
@@ -137,6 +153,18 @@ export interface CreateReceiptInput {
   additionalCosts: AdditionalCost[]
   /** Draft to keep working on it, received to post it straight away. */
   status: Extract<ReceiptStatus, 'draft' | 'received'>
+  /** Set when the delivery was booked against a purchase order. */
+  orderId?: string | null
+  orderNumber?: string | null
+}
+
+export interface CreateOrderInput {
+  supplierId: string
+  locationId: string
+  expectedAt: string | null
+  comment: string
+  lines: OrderLine[]
+  status: Extract<OrderStatus, 'draft' | 'sent'>
 }
 
 export type SupplierInput = Omit<
@@ -349,6 +377,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
   brands,
   locations,
   suppliers: seedSuppliers,
+  orders: seedOrders,
   walletTransactions: seedWalletTransactions,
 
   createSale: (input) => {
@@ -663,6 +692,8 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       status: 'draft',
       supplierId: input.supplierId,
       supplierName: get().suppliers.find((s) => s.id === input.supplierId)?.name ?? null,
+      orderId: input.orderId ?? null,
+      orderNumber: input.orderNumber ?? null,
       invoiceNumber: input.invoiceNumber || null,
       locationId: input.locationId,
       locationName: get().locations.find((l) => l.id === input.locationId)?.name ?? '—',
@@ -800,6 +831,148 @@ export const useDataStore = create<CatalogState>((set, get) => ({
     }
 
     return { ok: true }
+  },
+
+  createOrder: (input) => {
+    const sequence = get().orders.length + 1
+    const now = new Date().toISOString()
+    const supplier = get().suppliers.find((s) => s.id === input.supplierId)
+
+    const order: PurchaseOrder = {
+      id: `po-${sequence}`,
+      number: `PO-${String(sequence).padStart(5, '0')}`,
+      status: input.status,
+      supplierId: input.supplierId || null,
+      supplierName: supplier?.name ?? null,
+      locationId: input.locationId,
+      locationName: get().locations.find((l) => l.id === input.locationId)?.name ?? '—',
+      expectedAt: input.expectedAt,
+      lines: input.lines,
+      comment: input.comment || null,
+      receiptIds: [],
+      createdBy: 'Akhmet Dauletmuratov',
+      createdAt: now,
+      sentAt: input.status === 'sent' ? now : null,
+      closedAt: null,
+      updatedAt: now,
+    }
+
+    set({ orders: [...get().orders, order] })
+    return order
+  },
+
+  setOrderStatus: (id, to) => {
+    const order = get().orders.find((o) => o.id === id)
+    if (!order) return { ok: false, error: 'That order no longer exists' }
+    if (order.status === 'received') {
+      return { ok: false, error: 'It has already been delivered in full' }
+    }
+    if (order.status === 'cancelled') return { ok: false, error: 'It has already been cancelled' }
+    if (to === 'cancelled' && get().receipts.some((r) => r.orderId === id)) {
+      // Part of it is already on a shelf; cancelling would leave stock with no
+      // order behind it and an order claiming nothing arrived.
+      return {
+        ok: false,
+        error: 'Part of this order has already been delivered — close it instead of cancelling',
+      }
+    }
+
+    const now = new Date().toISOString()
+    set({
+      orders: get().orders.map((o) =>
+        o.id === id
+          ? {
+              ...o,
+              status: to,
+              sentAt: to === 'sent' ? now : o.sentAt,
+              closedAt: to === 'cancelled' || to === 'received' ? now : o.closedAt,
+              updatedAt: now,
+            }
+          : o,
+      ),
+    })
+    return { ok: true }
+  },
+
+  receiveAgainstOrder: (id, quantities, invoiceNumber) => {
+    const order = get().orders.find((o) => o.id === id)
+    if (!order) return { ok: false, error: 'That order no longer exists' }
+    if (order.status === 'draft') {
+      return { ok: false, error: 'Send the order before booking a delivery against it' }
+    }
+    if (order.status === 'received' || order.status === 'cancelled') {
+      return { ok: false, error: 'This order is closed' }
+    }
+
+    /*
+      Never more than is still outstanding. A supplier who over-ships has sent
+      something that was not ordered, and it should arrive on its own receipt
+      rather than quietly inflating this one.
+    */
+    const arriving = order.lines
+      .map((line) => ({
+        line,
+        quantity: Math.min(
+          Math.max(0, quantities[line.id] ?? 0),
+          Math.max(0, line.orderedQuantity - line.receivedQuantity),
+        ),
+      }))
+      .filter((entry) => entry.quantity > 0)
+
+    if (arriving.length === 0) {
+      return { ok: false, error: 'Nothing to receive — every line is zero or already complete' }
+    }
+
+    // The delivery is a real goods receipt, posted through the same path as any
+    // other, so stock and landed cost behave identically whether or not an
+    // order was involved.
+    const receipt = get().createReceipt({
+      supplierId: order.supplierId,
+      invoiceNumber,
+      locationId: order.locationId,
+      comment: order.comment ?? '',
+      orderId: order.id,
+      orderNumber: order.number,
+      lines: arriving.map(({ line, quantity }) => ({
+        id: `grl-${order.id}-${line.id}`,
+        variationId: line.variationId,
+        productId: line.productId,
+        sku: line.sku,
+        name: line.name,
+        imageUrl: line.imageUrl,
+        unit: line.unit,
+        orderedQuantity: quantity,
+        receivedQuantity: null,
+        unitCost: line.unitCost,
+        costCurrency: line.costCurrency,
+      })),
+      additionalCosts: [],
+      status: 'received',
+    })
+
+    const received = new Map(arriving.map(({ line, quantity }) => [line.id, quantity]))
+    const lines = order.lines.map((line) => ({
+      ...line,
+      receivedQuantity: line.receivedQuantity + (received.get(line.id) ?? 0),
+    }))
+    const done = outstandingUnits({ lines }) === 0
+    const now = new Date().toISOString()
+
+    set({
+      orders: get().orders.map((o) =>
+        o.id === id
+          ? {
+              ...o,
+              lines,
+              receiptIds: [...o.receiptIds, receipt.id],
+              status: done ? 'received' : 'partial',
+              closedAt: done ? now : o.closedAt,
+              updatedAt: now,
+            }
+          : o,
+      ),
+    })
+    return { ok: true, receiptId: receipt.id }
   },
 
   createSupplier: (input) => {

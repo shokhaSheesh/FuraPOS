@@ -63,6 +63,9 @@ export interface GoodsReceipt {
   status: ReceiptStatus
   supplierId: Id | null
   supplierName: string | null
+  /** The purchase order this delivery came against, when there was one. */
+  orderId: Id | null
+  orderNumber: string | null
   /** The supplier's own document number, for matching against their paperwork. */
   invoiceNumber: string | null
   locationId: Id

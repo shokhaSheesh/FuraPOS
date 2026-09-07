@@ -415,6 +415,38 @@ different tables.
 | Заказы             | Orders             | `/app/procurement/orders`    |
 | Расписание подбора | Selection schedule | `/app/procurement/schedules` |
 
+### Product selection
+
+**The only screen in the app that forecasts rather than records**, and the payoff for the whole
+inventory module: sales say how fast a part leaves, stock says what is left, receipts say who sells
+it, and the supplier's MOQ says what a realistic order looks like. None of those alone answers
+"what should I buy on Monday".
+
+Built before OX's Подбор товаров was seen.
+
+**Urgency is measured in time, not quantity.** Ten units is comfortable for something that sells one
+a month and an emergency for something that sells one a day, so every state is relative to the lead
+time: `out` → `critical` (runs out before a delivery could land) → `soon` → `ok`. `idle` is its own
+state, because an empty shelf of something nobody buys is not an emergency and flagging it would
+bury the parts that matter.
+
+**The three assumptions are on the screen, not in a settings page.** Lead time, cover and the history
+window are what every suggestion rests on — change the lead time and the whole list changes — and a
+buyer who cannot see them cannot trust the answer.
+
+**The suggested quantity is rounded up to a whole MOQ**, and says so when it has been: "5 needed ·
+MOQ 2 → 6". A suggestion nobody can place is not a suggestion.
+
+Nothing is stored. A suggestion is only true for as long as the stock and sales behind it are, so it
+is recomputed on read and exported when someone wants to act on it. **Creating a purchase order from
+a selection is deliberately not wired yet** — Orders is the next screen, and the hand-off should be
+built once that document exists rather than guessed at.
+
+**Seed note:** this screen exposed that 18 sales across 185 variations gave almost nothing a sales
+rate, so it reported "nothing needs ordering" about a catalogue that plainly did. The sales seed is
+now 420 orders over four months with a long tail, because seed data has to exercise the features it
+is seeding for.
+
 ## 5. Управление персоналом — Personnel management
 
 | OX (ru)             | Ours (en)         | OX route                               |

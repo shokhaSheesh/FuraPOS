@@ -291,13 +291,30 @@ export const clients = clientNames.map((name, index) => ({
 }))
 
 /** Sales accumulate at runtime as the New sale screen posts them. */
-export const sales: Sale[] = Array.from({ length: 18 }, (_, index) => {
+/*
+  Enough sales, over enough time, that demand is a real signal.
+
+  Eighteen sales across 185 variations meant almost nothing had a sales rate,
+  which made the reorder screen — the one screen in the app that forecasts
+  rather than records — say "nothing needs ordering" about a catalogue that
+  plainly does. Seed data has to exercise the features it is seeding for.
+*/
+export const sales: Sale[] = Array.from({ length: 420 }, (_, index) => {
   const location = pick(locations)
   const client = random() > 0.35 ? pick(clients) : null
-  const lineCount = between(1, 4)
+  const lineCount = between(1, 5)
   const lines = Array.from({ length: lineCount }, (__, lineIndex) => {
-    const variation = pick(variations)
-    const quantity = between(1, 6)
+    /*
+      Real demand is not uniform: a minority of parts are most of the movement.
+      Biasing two thirds of lines into the first quarter of the catalogue gives
+      the long tail a warehouse actually has, so "not selling" means something
+      and the reorder list is not simply every product at once.
+    */
+    const variation =
+      random() > 0.34
+        ? variations[Math.floor(random() * Math.ceil(variations.length / 4))]!
+        : pick(variations)
+    const quantity = between(1, 8)
     return {
       id: `line-${index}-${lineIndex}`,
       variationId: variation.id,
@@ -335,7 +352,11 @@ export const sales: Sale[] = Array.from({ length: 18 }, (_, index) => {
   const paid = settled ? total : random() > 0.6 ? Math.round(total / 2) : 0
   const needsDelivery = status === 'delivering' || status === 'delivered'
   const deliveryCost = needsDelivery ? between(20_000, 90_000) : 0
-  const createdAt = new Date(Date.now() - between(0, 20) * 86_400_000)
+  // Spread over four months so a 90-day window has history to average, with a
+  // bias towards recent days because that is what a real ledger looks like.
+  const createdAt = new Date(
+    Date.now() - Math.round(between(0, 120) * (random() > 0.5 ? 1 : 0.4)) * 86_400_000,
+  )
 
   return {
     id: `sale-${index + 1}`,

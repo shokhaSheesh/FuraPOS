@@ -11,6 +11,9 @@ const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPag
 const ProductsPage = lazy(() => import('@/features/products/pages/ProductsPage'))
 const ProductDetailPage = lazy(() => import('@/features/products/pages/ProductDetailPage'))
 const ProductFormPage = lazy(() => import('@/features/products/pages/ProductFormPage'))
+const TransfersListPage = lazy(() => import('@/features/transfers/pages/TransfersListPage'))
+const TransferDetailPage = lazy(() => import('@/features/transfers/pages/TransferDetailPage'))
+const NewTransferPage = lazy(() => import('@/features/transfers/pages/NewTransferPage'))
 const NewSalePage = lazy(() => import('@/features/sales/pages/NewSalePage'))
 const AllSalesPage = lazy(() => import('@/features/sales/pages/SalesListPage'))
 const SaleDetailPage = lazy(() => import('@/features/sales/pages/SaleDetailPage'))
@@ -62,7 +65,18 @@ const routes: RouteObject[] = [
       { path: paths.products.new, element: page(<ProductFormPage />, 'products.list.create') },
       { path: paths.products.detail(), element: page(<ProductDetailPage />, 'products.list.view') },
       { path: paths.products.edit(), element: page(<ProductFormPage />, 'products.list.edit') },
-      { path: paths.products.transfers, element: todo('Transfers', 'products.transfers.view') },
+      {
+        path: paths.products.transfers,
+        element: page(<TransfersListPage />, 'products.transfers.view'),
+      },
+      {
+        path: paths.products.newTransfer,
+        element: page(<NewTransferPage />, 'products.transfers.create'),
+      },
+      {
+        path: paths.products.transferDetail(),
+        element: page(<TransferDetailPage />, 'products.transfers.view'),
+      },
       {
         path: paths.products.corrections,
         element: todo('Corrections', 'products.corrections.view'),

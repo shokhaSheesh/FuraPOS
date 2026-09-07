@@ -9,6 +9,7 @@ import type {
   VariationRow,
 } from '@/features/products/model/product'
 import type { Sale } from '@/features/sales/model/sale'
+import type { Transfer } from '@/features/transfers/model/transfer'
 
 /** Kept in step with the dashboard's exchange-rate widget. */
 export const USD_RATE = 12_225
@@ -288,4 +289,65 @@ export const sales: Sale[] = Array.from({ length: 18 }, (_, index) => {
     updatedAt: createdAt.toISOString(),
     finishedAt: settled ? createdAt.toISOString() : null,
   }
+})
+
+/**
+ * Transfers between the warehouse and the two shops.
+ *
+ * Their stock effects are already baked into the variation quantities above —
+ * a received transfer is history, and an in-transit one has left its source but
+ * not yet landed. Replaying them at boot would double-count.
+ */
+export const transfers: Transfer[] = Array.from({ length: 14 }, (_, index) => {
+  const sequence = index + 1
+  const status = pick([
+    'draft',
+    'in_transit',
+    'in_transit',
+    'received',
+    'received',
+    'received',
+    'cancelled',
+  ] as const)
+
+  // Stock moves out of the warehouse far more often than back into it.
+  const from = random() > 0.25 ? locations[0]! : pick(locations)
+  const to = pick(locations.filter((location) => location.id !== from.id))
+
+  const createdAt = new Date(Date.now() - between(1, 60) * 86_400_000)
+  const lines = Array.from({ length: between(1, 5) }, (_, lineIndex) => {
+    const variation = pick(variations)
+    return {
+      id: `trl-${sequence}-${lineIndex + 1}`,
+      variationId: variation.id,
+      productId: variation.productId,
+      sku: variation.sku,
+      name: variation.fullName,
+      imageUrl: variation.imageUrl,
+      unit: variation.unit,
+      quantity: between(1, 12),
+    }
+  })
+
+  const sentAt = status === 'draft' ? null : new Date(createdAt.getTime() + 3_600_000).toISOString()
+  const receivedAt =
+    status === 'received' ? new Date(createdAt.getTime() + 2 * 86_400_000).toISOString() : null
+
+  return {
+    id: `tr-${sequence}`,
+    number: `TR-${String(sequence).padStart(5, '0')}`,
+    status,
+    fromLocationId: from.id,
+    fromLocationName: from.name,
+    toLocationId: to.id,
+    toLocationName: to.name,
+    lines,
+    comment:
+      random() > 0.7 ? pick(['Weekly top-up', 'Shop request', 'Rebalancing slow movers']) : null,
+    createdBy: pick(['Akhmet Dauletmuratov', 'Mansurbek', 'Dilnoza']),
+    createdAt: createdAt.toISOString(),
+    sentAt,
+    receivedAt,
+    updatedAt: receivedAt ?? sentAt ?? createdAt.toISOString(),
+  } satisfies Transfer
 })

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { combinationName } from '@/features/products/model/product'
 import type { Product, VariationRow } from '@/features/products/model/product'
+import type { Transfer, TransferLine, TransferStatus } from '@/features/transfers/model/transfer'
 import type { Sale, SaleLine, SaleStatus } from '@/features/sales/model/sale'
 import {
   brands,
@@ -9,6 +10,7 @@ import {
   locations,
   products as seedProducts,
   sales as seedSales,
+  transfers as seedTransfers,
   variations as seedVariations,
 } from './seed'
 import { computeTotals } from '@/features/sales/model/sale'
@@ -24,6 +26,7 @@ interface CatalogState {
   products: Product[]
   variations: VariationRow[]
   sales: Sale[]
+  transfers: Transfer[]
   clients: Client[]
   categories: typeof categories
   brands: typeof brands
@@ -36,6 +39,22 @@ interface CatalogState {
   setProductFlag: (productId: string, flag: 'isShippable' | 'showOnline', value: boolean) => void
   createProduct: (input: ProductInput) => Product
   updateProduct: (id: string, input: ProductInput) => Product | undefined
+
+  createTransfer: (input: CreateTransferInput) => Transfer
+  /**
+   * Advances a transfer and moves the stock that goes with it. Returns the
+   * reason it could not, so the screen can say so rather than failing quietly.
+   */
+  setTransferStatus: (id: string, to: TransferStatus) => { ok: true } | { ok: false; error: string }
+}
+
+export interface CreateTransferInput {
+  fromLocationId: string
+  toLocationId: string
+  comment: string
+  lines: TransferLine[]
+  /** Draft to keep working on it, in_transit to send it straight away. */
+  status: Extract<TransferStatus, 'draft' | 'in_transit'>
 }
 
 export interface CreateSaleInput {
@@ -118,6 +137,35 @@ function flatten(product: Product): VariationRow[] {
 }
 
 /**
+ * Adds `delta` to one variation's quantity at one location, in both places the
+ * app reads stock from: the nested product and the flat catalogue row. They are
+ * two views of one fact, so they are always written together — and `stock`
+ * is recomputed as the sum rather than adjusted, so it cannot drift.
+ *
+ * A location the variation has never been stocked at gains a row; a row that
+ * reaches zero is kept, because "carried here, none right now" is different
+ * from "not carried here" and the catalogue's location filter relies on it.
+ */
+function applyStockDelta(
+  variations: { locationId: string; locationName: string; quantity: number }[],
+  locationId: string,
+  locationName: string,
+  delta: number,
+) {
+  const existing = variations.find((row) => row.locationId === locationId)
+  const next = existing
+    ? variations.map((row) =>
+        row.locationId === locationId ? { ...row, quantity: row.quantity + delta } : row,
+      )
+    : [...variations, { locationId, locationName, quantity: delta }]
+  return { stockByLocation: next, stock: next.reduce((sum, row) => sum + row.quantity, 0) }
+}
+
+/** What one location currently holds of one variation. */
+const quantityAt = (rows: { locationId: string; quantity: number }[], locationId: string) =>
+  rows.find((row) => row.locationId === locationId)?.quantity ?? 0
+
+/**
  * The whole dataset, in memory. Everything the screens show comes from here —
  * there is no backend and no network. Writes replace the relevant array so
  * subscribed components re-render.
@@ -126,6 +174,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
   products: seedProducts,
   variations: seedVariations,
   sales: seedSales,
+  transfers: seedTransfers,
   clients,
   categories,
   brands,
@@ -265,5 +314,128 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       variations: [...get().variations.filter((v) => v.productId !== id), ...flatten(product)],
     })
     return product
+  },
+
+  createTransfer: (input) => {
+    const sequence = get().transfers.length + 1
+    const now = new Date().toISOString()
+    const named = (id: string) => get().locations.find((l) => l.id === id)?.name ?? '—'
+
+    const transfer: Transfer = {
+      id: `tr-${sequence}`,
+      number: `TR-${String(sequence).padStart(5, '0')}`,
+      status: 'draft',
+      fromLocationId: input.fromLocationId,
+      fromLocationName: named(input.fromLocationId),
+      toLocationId: input.toLocationId,
+      toLocationName: named(input.toLocationId),
+      lines: input.lines,
+      comment: input.comment || null,
+      createdBy: 'Akhmet Dauletmuratov',
+      createdAt: now,
+      sentAt: null,
+      receivedAt: null,
+      updatedAt: now,
+    }
+
+    set({ transfers: [...get().transfers, transfer] })
+    // Sending goes through the same path as sending later, so the stock
+    // deduction and its checks exist in exactly one place.
+    if (input.status === 'in_transit') get().setTransferStatus(transfer.id, 'in_transit')
+    return get().transfers.find((t) => t.id === transfer.id) ?? transfer
+  },
+
+  setTransferStatus: (id, to) => {
+    const transfer = get().transfers.find((t) => t.id === id)
+    if (!transfer) return { ok: false, error: 'That transfer no longer exists' }
+
+    /** Moves every line by `delta` at one end of the transfer. */
+    const move = (locationId: string, locationName: string, sign: 1 | -1) => {
+      const byVariation = new Map<string, number>()
+      for (const line of transfer.lines) {
+        byVariation.set(line.variationId, (byVariation.get(line.variationId) ?? 0) + line.quantity)
+      }
+      set({
+        products: get().products.map((product) => {
+          if (!product.variations.some((v) => byVariation.has(v.id))) return product
+          return {
+            ...product,
+            variations: product.variations.map((variation) => {
+              const quantity = byVariation.get(variation.id)
+              if (quantity === undefined) return variation
+              return {
+                ...variation,
+                ...applyStockDelta(
+                  variation.stockByLocation,
+                  locationId,
+                  locationName,
+                  sign * quantity,
+                ),
+              }
+            }),
+          }
+        }),
+        variations: get().variations.map((row) => {
+          const quantity = byVariation.get(row.id)
+          if (quantity === undefined) return row
+          return {
+            ...row,
+            ...applyStockDelta(row.stockByLocation, locationId, locationName, sign * quantity),
+          }
+        }),
+      })
+    }
+
+    const now = new Date().toISOString()
+
+    if (to === 'in_transit') {
+      if (transfer.status !== 'draft') return { ok: false, error: 'This transfer has already left' }
+      // Checked against live stock, not against what was available when the
+      // draft was written — a sale may have taken the last one since.
+      const short = transfer.lines.find((line) => {
+        const row = get().variations.find((v) => v.id === line.variationId)
+        return !row || quantityAt(row.stockByLocation, transfer.fromLocationId) < line.quantity
+      })
+      if (short) {
+        return {
+          ok: false,
+          error: `${transfer.fromLocationName} no longer has ${short.quantity} × ${short.name}`,
+        }
+      }
+      move(transfer.fromLocationId, transfer.fromLocationName, -1)
+    }
+
+    if (to === 'received') {
+      if (transfer.status !== 'in_transit') {
+        return { ok: false, error: 'Only a transfer in transit can be received' }
+      }
+      move(transfer.toLocationId, transfer.toLocationName, 1)
+    }
+
+    if (to === 'cancelled') {
+      if (transfer.status === 'received') {
+        return { ok: false, error: 'It has already been received — correct it instead' }
+      }
+      // Goods already on the truck go back where they came from; a draft never
+      // moved anything, so there is nothing to undo.
+      if (transfer.status === 'in_transit') {
+        move(transfer.fromLocationId, transfer.fromLocationName, 1)
+      }
+    }
+
+    set({
+      transfers: get().transfers.map((t) =>
+        t.id === id
+          ? {
+              ...t,
+              status: to,
+              sentAt: to === 'in_transit' ? now : t.sentAt,
+              receivedAt: to === 'received' ? now : t.receivedAt,
+              updatedAt: now,
+            }
+          : t,
+      ),
+    })
+    return { ok: true }
   },
 }))

@@ -14,7 +14,7 @@ import { formatMoney } from '@/shared/lib/format'
 import { cn } from '@/shared/lib/cn'
 import { useCreateSale } from '../api/sales'
 import type { Client } from '../api/sales'
-import { ProductPicker } from '../components/ProductPicker'
+import { ProductPicker } from '@/shared/components/ProductPicker'
 import { SaleLinesTable } from '../components/SaleLinesTable'
 import { ClientPicker } from '../components/ClientPicker'
 import {

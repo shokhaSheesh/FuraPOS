@@ -35,6 +35,8 @@ export const paths = {
     detail: (id = ':productId') => `/products/list/${id}`,
     edit: (id = ':productId') => `/products/list/${id}/edit`,
     transfers: '/products/transfers', // OX: /app/products/transfers
+    newTransfer: '/products/transfers/new',
+    transferDetail: (id = ':transferId') => `/products/transfers/${id}`,
     corrections: '/products/corrections', // OX: /app/products/corrections
     stocktaking: '/products/stocktaking', // OX: /app/products/reviews
     goodsReceipt: '/products/goods-receipt', // OX: /app/products/imports

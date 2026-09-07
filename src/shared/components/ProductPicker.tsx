@@ -5,15 +5,31 @@ import { Skeleton } from '@/shared/ui/Skeleton'
 import { ProductThumb } from '@/shared/components/ProductThumb'
 import { cn } from '@/shared/lib/cn'
 import { formatMoney, formatNumber } from '@/shared/lib/format'
+import { useDataStore } from '@/data/store'
+import { matches } from '@/data/query'
 import type { VariationRow } from '@/features/products/model/product'
-import { useVariations } from '@/features/products/api/products'
 
 /**
  * Searchable product picker. `Select` is for a short fixed list; a catalog of
  * thousands needs search, so this is a combobox: type, arrow through results,
- * Enter to add. Built to be reused by goods receipt and purchase orders.
+ * Enter to add. Shared, because sales, transfers, goods receipt and purchase
+ * orders all begin the same way — by finding a variation.
+ *
+ * `stockLabel` lets the caller say which quantity matters: a sale cares about
+ * the total, a transfer only about the shelf the goods are leaving.
  */
-export function ProductPicker({ onPick }: { onPick: (variation: VariationRow) => void }) {
+export function ProductPicker({
+  onPick,
+  placeholder = 'Search a product by name, SKU or barcode to add it…',
+  stockLabel,
+  disabled,
+}: {
+  onPick: (variation: VariationRow) => void
+  placeholder?: string
+  /** Overrides the right-hand quantity shown against each result. */
+  stockLabel?: (variation: VariationRow) => { text: string; muted: boolean }
+  disabled?: boolean
+}) {
   const [term, setTerm] = useState('')
   const [debounced, setDebounced] = useState('')
   const [highlight, setHighlight] = useState(0)
@@ -24,13 +40,19 @@ export function ProductPicker({ onPick }: { onPick: (variation: VariationRow) =>
     return () => clearTimeout(timer)
   }, [term])
 
-  const { data } = useVariations(
-    { search: debounced, pageSize: 8, status: 'active' },
-    { enabled: debounced.length > 0 },
-  )
+  const variations = useDataStore((s) => s.variations)
   const isFetching = false
 
-  const results = useMemo(() => data?.items ?? [], [data])
+  const results = useMemo(() => {
+    if (!debounced) return []
+    return variations
+      .filter(
+        (v) =>
+          v.status === 'active' &&
+          matches([v.fullName, v.sku, v.barcode, v.brandName, v.description], debounced),
+      )
+      .slice(0, 8)
+  }, [variations, debounced])
   useEffect(() => setHighlight(0), [debounced])
 
   const add = (product: VariationRow) => {
@@ -58,7 +80,7 @@ export function ProductPicker({ onPick }: { onPick: (variation: VariationRow) =>
     }
   }
 
-  const open = debounced.length > 0
+  const open = debounced.length > 0 && !disabled
 
   return (
     <div className="relative">
@@ -68,8 +90,9 @@ export function ProductPicker({ onPick }: { onPick: (variation: VariationRow) =>
         value={term}
         onChange={(event) => setTerm(event.target.value)}
         onKeyDown={onKeyDown}
-        placeholder="Search a product by name, SKU or barcode to add it…"
+        placeholder={placeholder}
         aria-label="Add a product"
+        disabled={disabled}
         className="pl-8"
       />
 
@@ -105,10 +128,14 @@ export function ProductPicker({ onPick }: { onPick: (variation: VariationRow) =>
                     <span
                       className={cn(
                         'text-2xs shrink-0',
-                        product.stock > 0 ? 'text-fg-muted' : 'text-danger',
+                        (stockLabel ? stockLabel(product).muted : product.stock > 0)
+                          ? 'text-fg-muted'
+                          : 'text-danger',
                       )}
                     >
-                      {formatNumber(product.stock)} {product.unit}
+                      {stockLabel
+                        ? stockLabel(product).text
+                        : `${formatNumber(product.stock)} ${product.unit}`}
                     </span>
                     <span className="text-fg w-28 shrink-0 text-right font-medium tabular-nums">
                       {formatMoney(product.salePrice)}

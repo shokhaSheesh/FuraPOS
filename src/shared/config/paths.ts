@@ -42,6 +42,8 @@ export const paths = {
     correctionDetail: (id = ':correctionId') => `/products/corrections/${id}`,
     stocktaking: '/products/stocktaking', // OX: /app/products/reviews
     goodsReceipt: '/products/goods-receipt', // OX: /app/products/imports
+    newGoodsReceipt: '/products/goods-receipt/new',
+    goodsReceiptDetail: (id = ':receiptId') => `/products/goods-receipt/${id}`,
     repricing: '/products/repricing', // OX: /app/products/reprices
     printTemplates: '/products/print-templates', // OX: /app/products/stickers
     suppliers: '/products/suppliers', // OX: /app/products/suppliers

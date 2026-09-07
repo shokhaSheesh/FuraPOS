@@ -7,6 +7,13 @@ import type {
   CorrectionLine,
   CorrectionReason,
 } from '@/features/corrections/model/correction'
+import {
+  landedUnitCost,
+  type AdditionalCost,
+  type GoodsReceipt,
+  type ReceiptLine,
+  type ReceiptStatus,
+} from '@/features/receipts/model/receipt'
 import type { Sale, SaleLine, SaleStatus } from '@/features/sales/model/sale'
 import {
   brands,
@@ -15,7 +22,10 @@ import {
   locations,
   products as seedProducts,
   sales as seedSales,
+  USD_RATE,
   corrections as seedCorrections,
+  receipts as seedReceipts,
+  suppliers,
   transfers as seedTransfers,
   variations as seedVariations,
 } from './seed'
@@ -34,10 +44,12 @@ interface CatalogState {
   sales: Sale[]
   transfers: Transfer[]
   corrections: Correction[]
+  receipts: GoodsReceipt[]
   clients: Client[]
   categories: typeof categories
   brands: typeof brands
   locations: typeof locations
+  suppliers: typeof suppliers
 
   createSale: (input: CreateSaleInput) => Sale
   updateSale: (id: string, patch: { status?: SaleStatus; paid?: number }) => Sale | undefined
@@ -62,9 +74,29 @@ interface CatalogState {
     quantities?: Record<string, number>,
   ) => { ok: true } | { ok: false; error: string }
 
+  createReceipt: (input: CreateReceiptInput) => GoodsReceipt
+  /** Posts or cancels a receipt, landing or reversing the stock that goes with it. */
+  setReceiptStatus: (
+    id: string,
+    to: ReceiptStatus,
+    /** What was actually counted off the truck, keyed by line id. */
+    quantities?: Record<string, number>,
+  ) => { ok: true } | { ok: false; error: string }
+
   createCorrection: (input: CreateCorrectionInput) => Correction
   /** Reverses a correction's effect, leaving both documents in the history. */
   cancelCorrection: (id: string) => { ok: true } | { ok: false; error: string }
+}
+
+export interface CreateReceiptInput {
+  supplierId: string | null
+  invoiceNumber: string
+  locationId: string
+  comment: string
+  lines: ReceiptLine[]
+  additionalCosts: AdditionalCost[]
+  /** Draft to keep working on it, received to post it straight away. */
+  status: Extract<ReceiptStatus, 'draft' | 'received'>
 }
 
 export interface CreateCorrectionInput {
@@ -240,10 +272,12 @@ export const useDataStore = create<CatalogState>((set, get) => ({
   sales: seedSales,
   transfers: seedTransfers,
   corrections: seedCorrections,
+  receipts: seedReceipts,
   clients,
   categories,
   brands,
   locations,
+  suppliers,
 
   createSale: (input) => {
     const sales = get().sales
@@ -544,6 +578,155 @@ export const useDataStore = create<CatalogState>((set, get) => ({
           : t,
       ),
     })
+    return { ok: true }
+  },
+
+  createReceipt: (input) => {
+    const sequence = get().receipts.length + 1
+    const now = new Date().toISOString()
+
+    const receipt: GoodsReceipt = {
+      id: `gr-${sequence}`,
+      number: `GR-${String(sequence).padStart(5, '0')}`,
+      status: 'draft',
+      supplierId: input.supplierId,
+      supplierName: get().suppliers.find((s) => s.id === input.supplierId)?.name ?? null,
+      invoiceNumber: input.invoiceNumber || null,
+      locationId: input.locationId,
+      locationName: get().locations.find((l) => l.id === input.locationId)?.name ?? '—',
+      lines: input.lines,
+      additionalCosts: input.additionalCosts,
+      comment: input.comment || null,
+      createdBy: 'Akhmet Dauletmuratov',
+      receivedBy: null,
+      createdAt: now,
+      receivedAt: null,
+      updatedAt: now,
+    }
+
+    set({ receipts: [...get().receipts, receipt] })
+    // Posting goes through the same path whether it happens now or later, so
+    // the stock and cost effects exist in exactly one place.
+    if (input.status === 'received') get().setReceiptStatus(receipt.id, 'received')
+    return get().receipts.find((r) => r.id === receipt.id) ?? receipt
+  },
+
+  setReceiptStatus: (id, to, quantities) => {
+    const receipt = get().receipts.find((r) => r.id === id)
+    if (!receipt) return { ok: false, error: 'That receipt no longer exists' }
+
+    let lines = receipt.lines
+
+    if (to === 'received') {
+      if (receipt.status !== 'draft') return { ok: false, error: 'This receipt is already posted' }
+      lines = receipt.lines.map((line) => ({
+        ...line,
+        receivedQuantity: Math.max(0, quantities?.[line.id] ?? line.orderedQuantity),
+      }))
+      if (lines.every((line) => (line.receivedQuantity ?? 0) === 0)) {
+        return { ok: false, error: 'Nothing to receive — every line is zero' }
+      }
+    }
+
+    if (to === 'cancelled' && receipt.status === 'draft') {
+      // A draft never landed anything, so cancelling only closes the document.
+      set({
+        receipts: get().receipts.map((r) =>
+          r.id === id ? { ...r, status: 'cancelled', updatedAt: new Date().toISOString() } : r,
+        ),
+      })
+      return { ok: true }
+    }
+
+    if (to === 'cancelled' && receipt.status === 'cancelled') {
+      return { ok: false, error: 'It has already been cancelled' }
+    }
+
+    const sign = to === 'received' ? 1 : -1
+    const deltas = new Map<string, number>()
+    for (const line of lines) {
+      const quantity = line.receivedQuantity ?? 0
+      if (quantity > 0) {
+        deltas.set(line.variationId, (deltas.get(line.variationId) ?? 0) + sign * quantity)
+      }
+    }
+
+    // Cancelling a posted receipt must not leave stock it created behind, and
+    // must not push a shelf below zero either — the goods may already be sold.
+    if (sign === -1) {
+      const overdrawn = [...deltas.entries()].find(([variationId, delta]) => {
+        const row = get().variations.find((v) => v.id === variationId)
+        return quantityAt(row?.stockByLocation ?? [], receipt.locationId) + delta < 0
+      })
+      if (overdrawn) {
+        const name = lines.find((line) => line.variationId === overdrawn[0])?.name ?? 'a product'
+        return {
+          ok: false,
+          error: `${name} has already left ${receipt.locationName} — correct it instead of cancelling`,
+        }
+      }
+    }
+
+    const now = new Date().toISOString()
+
+    set({
+      receipts: get().receipts.map((r) =>
+        r.id === id
+          ? {
+              ...r,
+              status: to,
+              lines,
+              receivedAt: to === 'received' ? now : r.receivedAt,
+              receivedBy: to === 'received' ? 'Akhmet Dauletmuratov' : r.receivedBy,
+              updatedAt: now,
+            }
+          : r,
+      ),
+      ...commitDeltas(get(), deltas, receipt.locationId, receipt.locationName),
+    })
+
+    /*
+      Posting is where a cost price is actually discovered. The variation takes
+      the *landed* cost of this receipt — the supplier's price plus its share of
+      freight and duty — because a cost that ignores those makes every margin on
+      every screen optimistic.
+
+      Last landed cost wins, rather than a weighted average across what is
+      already on the shelf. It is the simpler rule and the predictable one, but
+      it is a business decision: see docs/OX-NAVIGATION-MAP.md.
+    */
+    if (to === 'received') {
+      const costs = new Map<string, number>()
+      for (const line of lines) {
+        if ((line.receivedQuantity ?? 0) > 0) {
+          costs.set(line.variationId, landedUnitCost(line, { ...receipt, lines }, USD_RATE))
+        }
+      }
+      set({
+        products: get().products.map((product) =>
+          product.variations.some((v) => costs.has(v.id))
+            ? {
+                ...product,
+                variations: product.variations.map((variation) =>
+                  costs.has(variation.id)
+                    ? {
+                        ...variation,
+                        costPrice: Math.round(costs.get(variation.id)!),
+                        costCurrency: 'UZS',
+                      }
+                    : variation,
+                ),
+              }
+            : product,
+        ),
+        variations: get().variations.map((row) =>
+          costs.has(row.id)
+            ? { ...row, costPrice: Math.round(costs.get(row.id)!), costCurrency: 'UZS' }
+            : row,
+        ),
+      })
+    }
+
     return { ok: true }
   },
 

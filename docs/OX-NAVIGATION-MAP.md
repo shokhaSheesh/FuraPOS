@@ -151,6 +151,45 @@ Not attempted: a unified **stock movement ledger** across sales, transfers, rece
 corrections. That is the real answer to "what happened to this unit", and it is a reporting concern
 rather than something any one of these screens should own.
 
+### Goods receipt
+
+Stock arriving from a supplier — **the only way stock legitimately enters**. Everything else in the
+module takes it away. Built list, detail and create.
+
+#### Landed cost
+
+The reason this screen is worth more than a list of deliveries. A part costs the supplier's price
+_plus its share of freight, duty and broker fees_; a cost price that ignores those makes every
+margin on every screen optimistic. So a receipt carries **additional costs** as their own lines, and
+posting it writes the landed cost onto the variation.
+
+This also answers the question left open in the Transfers section: we now have two genuinely
+different money figures, so `Сумма поставщика` (supplier total) and `Сумма себестоимости` (cost
+total) are both real and both shown, rather than one number under two names.
+
+**Two business decisions to confirm with the client:**
+
+1. **Allocation basis.** Extras are spread in proportion to each line's _value_. That is the
+   ordinary method, but freight is really a function of weight or volume — and the catalogue does
+   carry `cargoWeightKg`. By weight would be more accurate **if those weights can be relied on**; a
+   rule that silently skips every part without a weight is worse than one that approximates all of
+   them, which is why value is the default.
+2. **Which cost wins.** Posting sets the variation's cost to _this receipt's_ landed cost — last
+   landed cost wins. The alternative is a weighted average across what is already on the shelf,
+   which is more correct for valuation and less predictable for a buyer reading a screen. Simple and
+   predictable was chosen; it is one line to change.
+
+#### Shortfalls mean something different here
+
+Short on a transfer is stock that left one shelf and reached no other: a loss, written off. Short on
+a receipt is stock that was invoiced and never arrived: **a claim against the supplier**, and it was
+never ours to lose. Nothing is written off, and the landed cost is spread over what actually turned
+up — so the units that did arrive carry the freight paid for the ones that did not.
+
+Cancelling a posted receipt takes its stock back, and is **refused** if any of it has already been
+sold or moved on, because that would push a shelf below zero. The message says to correct it
+instead.
+
 ## 4. Закупки — Procurement
 
 | OX (ru)            | Ours (en)          | OX route                     |

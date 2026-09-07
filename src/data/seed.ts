@@ -11,6 +11,7 @@ import type {
 import type { Sale } from '@/features/sales/model/sale'
 import type { Transfer } from '@/features/transfers/model/transfer'
 import type { Correction, CorrectionReason } from '@/features/corrections/model/correction'
+import type { GoodsReceipt } from '@/features/receipts/model/receipt'
 
 /** Kept in step with the dashboard's exchange-rate widget. */
 export const USD_RATE = 12_225
@@ -51,6 +52,14 @@ export const brands = [
   { id: 'brand-2', name: 'Denso' },
   { id: 'brand-3', name: 'Mann' },
   { id: 'brand-4', name: 'Castrol' },
+] as const
+
+/** Who we buy from. The Suppliers screen will own these properly later. */
+export const suppliers = [
+  { id: 'sup-1', name: 'AKCHAEV INC', country: 'Türkiye' },
+  { id: 'sup-2', name: 'Euro Parts DMCC', country: 'UAE' },
+  { id: 'sup-3', name: 'Sampa Otomotiv', country: 'Türkiye' },
+  { id: 'sup-4', name: 'Dinex Group', country: 'Denmark' },
 ] as const
 
 export const locations = [
@@ -445,4 +454,89 @@ export const corrections: Correction[] = Array.from({ length: 11 }, (_, index) =
     createdAt: createdAt.toISOString(),
     updatedAt: createdAt.toISOString(),
   } satisfies Correction
+})
+
+/**
+ * Goods arriving from suppliers. As with transfers and corrections, their
+ * effect is already baked into the variation quantities above — replaying them
+ * at boot would double-count.
+ *
+ * Extra costs are on most of them, because for an importer freight and duty are
+ * the normal case rather than the exception.
+ */
+export const receipts: GoodsReceipt[] = Array.from({ length: 13 }, (_, index) => {
+  const sequence = index + 1
+  const status = pick(['draft', 'received', 'received', 'received', 'cancelled'] as const)
+  const supplier = pick(suppliers)
+  // Imports land at the warehouse; the shops are supplied by transfer.
+  const location = random() > 0.2 ? locations[0]! : pick(locations)
+  const createdAt = new Date(Date.now() - between(2, 120) * 86_400_000)
+
+  const lines = Array.from({ length: between(2, 6) }, (_, lineIndex) => {
+    const variation = pick(variations)
+    const ordered = between(5, 60)
+    return {
+      id: `grl-${sequence}-${lineIndex + 1}`,
+      variationId: variation.id,
+      productId: variation.productId,
+      sku: variation.sku,
+      name: variation.fullName,
+      imageUrl: variation.imageUrl,
+      unit: variation.unit,
+      orderedQuantity: ordered,
+      // A short delivery is a claim against the supplier, and happens.
+      receivedQuantity:
+        status === 'draft'
+          ? null
+          : random() > 0.88
+            ? Math.max(1, ordered - between(1, 5))
+            : ordered,
+      unitCost: variation.costPrice,
+      costCurrency: variation.costCurrency,
+    }
+  })
+
+  const additionalCosts =
+    random() > 0.25
+      ? [
+          {
+            id: `grc-${sequence}-1`,
+            label: 'Freight',
+            amount: between(400, 3_500),
+            currency: 'USD' as const,
+          },
+          ...(random() > 0.4
+            ? [
+                {
+                  id: `grc-${sequence}-2`,
+                  label: 'Customs duty',
+                  amount: between(2_000_000, 18_000_000),
+                  currency: 'UZS' as const,
+                },
+              ]
+            : []),
+        ]
+      : []
+
+  const receivedAt =
+    status === 'received' ? new Date(createdAt.getTime() + 86_400_000).toISOString() : null
+
+  return {
+    id: `gr-${sequence}`,
+    number: `GR-${String(sequence).padStart(5, '0')}`,
+    status,
+    supplierId: supplier.id,
+    supplierName: supplier.name,
+    invoiceNumber: random() > 0.2 ? `INV-${between(10_000, 99_999)}` : null,
+    locationId: location.id,
+    locationName: location.name,
+    lines,
+    additionalCosts,
+    comment: random() > 0.75 ? pick(['Part of container 3', 'Air freight — urgent']) : null,
+    createdBy: pick(['Akhmet Dauletmuratov', 'Mansurbek']),
+    receivedBy: status === 'received' ? pick(['Dilnoza', 'Sardor']) : null,
+    createdAt: createdAt.toISOString(),
+    receivedAt,
+    updatedAt: receivedAt ?? createdAt.toISOString(),
+  } satisfies GoodsReceipt
 })

@@ -15,6 +15,7 @@ import { useListQuery } from '@/shared/hooks/useListQuery'
 import { useSession } from '@/app/providers/SessionProvider'
 import { paths } from '@/shared/config/paths'
 import { formatMoney, formatNumber, formatPercent } from '@/shared/lib/format'
+import { downloadCsv } from '@/shared/lib/csv'
 import { useDataStore } from '@/data/store'
 import { USD_RATE } from '@/data/seed'
 import {
@@ -28,7 +29,7 @@ import {
   buildReceiptColumns,
   RECEIPT_COLUMNS_HIDDEN_BY_DEFAULT,
 } from '../components/receiptColumns'
-import { landedTotal, type GoodsReceipt } from '../model/receipt'
+import { landedTotal, landedUnitCost, type GoodsReceipt } from '../model/receipt'
 
 /**
  * Goods arriving from suppliers — the only way stock legitimately enters.
@@ -43,6 +44,7 @@ export default function GoodsReceiptListPage() {
   const { can } = useSession()
   const { query, setQuery } = useListQuery()
   const locations = useDataStore((s) => s.locations)
+  const variations = useDataStore((s) => s.variations)
   const { data: suppliers } = useSuppliers()
 
   const scope = { search: query.search, location: query.location, supplier: query.supplier }
@@ -54,15 +56,50 @@ export default function GoodsReceiptListPage() {
   const [pendingCancel, setPendingCancel] = useState<GoodsReceipt | null>(null)
   const cancelReceipt = useSetReceiptStatus(pendingCancel?.id ?? '')
 
+  const stockAt = useMemo(
+    () => (variationId: string, locationId: string) =>
+      variations
+        .find((v) => v.id === variationId)
+        ?.stockByLocation.find((row) => row.locationId === locationId)?.quantity ?? 0,
+    [variations],
+  )
+  const salePriceOf = useMemo(
+    () => (variationId: string) => variations.find((v) => v.id === variationId)?.salePrice ?? 0,
+    [variations],
+  )
+
+  /** OX puts a per-row download here, and a delivery is exactly the kind of
+   *  document someone forwards to an accountant. */
+  const downloadReceipt = (receipt: GoodsReceipt) => {
+    downloadCsv(
+      `${receipt.number}.csv`,
+      ['SKU', 'Product', 'Invoiced', 'Received', 'Supplier price', 'Currency', 'Landed cost'],
+      receipt.lines.map((line) => [
+        line.sku,
+        line.name,
+        line.orderedQuantity,
+        line.receivedQuantity ?? '',
+        line.unitCost,
+        line.costCurrency,
+        canSeeCost ? Math.round(landedUnitCost(line, receipt, USD_RATE)) : '',
+      ]),
+    )
+    toast.success(`${receipt.number} exported`)
+  }
+
   const columns = useMemo(
     () =>
       buildReceiptColumns({
         canCancelReceipts: can('products.goodsReceipt.delete'),
         canSeeCost,
         usdRate: USD_RATE,
+        stockAt,
+        salePriceOf,
         onCancel: setPendingCancel,
+        onDownload: downloadReceipt,
       }),
-    [can, canSeeCost],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [can, canSeeCost, stockAt, salePriceOf],
   )
 
   const tiles = [

@@ -179,6 +179,53 @@ total) are both real and both shown, rather than one number under two names.
    which is more correct for valuation and less predictable for a buyer reading a screen. Simple and
    predictable was chosen; it is one line to change.
 
+#### Columns, against OX's
+
+Read off OX's Приход list (13 columns). Ours was built before this screen was seen, so the
+divergence below is the honest record of building from a model rather than from the reference.
+
+| OX (ru)         | Ours             | Note                                                                          |
+| --------------- | ---------------- | ----------------------------------------------------------------------------- |
+| ID              | Number           |                                                                               |
+| Дата            | Created          |                                                                               |
+| Кол-во          | Invoiced         |                                                                               |
+| **Реализовано** | **Sold through** | Added after seeing OX. See below.                                             |
+| Локация         | Landed at        |                                                                               |
+| Пользователь    | Created by       |                                                                               |
+| Статус          | Status           |                                                                               |
+| Поставщики      | Supplier         |                                                                               |
+| Заметка         | Comment          | OX uses it as the delivery's _name_ — "Export N7", "N 11 Pump clutch Starter" |
+| Себестоимость   | Landed total     |                                                                               |
+| Цена поставки   | Supplier total   |                                                                               |
+| Цена продажи    | Value at sale    | Added after seeing OX                                                         |
+| Скачать         | Download as CSV  | Added after seeing OX, as a row action                                        |
+
+**`Реализовано` was the real find.** A progress bar per delivery: how much of it has sold. It says
+whether a container was a _good buy_, not merely that it arrived — nothing else in either product
+answers that. Ours is an **estimate**, and labelled as such: exact sell-through needs lot tracking,
+where every sale line remembers which delivery it drew from, and this build has none. Instead,
+whatever is still on the shelf the goods landed on is assumed to be from this delivery. That is
+right in the ordinary case and **understates** sell-through when a later delivery has restocked in
+between. Worth revisiting if lot tracking ever lands.
+
+**`Себестоимость` and `Цена поставки` are identical in every row of the live tenant** — 59 814 900
+against 59 814 900, 308 668 500 against 308 668 500, and so on down the list. So OX has the two
+fields but Fura is not using them differently: no freight or duty is being folded into cost there.
+Our landed cost is therefore an **addition to OX, not a match**, and the question for the client is
+whether it is wanted — it is the difference between a margin that is real and one that is optimistic.
+
+Three things we have that OX's screen does not, all deliberate and all worth confirming:
+
+- **Draft → posted.** OX's statuses here are only `Завершено` / `Удалено`. Ours holds a receipt open
+  until someone counts it in.
+- **Invoiced vs received per line.** OX shows a single `Кол-во`. Ours splits them, as OX itself does
+  on transfers — a short delivery is a claim against the supplier and needs to be visible.
+- **Freight and duty as their own lines**, and the uplift percentage that follows from them.
+
+Also noted from the screen: OX's Локация reads "Furasentr Erkin" on every row, so the live tenant
+appears to run a single location. Our multi-location model may be richer than the business actually
+needs — worth asking before more is built on it.
+
 #### Shortfalls mean something different here
 
 Short on a transfer is stock that left one shelf and reached no other: a loss, written off. Short on

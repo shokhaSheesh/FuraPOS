@@ -6,6 +6,8 @@ import {
   landedUnitCost,
   landedUplift,
   receiptShortfall,
+  retailValue,
+  soldThrough,
   supplierTotal,
   type ReceiptLine,
 } from './receipt'
@@ -63,7 +65,7 @@ describe('landed cost', () => {
     expect(landedUnitCost(receipt.lines[1]!, receipt, USD_RATE)).toBeCloseTo(240) // 200 + 200/5
   })
 
-  it('adds up: every unit\'s landed cost times its quantity equals the landed total', () => {
+  it("adds up: every unit's landed cost times its quantity equals the landed total", () => {
     const receipt = {
       lines: [
         line({ id: 'a', orderedQuantity: 7, unitCost: 85, costCurrency: 'USD' as const }),
@@ -234,5 +236,40 @@ describe('posting a receipt', () => {
 
     expect(nested?.stock).toBe(flat?.stock)
     expect(nested?.costPrice).toBe(flat?.costPrice)
+  })
+})
+
+describe('sell-through', () => {
+  const posted = (over: Partial<ReceiptLine> = {}) => ({
+    status: 'received' as const,
+    locationId: 'loc-1',
+    lines: [line({ orderedQuantity: 10, receivedQuantity: 10, ...over })],
+  })
+
+  it('is zero while none of it has moved', () => {
+    expect(soldThrough(posted(), () => 10)).toEqual({ received: 10, sold: 0, ratio: 0 })
+  })
+
+  it('reads the shelf to work out what has gone', () => {
+    expect(soldThrough(posted(), () => 4)).toEqual({ received: 10, sold: 6, ratio: 0.6 })
+    expect(soldThrough(posted(), () => 0)).toEqual({ received: 10, sold: 10, ratio: 1 })
+  })
+
+  it('never exceeds what was received, however much is on the shelf', () => {
+    // A later delivery has restocked past this one; sell-through cannot go
+    // negative, and this is exactly the case where the estimate understates.
+    expect(soldThrough(posted(), () => 400)).toEqual({ received: 10, sold: 0, ratio: 0 })
+  })
+
+  it('says nothing about a receipt that was never posted', () => {
+    const draft = { status: 'draft' as const, locationId: 'loc-1', lines: [line()] }
+    expect(soldThrough(draft, () => 0)).toEqual({ received: 0, sold: 0, ratio: 0 })
+  })
+})
+
+describe('retail value', () => {
+  it('prices the delivery at what we sell it for, not what we paid', () => {
+    const receipt = { lines: [line({ orderedQuantity: 4 }), line({ id: 'b', orderedQuantity: 6 })] }
+    expect(retailValue(receipt, () => 1_000)).toBe(10_000)
   })
 })

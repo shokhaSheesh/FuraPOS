@@ -159,6 +159,44 @@ export const receiptShortfall = (r: Pick<GoodsReceipt, 'lines'>) =>
     0,
   )
 
+/** What the whole delivery is worth at the price we sell it for. */
+export const retailValue = (
+  r: Pick<GoodsReceipt, 'lines'>,
+  salePriceOf: (variationId: Id) => number,
+) => r.lines.reduce((sum, line) => sum + lineQuantity(line) * salePriceOf(line.variationId), 0)
+
+/**
+ * How much of a delivery has sold through — OX's `Реализовано`, and the most
+ * interesting number on its screen: it says whether a container was a good buy,
+ * not merely that it arrived.
+ *
+ * **This is an estimate, and knowingly so.** Doing it exactly needs lot
+ * tracking — every sale line remembering which delivery it drew from — which
+ * this build does not have. Instead: whatever of a line is still on the shelf
+ * it landed on is assumed to be from this delivery, and the rest is assumed
+ * sold. That is right when a part is delivered and sold before the next
+ * delivery of it, which is the ordinary case, and it **understates** sell-
+ * through when a later delivery has restocked the shelf in the meantime.
+ *
+ * Never present it as an exact figure. See docs/OX-NAVIGATION-MAP.md.
+ */
+export function soldThrough(
+  receipt: Pick<GoodsReceipt, 'lines' | 'locationId' | 'status'>,
+  stockAt: (variationId: Id, locationId: Id) => number,
+): { received: number; sold: number; ratio: number } {
+  if (receipt.status !== 'received') return { received: 0, sold: 0, ratio: 0 }
+
+  let received = 0
+  let sold = 0
+  for (const line of receipt.lines) {
+    const landed = line.receivedQuantity ?? 0
+    received += landed
+    const stillHere = Math.min(stockAt(line.variationId, receipt.locationId), landed)
+    sold += landed - stillHere
+  }
+  return { received, sold, ratio: received === 0 ? 0 : sold / received }
+}
+
 /** The one step a receipt can take from where it is. */
 export function nextStep(status: ReceiptStatus): { to: ReceiptStatus; label: string } | null {
   return status === 'draft' ? { to: 'received', label: 'Post receipt' } : null

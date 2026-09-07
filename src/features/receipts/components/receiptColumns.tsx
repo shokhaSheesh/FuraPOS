@@ -1,4 +1,4 @@
-import { Ban } from 'lucide-react'
+import { Ban, Download } from 'lucide-react'
 import { Badge } from '@/shared/ui/Badge'
 import { RowActions } from '@/shared/components/RowActions'
 import type { TableColumn } from '@/shared/components/table/features'
@@ -13,6 +13,8 @@ import {
   receiptShortfall,
   receiptStatusLabel,
   receiptStatusTone,
+  retailValue,
+  soldThrough,
   supplierTotal,
   type GoodsReceipt,
 } from '../model/receipt'
@@ -21,14 +23,21 @@ const Empty = () => <span className="text-fg-subtle">—</span>
 
 export function buildReceiptColumns({
   onCancel,
+  onDownload,
   canCancelReceipts,
   canSeeCost,
   usdRate,
+  stockAt,
+  salePriceOf,
 }: {
   onCancel: (receipt: GoodsReceipt) => void
+  onDownload: (receipt: GoodsReceipt) => void
   canCancelReceipts: boolean
   canSeeCost: boolean
   usdRate: number
+  /** Live stock, for the sell-through estimate. */
+  stockAt: (variationId: string, locationId: string) => number
+  salePriceOf: (variationId: string) => number
 }): TableColumn<GoodsReceipt>[] {
   return [
     {
@@ -91,6 +100,36 @@ export function buildReceiptColumns({
         )
       },
     },
+    /*
+      OX's `Реализовано`: how much of the delivery has sold through. The most
+      useful column on the screen, because it says whether a container was a
+      good buy rather than merely that it arrived. It is an estimate — see
+      `soldThrough` — so it is drawn as a bar and a rounded percentage, never as
+      a precise unit count pretending to be exact.
+    */
+    {
+      id: 'soldThrough',
+      header: 'Sold through',
+      enableHiding: false,
+      cell: ({ row }) => {
+        const { received, sold, ratio } = soldThrough(row.original, stockAt)
+        if (received === 0) return <Empty />
+        return (
+          <div
+            className="flex items-center gap-2"
+            title={`About ${formatNumber(sold)} of ${formatNumber(received)} sold`}
+          >
+            <span className="bg-surface-inset h-1.5 w-20 shrink-0 overflow-hidden rounded-full">
+              <span
+                className={`block h-full rounded-full ${ratio >= 1 ? 'bg-success' : 'bg-info'}`}
+                style={{ width: `${Math.min(100, Math.round(ratio * 100))}%` }}
+              />
+            </span>
+            <span className="text-fg-muted text-2xs tabular-nums">{formatPercent(ratio)}</span>
+          </div>
+        )
+      },
+    },
     ...(canSeeCost
       ? [
           {
@@ -116,6 +155,13 @@ export function buildReceiptColumns({
             cell: ({ row }: { row: { original: GoodsReceipt } }) => (
               <span className="font-medium">{formatMoney(landedTotal(row.original, usdRate))}</span>
             ),
+          },
+          {
+            id: 'retail',
+            header: 'Value at sale',
+            meta: { align: 'right' as const },
+            cell: ({ row }: { row: { original: GoodsReceipt } }) =>
+              formatMoney(retailValue(row.original, salePriceOf)),
           },
           {
             id: 'uplift',
@@ -163,18 +209,20 @@ export function buildReceiptColumns({
       enableHiding: false,
       cell: ({ row }) => (
         <RowActions
-          actions={
-            canCancelReceipts && canCancel(row.original.status)
-              ? [
-                  {
-                    label: 'Cancel receipt',
-                    icon: Ban,
-                    destructive: true,
-                    onSelect: () => onCancel(row.original),
-                  },
-                ]
-              : []
-          }
+          actions={[
+            {
+              label: 'Download as CSV',
+              icon: Download,
+              onSelect: () => onDownload(row.original),
+            },
+            {
+              label: 'Cancel receipt',
+              icon: Ban,
+              destructive: true,
+              hidden: !canCancelReceipts || !canCancel(row.original.status),
+              onSelect: () => onCancel(row.original),
+            },
+          ]}
         />
       ),
     },
@@ -186,6 +234,7 @@ export const RECEIPT_COLUMNS_HIDDEN_BY_DEFAULT = [
   'invoiceNumber',
   'supplierTotal',
   'extras',
+  'retail',
   'receivedAt',
   'createdBy',
   'receivedBy',

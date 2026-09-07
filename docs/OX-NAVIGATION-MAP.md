@@ -165,6 +165,40 @@ The headline figure is **accuracy**, not loss: a warehouse finding a small discr
 is working, while one whose counts agree 80% of the time cannot trust a number on any other screen,
 however small the money looks.
 
+#### Columns, against OX's
+
+OX's Инвентаризация list carries 9 columns. Ours was built before it was seen.
+
+| OX (ru)                | Ours                           | Note                                                                  |
+| ---------------------- | ------------------------------ | --------------------------------------------------------------------- |
+| ID                     | Number                         |                                                                       |
+| Время начала           | Started                        |                                                                       |
+| Время завершения       | Finished                       | Added after seeing OX                                                 |
+| Статус                 | Status                         |                                                                       |
+| **Тип инвентаризации** | **Counted by**                 | Added after seeing OX — see below                                     |
+| Локация                | Location                       |                                                                       |
+| Фильтр                 | (the value under "Counted by") | OX splits type and value across two columns; we keep them in one cell |
+| Создатель              | Started by                     |                                                                       |
+| Заметка                | Comment                        |                                                                       |
+
+**`Тип инвентаризации` was the thing worth taking.** OX names the _dimension_ a count was scoped
+by — "Локация" — as its own column, rather than leaving an empty cell where a category might have
+been. That is right: "Whole location" says a decision was made, where a blank only says a field was
+left alone. Ours now reads Whole location / Category / Brand / Category and brand, with the value
+beneath it. **Brand was added as a scope at the same time**, since OX's having a _type_ field
+implies more scopes than one.
+
+**Six columns we have that OX does not**, and the reason is the same for all of them: OX's list
+tells you a count _happened_ but nothing about what it _found_ — no progress, no accuracy, no
+variance, no value. Ours carries Counted (a progress bar), Agreed, Differs, Missing, Found and
+Value at cost, because a stocktake list where you cannot see whether anything was wrong is a log of
+events rather than information.
+
+**Worth telling the client, from their own data:** the live tenant has **one** stocktake, ever, and
+it ran from 07:11:38 to 07:12:35 — fifty-seven seconds. Whatever that was, it was not someone
+walking an aisle. Either the feature does not fit how Fura works, or they know they should count and
+do not. Either answer changes how much this screen is worth building out.
+
 #### Corrections and Stocktaking are the same operation
 
 A correction is ad-hoc and small ("this box arrived crushed"); a stocktake is a planned count of a

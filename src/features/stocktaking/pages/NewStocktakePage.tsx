@@ -32,16 +32,18 @@ export default function NewStocktakePage() {
   const navigate = useNavigate()
   const locations = useDataStore((s) => s.locations)
   const categories = useDataStore((s) => s.categories)
+  const brands = useDataStore((s) => s.brands)
   const variations = useDataStore((s) => s.variations)
   const start = useStartStocktake()
 
   const form = useForm<StocktakeDraft>({
     resolver: zodResolver(stocktakeDraftSchema),
-    defaultValues: { locationId: locations[0]?.id ?? '', categoryId: '', comment: '' },
+    defaultValues: { locationId: locations[0]?.id ?? '', categoryId: '', brandId: '', comment: '' },
   })
 
   const locationId = form.watch('locationId')
   const categoryId = form.watch('categoryId')
+  const brandId = form.watch('brandId')
 
   // The same rule the store uses to build the sheet, so the preview cannot
   // promise a different number from the one that appears.
@@ -50,9 +52,10 @@ export default function NewStocktakePage() {
       variations.filter((variation) => {
         if (variation.status === 'archived') return false
         if (categoryId && variation.categoryId !== categoryId) return false
+        if (brandId && variation.brandId !== brandId) return false
         return variation.stockByLocation.some((row) => row.locationId === locationId)
       }).length,
-    [variations, locationId, categoryId],
+    [variations, locationId, categoryId, brandId],
   )
 
   const submit = form.handleSubmit(
@@ -148,6 +151,25 @@ export default function NewStocktakePage() {
               )}
             </Field>
 
+            <Field label="Brand" hint="Narrow further when one supplier's stock is in doubt">
+              {(p) => (
+                <Controller
+                  control={form.control}
+                  name="brandId"
+                  render={({ field }) => (
+                    <Select
+                      {...p}
+                      className="w-full"
+                      value={field.value || undefined}
+                      onChange={field.onChange}
+                      placeholder="Every brand"
+                      options={brands.map((b) => ({ value: b.id, label: b.name }))}
+                    />
+                  )}
+                />
+              )}
+            </Field>
+
             <Field label="Comment" hint="Why this count is happening">
               {(p) => <Input {...p} placeholder="Monthly count" {...form.register('comment')} />}
             </Field>
@@ -160,8 +182,8 @@ export default function NewStocktakePage() {
               This sheet will have{' '}
               <span className="text-fg font-semibold">{formatNumber(lineCount)} lines</span> —
               everything {location?.name ?? 'the location'} carries
-              {categoryId ? ' in that category' : ''}, including anything the system says is at
-              zero.
+              {categoryId ? ' in that category' : ''}
+              {brandId ? ' from that brand' : ''}, including anything the system says is at zero.
             </p>
             <p className="text-fg-subtle text-2xs mt-1">
               Lines nobody counts are left exactly as they are. An empty count is not a write-off.

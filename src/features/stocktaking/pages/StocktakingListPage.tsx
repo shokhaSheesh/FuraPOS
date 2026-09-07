@@ -17,7 +17,13 @@ import { toast } from '@/shared/ui/toast'
 import { useListQuery } from '@/shared/hooks/useListQuery'
 import { useSession } from '@/app/providers/SessionProvider'
 import { paths } from '@/shared/config/paths'
-import { formatDate, formatMoney, formatNumber, formatPercent } from '@/shared/lib/format'
+import {
+  formatDate,
+  formatDateTime,
+  formatMoney,
+  formatNumber,
+  formatPercent,
+} from '@/shared/lib/format'
 import type { TableColumn } from '@/shared/components/table/features'
 import { useDataStore } from '@/data/store'
 import { USD_RATE } from '@/data/seed'
@@ -30,6 +36,8 @@ import {
 import {
   accuracy,
   discrepancies,
+  scopeDetail,
+  scopeType,
   netCostValue,
   progress,
   shortUnits,
@@ -80,11 +88,33 @@ export default function StocktakingListPage() {
         header: 'Location',
         enableHiding: false,
       },
+      /*
+        OX carries the scope as its own column (`Тип инвентаризации`) rather
+        than as an empty cell, and it is right to: "Whole location" says a
+        decision was made where a blank only says a field was left alone.
+      */
       {
-        accessorKey: 'categoryName',
-        header: 'Scope',
+        id: 'scopeType',
+        header: 'Counted by',
+        cell: ({ row }) => {
+          const detail = scopeDetail(row.original)
+          return (
+            <div className="min-w-0">
+              <p className="text-fg">{scopeType(row.original)}</p>
+              {detail ? <p className="text-fg-subtle text-2xs">{detail}</p> : null}
+            </div>
+          )
+        },
+      },
+      {
+        accessorKey: 'appliedAt',
+        header: 'Finished',
         cell: ({ row }) =>
-          row.original.categoryName ?? <span className="text-fg-subtle">Whole location</span>,
+          row.original.appliedAt ? (
+            formatDateTime(row.original.appliedAt)
+          ) : (
+            <span className="text-fg-subtle">—</span>
+          ),
       },
       {
         id: 'progress',
@@ -301,7 +331,7 @@ export default function StocktakingListPage() {
       <DataTable
         storageKey="stocktakes"
         columns={columns}
-        initialHidden={['createdBy', 'comment', 'found']}
+        initialHidden={['createdBy', 'comment', 'found', 'appliedAt']}
         data={data?.items ?? []}
         total={data?.total ?? 0}
         isLoading={isLoading}

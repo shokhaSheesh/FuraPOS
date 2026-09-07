@@ -58,7 +58,9 @@ describe('counting progress', () => {
 
 describe('applying a stocktake', () => {
   const startOne = () =>
-    useDataStore.getState().startStocktake({ locationId: 'loc-1', categoryId: '', comment: '' })
+    useDataStore
+      .getState()
+      .startStocktake({ locationId: 'loc-1', categoryId: '', brandId: '', comment: '' })
 
   it('freezes what the system believes when the sheet is opened', () => {
     const stocktake = startOne()

@@ -64,6 +64,8 @@ export interface Stocktake {
   /** Null when the whole location is in scope. */
   categoryId: Id | null
   categoryName: string | null
+  brandId: Id | null
+  brandName: string | null
   lines: StocktakeLine[]
   comment: string | null
   createdBy: string
@@ -73,6 +75,24 @@ export interface Stocktake {
   /** The correction this produced, so one ledger holds every adjustment. */
   correctionId: Id | null
   updatedAt: IsoDate
+}
+
+/**
+ * What dimension the count was scoped by — OX carries this as its own column
+ * (`Тип инвентаризации`), and it is worth having as a word rather than as an
+ * absence: "Whole location" says a decision was made, where an empty cell only
+ * says a field was left alone.
+ */
+export function scopeType(s: Pick<Stocktake, 'categoryId' | 'brandId'>) {
+  if (s.categoryId && s.brandId) return 'Category and brand'
+  if (s.categoryId) return 'Category'
+  if (s.brandId) return 'Brand'
+  return 'Whole location'
+}
+
+/** The scope in full, for the row beneath the type. */
+export function scopeDetail(s: Pick<Stocktake, 'categoryName' | 'brandName'>) {
+  return [s.categoryName, s.brandName].filter(Boolean).join(' · ')
 }
 
 /* --- progress and variance ----------------------------------------------- */
@@ -136,6 +156,7 @@ export const stocktakeDraftSchema = z.object({
   locationId: z.string().min(1, 'Pick the location being counted'),
   /** Empty string means the whole location. */
   categoryId: z.string(),
+  brandId: z.string(),
   comment: z.string(),
 })
 

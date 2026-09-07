@@ -138,8 +138,10 @@ export interface CreateRepricingInput {
 
 export interface StartStocktakeInput {
   locationId: string
-  /** Empty means the whole location. */
+  /** Empty means every category. */
   categoryId: string
+  /** Empty means every brand. */
+  brandId: string
   comment: string
 }
 
@@ -966,6 +968,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
     const sequence = get().stocktakes.length + 1
     const now = new Date().toISOString()
     const category = get().categories.find((c) => c.id === input.categoryId)
+    const brand = get().brands.find((b) => b.id === input.brandId)
 
     /*
       Every variation the location carries goes on the sheet, including ones
@@ -978,6 +981,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       .variations.filter((variation) => {
         if (variation.status === 'archived') return false
         if (input.categoryId && variation.categoryId !== input.categoryId) return false
+        if (input.brandId && variation.brandId !== input.brandId) return false
         return variation.stockByLocation.some((row) => row.locationId === input.locationId)
       })
       .map((variation, index) => ({
@@ -1005,6 +1009,8 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       locationName: get().locations.find((l) => l.id === input.locationId)?.name ?? '—',
       categoryId: input.categoryId || null,
       categoryName: category?.name ?? null,
+      brandId: input.brandId || null,
+      brandName: brand?.name ?? null,
       lines,
       comment: input.comment || null,
       createdBy: 'Akhmet Dauletmuratov',

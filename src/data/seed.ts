@@ -560,12 +560,14 @@ export const stocktakes: Stocktake[] = Array.from({ length: 6 }, (_, index) => {
   const status = pick(['counting', 'applied', 'applied', 'applied', 'cancelled'] as const)
   const location = pick(locations)
   const category = random() > 0.55 ? pick(categories) : null
+  const brand = random() > 0.8 ? pick(brands) : null
   const createdAt = new Date(Date.now() - between(3, 90) * 86_400_000)
 
   const scope = variations.filter(
     (variation) =>
       variation.stockByLocation.some((row) => row.locationId === location.id) &&
-      (!category || variation.categoryId === category.id),
+      (!category || variation.categoryId === category.id) &&
+      (!brand || variation.brandId === brand.id),
   )
 
   const lines = scope.slice(0, between(8, 24)).map((variation, lineIndex) => {
@@ -608,6 +610,8 @@ export const stocktakes: Stocktake[] = Array.from({ length: 6 }, (_, index) => {
     locationName: location.name,
     categoryId: category?.id ?? null,
     categoryName: category?.name ?? null,
+    brandId: brand?.id ?? null,
+    brandName: brand?.name ?? null,
     lines,
     comment: random() > 0.6 ? pick(['Monthly count', 'Quarterly audit', 'Brakes aisle only']) : null,
     createdBy: pick(['Akhmet Dauletmuratov', 'Mansurbek', 'Dilnoza']),

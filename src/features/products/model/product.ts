@@ -149,6 +149,7 @@ export interface VariationRow extends ProductVariation {
   categoryId: Id
   categoryName: string
   categoryPath: string
+  brandId: Id | null
   brandName: string | null
   manufacturer: string | null
   tags: string[]

@@ -13,6 +13,7 @@ import type { Transfer } from '@/features/transfers/model/transfer'
 import type { Correction, CorrectionReason } from '@/features/corrections/model/correction'
 import type { GoodsReceipt } from '@/features/receipts/model/receipt'
 import type { Stocktake } from '@/features/stocktaking/model/stocktake'
+import type { Repricing, RuleKind } from '@/features/repricing/model/repricing'
 
 /** Kept in step with the dashboard's exchange-rate widget. */
 export const USD_RATE = 12_225
@@ -189,6 +190,7 @@ export const variations: VariationRow[] = products.flatMap((product) =>
     categoryId: product.categoryId,
     categoryName: product.categoryName,
     categoryPath: product.categoryPath,
+    brandId: product.brandId,
     brandName: product.brandName,
     manufacturer: product.manufacturer,
     tags: product.tags,
@@ -614,4 +616,88 @@ export const stocktakes: Stocktake[] = Array.from({ length: 6 }, (_, index) => {
     correctionId: null,
     updatedAt: appliedAt ?? createdAt.toISOString(),
   } satisfies Stocktake
+})
+
+/**
+ * Price changes. Their effect is already in the prices above, as with every
+ * other document here.
+ *
+ * Weighted towards percentage changes because that is what actually happens:
+ * the som moves against the dollar and everything is repriced together.
+ */
+export const repricings: Repricing[] = Array.from({ length: 8 }, (_, index) => {
+  const sequence = index + 1
+  const status = pick(['draft', 'applied', 'applied', 'applied', 'reverted'] as const)
+  const kind = pick(['percent', 'percent', 'percent', 'margin', 'amount'] as const) satisfies RuleKind
+  const category = random() > 0.6 ? pick(categories) : null
+  const brand = random() > 0.75 ? pick(brands) : null
+  const createdAt = new Date(Date.now() - between(4, 150) * 86_400_000)
+
+  const rule = {
+    kind,
+    value: kind === 'percent' ? between(3, 12) : kind === 'margin' ? 0.3 : between(50_000, 400_000),
+    roundTo: pick([100, 1000, 1000, 5000]),
+  }
+
+  const scope = variations.filter(
+    (variation) =>
+      (!category || variation.categoryId === category.id) &&
+      (!brand || variation.brandId === brand.id),
+  )
+
+  const lines = scope.slice(0, between(6, 22)).map((variation, lineIndex) => {
+    const costAtTime =
+      variation.costCurrency === 'USD' ? variation.costPrice * USD_RATE : variation.costPrice
+    const base = { oldPrice: variation.salePrice, costAtTime }
+    const newPrice =
+      kind === 'percent'
+        ? Math.round((base.oldPrice * (1 + rule.value / 100)) / rule.roundTo) * rule.roundTo
+        : kind === 'amount'
+          ? Math.round((base.oldPrice + rule.value) / rule.roundTo) * rule.roundTo
+          : Math.round(costAtTime / 0.7 / rule.roundTo) * rule.roundTo
+
+    return {
+      id: `rpl-${sequence}-${lineIndex + 1}`,
+      variationId: variation.id,
+      productId: variation.productId,
+      sku: variation.sku,
+      name: variation.fullName,
+      imageUrl: variation.imageUrl,
+      categoryName: variation.categoryName,
+      costAtTime,
+      oldPrice: base.oldPrice,
+      newPrice: Math.max(0, newPrice),
+      oldDiscountPrice: variation.discountPrice,
+      newDiscountPrice:
+        variation.discountPrice === null || variation.salePrice === 0
+          ? null
+          : Math.round((variation.discountPrice / variation.salePrice) * newPrice),
+    }
+  })
+
+  const appliedAt =
+    status === 'draft' ? null : new Date(createdAt.getTime() + 3_600_000).toISOString()
+  const revertedAt =
+    status === 'reverted' ? new Date(createdAt.getTime() + 4 * 86_400_000).toISOString() : null
+
+  return {
+    id: `rp-${sequence}`,
+    number: `RP-${String(sequence).padStart(5, '0')}`,
+    status,
+    rule,
+    categoryId: category?.id ?? null,
+    categoryName: category?.name ?? null,
+    brandId: brand?.id ?? null,
+    brandName: brand?.name ?? null,
+    lines,
+    comment:
+      random() > 0.5
+        ? pick(['Exchange rate moved', 'Supplier raised prices', 'Margin correction'])
+        : null,
+    createdBy: pick(['Akhmet Dauletmuratov', 'Mansurbek']),
+    createdAt: createdAt.toISOString(),
+    appliedAt,
+    revertedAt,
+    updatedAt: revertedAt ?? appliedAt ?? createdAt.toISOString(),
+  } satisfies Repricing
 })

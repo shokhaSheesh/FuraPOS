@@ -267,6 +267,32 @@ Cancelling a posted receipt takes its stock back, and is **refused** if any of i
 sold or moved on, because that would push a shelf below zero. The message says to correct it
 instead.
 
+### Repricing
+
+Changing what many products sell for at once, as a document. Built list, price sheet and set-up. As
+with the last three, built before OX's Переоценка was seen.
+
+**Why it is not the price field on a product.** A price change has to be answerable later — when did
+this go up, and who decided — and it is almost never one price. For an importer buying in USD and
+selling in UZS, every time the som slides _every_ price is wrong at once. That is the case this
+screen exists for.
+
+- **It never touches cost.** Cost is discovered at goods receipt — what was actually paid, freight
+  included. Price is decided. A screen that could edit both would let someone invent a margin by
+  moving the wrong number.
+- **Prepare, review, apply.** Nothing changes until the third step. A bulk rule is easy to get wrong
+  by a decimal place, and the gap is where someone notices. Prices stay editable in the sheet,
+  because a rule gets ninety per cent of a repricing right and the rest is judgement.
+- **Margin is shown per line, and "below cost" is a filter.** A blanket percentage looks harmless
+  until it puts something under what it cost; applying says so before it lets that through.
+- **Reverting replays the snapshot, not the rule in reverse.** +7% then −7% does not return to the
+  original number, and rounding pushes it further every time.
+
+Four rules: by percentage, by fixed amount, **to a target margin** (works the price back from what
+each part actually cost — the only one that can _lower_ a price it was told to raise, which is how a
+catalogue of drifted margins gets fixed), and by hand. All with a rounding step, because bulk
+arithmetic produces prices like 2 340 671 that nobody would print on a label.
+
 ## 4. Закупки — Procurement
 
 | OX (ru)            | Ours (en)          | OX route                     |

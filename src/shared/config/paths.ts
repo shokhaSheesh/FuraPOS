@@ -47,6 +47,8 @@ export const paths = {
     newGoodsReceipt: '/products/goods-receipt/new',
     goodsReceiptDetail: (id = ':receiptId') => `/products/goods-receipt/${id}`,
     repricing: '/products/repricing', // OX: /app/products/reprices
+    newRepricing: '/products/repricing/new',
+    repricingDetail: (id = ':repricingId') => `/products/repricing/${id}`,
     printTemplates: '/products/print-templates', // OX: /app/products/stickers
     suppliers: '/products/suppliers', // OX: /app/products/suppliers
     supplierDetail: (id = ':supplierId') => `/products/suppliers/${id}`,

@@ -25,6 +25,9 @@ const NewGoodsReceiptPage = lazy(() => import('@/features/receipts/pages/NewGood
 const StocktakingListPage = lazy(() => import('@/features/stocktaking/pages/StocktakingListPage'))
 const StocktakeDetailPage = lazy(() => import('@/features/stocktaking/pages/StocktakeDetailPage'))
 const NewStocktakePage = lazy(() => import('@/features/stocktaking/pages/NewStocktakePage'))
+const RepricingListPage = lazy(() => import('@/features/repricing/pages/RepricingListPage'))
+const RepricingDetailPage = lazy(() => import('@/features/repricing/pages/RepricingDetailPage'))
+const NewRepricingPage = lazy(() => import('@/features/repricing/pages/NewRepricingPage'))
 const NewSalePage = lazy(() => import('@/features/sales/pages/NewSalePage'))
 const AllSalesPage = lazy(() => import('@/features/sales/pages/SalesListPage'))
 const SaleDetailPage = lazy(() => import('@/features/sales/pages/SaleDetailPage'))
@@ -124,7 +127,18 @@ const routes: RouteObject[] = [
         path: paths.products.goodsReceiptDetail(),
         element: page(<GoodsReceiptDetailPage />, 'products.goodsReceipt.view'),
       },
-      { path: paths.products.repricing, element: todo('Repricing', 'products.repricing.view') },
+      {
+        path: paths.products.repricing,
+        element: page(<RepricingListPage />, 'products.repricing.view'),
+      },
+      {
+        path: paths.products.newRepricing,
+        element: page(<NewRepricingPage />, 'products.repricing.create'),
+      },
+      {
+        path: paths.products.repricingDetail(),
+        element: page(<RepricingDetailPage />, 'products.repricing.view'),
+      },
       {
         path: paths.products.printTemplates,
         element: todo('Print templates', 'products.printTemplates.view'),

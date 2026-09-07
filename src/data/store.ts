@@ -12,6 +12,11 @@ import type {
   StocktakeLine,
 } from '@/features/stocktaking/model/stocktake'
 import {
+  priceUnder,
+  type Repricing,
+  type RepricingLine,
+} from '@/features/repricing/model/repricing'
+import {
   landedUnitCost,
   type AdditionalCost,
   type GoodsReceipt,
@@ -29,6 +34,7 @@ import {
   USD_RATE,
   corrections as seedCorrections,
   receipts as seedReceipts,
+  repricings as seedRepricings,
   stocktakes as seedStocktakes,
   suppliers,
   transfers as seedTransfers,
@@ -51,6 +57,7 @@ interface CatalogState {
   corrections: Correction[]
   receipts: GoodsReceipt[]
   stocktakes: Stocktake[]
+  repricings: Repricing[]
   clients: Client[]
   categories: typeof categories
   brands: typeof brands
@@ -89,6 +96,14 @@ interface CatalogState {
     quantities?: Record<string, number>,
   ) => { ok: true } | { ok: false; error: string }
 
+  /** Prepares a price change: works out every new price but changes nothing yet. */
+  createRepricing: (input: CreateRepricingInput) => Repricing
+  /** Overrides one line's new price, for hand-tuning before applying. */
+  setRepricingPrice: (id: string, lineId: string, newPrice: number) => void
+  applyRepricing: (id: string) => { ok: true } | { ok: false; error: string }
+  /** Puts every price back to what it was, exactly. */
+  revertRepricing: (id: string) => { ok: true } | { ok: false; error: string }
+
   /** Opens a count: freezes what the system believes for everything in scope. */
   startStocktake: (input: StartStocktakeInput) => Stocktake
   /** Records one shelf count. `null` puts a line back to uncounted. */
@@ -111,6 +126,14 @@ export interface CreateReceiptInput {
   additionalCosts: AdditionalCost[]
   /** Draft to keep working on it, received to post it straight away. */
   status: Extract<ReceiptStatus, 'draft' | 'received'>
+}
+
+export interface CreateRepricingInput {
+  rule: Repricing['rule']
+  /** Empty means everything. */
+  categoryId: string
+  brandId: string
+  comment: string
 }
 
 export interface StartStocktakeInput {
@@ -207,6 +230,7 @@ function flatten(product: Product): VariationRow[] {
     categoryId: product.categoryId,
     categoryName: product.categoryName,
     categoryPath: product.categoryPath,
+    brandId: product.brandId,
     brandName: product.brandName,
     manufacturer: product.manufacturer,
     tags: product.tags,
@@ -299,6 +323,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
   corrections: seedCorrections,
   receipts: seedReceipts,
   stocktakes: seedStocktakes,
+  repricings: seedRepricings,
   clients,
   categories,
   brands,
@@ -753,6 +778,187 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       })
     }
 
+    return { ok: true }
+  },
+
+  createRepricing: (input) => {
+    const sequence = get().repricings.length + 1
+    const now = new Date().toISOString()
+    const category = get().categories.find((c) => c.id === input.categoryId)
+    const brand = get().brands.find((b) => b.id === input.brandId)
+
+    const lines: RepricingLine[] = get()
+      .variations.filter((variation) => {
+        if (variation.status === 'archived') return false
+        if (input.categoryId && variation.categoryId !== input.categoryId) return false
+        if (input.brandId && variation.brandId !== input.brandId) return false
+        return true
+      })
+      .map((variation, index) => {
+        // Cost is snapshotted in UZS so the margin columns stay readable a
+        // month later, when the rate has moved.
+        const costAtTime =
+          variation.costCurrency === 'USD' ? variation.costPrice * USD_RATE : variation.costPrice
+        const base = {
+          id: `rpl-${sequence}-${index + 1}`,
+          variationId: variation.id,
+          productId: variation.productId,
+          sku: variation.sku,
+          name: variation.fullName,
+          imageUrl: variation.imageUrl,
+          categoryName: variation.categoryName,
+          costAtTime,
+          oldPrice: variation.salePrice,
+          oldDiscountPrice: variation.discountPrice,
+        }
+        const newPrice = priceUnder(input.rule, base)
+        return {
+          ...base,
+          newPrice,
+          // A promotional price moves with the price it discounts, keeping the
+          // discount's shape rather than its absolute size.
+          newDiscountPrice:
+            variation.discountPrice === null || variation.salePrice === 0
+              ? null
+              : Math.round((variation.discountPrice / variation.salePrice) * newPrice),
+        }
+      })
+
+    const repricing: Repricing = {
+      id: `rp-${sequence}`,
+      number: `RP-${String(sequence).padStart(5, '0')}`,
+      status: 'draft',
+      rule: input.rule,
+      categoryId: input.categoryId || null,
+      categoryName: category?.name ?? null,
+      brandId: input.brandId || null,
+      brandName: brand?.name ?? null,
+      lines,
+      comment: input.comment || null,
+      createdBy: 'Akhmet Dauletmuratov',
+      createdAt: now,
+      appliedAt: null,
+      revertedAt: null,
+      updatedAt: now,
+    }
+
+    set({ repricings: [...get().repricings, repricing] })
+    return repricing
+  },
+
+  setRepricingPrice: (id, lineId, newPrice) =>
+    set({
+      repricings: get().repricings.map((repricing) =>
+        repricing.id === id
+          ? {
+              ...repricing,
+              lines: repricing.lines.map((line) =>
+                line.id === lineId
+                  ? {
+                      ...line,
+                      newPrice: Math.max(0, newPrice),
+                      newDiscountPrice:
+                        line.oldDiscountPrice === null || line.oldPrice === 0
+                          ? null
+                          : Math.round((line.oldDiscountPrice / line.oldPrice) * newPrice),
+                    }
+                  : line,
+              ),
+              updatedAt: new Date().toISOString(),
+            }
+          : repricing,
+      ),
+    }),
+
+  applyRepricing: (id) => {
+    const repricing = get().repricings.find((r) => r.id === id)
+    if (!repricing) return { ok: false, error: 'That price change no longer exists' }
+    if (repricing.status !== 'draft') {
+      return { ok: false, error: 'This price change has already been applied' }
+    }
+
+    const changed = repricing.lines.filter((line) => line.newPrice !== line.oldPrice)
+    if (changed.length === 0) {
+      return { ok: false, error: 'Nothing to apply — every price is unchanged' }
+    }
+
+    const next = new Map(changed.map((line) => [line.variationId, line]))
+    const now = new Date().toISOString()
+
+    set({
+      products: get().products.map((product) =>
+        product.variations.some((v) => next.has(v.id))
+          ? {
+              ...product,
+              variations: product.variations.map((variation) => {
+                const line = next.get(variation.id)
+                return line
+                  ? {
+                      ...variation,
+                      salePrice: line.newPrice,
+                      discountPrice: line.newDiscountPrice,
+                    }
+                  : variation
+              }),
+            }
+          : product,
+      ),
+      variations: get().variations.map((row) => {
+        const line = next.get(row.id)
+        return line
+          ? { ...row, salePrice: line.newPrice, discountPrice: line.newDiscountPrice }
+          : row
+      }),
+      repricings: get().repricings.map((r) =>
+        r.id === id ? { ...r, status: 'applied', appliedAt: now, updatedAt: now } : r,
+      ),
+    })
+    return { ok: true }
+  },
+
+  revertRepricing: (id) => {
+    const repricing = get().repricings.find((r) => r.id === id)
+    if (!repricing) return { ok: false, error: 'That price change no longer exists' }
+    if (repricing.status !== 'applied') {
+      return { ok: false, error: 'Only an applied price change can be reverted' }
+    }
+
+    /*
+      Restores the exact prices that were snapshotted, not the reverse of the
+      rule — a percentage reversed is not the original number, and rounding
+      would make it drift further every time.
+    */
+    const previous = new Map(repricing.lines.map((line) => [line.variationId, line]))
+    const now = new Date().toISOString()
+
+    set({
+      products: get().products.map((product) =>
+        product.variations.some((v) => previous.has(v.id))
+          ? {
+              ...product,
+              variations: product.variations.map((variation) => {
+                const line = previous.get(variation.id)
+                return line
+                  ? {
+                      ...variation,
+                      salePrice: line.oldPrice,
+                      discountPrice: line.oldDiscountPrice,
+                    }
+                  : variation
+              }),
+            }
+          : product,
+      ),
+      variations: get().variations.map((row) => {
+        const line = previous.get(row.id)
+        return line
+          ? { ...row, salePrice: line.oldPrice, discountPrice: line.oldDiscountPrice }
+          : row
+      }),
+      repricings: get().repricings.map((r) =>
+        r.id === id ? { ...r, status: 'reverted', revertedAt: now, updatedAt: now } : r,
+      ),
+    })
     return { ok: true }
   },
 

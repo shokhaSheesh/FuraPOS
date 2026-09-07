@@ -442,6 +442,20 @@ Two rules bound that generosity, and both matter:
 Anything that genuinely has to be dropped is **reported in a toast** — a row of typed work must
 never vanish quietly.
 
+**Not every combination exists.** Options multiply out to every pairing, but a catalogue rarely
+stocks all of them: there may be a left in black and a right in red and nothing else. So every row
+carries a **Sold** checkbox, and unticking one:
+
+- **greys the row and strikes the name** rather than deleting it, so it can be ticked back on
+  without rebuilding the options;
+- **stops asking.** Its inputs disable, its SKU is not required, its expander will not open, and it
+  is not offered a quantity in the Stock section — a combination that is not sold has no shelf.
+- **is never saved.** It does not become a variation, so it cannot be sold by accident, and it comes
+  back unticked next time the product is opened.
+
+The header carries a select-all with a real indeterminate state, and a product where nothing is
+ticked is rejected — it is not sellable.
+
 ### 7.3.4 Two names on one form must never both be called "Name"
 
 A product name and a variation label are different things — "Brake disc HD72" and "Left" — but a

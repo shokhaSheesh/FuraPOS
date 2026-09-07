@@ -19,6 +19,7 @@ export function NumberField({
   onChange,
   onBlur,
   nullable = true,
+  disabled,
   placeholder,
   step,
   min = 0,
@@ -31,6 +32,7 @@ export function NumberField({
   onChange: (value: number | null) => void
   onBlur?: () => void
   nullable?: boolean
+  disabled?: boolean
   placeholder?: string
   step?: string | number
   min?: number
@@ -45,6 +47,7 @@ export function NumberField({
       inputMode="decimal"
       step={step}
       min={min}
+      disabled={disabled}
       placeholder={placeholder}
       aria-invalid={ariaInvalid}
       aria-label={ariaLabel}

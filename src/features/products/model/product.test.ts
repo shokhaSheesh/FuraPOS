@@ -10,6 +10,7 @@ import {
 
 const variation = (over: Partial<ProductFormValues['variations'][number]> = {}) => ({
   optionValues: [],
+  enabled: true,
   sku: 'SKU-1',
   barcode: null,
   partSide: null,
@@ -239,5 +240,42 @@ describe('option combinations', () => {
     }))
     expect(variations).toEqual([{ optionValues: [], sku: 'SKU-0' }])
     expect(dropped).toHaveLength(1)
+  })
+})
+
+describe('combinations that are not sold', () => {
+  it('does not ask an unsold combination for a SKU', () => {
+    const result = productFormSchema.safeParse(
+      values({
+        variationMode: 'multiple',
+        options: [{ id: 'o1', name: 'Side', values: ['Left', 'Right'] }],
+        variations: [variation(), variation({ enabled: false, sku: '' })],
+      }),
+    )
+    expect(result.success).toBe(true)
+  })
+
+  it('still asks a sold combination for one', () => {
+    const result = productFormSchema.safeParse(
+      values({
+        variationMode: 'multiple',
+        options: [{ id: 'o1', name: 'Side', values: ['Left', 'Right'] }],
+        variations: [variation(), variation({ sku: '' })],
+      }),
+    )
+    expect(result.success).toBe(false)
+    expect(result.error?.issues.some((i) => i.message === 'SKU is required')).toBe(true)
+  })
+
+  it('refuses a product where nothing is sold', () => {
+    const result = productFormSchema.safeParse(
+      values({
+        variationMode: 'multiple',
+        options: [{ id: 'o1', name: 'Side', values: ['Left'] }],
+        variations: [variation({ enabled: false })],
+      }),
+    )
+    expect(result.success).toBe(false)
+    expect(result.error?.issues.some((i) => /at least one combination/.test(i.message))).toBe(true)
   })
 })

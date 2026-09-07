@@ -30,7 +30,12 @@ export function ProductStockSection({
   editing: boolean
 }) {
   const locationIds = form.watch('locationIds')
-  const variations = form.watch('variations')
+  // Only what is actually sold gets a shelf: an unticked combination does not
+  // exist, so asking for its quantity would be asking about nothing.
+  const variations = form
+    .watch('variations')
+    .map((variation, index) => ({ variation, index }))
+    .filter(({ variation }) => variation.enabled)
   const single = form.watch('variationMode') === 'single'
   const productName = form.watch('name').trim()
   const selected = locations.filter((location) => locationIds.includes(location.id))
@@ -105,7 +110,7 @@ export function ProductStockSection({
                 </tr>
               </thead>
               <tbody>
-                {variations.map((variation, index) => {
+                {variations.map(({ variation, index }) => {
                   const total = variation.stockByLocation.reduce(
                     (sum, row, rowIndex) =>
                       locationIds.includes(locations[rowIndex]?.id ?? '')

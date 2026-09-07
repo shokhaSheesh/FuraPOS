@@ -358,7 +358,15 @@ export const optionFormSchema = z.object({
 export const variationFormSchema = z.object({
   /** Present when editing an existing variation, absent for a new one. */
   id: z.string().optional(),
-  sku: z.string().min(1, 'SKU is required'),
+  /**
+   * Whether this combination is actually sold. Options multiply out to every
+   * pairing, but a catalogue rarely stocks all of them — there may be a left
+   * in black and a right in red and nothing else. An unsold combination stays
+   * visible so it can be switched back on, but is not asked for and not saved.
+   */
+  enabled: z.boolean(),
+  // Required only when the combination is sold — see the refinement below.
+  sku: z.string(),
   barcode: z.string().nullable(),
   partSide: z.enum(['left', 'right', 'both']).nullable(),
   costPrice: z.number().nonnegative(),
@@ -400,6 +408,18 @@ export const productFormSchema = z
     variations: z.array(variationFormSchema).min(1, 'Add at least one variation'),
   })
   .superRefine((values, ctx) => {
+    // A combination that is not sold is not asked for — that is the whole
+    // point of switching it off — so SKU is required per sold row here rather
+    // than on the field itself.
+    values.variations.forEach((variation, index) => {
+      if (!variation.enabled || variation.sku.trim()) return
+      ctx.addIssue({
+        code: 'custom',
+        path: ['variations', index, 'sku'],
+        message: 'SKU is required',
+      })
+    })
+
     if (values.variationMode !== 'multiple') return
 
     // Variation names are generated from the options, so it is the options
@@ -410,6 +430,15 @@ export const productFormSchema = z
         code: 'custom',
         path: ['options'],
         message: 'Add an option with at least one value, or switch to one variation',
+      })
+    }
+
+    const sold = values.variations.filter((variation) => variation.enabled)
+    if (sold.length === 0) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['variations'],
+        message: 'Tick at least one combination — a product with none is not sellable',
       })
     }
 

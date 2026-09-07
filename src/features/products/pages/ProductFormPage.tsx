@@ -31,7 +31,6 @@ import {
   PART_SIDES,
   combinationName,
   isSideOption,
-  optionCombinations,
   productFormSchema,
   reconcileVariations,
   usableOptions,
@@ -84,6 +83,7 @@ const emptyVariation = (
   optionValues: OptionValue[] = [],
 ) => ({
   optionValues,
+  enabled: true,
   sku: '',
   barcode: null,
   partSide: null,
@@ -159,22 +159,34 @@ export default function ProductFormPage() {
                 ),
               )
               .map((location) => location.id),
-            variations: existing.variations.map((v) => ({
-              id: v.id,
-              optionValues: v.optionValues,
-              sku: v.sku,
-              barcode: v.barcode,
-              partSide: v.partSide,
-              costPrice: v.costPrice,
-              costCurrency: v.costCurrency,
-              salePrice: v.salePrice,
-              discountPrice: v.discountPrice,
-              lowStockThreshold: v.lowStockThreshold,
-              shelfAddress: v.shelfAddress,
-              moq: v.moq,
-              status: v.status,
-              stockByLocation: stockRows(locations, v.stockByLocation),
-            })),
+            /*
+              Every combination is listed, but only the ones that were saved
+              are ticked. A combination the business does not make shows as an
+              unsold row rather than silently missing, so it can be switched on
+              later without rebuilding the options.
+            */
+            variations: reconcileVariations(
+              existing.options,
+              existing.variations.map((v) => ({
+                id: v.id as string | undefined,
+                optionValues: v.optionValues,
+                enabled: true,
+                sku: v.sku,
+                barcode: v.barcode,
+                partSide: v.partSide,
+                costPrice: v.costPrice,
+                costCurrency: v.costCurrency,
+                salePrice: v.salePrice,
+                discountPrice: v.discountPrice,
+                lowStockThreshold: v.lowStockThreshold,
+                shelfAddress: v.shelfAddress,
+                moq: v.moq,
+                status: v.status,
+                stockByLocation: stockRows(locations, v.stockByLocation),
+              })),
+              (values) => ({ ...emptyVariation(locations, values), id: undefined, enabled: false }),
+              (row) => ({ ...row, enabled: false, stockByLocation: stockRows(locations) }),
+            ).variations,
           }
         : {
             name: '',
@@ -212,10 +224,15 @@ export default function ProductFormPage() {
   const productName = form.watch('name')
 
   const live = usableOptions(options)
+  const soldCount = variations.filter((variation) => variation.enabled).length
   const gridSummary = live.length
-    ? `${optionCombinations(live).length} variations from ${live
-        .map((option) => `${option.name} (${option.values.length})`)
-        .join(' × ')}`
+    ? `${live.map((option) => `${option.name} (${option.values.length})`).join(' × ')} makes ${
+        variations.length
+      } combinations${
+        soldCount === variations.length
+          ? ', all sold'
+          : ` — ${soldCount} sold. Untick the ones you do not make.`
+      }`
     : 'Each one has its own barcode, price and stock.'
 
   /**
@@ -273,8 +290,9 @@ export default function ProductFormPage() {
     (values) => {
       // Duplicate SKUs inside one product would make two rows indistinguishable
       // in the catalogue, so they are caught here rather than at the store.
-      const skus = values.variations.map((v) => v.sku.trim().toLowerCase())
-      const duplicate = skus.findIndex((sku, i) => skus.indexOf(sku) !== i)
+      // Only among sold combinations: an unsold row has no SKU to clash.
+      const skus = values.variations.map((v) => (v.enabled ? v.sku.trim().toLowerCase() : null))
+      const duplicate = skus.findIndex((sku, i) => sku !== null && skus.indexOf(sku) !== i)
       if (duplicate > -1) {
         form.setError(`variations.${duplicate}.sku`, {
           message: 'Already used by another variation',
@@ -285,7 +303,10 @@ export default function ProductFormPage() {
       const singleMode = values.variationMode === 'single'
       const keptOptions = singleMode ? [] : usableOptions(values.options)
       const sideOption = keptOptions.find(isSideOption)
-      const kept = singleMode ? values.variations.slice(0, 1) : values.variations
+      // An unticked combination is not a variation: it is never created.
+      const kept = singleMode
+        ? values.variations.slice(0, 1)
+        : values.variations.filter((variation) => variation.enabled)
 
       const payload = {
         ...values,

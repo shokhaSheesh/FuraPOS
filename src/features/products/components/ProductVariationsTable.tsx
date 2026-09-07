@@ -4,6 +4,7 @@ import { Controller, type UseFormReturn } from 'react-hook-form'
 import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
 import { Button } from '@/shared/ui/Button'
+import { Checkbox } from '@/shared/ui/Checkbox'
 import { Input } from '@/shared/ui/Input'
 import { Select } from '@/shared/ui/Select'
 import { cn } from '@/shared/lib/cn'
@@ -50,18 +51,28 @@ export function ProductVariationsTable({
       return next
     })
 
+  const soldCount = variations.filter((v) => v.enabled).length
+  const allSold = soldCount === variations.length
+  const someSold = soldCount > 0 && !allSold
+
+  const setAllSold = (next: boolean) =>
+    variations.forEach((_, index) =>
+      form.setValue(`variations.${index}.enabled`, next, { shouldDirty: true }),
+    )
+
+  /** Copies the first sold row down onto the others; skips what is not sold. */
   const fillDown = (field: 'costPrice' | 'salePrice') => {
-    const first = form.getValues(`variations.0.${field}`)
-    variations.forEach((_, index) => {
-      if (index === 0) return
-      form.setValue(`variations.${index}.${field}`, first, { shouldDirty: true })
+    const source = variations.findIndex((v) => v.enabled)
+    if (source === -1) return
+    const value = form.getValues(`variations.${source}.${field}`)
+    const currency = form.getValues(`variations.${source}.costCurrency`)
+    variations.forEach((variation, index) => {
+      if (index === source || !variation.enabled) return
+      form.setValue(`variations.${index}.${field}`, value, { shouldDirty: true })
+      if (field === 'costPrice') {
+        form.setValue(`variations.${index}.costCurrency`, currency, { shouldDirty: true })
+      }
     })
-    if (field === 'costPrice') {
-      const currency = form.getValues('variations.0.costCurrency')
-      variations.forEach((_, index) => {
-        if (index > 0) form.setValue(`variations.${index}.costCurrency`, currency)
-      })
-    }
   }
 
   return (
@@ -71,6 +82,14 @@ export function ProductVariationsTable({
           <thead className="bg-canvas">
             <tr className="text-fg-muted text-2xs tracking-wide uppercase">
               <th className="w-8" />
+              <th className="w-10 px-3 py-2 text-left font-semibold">
+                <span className="sr-only">Sold</span>
+                <Checkbox
+                  aria-label={allSold ? 'Stop selling every combination' : 'Sell every combination'}
+                  checked={someSold ? 'indeterminate' : allSold}
+                  onCheckedChange={(next) => setAllSold(next)}
+                />
+              </th>
               <th className="px-3 py-2 text-left font-semibold">Variation</th>
               <th className="px-3 py-2 text-left font-semibold">
                 SKU<span className="text-danger ml-0.5">*</span>
@@ -91,20 +110,23 @@ export function ProductVariationsTable({
           </thead>
           <tbody>
             {variations.map((variation, index) => {
-              const open = expanded.has(index)
+              const name = combinationName(variation.optionValues)
+              const sold = variation.enabled
+              const open = expanded.has(index) && sold
               const rowError = errors?.[index]
               return (
                 // Keyed by the combination, which is unique by construction:
                 // two rows can briefly share an id while options are edited.
-                <Fragment key={combinationName(variation.optionValues) || index}>
+                <Fragment key={name || index}>
                   <tr className="border-border border-t align-middle">
                     <td className="pl-2">
                       <button
                         type="button"
                         onClick={() => toggle(index)}
                         aria-expanded={open}
-                        aria-label={`More fields for ${combinationName(variation.optionValues)}`}
-                        className="text-fg-subtle hover:text-fg grid size-6 place-items-center"
+                        disabled={!sold}
+                        aria-label={`More fields for ${name}`}
+                        className="text-fg-subtle hover:text-fg grid size-6 place-items-center disabled:opacity-30"
                       >
                         <ChevronRight
                           className={cn('size-4 transition-transform', open && 'rotate-90')}
@@ -112,14 +134,32 @@ export function ProductVariationsTable({
                       </button>
                     </td>
                     <td className="px-3 py-2">
+                      <Controller
+                        control={form.control}
+                        name={`variations.${index}.enabled`}
+                        render={({ field }) => (
+                          <Checkbox
+                            aria-label={`Sell ${name}`}
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        )}
+                      />
+                    </td>
+                    <td className="px-3 py-2">
                       {/* Generated, never typed — the reason options exist. */}
-                      <span className="text-fg">{combinationName(variation.optionValues)}</span>
-                      <span className="text-fg-subtle text-2xs ml-2">{productName}</span>
+                      <span className={cn('text-fg', !sold && 'text-fg-subtle line-through')}>
+                        {name}
+                      </span>
+                      <span className="text-fg-subtle text-2xs ml-2">
+                        {sold ? productName : 'not sold'}
+                      </span>
                     </td>
                     <td className="px-2 py-1.5">
                       <Input
                         className="w-36"
                         aria-label="SKU"
+                        disabled={!sold}
                         aria-invalid={rowError?.sku ? true : undefined}
                         {...form.register(`variations.${index}.sku`)}
                       />
@@ -131,6 +171,7 @@ export function ProductVariationsTable({
                       <Input
                         className="w-36"
                         aria-label="Barcode"
+                        disabled={!sold}
                         {...form.register(`variations.${index}.barcode`)}
                       />
                     </td>
@@ -144,6 +185,7 @@ export function ProductVariationsTable({
                               className="w-24"
                               nullable={false}
                               step="any"
+                              disabled={!sold}
                               aria-label="Cost"
                               value={field.value}
                               onChange={(v) => field.onChange(v ?? 0)}
@@ -159,6 +201,7 @@ export function ProductVariationsTable({
                               value={field.value}
                               onChange={field.onChange}
                               options={CURRENCIES}
+                              disabled={!sold}
                               aria-label="Cost currency"
                               className="w-20"
                             />
@@ -174,6 +217,7 @@ export function ProductVariationsTable({
                           <NumberField
                             className="w-32"
                             nullable={false}
+                            disabled={!sold}
                             aria-label="Sale price"
                             value={field.value}
                             onChange={(v) => field.onChange(v ?? 0)}
@@ -186,7 +230,7 @@ export function ProductVariationsTable({
 
                   {open ? (
                     <tr className="bg-canvas/50">
-                      <td />
+                      <td colSpan={2} />
                       <td colSpan={5} className="px-3 pt-1 pb-3">
                         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                           <Field

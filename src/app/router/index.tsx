@@ -14,6 +14,9 @@ const ProductFormPage = lazy(() => import('@/features/products/pages/ProductForm
 const TransfersListPage = lazy(() => import('@/features/transfers/pages/TransfersListPage'))
 const TransferDetailPage = lazy(() => import('@/features/transfers/pages/TransferDetailPage'))
 const NewTransferPage = lazy(() => import('@/features/transfers/pages/NewTransferPage'))
+const CorrectionsListPage = lazy(() => import('@/features/corrections/pages/CorrectionsListPage'))
+const CorrectionDetailPage = lazy(() => import('@/features/corrections/pages/CorrectionDetailPage'))
+const NewCorrectionPage = lazy(() => import('@/features/corrections/pages/NewCorrectionPage'))
 const NewSalePage = lazy(() => import('@/features/sales/pages/NewSalePage'))
 const AllSalesPage = lazy(() => import('@/features/sales/pages/SalesListPage'))
 const SaleDetailPage = lazy(() => import('@/features/sales/pages/SaleDetailPage'))
@@ -79,7 +82,15 @@ const routes: RouteObject[] = [
       },
       {
         path: paths.products.corrections,
-        element: todo('Corrections', 'products.corrections.view'),
+        element: page(<CorrectionsListPage />, 'products.corrections.view'),
+      },
+      {
+        path: paths.products.newCorrection,
+        element: page(<NewCorrectionPage />, 'products.corrections.create'),
+      },
+      {
+        path: paths.products.correctionDetail(),
+        element: page(<CorrectionDetailPage />, 'products.corrections.view'),
       },
       {
         path: paths.products.stocktaking,

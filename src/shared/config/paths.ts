@@ -38,6 +38,8 @@ export const paths = {
     newTransfer: '/products/transfers/new',
     transferDetail: (id = ':transferId') => `/products/transfers/${id}`,
     corrections: '/products/corrections', // OX: /app/products/corrections
+    newCorrection: '/products/corrections/new',
+    correctionDetail: (id = ':correctionId') => `/products/corrections/${id}`,
     stocktaking: '/products/stocktaking', // OX: /app/products/reviews
     goodsReceipt: '/products/goods-receipt', // OX: /app/products/imports
     repricing: '/products/repricing', // OX: /app/products/reprices

@@ -10,6 +10,7 @@ import type {
 } from '@/features/products/model/product'
 import type { Sale } from '@/features/sales/model/sale'
 import type { Transfer } from '@/features/transfers/model/transfer'
+import type { Correction, CorrectionReason } from '@/features/corrections/model/correction'
 
 /** Kept in step with the dashboard's exchange-rate widget. */
 export const USD_RATE = 12_225
@@ -376,4 +377,72 @@ export const transfers: Transfer[] = Array.from({ length: 14 }, (_, index) => {
     receivedAt,
     updatedAt: receivedAt ?? sentAt ?? createdAt.toISOString(),
   } satisfies Transfer
+})
+
+/**
+ * Stock adjustments. Their effect is already baked into the variation
+ * quantities above, exactly as transfers are — replaying them at boot would
+ * double-count.
+ *
+ * Weighted towards write-offs because that is what really happens: things get
+ * dropped and go missing far more often than they turn up.
+ */
+export const corrections: Correction[] = Array.from({ length: 11 }, (_, index) => {
+  const sequence = index + 1
+  const location = pick(locations)
+  const reason = pick([
+    'damaged',
+    'damaged',
+    'miscount',
+    'miscount',
+    'theft',
+    'expired',
+    'lost',
+    'found',
+  ] as const) satisfies CorrectionReason
+
+  const createdAt = new Date(Date.now() - between(1, 75) * 86_400_000)
+  const stockedHere = variations.filter((variation) =>
+    variation.stockByLocation.some((row) => row.locationId === location.id && row.quantity > 2),
+  )
+
+  const lines = Array.from({ length: between(1, 3) }, (_, lineIndex) => {
+    const variation = pick(stockedHere.length ? stockedHere : variations)
+    const before =
+      variation.stockByLocation.find((row) => row.locationId === location.id)?.quantity ?? 5
+    // "Found" adds; everything else takes away.
+    const change =
+      reason === 'found' ? between(1, 4) : -between(1, Math.max(1, Math.min(4, before)))
+
+    return {
+      id: `corl-${sequence}-${lineIndex + 1}`,
+      variationId: variation.id,
+      productId: variation.productId,
+      sku: variation.sku,
+      name: variation.fullName,
+      imageUrl: variation.imageUrl,
+      unit: variation.unit,
+      countedBefore: before,
+      countedAfter: Math.max(0, before + change),
+      unitCost: variation.costPrice,
+      costCurrency: variation.costCurrency,
+    }
+  })
+
+  return {
+    id: `cor-${sequence}`,
+    number: `CR-${String(sequence).padStart(5, '0')}`,
+    status: random() > 0.92 ? ('cancelled' as const) : ('applied' as const),
+    locationId: location.id,
+    locationName: location.name,
+    reason,
+    lines,
+    comment:
+      random() > 0.6
+        ? pick(['Dropped during unloading', 'Found behind the rack', 'Recount after stocktake'])
+        : null,
+    createdBy: pick(['Akhmet Dauletmuratov', 'Mansurbek', 'Dilnoza']),
+    createdAt: createdAt.toISOString(),
+    updatedAt: createdAt.toISOString(),
+  } satisfies Correction
 })

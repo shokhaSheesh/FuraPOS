@@ -53,7 +53,7 @@ export function ProductStockSection({
         <CardTitle>Stock</CardTitle>
         <p className="text-fg-subtle text-2xs">
           {editing
-            ? 'Editing a quantity here records a correction against that location.'
+            ? 'Editing a quantity here writes the new figure directly. To record why it changed, use Corrections instead.'
             : 'Opening quantities. Everything after this arrives through goods receipt, corrections and stocktaking.'}
         </p>
       </CardHeader>

@@ -2,6 +2,11 @@ import { create } from 'zustand'
 import { combinationName } from '@/features/products/model/product'
 import type { Product, VariationRow } from '@/features/products/model/product'
 import type { Transfer, TransferLine, TransferStatus } from '@/features/transfers/model/transfer'
+import type {
+  Correction,
+  CorrectionLine,
+  CorrectionReason,
+} from '@/features/corrections/model/correction'
 import type { Sale, SaleLine, SaleStatus } from '@/features/sales/model/sale'
 import {
   brands,
@@ -10,6 +15,7 @@ import {
   locations,
   products as seedProducts,
   sales as seedSales,
+  corrections as seedCorrections,
   transfers as seedTransfers,
   variations as seedVariations,
 } from './seed'
@@ -27,6 +33,7 @@ interface CatalogState {
   variations: VariationRow[]
   sales: Sale[]
   transfers: Transfer[]
+  corrections: Correction[]
   clients: Client[]
   categories: typeof categories
   brands: typeof brands
@@ -54,6 +61,18 @@ interface CatalogState {
      */
     quantities?: Record<string, number>,
   ) => { ok: true } | { ok: false; error: string }
+
+  createCorrection: (input: CreateCorrectionInput) => Correction
+  /** Reverses a correction's effect, leaving both documents in the history. */
+  cancelCorrection: (id: string) => { ok: true } | { ok: false; error: string }
+}
+
+export interface CreateCorrectionInput {
+  locationId: string
+  reason: CorrectionReason
+  comment: string
+  /** `countedBefore` is ignored: the store reads it live at the moment of writing. */
+  lines: CorrectionLine[]
 }
 
 export interface CreateTransferInput {
@@ -169,6 +188,43 @@ function applyStockDelta(
   return { stockByLocation: next, stock: next.reduce((sum, row) => sum + row.quantity, 0) }
 }
 
+/**
+ * Applies a map of variationId → delta at one location, in both places stock
+ * is read from. Shared by transfers and corrections so there is exactly one
+ * piece of code that can change what a shelf holds.
+ */
+function commitDeltas(
+  state: { products: Product[]; variations: VariationRow[] },
+  deltas: Map<string, number>,
+  locationId: string,
+  locationName: string,
+) {
+  return {
+    products: state.products.map((product) => {
+      if (!product.variations.some((v) => deltas.has(v.id))) return product
+      return {
+        ...product,
+        variations: product.variations.map((variation) => {
+          const delta = deltas.get(variation.id)
+          if (delta === undefined || delta === 0) return variation
+          return {
+            ...variation,
+            ...applyStockDelta(variation.stockByLocation, locationId, locationName, delta),
+          }
+        }),
+      }
+    }),
+    variations: state.variations.map((row) => {
+      const delta = deltas.get(row.id)
+      if (delta === undefined || delta === 0) return row
+      return {
+        ...row,
+        ...applyStockDelta(row.stockByLocation, locationId, locationName, delta),
+      }
+    }),
+  }
+}
+
 /** What one location currently holds of one variation. */
 const quantityAt = (rows: { locationId: string; quantity: number }[], locationId: string) =>
   rows.find((row) => row.locationId === locationId)?.quantity ?? 0
@@ -183,6 +239,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
   variations: seedVariations,
   sales: seedSales,
   transfers: seedTransfers,
+  corrections: seedCorrections,
   clients,
   categories,
   brands,
@@ -486,6 +543,79 @@ export const useDataStore = create<CatalogState>((set, get) => ({
             }
           : t,
       ),
+    })
+    return { ok: true }
+  },
+
+  createCorrection: (input) => {
+    const sequence = get().corrections.length + 1
+    const now = new Date().toISOString()
+    const location = get().locations.find((l) => l.id === input.locationId)
+    const locationName = location?.name ?? '—'
+
+    /*
+      `countedBefore` is read here rather than trusted from the form: between
+      opening the screen and saving, a sale may have taken one off the shelf.
+      Recording what the system believed at the moment of writing is what keeps
+      the document readable a month later, and it is what the delta is measured
+      against — so a correction never silently undoes a sale it never saw.
+    */
+    const lines: CorrectionLine[] = input.lines.map((line) => ({
+      ...line,
+      countedBefore: quantityAt(
+        get().variations.find((v) => v.id === line.variationId)?.stockByLocation ?? [],
+        input.locationId,
+      ),
+    }))
+
+    const correction: Correction = {
+      id: `cor-${sequence}`,
+      number: `CR-${String(sequence).padStart(5, '0')}`,
+      status: 'applied',
+      locationId: input.locationId,
+      locationName,
+      reason: input.reason,
+      lines,
+      comment: input.comment || null,
+      createdBy: 'Akhmet Dauletmuratov',
+      createdAt: now,
+      updatedAt: now,
+    }
+
+    const deltas = new Map<string, number>()
+    for (const line of lines) {
+      const delta = line.countedAfter - line.countedBefore
+      if (delta !== 0) deltas.set(line.variationId, (deltas.get(line.variationId) ?? 0) + delta)
+    }
+
+    set({
+      corrections: [...get().corrections, correction],
+      ...commitDeltas(get(), deltas, input.locationId, locationName),
+    })
+    return correction
+  },
+
+  cancelCorrection: (id) => {
+    const correction = get().corrections.find((c) => c.id === id)
+    if (!correction) return { ok: false, error: 'That correction no longer exists' }
+    if (correction.status === 'cancelled') {
+      return { ok: false, error: 'It has already been cancelled' }
+    }
+
+    // Reversed, not deleted: the original and its reversal both stay in the
+    // history, because "this was corrected and then un-corrected" is itself
+    // something an auditor needs to be able to see.
+    const deltas = new Map<string, number>()
+    for (const line of correction.lines) {
+      const delta = line.countedBefore - line.countedAfter
+      if (delta !== 0) deltas.set(line.variationId, (deltas.get(line.variationId) ?? 0) + delta)
+    }
+
+    set({
+      corrections: get().corrections.map((c) =>
+        c.id === id ? { ...c, status: 'cancelled', updatedAt: new Date().toISOString() } : c,
+      ),
+      ...commitDeltas(get(), deltas, correction.locationId, correction.locationName),
     })
     return { ok: true }
   },

@@ -114,6 +114,43 @@ routinely are not, and the two gaps mean opposite things:
 Both hand-offs therefore _ask_ rather than assume, pre-filled with the optimistic answer so the
 ordinary case stays one click.
 
+### Corrections
+
+Stock that changed when nothing was sold, received or moved: breakage, shrinkage, expiry, a
+miscount. Built list, detail and create.
+
+**The reason is the document.** "Stock went from 9 to 7" is not information; "two were dropped" is,
+and it is the difference between a warehouse that can be improved and one that merely leaks. So the
+reason is a required field, an unhideable column and a filter of its own.
+
+Three decisions worth recording:
+
+- **The user types the count, never the difference.** Asking for "−2" invites a sign error that
+  silently doubles a loss. A line opens at the current figure, so an untouched row is a no-op rather
+  than an accidental write-off to zero, and a correction where every count matches is rejected — a
+  document saying nothing happened looks like a decision.
+- **`countedBefore` is read live at the moment of saving,** not trusted from the form. Between
+  opening the screen and saving, a sale may have taken one off the shelf; measuring the delta
+  against a stale figure would silently undo it.
+- **Reversing keeps both entries.** That a correction was made and then withdrawn is itself part of
+  the record.
+
+**Applies immediately — whoever counts, records.** Pending the client's answer on whether write-offs
+need a second signature. A review step would slot in as a third status before `applied` without
+changing any arithmetic, because stock moves on the transition into `applied` and nowhere else.
+
+#### Corrections and Stocktaking are the same operation
+
+A correction is ad-hoc and small ("this box arrived crushed"); a stocktake is a planned count of a
+whole location whose differences become adjustments in bulk. OX ships them as separate nav items and
+so do we, but **they should share one adjustment ledger underneath** — otherwise there are two
+parallel histories and no single answer to "why is this number what it is". Stocktaking is therefore
+mostly a bulk-entry screen on top of what is now built.
+
+Not attempted: a unified **stock movement ledger** across sales, transfers, receipts and
+corrections. That is the real answer to "what happened to this unit", and it is a reporting concern
+rather than something any one of these screens should own.
+
 ## 4. Закупки — Procurement
 
 | OX (ru)            | Ours (en)          | OX route                     |

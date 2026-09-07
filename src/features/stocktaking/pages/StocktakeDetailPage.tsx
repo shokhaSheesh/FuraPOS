@@ -145,7 +145,7 @@ export default function StocktakeDetailPage() {
           </span>
         </Card>
         <Card className="p-4">
-          <p className="text-fg-muted text-sm">Agreed with the system</p>
+          <p className="text-fg-muted text-sm">System was right</p>
           <p className="text-fg mt-0.5 text-lg font-semibold">
             {formatPercent(accuracy(stocktake))}
           </p>
@@ -154,7 +154,7 @@ export default function StocktakeDetailPage() {
           </p>
         </Card>
         <Card className="p-4">
-          <p className="text-fg-muted text-sm">Difference</p>
+          <p className="text-fg-muted text-sm">Missing / found</p>
           <p
             className={`mt-0.5 text-lg font-semibold ${
               netUnits(stocktake) < 0 ? 'text-danger' : 'text-fg'

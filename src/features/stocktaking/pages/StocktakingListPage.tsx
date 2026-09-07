@@ -222,13 +222,13 @@ export default function StocktakingListPage() {
     },
     {
       icon: Target,
-      label: 'Agreed with the system',
+      label: 'System was right',
       value: formatPercent(summary.accuracy),
-      meta: 'across every applied count',
+      meta: 'of everything counted so far',
     },
     {
       icon: TrendingDown,
-      label: 'Missing',
+      label: 'Missing on the shelf',
       value: formatNumber(summary.shortUnits),
       meta: canSeeCost
         ? `${summary.netValue < 0 ? '−' : ''}${formatMoney(Math.abs(summary.netValue))} net at cost`
@@ -241,7 +241,7 @@ export default function StocktakingListPage() {
     <>
       <PageHeader
         title="Stocktaking"
-        description="Counting a shelf and proving the numbers. Whatever nobody counts is left exactly as it is."
+        description="Someone counts what is really on the shelves, and the app compares it with what the system believes. The gap is stock you have lost without noticing."
         action={
           can('products.stocktaking.create') ? (
             <Button variant="primary" asChild>
@@ -326,7 +326,7 @@ export default function StocktakingListPage() {
           ) : (
             <EmptyState
               title="Nothing has been counted"
-              description="A stocktake freezes what the system believes, then someone walks the shelves. What they find becomes a correction."
+              description="The system's numbers drift — things get broken, miscounted or taken without anyone recording it. Counting the shelves is the only way to find out by how much."
               action={
                 can('products.stocktaking.create') ? (
                   <Button variant="primary" asChild>

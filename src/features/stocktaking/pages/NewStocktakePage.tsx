@@ -84,7 +84,7 @@ export default function NewStocktakePage() {
 
       <PageHeader
         title="Start a count"
-        description="Freeze what the system believes, then go and see what is really there."
+        description="The app records what the system currently believes, then someone walks the shelves and enters what is actually there."
         action={
           <div className="flex items-center gap-2">
             <Button

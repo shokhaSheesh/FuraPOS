@@ -7,6 +7,10 @@ import type {
   CorrectionLine,
   CorrectionReason,
 } from '@/features/corrections/model/correction'
+import type {
+  Stocktake,
+  StocktakeLine,
+} from '@/features/stocktaking/model/stocktake'
 import {
   landedUnitCost,
   type AdditionalCost,
@@ -25,6 +29,7 @@ import {
   USD_RATE,
   corrections as seedCorrections,
   receipts as seedReceipts,
+  stocktakes as seedStocktakes,
   suppliers,
   transfers as seedTransfers,
   variations as seedVariations,
@@ -45,6 +50,7 @@ interface CatalogState {
   transfers: Transfer[]
   corrections: Correction[]
   receipts: GoodsReceipt[]
+  stocktakes: Stocktake[]
   clients: Client[]
   categories: typeof categories
   brands: typeof brands
@@ -83,6 +89,14 @@ interface CatalogState {
     quantities?: Record<string, number>,
   ) => { ok: true } | { ok: false; error: string }
 
+  /** Opens a count: freezes what the system believes for everything in scope. */
+  startStocktake: (input: StartStocktakeInput) => Stocktake
+  /** Records one shelf count. `null` puts a line back to uncounted. */
+  setStocktakeCount: (id: string, lineId: string, counted: number | null) => void
+  /** Commits the variances as a correction, and returns it. */
+  applyStocktake: (id: string) => { ok: true; correctionId: string } | { ok: false; error: string }
+  cancelStocktake: (id: string) => { ok: true } | { ok: false; error: string }
+
   createCorrection: (input: CreateCorrectionInput) => Correction
   /** Reverses a correction's effect, leaving both documents in the history. */
   cancelCorrection: (id: string) => { ok: true } | { ok: false; error: string }
@@ -99,12 +113,22 @@ export interface CreateReceiptInput {
   status: Extract<ReceiptStatus, 'draft' | 'received'>
 }
 
+export interface StartStocktakeInput {
+  locationId: string
+  /** Empty means the whole location. */
+  categoryId: string
+  comment: string
+}
+
 export interface CreateCorrectionInput {
   locationId: string
   reason: CorrectionReason
   comment: string
   /** `countedBefore` is ignored: the store reads it live at the moment of writing. */
   lines: CorrectionLine[]
+  /** Set by a stocktake so its adjustment is traceable back to the count. */
+  source?: 'manual' | 'stocktake'
+  sourceRef?: string | null
 }
 
 export interface CreateTransferInput {
@@ -180,6 +204,7 @@ function flatten(product: Product): VariationRow[] {
     productName: product.name,
     fullName: product.variations.length > 1 ? `${product.name} — ${variation.name}` : product.name,
     description: product.description,
+    categoryId: product.categoryId,
     categoryName: product.categoryName,
     categoryPath: product.categoryPath,
     brandName: product.brandName,
@@ -273,6 +298,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
   transfers: seedTransfers,
   corrections: seedCorrections,
   receipts: seedReceipts,
+  stocktakes: seedStocktakes,
   clients,
   categories,
   brands,
@@ -730,6 +756,156 @@ export const useDataStore = create<CatalogState>((set, get) => ({
     return { ok: true }
   },
 
+  startStocktake: (input) => {
+    const sequence = get().stocktakes.length + 1
+    const now = new Date().toISOString()
+    const category = get().categories.find((c) => c.id === input.categoryId)
+
+    /*
+      Every variation the location carries goes on the sheet, including ones
+      the system says are at zero — a shelf that should be empty and is not is
+      exactly the discrepancy a stocktake is looking for. `expected` is frozen
+      here, because it is what the person walking the aisle will be compared
+      against; re-reading it at the end would blame them for a sale.
+    */
+    const lines: StocktakeLine[] = get()
+      .variations.filter((variation) => {
+        if (variation.status === 'archived') return false
+        if (input.categoryId && variation.categoryId !== input.categoryId) return false
+        return variation.stockByLocation.some((row) => row.locationId === input.locationId)
+      })
+      .map((variation, index) => ({
+        id: `stl-${sequence}-${index + 1}`,
+        variationId: variation.id,
+        productId: variation.productId,
+        sku: variation.sku,
+        name: variation.fullName,
+        imageUrl: variation.imageUrl,
+        unit: variation.unit,
+        categoryId: variation.categoryId,
+        categoryName: variation.categoryName,
+        shelfAddress: variation.shelfAddress,
+        expected: quantityAt(variation.stockByLocation, input.locationId),
+        counted: null,
+        unitCost: variation.costPrice,
+        costCurrency: variation.costCurrency,
+      }))
+
+    const stocktake: Stocktake = {
+      id: `st-${sequence}`,
+      number: `ST-${String(sequence).padStart(5, '0')}`,
+      status: 'counting',
+      locationId: input.locationId,
+      locationName: get().locations.find((l) => l.id === input.locationId)?.name ?? '—',
+      categoryId: input.categoryId || null,
+      categoryName: category?.name ?? null,
+      lines,
+      comment: input.comment || null,
+      createdBy: 'Akhmet Dauletmuratov',
+      createdAt: now,
+      appliedAt: null,
+      correctionId: null,
+      updatedAt: now,
+    }
+
+    set({ stocktakes: [...get().stocktakes, stocktake] })
+    return stocktake
+  },
+
+  setStocktakeCount: (id, lineId, counted) =>
+    set({
+      stocktakes: get().stocktakes.map((stocktake) =>
+        stocktake.id === id
+          ? {
+              ...stocktake,
+              lines: stocktake.lines.map((line) =>
+                line.id === lineId ? { ...line, counted } : line,
+              ),
+              updatedAt: new Date().toISOString(),
+            }
+          : stocktake,
+      ),
+    }),
+
+  applyStocktake: (id) => {
+    const stocktake = get().stocktakes.find((s) => s.id === id)
+    if (!stocktake) return { ok: false, error: 'That stocktake no longer exists' }
+    if (stocktake.status !== 'counting') {
+      return { ok: false, error: 'This stocktake has already been closed' }
+    }
+
+    /*
+      Only counted lines, and only ones that disagree. An uncounted line is not
+      a zero — nobody got to it — and writing it off would turn an unfinished
+      count into a fabricated loss. This is the whole reason a stocktake is not
+      just a large correction.
+    */
+    const changed = stocktake.lines.filter(
+      (line) => line.counted !== null && line.counted !== line.expected,
+    )
+    if (changed.length === 0) {
+      return { ok: false, error: 'Nothing to apply — every count matches the system' }
+    }
+
+    /*
+      The variance is measured against the frozen figure, then applied as a
+      delta to whatever the shelf holds now. If a sale happened mid-count, that
+      sale survives; setting the shelf to the counted number would silently
+      undo it.
+    */
+    const correction = get().createCorrection({
+      locationId: stocktake.locationId,
+      reason: 'miscount',
+      comment: `Stocktake ${stocktake.number}`,
+      source: 'stocktake',
+      sourceRef: stocktake.id,
+      lines: changed.map((line) => ({
+        id: line.id,
+        variationId: line.variationId,
+        productId: line.productId,
+        sku: line.sku,
+        name: line.name,
+        imageUrl: line.imageUrl,
+        unit: line.unit,
+        // createCorrection reads `countedBefore` live and ignores what is passed,
+        // so the delta below is applied against current stock, not the snapshot.
+        countedBefore: line.expected,
+        countedAfter:
+          quantityAt(
+            get().variations.find((v) => v.id === line.variationId)?.stockByLocation ?? [],
+            stocktake.locationId,
+          ) +
+          (line.counted! - line.expected),
+        unitCost: line.unitCost,
+        costCurrency: line.costCurrency,
+      })),
+    })
+
+    const now = new Date().toISOString()
+    set({
+      stocktakes: get().stocktakes.map((s) =>
+        s.id === id
+          ? { ...s, status: 'applied', appliedAt: now, correctionId: correction.id, updatedAt: now }
+          : s,
+      ),
+    })
+    return { ok: true, correctionId: correction.id }
+  },
+
+  cancelStocktake: (id) => {
+    const stocktake = get().stocktakes.find((s) => s.id === id)
+    if (!stocktake) return { ok: false, error: 'That stocktake no longer exists' }
+    if (stocktake.status === 'applied') {
+      return { ok: false, error: 'It has been applied — reverse its correction instead' }
+    }
+    set({
+      stocktakes: get().stocktakes.map((s) =>
+        s.id === id ? { ...s, status: 'cancelled', updatedAt: new Date().toISOString() } : s,
+      ),
+    })
+    return { ok: true }
+  },
+
   createCorrection: (input) => {
     const sequence = get().corrections.length + 1
     const now = new Date().toISOString()
@@ -759,6 +935,8 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       locationName,
       reason: input.reason,
       lines,
+      source: input.source ?? 'manual',
+      sourceRef: input.sourceRef ?? null,
       comment: input.comment || null,
       createdBy: 'Akhmet Dauletmuratov',
       createdAt: now,

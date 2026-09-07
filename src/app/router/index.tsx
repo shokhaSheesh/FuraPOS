@@ -22,6 +22,9 @@ const GoodsReceiptDetailPage = lazy(
   () => import('@/features/receipts/pages/GoodsReceiptDetailPage'),
 )
 const NewGoodsReceiptPage = lazy(() => import('@/features/receipts/pages/NewGoodsReceiptPage'))
+const StocktakingListPage = lazy(() => import('@/features/stocktaking/pages/StocktakingListPage'))
+const StocktakeDetailPage = lazy(() => import('@/features/stocktaking/pages/StocktakeDetailPage'))
+const NewStocktakePage = lazy(() => import('@/features/stocktaking/pages/NewStocktakePage'))
 const NewSalePage = lazy(() => import('@/features/sales/pages/NewSalePage'))
 const AllSalesPage = lazy(() => import('@/features/sales/pages/SalesListPage'))
 const SaleDetailPage = lazy(() => import('@/features/sales/pages/SaleDetailPage'))
@@ -99,7 +102,15 @@ const routes: RouteObject[] = [
       },
       {
         path: paths.products.stocktaking,
-        element: todo('Stocktaking', 'products.stocktaking.view'),
+        element: page(<StocktakingListPage />, 'products.stocktaking.view'),
+      },
+      {
+        path: paths.products.newStocktake,
+        element: page(<NewStocktakePage />, 'products.stocktaking.create'),
+      },
+      {
+        path: paths.products.stocktakeDetail(),
+        element: page(<StocktakeDetailPage />, 'products.stocktaking.view'),
       },
       {
         path: paths.products.goodsReceipt,

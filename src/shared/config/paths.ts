@@ -41,6 +41,8 @@ export const paths = {
     newCorrection: '/products/corrections/new',
     correctionDetail: (id = ':correctionId') => `/products/corrections/${id}`,
     stocktaking: '/products/stocktaking', // OX: /app/products/reviews
+    newStocktake: '/products/stocktaking/new',
+    stocktakeDetail: (id = ':stocktakeId') => `/products/stocktaking/${id}`,
     goodsReceipt: '/products/goods-receipt', // OX: /app/products/imports
     newGoodsReceipt: '/products/goods-receipt/new',
     goodsReceiptDetail: (id = ':receiptId') => `/products/goods-receipt/${id}`,

@@ -12,6 +12,7 @@ import type { Sale } from '@/features/sales/model/sale'
 import type { Transfer } from '@/features/transfers/model/transfer'
 import type { Correction, CorrectionReason } from '@/features/corrections/model/correction'
 import type { GoodsReceipt } from '@/features/receipts/model/receipt'
+import type { Stocktake } from '@/features/stocktaking/model/stocktake'
 
 /** Kept in step with the dashboard's exchange-rate widget. */
 export const USD_RATE = 12_225
@@ -185,6 +186,7 @@ export const variations: VariationRow[] = products.flatMap((product) =>
     productName: product.name,
     fullName: product.variations.length > 1 ? `${product.name} — ${variation.name}` : product.name,
     description: product.description,
+    categoryId: product.categoryId,
     categoryName: product.categoryName,
     categoryPath: product.categoryPath,
     brandName: product.brandName,
@@ -446,6 +448,8 @@ export const corrections: Correction[] = Array.from({ length: 11 }, (_, index) =
     locationName: location.name,
     reason,
     lines,
+    source: 'manual' as const,
+    sourceRef: null,
     comment:
       random() > 0.6
         ? pick(['Dropped during unloading', 'Found behind the rack', 'Recount after stocktake'])
@@ -539,4 +543,75 @@ export const receipts: GoodsReceipt[] = Array.from({ length: 13 }, (_, index) =>
     receivedAt,
     updatedAt: receivedAt ?? createdAt.toISOString(),
   } satisfies GoodsReceipt
+})
+
+/**
+ * Counts. Their variances are already reflected in the quantities above, as
+ * with every other document here — replaying them at boot would double-count.
+ *
+ * One is left mid-count so the counting sheet has something real to show; most
+ * lines in it match, because a warehouse where most lines disagree has a bigger
+ * problem than its paperwork.
+ */
+export const stocktakes: Stocktake[] = Array.from({ length: 6 }, (_, index) => {
+  const sequence = index + 1
+  const status = pick(['counting', 'applied', 'applied', 'applied', 'cancelled'] as const)
+  const location = pick(locations)
+  const category = random() > 0.55 ? pick(categories) : null
+  const createdAt = new Date(Date.now() - between(3, 90) * 86_400_000)
+
+  const scope = variations.filter(
+    (variation) =>
+      variation.stockByLocation.some((row) => row.locationId === location.id) &&
+      (!category || variation.categoryId === category.id),
+  )
+
+  const lines = scope.slice(0, between(8, 24)).map((variation, lineIndex) => {
+    const expected = variation.stockByLocation.find((r) => r.locationId === location.id)!.quantity
+    // Most counts agree. An unfinished stocktake leaves a tail uncounted, which
+    // is the state the sheet exists to make visible.
+    const counted =
+      status === 'counting' && lineIndex > 5
+        ? null
+        : random() > 0.82
+          ? Math.max(0, expected - between(1, 3))
+          : expected
+
+    return {
+      id: `stl-${sequence}-${lineIndex + 1}`,
+      variationId: variation.id,
+      productId: variation.productId,
+      sku: variation.sku,
+      name: variation.fullName,
+      imageUrl: variation.imageUrl,
+      unit: variation.unit,
+      categoryId: variation.categoryId,
+      categoryName: variation.categoryName,
+      shelfAddress: variation.shelfAddress,
+      expected,
+      counted,
+      unitCost: variation.costPrice,
+      costCurrency: variation.costCurrency,
+    }
+  })
+
+  const appliedAt =
+    status === 'applied' ? new Date(createdAt.getTime() + 2 * 86_400_000).toISOString() : null
+
+  return {
+    id: `st-${sequence}`,
+    number: `ST-${String(sequence).padStart(5, '0')}`,
+    status,
+    locationId: location.id,
+    locationName: location.name,
+    categoryId: category?.id ?? null,
+    categoryName: category?.name ?? null,
+    lines,
+    comment: random() > 0.6 ? pick(['Monthly count', 'Quarterly audit', 'Brakes aisle only']) : null,
+    createdBy: pick(['Akhmet Dauletmuratov', 'Mansurbek', 'Dilnoza']),
+    createdAt: createdAt.toISOString(),
+    appliedAt,
+    correctionId: null,
+    updatedAt: appliedAt ?? createdAt.toISOString(),
+  } satisfies Stocktake
 })

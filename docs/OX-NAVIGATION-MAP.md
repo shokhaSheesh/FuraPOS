@@ -139,13 +139,43 @@ Three decisions worth recording:
 need a second signature. A review step would slot in as a third status before `applied` without
 changing any arithmetic, because stock moves on the transition into `applied` and nowhere else.
 
+### Stocktaking
+
+A planned count of a shelf, built as a **session** rather than an edit. Built list, counting sheet
+and start-a-count. As with Goods receipt, built before OX's Инвентаризация was seen.
+
+**The whole reason it exists rather than being a large correction: _not counted_ is different from
+_counted zero_.** A part nobody reached must not be written off; a part someone checked and found
+none of must be. A correction cannot express that — a line you do not add is simply absent — so a
+stocktake carries every line in scope and a `counted` of `null` until someone enters something. The
+sheet draws it blank, and applying skips it entirely; the confirmation says so in as many words.
+
+Three more decisions:
+
+- **`expected` is frozen when the sheet opens**, because it is what the person walking the aisle is
+  measured against. Re-reading it at the end would blame them for a sale.
+- **The variance is applied as a delta against live stock**, not by setting the shelf to the counted
+  figure. If three were sold mid-count, that sale survives; setting to the count would resurrect
+  them. Tested.
+- **Scope can be one category.** Counting a whole warehouse in one session is a day nobody has, so
+  the brakes aisle this morning and filters tomorrow is how it actually happens. The line count is
+  shown before starting, because "this is 184 lines" changes the decision.
+
+The headline figure is **accuracy**, not loss: a warehouse finding a small discrepancy every month
+is working, while one whose counts agree 80% of the time cannot trust a number on any other screen,
+however small the money looks.
+
 #### Corrections and Stocktaking are the same operation
 
 A correction is ad-hoc and small ("this box arrived crushed"); a stocktake is a planned count of a
 whole location whose differences become adjustments in bulk. OX ships them as separate nav items and
 so do we, but **they should share one adjustment ledger underneath** — otherwise there are two
-parallel histories and no single answer to "why is this number what it is". Stocktaking is therefore
-mostly a bulk-entry screen on top of what is now built.
+parallel histories and no single answer to "why is this number what it is".
+
+**That is how it was built.** Applying a stocktake does not move stock itself — it creates a
+`Correction` with reason _Recount_, `source: 'stocktake'` and a reference back to the count. So the
+Corrections list remains the single ledger of every adjustment, the stocktake links forward to its
+correction, and reversing that correction undoes the count.
 
 Not attempted: a unified **stock movement ledger** across sales, transfers, receipts and
 corrections. That is the real answer to "what happened to this unit", and it is a reporting concern

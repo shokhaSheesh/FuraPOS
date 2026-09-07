@@ -82,6 +82,13 @@ export interface Correction {
   locationName: string
   reason: CorrectionReason
   lines: CorrectionLine[]
+  /**
+   * Where it came from. A stocktake commits its variances as a correction
+   * rather than moving stock itself, so this ledger stays the single answer to
+   * "why is this number what it is".
+   */
+  source: 'manual' | 'stocktake'
+  sourceRef: Id | null
   comment: string | null
   createdBy: string
   createdAt: IsoDate

@@ -146,6 +146,7 @@ export interface VariationRow extends ProductVariation {
   /** Product name and variation together, e.g. "Brake disc — Left". */
   fullName: string
   description: string | null
+  categoryId: Id
   categoryName: string
   categoryPath: string
   brandName: string | null

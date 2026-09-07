@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { combinationName } from '@/features/products/model/product'
 import type { Product, VariationRow } from '@/features/products/model/product'
 import type { Sale, SaleLine, SaleStatus } from '@/features/sales/model/sale'
 import {
@@ -52,8 +53,9 @@ export interface CreateSaleInput {
 
 type VariationInput = Omit<
   Product['variations'][number],
-  'id' | 'productId' | 'stock' | 'stockByLocation' | 'imageUrl'
+  'id' | 'productId' | 'stock' | 'stockByLocation' | 'imageUrl' | 'name'
 > & {
+  /** The name is generated from `optionValues`, never sent. */
   id?: string
   /** Quantity per location; `stock` is the sum and is never sent. */
   stockByLocation: { locationId: string; quantity: number }[]
@@ -65,6 +67,14 @@ export type ProductInput = Omit<
 > & {
   variations: VariationInput[]
 }
+
+/**
+ * A variation is named by its option values — "Left / Black" — so the name is
+ * derived on write and never typed. A product sold one way has no options, and
+ * its lone variation keeps the neutral name the catalogue hides anyway.
+ */
+const variationName = (optionValues: { value: string }[]) =>
+  optionValues.length ? combinationName(optionValues as never) : 'Standard'
 
 /**
  * Turns a form's `{ locationId, quantity }` rows into stored stock: names are
@@ -87,6 +97,7 @@ function resolveStock(
 function flatten(product: Product): VariationRow[] {
   return product.variations.map((variation) => ({
     ...variation,
+    options: product.options,
     status: product.status === 'archived' ? 'archived' : variation.status,
     productName: product.name,
     fullName: product.variations.length > 1 ? `${product.name} — ${variation.name}` : product.name,
@@ -208,6 +219,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
         ...variation,
         id: variation.id ?? `var-${id}-${index + 1}`,
         productId: id,
+        name: variationName(variation.optionValues),
         ...resolveStock(variation.stockByLocation, get().locations),
         imageUrl: null,
       })),
@@ -240,6 +252,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
           ...variation,
           id: variation.id ?? `var-${id}-${Date.now()}-${index}`,
           productId: id,
+          name: variationName(variation.optionValues),
           ...resolveStock(variation.stockByLocation, get().locations),
           imageUrl: previous?.imageUrl ?? null,
         }

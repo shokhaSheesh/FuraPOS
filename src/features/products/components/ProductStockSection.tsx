@@ -5,7 +5,7 @@ import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
 import { NumberField } from '@/shared/components/NumberField'
 import { cn } from '@/shared/lib/cn'
 import { formatNumber } from '@/shared/lib/format'
-import type { ProductFormValues } from '../model/product'
+import { combinationName, type ProductFormValues } from '../model/product'
 
 /**
  * Stock, as its own section, because it answers a different question from the
@@ -119,8 +119,9 @@ export function ProductStockSection({
                         {/* The same name the catalogue will list it under. */}
                         {single
                           ? productName || 'This product'
-                          : [productName, variation.name.trim()].filter(Boolean).join(' — ') ||
-                            `Variation ${index + 1}`}
+                          : [productName, combinationName(variation.optionValues)]
+                              .filter(Boolean)
+                              .join(' — ') || `Variation ${index + 1}`}
                         <span className="text-fg-subtle text-2xs ml-2">
                           {variation.sku || 'no SKU'}
                         </span>

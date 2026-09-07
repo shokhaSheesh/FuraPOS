@@ -21,6 +21,38 @@ export const PART_SIDES: { value: PartSide; label: string }[] = [
   { value: 'both', label: 'Universal' },
 ]
 
+/**
+ * An axis a product varies along — "Side" with values Left / Right, "Colour"
+ * with Black / Silver. A variation is one combination of one value per option,
+ * which is what makes its name: "Left / Black".
+ *
+ * Capped at three, as Shopify caps it: a fourth axis multiplies the grid past
+ * what anyone edits by hand, and in this catalogue two is already unusual.
+ */
+export interface ProductOption {
+  id: Id
+  /** Shown as the column heading and in the variation's name. */
+  name: string
+  values: string[]
+}
+
+export const MAX_OPTIONS = 3
+
+/**
+ * The option named "Side" is special: the catalogue already has a real, typed
+ * `partSide` used for filtering, so when a product varies by side we drive that
+ * field from the option rather than asking for the same answer twice.
+ */
+export const SIDE_OPTION_NAME = 'Side'
+export const isSideOption = (option: { name: string }) =>
+  option.name.trim().toLowerCase() === SIDE_OPTION_NAME.toLowerCase()
+
+/** One variation's answer to each option, in the product's option order. */
+export interface OptionValue {
+  optionId: Id
+  value: string
+}
+
 export interface StockAtLocation {
   locationId: Id
   locationName: string
@@ -41,6 +73,8 @@ export interface ProductVariation {
   productId: Id
   /** What distinguishes it, e.g. "Left" or "1.5 m". */
   name: string
+  /** Which value of each option this variation is. Empty for a lone variation. */
+  optionValues: OptionValue[]
   sku: string
   barcode: string | null
   partSide: PartSide | null
@@ -95,6 +129,8 @@ export interface Product {
   isShippable: boolean
   showOnline: boolean
 
+  /** The axes this product varies along. Empty when it is sold one way. */
+  options: ProductOption[]
   variations: ProductVariation[]
   status: ProductStatus
   createdAt: IsoDate
@@ -122,6 +158,7 @@ export interface VariationRow extends ProductVariation {
   cargoSize: string | null
   isShippable: boolean
   showOnline: boolean
+  options: ProductOption[]
 }
 
 /* --- money -------------------------------------------------------------- */
@@ -159,6 +196,143 @@ export function productPriceRange(product: Product): { min: number; max: number 
   return { min: Math.min(...prices), max: Math.max(...prices) }
 }
 
+/* --- options and combinations ------------------------------------------- */
+
+/** Options that are actually usable: named, and with at least one value. */
+export const usableOptions = <T extends { name: string; values: string[] }>(options: T[]) =>
+  options.filter((option) => option.name.trim() && option.values.length > 0)
+
+/**
+ * Every combination of one value per option, in option order — the cartesian
+ * product. Two options of 2 and 3 values give 6 combinations, named
+ * "Left / Black", "Left / Silver", and so on.
+ */
+export function optionCombinations<T extends { id: Id; values: string[] }>(
+  options: T[],
+): OptionValue[][] {
+  return options.reduce<OptionValue[][]>(
+    (rows, option) =>
+      rows.flatMap((row) => option.values.map((value) => [...row, { optionId: option.id, value }])),
+    [[]],
+  )
+}
+
+/** How a combination is displayed and stored as a variation's name. */
+export const combinationName = (values: OptionValue[]) => values.map((v) => v.value).join(' / ')
+
+/** Identity of a combination, for matching an edited grid against the old one. */
+const combinationKey = (values: OptionValue[]) =>
+  values
+    .map((v) => `${v.optionId}=${v.value}`)
+    .sort()
+    .join('|')
+
+/**
+ * Rebuilds the variation grid after the options change, **keeping what the user
+ * already typed**.
+
+ * Three ways a row can survive:
+ *
+ * 1. *Exact* — the same combination still exists, so it is untouched. Matching
+ *    is by combination and not by position, so reordering an option's values
+ *    does not shuffle prices onto the wrong rows.
+ * 2. *Inherited* — a second option was added, so "Left" becomes "Left / Black",
+ *    "Left / Silver", "Left / Red". All three inherit the pricing and settings
+ *    that were typed for "Left", because re-typing them is what makes people
+ *    abandon options and create three products instead. Only the first keeps
+ *    the SKU and barcode: those identify one sellable thing and cannot be
+ *    duplicated.
+ * 3. Otherwise the combination is new and arrives blank.
+ *
+ * Anything left over is reported in `dropped` so the caller can say so rather
+ * than letting typed work disappear silently.
+ */
+export function reconcileVariations<
+  T extends { optionValues: OptionValue[]; sku: string; id?: string; barcode?: string | null },
+>(
+  options: { id: Id; values: string[] }[],
+  existing: T[],
+  blank: (values: OptionValue[]) => T,
+  /**
+   * Applied to a row that starts from a donor's values but is a new sellable
+   * thing in its own right. Anything counted rather than described — stock
+   * above all — belongs here: "Left / Silver" inherits Left's price, but not
+   * Left's discs.
+   */
+  onNew: (row: T) => T = (row) => row,
+): { variations: T[]; dropped: T[] } {
+  const combinations = optionCombinations(options)
+  // With no usable options the product is sold one way: keep the first row.
+  if (combinations.length === 1 && combinations[0]!.length === 0) {
+    const [first, ...rest] = existing
+    return {
+      variations: [first ? { ...first, optionValues: [] } : blank([])],
+      dropped: rest,
+    }
+  }
+
+  const survivors = new Set<T>()
+  /** A donor's identity passes to one row only; later inheritors start blank. */
+  const claimed = new Set<T>()
+
+  const variations = combinations.map((values) => {
+    const key = combinationKey(values)
+    const exact = existing.find((v) => combinationKey(v.optionValues) === key)
+    if (exact) {
+      survivors.add(exact)
+      claimed.add(exact)
+      return { ...exact, optionValues: values }
+    }
+
+    /**
+     * The closest relative: how many option answers this combination and that
+     * variation share outright. One rule covers every edit —
+     *
+     * - widening ("Left" → "Left / Black") agrees on Side;
+     * - narrowing ("Left / Black" → "Left") agrees on Side;
+     * - a new value ("Left / Silver" beside "Left / Black") agrees on Side, so
+     *   it starts from its sibling's pricing rather than from zero;
+     * - renaming a value ("Left" → "Nearside") agrees on nothing when Side is
+     *   the only option, so that row correctly starts blank.
+     *
+     * A guessed price the user can see and overwrite beats an empty grid; a
+     * guessed SKU would be a duplicate identity, which is why only the first
+     * claimant of a donor keeps it.
+     */
+    const agreement = (v: T) =>
+      v.optionValues.filter((own) =>
+        values.some((value) => value.optionId === own.optionId && value.value === own.value),
+      ).length
+
+    const donor = existing
+      .map((v) => ({ v, score: agreement(v) }))
+      .filter((candidate) => candidate.score > 0)
+      // Most in common first; among equals prefer one that still has an
+      // identity, so narrowing recovers the SKU rather than a blank sibling.
+      .sort(
+        (a, b) => b.score - a.score || Number(Boolean(b.v.sku)) - Number(Boolean(a.v.sku)),
+      )[0]?.v
+
+    if (!donor) return blank(values)
+    survivors.add(donor)
+    // Only one row may continue the donor's identity — its id, SKU and
+    // barcode. The rest are new variations that merely start from its
+    // pricing; giving them the same id would make two rows the same record.
+    const first = !claimed.has(donor)
+    claimed.add(donor)
+    const inherited = { ...donor, optionValues: values }
+    if (first) return inherited
+    return onNew({
+      ...inherited,
+      id: undefined,
+      sku: '',
+      ...('barcode' in donor ? { barcode: null } : {}),
+    })
+  })
+
+  return { variations, dropped: existing.filter((v) => !survivors.has(v)) }
+}
+
 /* --- validation --------------------------------------------------------- */
 
 /**
@@ -175,11 +349,15 @@ export const stockAtLocationFormSchema = z.object({
   quantity: z.number().int().nonnegative(),
 })
 
+export const optionFormSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  values: z.array(z.string()),
+})
+
 export const variationFormSchema = z.object({
   /** Present when editing an existing variation, absent for a new one. */
   id: z.string().optional(),
-  /** Empty in `single` mode — see VariationMode. */
-  name: z.string(),
   sku: z.string().min(1, 'SKU is required'),
   barcode: z.string().nullable(),
   partSide: z.enum(['left', 'right', 'both']).nullable(),
@@ -192,6 +370,7 @@ export const variationFormSchema = z.object({
   moq: z.number().int().positive().nullable(),
   status: z.enum(['active', 'archived', 'draft']),
   stockByLocation: z.array(stockAtLocationFormSchema),
+  optionValues: z.array(z.object({ optionId: z.string(), value: z.string() })),
 })
 
 export const productFormSchema = z
@@ -211,6 +390,7 @@ export const productFormSchema = z
     showOnline: z.boolean(),
     status: z.enum(['active', 'archived', 'draft']),
     variationMode: z.enum(['single', 'multiple']),
+    options: z.array(optionFormSchema).max(MAX_OPTIONS),
     /**
      * Which locations stock this product. Quantities are only asked for these,
      * and a location dropped here loses its stock rows on save.
@@ -220,15 +400,44 @@ export const productFormSchema = z
     variations: z.array(variationFormSchema).min(1, 'Add at least one variation'),
   })
   .superRefine((values, ctx) => {
-    // A name only distinguishes one variation from another, so it is required
-    // exactly when there is another one to distinguish it from.
     if (values.variationMode !== 'multiple') return
-    values.variations.forEach((variation, index) => {
-      if (variation.name.trim()) return
+
+    // Variation names are generated from the options, so it is the options
+    // that have to be complete — a half-filled option would silently produce
+    // no variations at all.
+    if (usableOptions(values.options).length === 0) {
       ctx.addIssue({
         code: 'custom',
-        path: ['variations', index, 'name'],
-        message: 'Every variation needs a name',
+        path: ['options'],
+        message: 'Add an option with at least one value, or switch to one variation',
+      })
+    }
+
+    values.options.forEach((option, index) => {
+      if (!option.name.trim()) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['options', index, 'name'],
+          message: 'Name this option',
+        })
+      }
+      if (option.values.length === 0) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['options', index, 'values'],
+          message: 'Add at least one value',
+        })
+      }
+    })
+
+    // Two options called the same thing make two identical column headings.
+    const names = values.options.map((o) => o.name.trim().toLowerCase()).filter(Boolean)
+    names.forEach((name, index) => {
+      if (names.indexOf(name) === index) return
+      ctx.addIssue({
+        code: 'custom',
+        path: ['options', index, 'name'],
+        message: 'Already used by another option',
       })
     })
   })

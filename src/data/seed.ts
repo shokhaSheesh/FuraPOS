@@ -89,6 +89,11 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
   const name = `${pick(productNouns)} ${pick(['A', 'B', 'X', 'Pro', 'HD'])}${between(10, 99)}`
 
   const sided = random() > 0.65
+  // A sided part varies along one real axis, so it gets a real option; the
+  // variation names are generated from its values, never typed.
+  const options = sided
+    ? [{ id: `opt-${productId}-side`, name: 'Side', values: ['Left', 'Right'] }]
+    : []
   const specs: { name: string; side: PartSide | null }[] = sided
     ? [
         { name: 'Left', side: 'left' },
@@ -115,6 +120,7 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
       id: `var-${index + 1}-${vIndex + 1}`,
       productId,
       name: spec.name,
+      optionValues: options.map((option) => ({ optionId: option.id, value: spec.name })),
       sku: `SKU-${String(index + 1).padStart(5, '0')}${sided ? `-${spec.side === 'left' ? 'L' : 'R'}` : ''}`,
       barcode: random() > 0.3 ? String(4_600_000_000_000 + index * 10 + vIndex) : null,
       partSide: spec.side,
@@ -151,6 +157,7 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
     cargoSize: random() > 0.5 ? `${between(20, 160)}*${between(20, 90)}*${between(10, 60)}` : null,
     isShippable: random() > 0.15,
     showOnline: random() > 0.35,
+    options,
     variations,
     status: random() > 0.92 ? 'archived' : 'active',
     createdAt,
@@ -179,6 +186,7 @@ export const variations: VariationRow[] = products.flatMap((product) =>
     cargoSize: product.cargoSize,
     isShippable: product.isShippable,
     showOnline: product.showOnline,
+    options: product.options,
   })),
 )
 

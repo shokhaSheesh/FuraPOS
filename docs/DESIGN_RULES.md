@@ -405,21 +405,56 @@ makes the same split, though it happens as a side effect of adding an option; we
 switch, because switching back discards variations and the user must see that first. Collapsing to
 one always confirms, and names what it keeps.)
 
-### 7.3.3 Two names on one form must never both be called "Name"
+### 7.3.3 A variation's name is generated, never typed
+
+A product varies along **options** — an axis with a name and a set of values, "Side" with Left and
+Right, "Colour" with Black and Silver. A variation is one combination of one value per option, and
+its name _is_ that combination: `Left / Black`. It is never a field.
+
+- **Options come first**, above the variations they generate, because everything below is derived
+  from them. Show the arithmetic in the section subtitle: "6 variations from Side (2) × Colour (3)".
+- **Three options maximum** (Shopify's limit). A fourth axis multiplies the grid past what anyone
+  edits by hand.
+- **Offer presets.** "Option" is jargon until you have seen one; a one-click **Side → Left, Right**
+  gives a first-time user a working example and covers this catalogue's dominant case with no typing.
+- **Where a typed field already carries the distinction, drive it from the option.** A "Side" option
+  sets `partSide`, and the per-variation Side control disappears. Never ask the same question twice.
+
+**Editing options must not destroy typed work.** Rows are matched to their _combination_, never
+their position, and a row that is new-but-related starts from its closest relative:
+
+| Edit                                                | What survives                                   |
+| --------------------------------------------------- | ----------------------------------------------- |
+| Add an option (`Left` → `Left / Black`)             | pricing and settings carry to every combination |
+| Add a value (`Left / Silver` beside `Left / Black`) | starts from its sibling's pricing               |
+| Remove an option                                    | the surviving combination keeps its identity    |
+| Reorder values                                      | nothing moves — matching is by combination      |
+| Rename a value                                      | agrees on nothing, so it correctly starts blank |
+
+Two rules bound that generosity, and both matter:
+
+- **Identity is never duplicated.** Only the first row descended from a given variation keeps its
+  id, SKU and barcode; the rest start blank. Two rows sharing an id are the same record, and will
+  render as one.
+- **Counted things are never inherited.** Stock above all: `Left / Silver` inherits Left's price but
+  not Left's discs, or the shelf gains inventory that was never received.
+
+Anything that genuinely has to be dropped is **reported in a toast** — a row of typed work must
+never vanish quietly.
+
+### 7.3.4 Two names on one form must never both be called "Name"
 
 A product name and a variation label are different things — "Brake disc HD72" and "Left" — but a
 form that labels both fields _Name_ reads as asking the same question twice. Three rules:
 
-- **Name each field for the thing it names**: "Product name" and "Variation label", never "Name".
-- **The label is the difference, not the whole name.** Say so in the hint: "Only what tells this one
-  apart, not the whole name".
-- **Show the result.** Wherever a variation is titled — its card header, its stock row — render the
-  joined name the catalogue will actually list, `Product — Label`, live as it is typed. The user
-  should never have to imagine what the two fields combine into.
+- **Name each field for the thing it names**: "Product name", never a bare "Name".
+- **Show the result.** Wherever a variation is titled — its row in the grid, its stock row — render
+  the name the catalogue will actually list, `Product — Left / Black`. The user should never have to
+  imagine what the parts combine into.
 
-Where a real typed field already carries the distinction, use it: picking a **Side** fills an empty
-variation label, because typing "Left" twice on one screen is exactly the duplication this section
-exists to prevent.
+This is why § 7.3.3 generates variation names rather than asking for them: a form with a "Product
+name" and a "Variation name" reads as asking the same question twice, and the answer to the second
+one is already implied by the options.
 
 ### 7.4 Submitting — the modal stays open until the action finishes
 

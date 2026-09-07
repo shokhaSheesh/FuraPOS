@@ -123,9 +123,10 @@ describe('data store', () => {
       isShippable: true,
       showOnline: false,
       status: 'active',
+      options: [{ id: 'opt-side', name: 'Side', values: ['Left', 'Right'] }],
       variations: [
         {
-          name: 'Left',
+          optionValues: [{ optionId: 'opt-side', value: 'Left' }],
           sku: 'TEST-L',
           barcode: null,
           partSide: 'left',
@@ -140,7 +141,7 @@ describe('data store', () => {
           status: 'active',
         },
         {
-          name: 'Right',
+          optionValues: [{ optionId: 'opt-side', value: 'Right' }],
           sku: 'TEST-R',
           barcode: null,
           partSide: 'right',

@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import { useFieldArray, useForm, Controller, type Control } from 'react-hook-form'
+import { useForm, Controller, type Control } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, Copy, Plus, Trash2 } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
@@ -25,9 +25,17 @@ import {
 } from '../api/products'
 import { SegmentedControl } from '../components/SegmentedControl'
 import { ProductStockSection } from '../components/ProductStockSection'
+import { ProductOptionsEditor } from '../components/ProductOptionsEditor'
+import { ProductVariationsTable } from '../components/ProductVariationsTable'
 import {
   PART_SIDES,
+  combinationName,
+  isSideOption,
+  optionCombinations,
   productFormSchema,
+  reconcileVariations,
+  usableOptions,
+  type OptionValue,
   type ProductFormValues,
   type VariationMode,
 } from '../model/product'
@@ -45,8 +53,16 @@ const MODES: { value: VariationMode; label: string }[] = [
   { value: 'multiple', label: 'Multiple variations' },
 ]
 
-/** The name a single-variation product's one variation is stored under. */
-const SINGLE_VARIATION_NAME = 'Standard'
+/** Maps a "Side" option's value onto the catalogue's typed `partSide` field. */
+const sideValue = (optionValues: OptionValue[], optionId: string) =>
+  PART_SIDES.find(
+    (side) =>
+      side.label.toLowerCase() ===
+      optionValues
+        .find((v) => v.optionId === optionId)
+        ?.value.trim()
+        .toLowerCase(),
+  )?.value ?? null
 
 /**
  * Every location gets a row whether or not it is currently picked, so that
@@ -63,8 +79,11 @@ const stockRows = (
     quantity: existing.find((row) => row.locationId === location.id)?.quantity ?? 0,
   }))
 
-const emptyVariation = (locations: readonly { id: string }[]) => ({
-  name: '',
+const emptyVariation = (
+  locations: readonly { id: string }[],
+  optionValues: OptionValue[] = [],
+) => ({
+  optionValues,
   sku: '',
   barcode: null,
   partSide: null,
@@ -130,7 +149,8 @@ export default function ProductFormPage() {
             isShippable: existing.isShippable,
             showOnline: existing.showOnline,
             status: existing.status,
-            variationMode: existing.variations.length > 1 ? 'multiple' : 'single',
+            variationMode: existing.options.length ? 'multiple' : 'single',
+            options: existing.options.map((option) => ({ ...option, values: [...option.values] })),
             // A product is stocked wherever any of its variations already is.
             locationIds: locations
               .filter((location) =>
@@ -141,7 +161,7 @@ export default function ProductFormPage() {
               .map((location) => location.id),
             variations: existing.variations.map((v) => ({
               id: v.id,
-              name: v.name,
+              optionValues: v.optionValues,
               sku: v.sku,
               barcode: v.barcode,
               partSide: v.partSide,
@@ -172,6 +192,7 @@ export default function ProductFormPage() {
             showOnline: false,
             status: 'active',
             variationMode: 'single',
+            options: [],
             locationIds: locations.length ? [locations[0]!.id] : [],
             variations: [emptyVariation(locations)],
           },
@@ -184,36 +205,67 @@ export default function ProductFormPage() {
     values: defaults,
   })
 
-  const { fields, append, remove } = useFieldArray({ control: form.control, name: 'variations' })
   const variations = form.watch('variations')
+  const options = form.watch('options')
   const mode = form.watch('variationMode')
   const single = mode === 'single'
   const productName = form.watch('name')
 
-  /** What a variation will actually be called once it is saved. */
-  const sellableName = (index: number) => {
-    const label = variations[index]?.name?.trim()
-    const base = productName.trim() || 'Product'
-    return label ? `${base} — ${label}` : base
+  const live = usableOptions(options)
+  const gridSummary = live.length
+    ? `${optionCombinations(live).length} variations from ${live
+        .map((option) => `${option.name} (${option.values.length})`)
+        .join(' × ')}`
+    : 'Each one has its own barcode, price and stock.'
+
+  /**
+   * Options are the source of truth for how many variations there are, so any
+   * edit to them rebuilds the grid. Rows are matched by their combination, not
+   * their position, so renaming a value does not move prices onto other rows;
+   * combinations that no longer exist are dropped, and we say how many, because
+   * a row vanishing silently is how a user loses work they typed.
+   */
+  const applyOptions = (next: ProductFormValues['options']) => {
+    form.setValue('options', next, { shouldDirty: true })
+    form.clearErrors('options')
+    const { variations: rebuilt, dropped } = reconcileVariations(
+      usableOptions(next),
+      form.getValues('variations'),
+      (values) => emptyVariation(locations, values),
+      // A combination that did not exist a moment ago has no stock: it starts
+      // from its sibling's pricing, never from its sibling's shelf.
+      (row) => ({ ...row, stockByLocation: stockRows(locations) }),
+    )
+    form.setValue('variations', rebuilt, { shouldDirty: true })
+    const lost = dropped.filter((v) => v.sku.trim() || v.salePrice > 0)
+    if (lost.length) {
+      toast.error(
+        `${lost.length} variation${lost.length > 1 ? 's no longer match' : ' no longer matches'} the options and ${lost.length > 1 ? 'were' : 'was'} removed`,
+      )
+    }
   }
 
   const setMode = (next: VariationMode) => {
     if (next === mode) return
-    if (next === 'single' && fields.length > 1) {
+    if (next === 'single' && variations.length > 1) {
       setConfirmCollapse(true)
       return
     }
-    if (next === 'multiple' && form.getValues('variations.0.name') === SINGLE_VARIATION_NAME) {
-      // "Standard" was our placeholder, not the user's word for it.
-      form.setValue('variations.0.name', '')
-    }
     form.setValue('variationMode', next, { shouldDirty: true })
+    // Going to multiple with nothing to vary along leaves an empty grid, so
+    // offer the axis this catalogue almost always means.
+    if (next === 'multiple' && options.length === 0) {
+      applyOptions([{ id: `opt-${Date.now()}`, name: 'Side', values: ['Left', 'Right'] }])
+    }
   }
 
   const collapseToSingle = () => {
-    form.setValue('variations', [form.getValues('variations.0')], { shouldDirty: true })
+    form.setValue('options', [], { shouldDirty: true })
+    form.setValue('variations', [{ ...form.getValues('variations.0'), optionValues: [] }], {
+      shouldDirty: true,
+    })
     form.setValue('variationMode', 'single', { shouldDirty: true })
-    form.clearErrors('variations')
+    form.clearErrors(['variations', 'options'])
     setConfirmCollapse(false)
   }
 
@@ -230,15 +282,22 @@ export default function ProductFormPage() {
         return
       }
 
-      const kept =
-        values.variationMode === 'single' ? values.variations.slice(0, 1) : values.variations
+      const singleMode = values.variationMode === 'single'
+      const keptOptions = singleMode ? [] : usableOptions(values.options)
+      const sideOption = keptOptions.find(isSideOption)
+      const kept = singleMode ? values.variations.slice(0, 1) : values.variations
+
       const payload = {
         ...values,
+        options: keptOptions,
         variations: kept.map((variation) => ({
           ...variation,
-          // Storage does not know about the mode: a single product is still one
-          // variation, and it needs a name for the places that list variations.
-          name: values.variationMode === 'single' ? SINGLE_VARIATION_NAME : variation.name.trim(),
+          optionValues: singleMode ? [] : variation.optionValues,
+          // A "Side" option already answers this, so the typed field follows it
+          // rather than being asked for a second time.
+          partSide: sideOption
+            ? (sideValue(variation.optionValues, sideOption.id) ?? variation.partSide)
+            : variation.partSide,
           stockByLocation: variation.stockByLocation.filter((row) =>
             values.locationIds.includes(row.locationId),
           ),
@@ -315,9 +374,7 @@ export default function ProductFormPage() {
               <p className="text-fg-subtle text-2xs">
                 {single
                   ? 'One sellable thing — it carries its own SKU, price and stock.'
-                  : `Several sellable things. Each gets a short label that extends the product name — “${
-                      productName || 'Brake disc HD72'
-                    } — Left”.`}
+                  : 'Several sellable things, generated from the options below. Each combination gets its own SKU, price and stock.'}
               </p>
             </div>
             <SegmentedControl
@@ -472,275 +529,179 @@ export default function ProductFormPage() {
               <p className="text-fg-subtle text-2xs">
                 {single
                   ? 'This product is one sellable thing, so these belong to it directly.'
-                  : 'Each one has its own barcode, price and stock.'}
+                  : gridSummary}
               </p>
             </div>
-            {single ? null : (
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => append(emptyVariation(locations))}
-              >
-                <Plus />
-                Add variation
-              </Button>
-            )}
           </CardHeader>
-          <CardBody className="space-y-3">
-            {form.formState.errors.variations?.root ? (
-              <p className="text-danger text-2xs">
-                {form.formState.errors.variations.root.message}
-              </p>
-            ) : null}
-
-            {fields.map((field, index) => (
-              <div
-                key={field.id}
-                className={single ? '' : 'border-border rounded-card space-y-3 border p-3'}
-              >
-                {single ? null : (
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-fg text-sm font-medium">
-                      {sellableName(index)}
-                      {variations[index]?.name?.trim() ? null : (
-                        <span className="text-fg-subtle text-2xs ml-2 font-normal">
-                          — add a label
-                        </span>
-                      )}
-                    </p>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        aria-label="Duplicate variation"
-                        title="Duplicate"
-                        onClick={() => {
-                          // Left/right pairs differ by a character; copying and
-                          // editing beats retyping eleven fields. The copy gets
-                          // no id, so it saves as a new variation.
-                          const source = variations[index]
-                          if (!source) return
-                          const { id: _ignored, ...rest } = source
-                          append({
-                            ...rest,
-                            sku: `${source.sku}-COPY`,
-                            // Stock is counted, not copied.
-                            stockByLocation: stockRows(locations),
-                          })
-                        }}
-                      >
-                        <Copy />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        aria-label="Remove variation"
-                        title={fields.length === 1 ? 'A product needs one variation' : 'Remove'}
-                        disabled={fields.length === 1}
-                        className="hover:text-danger"
-                        onClick={() => remove(index)}
-                      >
-                        <Trash2 />
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  {single ? null : (
-                    <Field
-                      label="Variation label"
-                      required
-                      hint="Only what tells this one apart, not the whole name"
-                      error={form.formState.errors.variations?.[index]?.name?.message}
-                    >
-                      {(p) => (
-                        <Input
+          <CardBody className="space-y-4">
+            {single ? (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <Field
+                  label="SKU"
+                  required
+                  error={form.formState.errors.variations?.[0]?.sku?.message}
+                >
+                  {(p) => <Input {...p} {...form.register('variations.0.sku')} />}
+                </Field>
+                <Field label="Barcode">
+                  {(p) => <Input {...p} {...form.register('variations.0.barcode')} />}
+                </Field>
+                <Field label="Side">
+                  {(p) => (
+                    <Controller
+                      control={form.control}
+                      name="variations.0.partSide"
+                      render={({ field: f }) => (
+                        <Select
                           {...p}
-                          placeholder="Left"
-                          {...form.register(`variations.${index}.name`)}
+                          className="w-full"
+                          value={f.value ?? undefined}
+                          onChange={f.onChange}
+                          options={PART_SIDES}
+                          placeholder="Not sided"
                         />
                       )}
-                    </Field>
+                    />
                   )}
-                  <Field
-                    label="SKU"
-                    required
-                    error={form.formState.errors.variations?.[index]?.sku?.message}
-                  >
-                    {(p) => <Input {...p} {...form.register(`variations.${index}.sku`)} />}
-                  </Field>
-                  <Field label="Barcode">
-                    {(p) => <Input {...p} {...form.register(`variations.${index}.barcode`)} />}
-                  </Field>
-                  <Field label="Side">
-                    {(p) => (
+                </Field>
+                <Field
+                  label="Cost"
+                  hint="What the supplier invoices"
+                  error={form.formState.errors.variations?.[0]?.costPrice?.message}
+                >
+                  {(p) => (
+                    <div className="flex gap-1.5">
                       <Controller
                         control={form.control}
-                        name={`variations.${index}.partSide`}
-                        render={({ field: f }) => (
-                          <Select
-                            {...p}
-                            className="w-full"
-                            value={f.value ?? undefined}
-                            onChange={(v) => {
-                              f.onChange(v)
-                              // Side is the label for most parts here, so
-                              // picking one fills an empty label rather than
-                              // making the user type "Left" a second time.
-                              if (single || form.getValues(`variations.${index}.name`).trim())
-                                return
-                              const side = PART_SIDES.find((s) => s.value === v)
-                              if (side) form.setValue(`variations.${index}.name`, side.label)
-                            }}
-                            options={PART_SIDES}
-                            placeholder="Not sided"
-                          />
-                        )}
-                      />
-                    )}
-                  </Field>
-
-                  <Field
-                    label="Cost"
-                    hint="What the supplier invoices"
-                    error={form.formState.errors.variations?.[index]?.costPrice?.message}
-                  >
-                    {(p) => (
-                      <div className="flex gap-1.5">
-                        <Controller
-                          control={form.control}
-                          name={`variations.${index}.costPrice`}
-                          render={({ field: f }) => (
-                            <NumberField
-                              {...p}
-                              nullable={false}
-                              step="any"
-                              value={f.value}
-                              onChange={(v) => f.onChange(v ?? 0)}
-                              onBlur={f.onBlur}
-                            />
-                          )}
-                        />
-                        <Controller
-                          control={form.control}
-                          name={`variations.${index}.costCurrency`}
-                          render={({ field: f }) => (
-                            <Select
-                              value={f.value}
-                              onChange={f.onChange}
-                              options={[
-                                { value: 'USD', label: 'USD' },
-                                { value: 'UZS', label: 'UZS' },
-                              ]}
-                              aria-label="Cost currency"
-                              className="w-24"
-                            />
-                          )}
-                        />
-                      </div>
-                    )}
-                  </Field>
-                  <Field
-                    label="Sale price"
-                    required
-                    error={form.formState.errors.variations?.[index]?.salePrice?.message}
-                  >
-                    {(p) => (
-                      <Controller
-                        control={form.control}
-                        name={`variations.${index}.salePrice`}
+                        name="variations.0.costPrice"
                         render={({ field: f }) => (
                           <NumberField
                             {...p}
                             nullable={false}
+                            step="any"
                             value={f.value}
                             onChange={(v) => f.onChange(v ?? 0)}
                             onBlur={f.onBlur}
                           />
                         )}
                       />
-                    )}
-                  </Field>
-                  <Field
-                    label="Discounted price"
-                    hint="Leave empty for none"
-                    error={form.formState.errors.variations?.[index]?.discountPrice?.message}
-                  >
-                    {(p) => (
                       <Controller
                         control={form.control}
-                        name={`variations.${index}.discountPrice`}
+                        name="variations.0.costCurrency"
                         render={({ field: f }) => (
-                          <NumberField
-                            {...p}
+                          <Select
                             value={f.value}
                             onChange={f.onChange}
-                            onBlur={f.onBlur}
+                            options={[
+                              { value: 'USD', label: 'USD' },
+                              { value: 'UZS', label: 'UZS' },
+                            ]}
+                            aria-label="Cost currency"
+                            className="w-24"
                           />
                         )}
                       />
-                    )}
-                  </Field>
-                  <Field
-                    label="Reorder point"
-                    hint="Warn below this"
-                    error={form.formState.errors.variations?.[index]?.lowStockThreshold?.message}
-                  >
-                    {(p) => (
-                      <Controller
-                        control={form.control}
-                        name={`variations.${index}.lowStockThreshold`}
-                        render={({ field: f }) => (
-                          <NumberField
-                            {...p}
-                            value={f.value}
-                            onChange={f.onChange}
-                            onBlur={f.onBlur}
-                          />
-                        )}
-                      />
-                    )}
-                  </Field>
-                  <Field label="Shelf">
-                    {(p) => (
-                      <Input
-                        {...p}
-                        placeholder="A-12-3"
-                        {...form.register(`variations.${index}.shelfAddress`)}
-                      />
-                    )}
-                  </Field>
-                  <Field
-                    label="MOQ"
-                    hint="Supplier minimum"
-                    error={form.formState.errors.variations?.[index]?.moq?.message}
-                  >
-                    {(p) => (
-                      <Controller
-                        control={form.control}
-                        name={`variations.${index}.moq`}
-                        render={({ field: f }) => (
-                          <NumberField
-                            {...p}
-                            min={1}
-                            value={f.value}
-                            onChange={f.onChange}
-                            onBlur={f.onBlur}
-                          />
-                        )}
-                      />
-                    )}
-                  </Field>
-                </div>
+                    </div>
+                  )}
+                </Field>
+                <Field
+                  label="Sale price"
+                  required
+                  error={form.formState.errors.variations?.[0]?.salePrice?.message}
+                >
+                  {(p) => (
+                    <Controller
+                      control={form.control}
+                      name="variations.0.salePrice"
+                      render={({ field: f }) => (
+                        <NumberField
+                          {...p}
+                          nullable={false}
+                          value={f.value}
+                          onChange={(v) => f.onChange(v ?? 0)}
+                          onBlur={f.onBlur}
+                        />
+                      )}
+                    />
+                  )}
+                </Field>
+                <Field label="Discounted price" hint="Leave empty for none">
+                  {(p) => (
+                    <Controller
+                      control={form.control}
+                      name="variations.0.discountPrice"
+                      render={({ field: f }) => (
+                        <NumberField
+                          {...p}
+                          value={f.value}
+                          onChange={f.onChange}
+                          onBlur={f.onBlur}
+                        />
+                      )}
+                    />
+                  )}
+                </Field>
+                <Field label="Reorder point" hint="Warn below this">
+                  {(p) => (
+                    <Controller
+                      control={form.control}
+                      name="variations.0.lowStockThreshold"
+                      render={({ field: f }) => (
+                        <NumberField
+                          {...p}
+                          value={f.value}
+                          onChange={f.onChange}
+                          onBlur={f.onBlur}
+                        />
+                      )}
+                    />
+                  )}
+                </Field>
+                <Field label="Shelf">
+                  {(p) => (
+                    <Input
+                      {...p}
+                      placeholder="A-12-3"
+                      {...form.register('variations.0.shelfAddress')}
+                    />
+                  )}
+                </Field>
+                <Field
+                  label="MOQ"
+                  hint="Supplier minimum"
+                  error={form.formState.errors.variations?.[0]?.moq?.message}
+                >
+                  {(p) => (
+                    <Controller
+                      control={form.control}
+                      name="variations.0.moq"
+                      render={({ field: f }) => (
+                        <NumberField
+                          {...p}
+                          min={1}
+                          value={f.value}
+                          onChange={f.onChange}
+                          onBlur={f.onBlur}
+                        />
+                      )}
+                    />
+                  )}
+                </Field>
               </div>
-            ))}
+            ) : (
+              <>
+                <ProductOptionsEditor form={form} options={options} onChange={applyOptions} />
+                {variations.length ? (
+                  <ProductVariationsTable form={form} productName={productName.trim()} />
+                ) : (
+                  <p className="text-fg-subtle text-sm">
+                    Name an option and give it values — the variations appear here.
+                  </p>
+                )}
+              </>
+            )}
           </CardBody>
         </Card>
-
         <ProductStockSection form={form} locations={locations} editing={editing} />
 
         <Card>
@@ -787,11 +748,13 @@ export default function ProductFormPage() {
       <ConfirmDialog
         open={confirmCollapse}
         onOpenChange={setConfirmCollapse}
-        title="Keep only the first variation?"
+        title="Sell this as one thing?"
         confirmLabel="Keep the first"
-        body={`This product has ${fields.length} variations. Switching to one keeps “${
-          variations[0]?.name?.trim() || variations[0]?.sku || 'the first'
-        }” and drops the rest, along with their stock.`}
+        body={`This drops the ${options.map((o) => o.name.trim() || 'unnamed').join(' and ')} option${
+          options.length > 1 ? 's' : ''
+        } and every variation but “${
+          combinationName(variations[0]?.optionValues ?? []) || variations[0]?.sku || 'the first'
+        }”, along with their stock.`}
         onConfirm={collapseToSingle}
       />
     </form>

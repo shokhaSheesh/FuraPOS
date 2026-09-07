@@ -185,6 +185,19 @@ mislabelled as primary.
 Inside a modal the primary is bottom-right; inside a form card it is bottom-right of the card.
 There is still only one.
 
+### 4.1.1 A second route in: split the primary, do not bury it
+
+When there is more than one way to perform the primary action — type a product in, or import a
+spreadsheet of them — the primary button **splits**: the button itself keeps doing the common thing
+in one click, and an attached caret opens a menu naming _both_ routes.
+
+Never turn the primary into a menu button. Costing the dominant path an extra click to advertise the
+rare one is a bad trade, and a caret with a single hidden item is a button pretending to be a menu.
+
+The split reads as one control: one yellow surface, the seam a hairline of the foreground colour at
+20% opacity, and the outer corners rounded while the inner two are square. It is still one primary
+button for the purposes of § 4.1.
+
 ### 4.2 Variants
 
 | Variant     | Look                                                  | Use for                                                    |
@@ -289,6 +302,14 @@ reads zero. A status with none shows `0`, never a blank: a missing number reads 
 
 Counts are what let a chip replace a nav entry. A saved filter in the sidebar earns its place only
 by telling you there is work waiting; a counted chip does that without spending a nav row.
+
+**Where the same three numbers already sit in a summary strip above the table, the chips drop their
+badges.** One fact, one place: a count shown twice, twenty pixels apart, in two sizes, is noise. The
+strip is then the overview and the chips are the control.
+
+A tile that counts a filter state must be **blind to that filter** — the strip's Active tile applies
+search, stock and location but never status, or picking "Active" makes All and Active read the same
+number and Archived read zero. Same rule as the counts above, for the same reason.
 
 ### 5.6.1 The filter row holds filters, and nothing else
 

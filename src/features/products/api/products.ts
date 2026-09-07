@@ -113,19 +113,6 @@ export function useCatalogSummary(query: ListQuery) {
   return { data, isLoading: false }
 }
 
-export function useCatalogStatusCounts(query: ListQuery) {
-  const variations = useDataStore((s) => s.variations)
-  const data = useMemo(() => {
-    // Counts ignore the status filter itself, or every chip but the active one
-    // would read zero.
-    const scoped = filterVariations(variations, { ...query, status: undefined })
-    const counts: Record<string, number> = { all: scoped.length }
-    for (const v of scoped) counts[v.status] = (counts[v.status] ?? 0) + 1
-    return counts
-  }, [variations, query])
-  return { data, isLoading: false }
-}
-
 export function useCategories() {
   const items = useDataStore((s) => s.categories)
   return { data: { items }, isLoading: false }

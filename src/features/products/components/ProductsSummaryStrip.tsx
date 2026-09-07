@@ -1,14 +1,19 @@
-import { Boxes, Image, PackageX, Wallet } from 'lucide-react'
+import { Archive, CheckCircle2, Layers } from 'lucide-react'
 import { Card } from '@/shared/ui/Card'
 import { Skeleton } from '@/shared/ui/Skeleton'
-import { formatMoney, formatNumber, formatPercent } from '@/shared/lib/format'
+import { formatNumber } from '@/shared/lib/format'
 import type { CatalogSummary } from '../api/products'
 
 /**
- * Mirrors OX's strip above the catalogue. Stock is valued twice — at what we
- * will sell it for and at what we paid — because for an importer those are
- * different currencies, and the gap between them is the working capital
- * question the strip exists to answer.
+ * What the catalogue holds, in the three states a product can be in.
+ *
+ * Everything counts variations, because that is what the table lists and what
+ * carries a price and a barcode; the first tile's meta line is the only place
+ * the product count appears, since "185 things to sell across 137 parts" is a
+ * different fact from either number alone.
+ *
+ * The tiles follow the active filters, the location scope included — so at one
+ * warehouse they describe that warehouse, not the business.
  */
 export function ProductsSummaryStrip({
   summary,
@@ -19,8 +24,8 @@ export function ProductsSummaryStrip({
 }) {
   if (loading || !summary) {
     return (
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {[0, 1, 2, 3].map((i) => (
+      <div className="grid gap-3 sm:grid-cols-3">
+        {[0, 1, 2].map((i) => (
           <Card key={i} className="space-y-2 p-4">
             <Skeleton className="h-3.5 w-20" />
             <Skeleton className="h-6 w-28" />
@@ -30,39 +35,29 @@ export function ProductsSummaryStrip({
     )
   }
 
-  const margin =
-    summary.saleValue > 0 ? (summary.saleValue - summary.costValue) / summary.saleValue : 0
-
   const tiles = [
     {
-      icon: Boxes,
-      label: 'In stock',
-      value: formatNumber(summary.quantity),
-      meta: `${formatNumber(summary.total)} variations across ${formatNumber(summary.products)} products`,
+      icon: Layers,
+      label: 'All products',
+      value: formatNumber(summary.total),
+      meta: `across ${formatNumber(summary.products)} products`,
     },
     {
-      icon: Wallet,
-      label: 'Stock value',
-      value: formatMoney(summary.saleValue),
-      meta: `${formatMoney(summary.costValue)} at cost · ${formatPercent(margin)} margin`,
+      icon: CheckCircle2,
+      label: 'Active',
+      value: formatNumber(summary.active),
+      meta: 'on sale',
     },
     {
-      icon: PackageX,
-      label: 'Out of stock',
-      value: formatNumber(summary.zeroStock),
-      meta: `of ${formatNumber(summary.total)} products`,
-      tone: summary.zeroStock > 0 ? ('danger' as const) : undefined,
-    },
-    {
-      icon: Image,
-      label: 'With a photo',
-      value: `${formatNumber(summary.withImage)} / ${formatNumber(summary.total)}`,
-      meta: 'products with an image',
+      icon: Archive,
+      label: 'Archived',
+      value: formatNumber(summary.archived),
+      meta: 'hidden from sale',
     },
   ]
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-3 sm:grid-cols-3">
       {tiles.map((tile) => (
         <Card key={tile.label} className="flex items-start gap-3 p-4">
           <span className="bg-surface-inset text-fg-muted mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full">
@@ -70,15 +65,7 @@ export function ProductsSummaryStrip({
           </span>
           <div className="min-w-0">
             <p className="text-fg-muted text-sm">{tile.label}</p>
-            <p
-              className={
-                tile.tone === 'danger'
-                  ? 'text-danger mt-0.5 text-lg font-semibold'
-                  : 'text-fg mt-0.5 text-lg font-semibold'
-              }
-            >
-              {tile.value}
-            </p>
+            <p className="text-fg mt-0.5 text-lg font-semibold">{tile.value}</p>
             <p className="text-fg-subtle text-2xs">{tile.meta}</p>
           </div>
         </Card>

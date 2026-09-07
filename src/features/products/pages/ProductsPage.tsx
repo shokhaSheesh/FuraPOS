@@ -1,13 +1,13 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { Download, Plus } from 'lucide-react'
+import { ChevronDown, Download, FileUp, PencilLine, Plus } from 'lucide-react'
+import { DropdownMenu } from 'radix-ui'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
 import { SearchInput } from '@/shared/components/SearchInput'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { FilterSelect } from '@/shared/components/FilterSelect'
-import { SegmentedControl } from '@/shared/ui/SegmentedControl'
 import { Button } from '@/shared/ui/Button'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 import { toast } from '@/shared/ui/toast'
@@ -16,20 +16,13 @@ import { useSession } from '@/app/providers/SessionProvider'
 import { paths } from '@/shared/config/paths'
 import { downloadCsv } from '@/shared/lib/csv'
 import { USD_RATE } from '@/data/seed'
-import {
-  useCatalogStatusCounts,
-  useCatalogSummary,
-  useDeleteVariation,
-  useLocations,
-  useProducts,
-  useVariations,
-} from '../api/products'
+import { useCatalogSummary, useDeleteVariation, useLocations, useVariations } from '../api/products'
 import {
   buildProductColumns,
   PRODUCT_COLUMNS_HIDDEN_BY_DEFAULT,
 } from '../components/productColumns'
 import { ProductsSummaryStrip } from '../components/ProductsSummaryStrip'
-import { productParentColumns } from '../components/productParentColumns'
+import { ImportProductsModal } from '../components/ImportProductsModal'
 import { effectivePrice, type VariationRow } from '../model/product'
 
 /**
@@ -45,34 +38,24 @@ export default function ProductsPage() {
   const { can } = useSession()
   const { query, setQuery } = useListQuery()
 
-  /**
-   * Two ways to read the same catalogue, as in the reference product: by
-   * variation (the sellable rows) or by product (the parent). Variations is
-   * the default because that is what has a price, a barcode and stock.
-   */
-  const byProduct = query.view === 'products'
-  // `enabled` is a React Query option, not a request param — passing it in the
-  // query object would send ?enabled=false to the server and still fetch.
-  const { data, isLoading } = useVariations(query, { enabled: !byProduct })
-  const { data: parents, isLoading: parentsLoading } = useProducts(query, { enabled: byProduct })
-  const scope = {
-    search: query.search,
-    status: query.status,
-    stock: query.stock,
-    location: query.location,
-  }
+  // The catalogue lists variations, full stop: a variation is what carries a
+  // price, a barcode and stock, so it is what can be sold, counted or picked.
+  const { data, isLoading } = useVariations(query)
+  /*
+    The tiles count the three states, so they must be blind to the state
+    filter — otherwise picking "Active" would make Active and All read the same
+    number and Archived read zero. Every other filter still applies, the
+    location scope included.
+  */
+  const scope = { search: query.search, stock: query.stock, location: query.location }
   const { data: summary, isLoading: summaryLoading } = useCatalogSummary(scope)
-  const { data: counts } = useCatalogStatusCounts({
-    search: query.search,
-    stock: query.stock,
-    location: query.location,
-  })
   const { data: locationData } = useLocations()
   const locationId = (query.location as string | null) ?? null
   const location = locationData.items.find((item) => item.id === locationId)
   const deleteVariation = useDeleteVariation()
 
   const [pendingDelete, setPendingDelete] = useState<VariationRow | null>(null)
+  const [importing, setImporting] = useState(false)
 
   const columns = useMemo(
     () =>
@@ -153,12 +136,66 @@ export default function ProductsPage() {
               Export
             </Button>
             {can('products.list.create') ? (
-              <Button variant="primary" asChild>
-                <Link to={paths.products.new}>
-                  <Plus />
-                  Add product
-                </Link>
-              </Button>
+              /*
+                A split button, not a menu button: typing one product in is the
+                common case and stays a single click, while the caret admits
+                that a spreadsheet is the other way in. Both routes are named
+                in the menu so neither is folded away.
+              */
+              <div className="flex items-center">
+                <Button variant="primary" className="rounded-r-none" asChild>
+                  <Link to={paths.products.new}>
+                    <Plus />
+                    Add product
+                  </Link>
+                </Button>
+                <DropdownMenu.Root>
+                  <DropdownMenu.Trigger asChild>
+                    <Button
+                      variant="primary"
+                      size="icon"
+                      aria-label="Other ways to add products"
+                      className="border-primary-fg/20 rounded-l-none border-l"
+                    >
+                      <ChevronDown />
+                    </Button>
+                  </DropdownMenu.Trigger>
+                  <DropdownMenu.Portal>
+                    <DropdownMenu.Content
+                      align="end"
+                      sideOffset={6}
+                      className="rounded-control border-border bg-surface shadow-popover z-50 min-w-56 border p-1"
+                    >
+                      <DropdownMenu.Item asChild>
+                        <Link
+                          to={paths.products.new}
+                          className="rounded-control text-fg data-[highlighted]:bg-surface-muted flex cursor-pointer items-start gap-2 px-2 py-1.5 text-sm outline-none"
+                        >
+                          <PencilLine className="text-fg-muted mt-0.5 size-4 shrink-0" />
+                          <span>
+                            Enter manually
+                            <span className="text-fg-subtle text-2xs block">
+                              One product and its variations
+                            </span>
+                          </span>
+                        </Link>
+                      </DropdownMenu.Item>
+                      <DropdownMenu.Item
+                        onSelect={() => setImporting(true)}
+                        className="rounded-control text-fg data-[highlighted]:bg-surface-muted flex cursor-pointer items-start gap-2 px-2 py-1.5 text-sm outline-none"
+                      >
+                        <FileUp className="text-fg-muted mt-0.5 size-4 shrink-0" />
+                        <span>
+                          Import from a file
+                          <span className="text-fg-subtle text-2xs block">
+                            CSV or Excel, one row per variation
+                          </span>
+                        </span>
+                      </DropdownMenu.Item>
+                    </DropdownMenu.Content>
+                  </DropdownMenu.Portal>
+                </DropdownMenu.Root>
+              </div>
             ) : null}
           </div>
         }
@@ -172,7 +209,6 @@ export default function ProductsPage() {
               ]}
               value={(query.status as string | null) ?? null}
               onChange={(next) => setQuery({ status: next })}
-              counts={counts}
             />
             <FilterSelect
               aria-label="Filter by location"
@@ -201,105 +237,69 @@ export default function ProductsPage() {
 
       <ProductsSummaryStrip summary={summary} loading={summaryLoading} />
 
-      {byProduct ? (
-        <DataTable
-          storageKey="products-parents"
-          columns={productParentColumns}
-          data={parents?.items ?? []}
-          total={parents?.total ?? 0}
-          isLoading={parentsLoading}
-          toolbar={
-            <>
-              <SearchInput
-                value={String(query.search ?? '')}
-                onChange={(search) => setQuery({ search })}
-                placeholder="Search by name, OEM, brand or vehicle…"
-              />
-              <SegmentedControl
-                aria-label="How the catalogue is listed"
-                value={byProduct ? 'products' : 'variations'}
-                onChange={(next) =>
-                  setQuery({ view: next === 'products' ? 'products' : null, page: null })
-                }
-                options={[
-                  { value: 'variations', label: 'By variation' },
-                  { value: 'products', label: 'By product' },
-                ]}
-              />
-            </>
-          }
-          pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
-          onPaginationChange={({ page, pageSize }) => setQuery({ page, pageSize })}
-          onRowClick={(product) => navigate(paths.products.detail(product.id))}
-          emptyState={<EmptyState title="No products match these filters" />}
-        />
-      ) : (
-        <DataTable
-          storageKey="products"
-          columns={columns}
-          initialHidden={PRODUCT_COLUMNS_HIDDEN_BY_DEFAULT}
-          data={data?.items ?? []}
-          total={data?.total ?? 0}
-          isLoading={isLoading}
-          toolbar={
-            <>
-              <SearchInput
-                value={String(query.search ?? '')}
-                onChange={(search) => setQuery({ search })}
-                placeholder="Search by name, SKU, barcode or OEM…"
-              />
-              <SegmentedControl
-                aria-label="How the catalogue is listed"
-                value={byProduct ? 'products' : 'variations'}
-                onChange={(next) =>
-                  setQuery({ view: next === 'products' ? 'products' : null, page: null })
-                }
-                options={[
-                  { value: 'variations', label: 'By variation' },
-                  { value: 'products', label: 'By product' },
-                ]}
-              />
-            </>
-          }
-          pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
-          onPaginationChange={({ page, pageSize }) => setQuery({ page, pageSize })}
-          sorting={query.sort ? [{ id: String(query.sort), desc: query.order === 'desc' }] : []}
-          onSortingChange={(sorting) => {
-            const next = sorting[0]
-            setQuery({ sort: next?.id ?? null, order: next ? (next.desc ? 'desc' : 'asc') : null })
-          }}
-          onRowClick={(variation) => navigate(paths.products.detail(variation.productId))}
-          emptyState={
-            isFiltered ? (
-              <EmptyState
-                title="No products match these filters"
-                description="Try a different search term, or clear the filters to see everything."
-                action={
-                  <Button
-                    variant="secondary"
-                    onClick={() => setQuery({ search: null, status: null, stock: null })}
-                  >
-                    Clear filters
+      <DataTable
+        storageKey="products"
+        columns={columns}
+        initialHidden={PRODUCT_COLUMNS_HIDDEN_BY_DEFAULT}
+        data={data?.items ?? []}
+        total={data?.total ?? 0}
+        isLoading={isLoading}
+        toolbar={
+          <SearchInput
+            value={String(query.search ?? '')}
+            onChange={(search) => setQuery({ search })}
+            placeholder="Search by name, SKU, barcode or OEM…"
+          />
+        }
+        pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
+        onPaginationChange={({ page, pageSize }) => setQuery({ page, pageSize })}
+        sorting={query.sort ? [{ id: String(query.sort), desc: query.order === 'desc' }] : []}
+        onSortingChange={(sorting) => {
+          const next = sorting[0]
+          setQuery({ sort: next?.id ?? null, order: next ? (next.desc ? 'desc' : 'asc') : null })
+        }}
+        onRowClick={(variation) => navigate(paths.products.detail(variation.productId))}
+        emptyState={
+          isFiltered ? (
+            <EmptyState
+              title="No products match these filters"
+              description="Try a different search term, or clear the filters to see everything."
+              action={
+                <Button
+                  variant="secondary"
+                  onClick={() => setQuery({ search: null, status: null, stock: null })}
+                >
+                  Clear filters
+                </Button>
+              }
+            />
+          ) : (
+            <EmptyState
+              title="No products yet"
+              description="Products are everything you sell. Add the first one to start tracking stock and sales."
+              action={
+                can('products.list.create') ? (
+                  <Button variant="primary">
+                    <Plus />
+                    Add product
                   </Button>
-                }
-              />
-            ) : (
-              <EmptyState
-                title="No products yet"
-                description="Products are everything you sell. Add the first one to start tracking stock and sales."
-                action={
-                  can('products.list.create') ? (
-                    <Button variant="primary">
-                      <Plus />
-                      Add product
-                    </Button>
-                  ) : null
-                }
-              />
-            )
-          }
-        />
-      )}
+                ) : null
+              }
+            />
+          )
+        }
+      />
+
+      <ImportProductsModal
+        open={importing}
+        onOpenChange={setImporting}
+        onQueued={(fileName) => {
+          // Imports are jobs, so the confirmation points at where they are
+          // watched rather than claiming the catalogue already changed.
+          toast.success(`${fileName} queued — track it in My uploads`)
+          navigate(paths.uploads)
+        }}
+      />
 
       <ConfirmDialog
         open={pendingDelete !== null}

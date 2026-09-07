@@ -98,14 +98,9 @@ export const navigation: NavSection[] = [
     icon: Truck,
     badge: 'new',
     items: [
-      {
-        label: 'Product selection',
-        to: paths.procurement.selection,
-        permission: 'procurement.selection.view',
-      },
       { label: 'Orders', to: paths.procurement.orders, permission: 'procurement.orders.view' },
       {
-        label: 'Selection schedule',
+        label: 'Reorder schedules',
         to: paths.procurement.schedules,
         permission: 'procurement.schedules.view',
       },

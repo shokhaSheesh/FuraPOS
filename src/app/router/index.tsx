@@ -31,6 +31,7 @@ const NewRepricingPage = lazy(() => import('@/features/repricing/pages/NewRepric
 const SuppliersListPage = lazy(() => import('@/features/suppliers/pages/SuppliersListPage'))
 const SupplierDetailPage = lazy(() => import('@/features/suppliers/pages/SupplierDetailPage'))
 const SupplierFormPage = lazy(() => import('@/features/suppliers/pages/SupplierFormPage'))
+const SchedulesPage = lazy(() => import('@/features/schedules/pages/SchedulesPage'))
 const OrdersListPage = lazy(() => import('@/features/orders/pages/OrdersListPage'))
 const OrderDetailPage = lazy(() => import('@/features/orders/pages/OrderDetailPage'))
 const NewOrderPage = lazy(() => import('@/features/orders/pages/NewOrderPage'))
@@ -169,10 +170,6 @@ const routes: RouteObject[] = [
       // --- Procurement ----------------------------------------------------
       { path: paths.procurement.root, element: <Navigate to={paths.procurement.orders} replace /> },
       {
-        path: paths.procurement.selection,
-        element: todo('Product selection', 'procurement.selection.view'),
-      },
-      {
         path: paths.procurement.orders,
         element: page(<OrdersListPage />, 'procurement.orders.view'),
       },
@@ -186,7 +183,7 @@ const routes: RouteObject[] = [
       },
       {
         path: paths.procurement.schedules,
-        element: todo('Selection schedule', 'procurement.schedules.view'),
+        element: page(<SchedulesPage />, 'procurement.schedules.view'),
       },
 
       // --- Personnel management -------------------------------------------

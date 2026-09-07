@@ -409,11 +409,11 @@ different tables.
 
 ## 4. Закупки — Procurement
 
-| OX (ru)            | Ours (en)          | OX route                     |
-| ------------------ | ------------------ | ---------------------------- |
-| Подбор товаров     | Product selection  | `/app/procurement/selection` |
-| Заказы             | Orders             | `/app/procurement/orders`    |
-| Расписание подбора | Selection schedule | `/app/procurement/schedules` |
+| OX (ru)            | Ours (en)         | OX route                     |
+| ------------------ | ----------------- | ---------------------------- |
+| Подбор товаров     | — (removed)       | `/app/procurement/selection` |
+| Заказы             | Orders            | `/app/procurement/orders`    |
+| Расписание подбора | Reorder schedules | `/app/procurement/schedules` |
 
 ### Product selection — removed
 
@@ -428,9 +428,12 @@ saved-run shape. Recorded rather than quietly dropped, because the reasoning is 
   начните первый". That is the same signal as their single 57-second stocktake and their twenty
   test repricings, and it is the strongest argument for the removal.
 
-**Knock-on: «Расписание подбора» (Selection schedule) now has nothing to schedule.** A recurring job
-needs an artefact to produce. That page should either go too, or become something else entirely —
-it is not a screen that can stand on its own.
+Removed from the sidebar, the routes, the permission tree and the dashboard at the client's request.
+The dashboard's "below their reorder point" row now links to the product list filtered to low stock,
+which is where the answer actually is.
+
+**Knock-on, now resolved: «Расписание подбора» had nothing left to schedule.** The answer was not to
+delete it but to give the run somewhere to land — see below.
 
 ### Orders — built without an OX reference
 
@@ -440,7 +443,7 @@ new information, not a contradiction.
 
 **Why it exists.** Until now goods receipts appeared from nowhere — stock turned up and someone
 typed what was in the box, with nothing to check it against. An order is the other half: the
-commitment made weeks earlier. It is what makes *where is it* and *is it late* answerable, and what
+commitment made weeks earlier. It is what makes _where is it_ and _is it late_ answerable, and what
 turns a receipt from a recording into a check.
 
 **The decisions worth keeping:**
@@ -448,7 +451,7 @@ turns a receipt from a recording into a check.
 - **Receiving is not a status.** `draft → sent → confirmed` are steps a person takes; a delivery is
   an event that can happen as many times as the supplier ships. So the detail page offers exactly
   one "next step" button, and "Book a delivery" sits beside it rather than in the sequence.
-  `partial` and `received` are then *derived* from what has arrived, never picked from a menu.
+  `partial` and `received` are then _derived_ from what has arrived, never picked from a menu.
 - **A delivery is a real goods receipt.** `receiveAgainstOrder` builds one and posts it through the
   same path as any other, so stock, landed cost and the adjustment ledger behave identically
   whether or not an order was involved. The order stores the receipt ids; the receipt links back.
@@ -461,11 +464,58 @@ turns a receipt from a recording into a check.
   order behind it.
 - **Nothing is late without a promised date.** `expectedAt` is optional, and `daysLate` returns
   null without it, when nothing is outstanding, and once the order is closed.
-- **The list sorts late first, then still-open, then by date**, and leads with *Still coming* rather
+- **The list sorts late first, then still-open, then by date**, and leads with _Still coming_ rather
   than what was ordered — nobody opens an orders screen to admire the completed ones.
 - **The agreed price is editable per line**, defaulting to the last known cost. An order is where a
   price is agreed; taking it from the catalogue with no way to change it would make the check
   against the delivery meaningless.
+
+### Reorder schedules — «Расписание подбора»
+
+OX's columns, from the live tenant: Поставщик · Дни месяца · Время · Период продаж · Страховой
+запас · Срок доставки · Следующий запуск · Последний запуск · Статус. Its own description reads:
+_"В указанные дни месяца система считает по товарам поставщика, что и сколько дозаказать (остаток,
+скорость продаж, срок доставки, MOQ), и уведомляет ответственных."_
+
+We keep every one of those columns. The change is what a run **does**.
+
+**OX notifies. We leave a draft order.** OX's run ends in a notification: the buyer still has to
+open the selection, read it, and retype the whole thing as an order. Ours creates a real draft
+order in Orders — priced, addressed to the supplier, with an expected date one lead time out — for
+a person to check and send. The schedule does the arithmetic and the typing; committing money to a
+supplier stays a human decision, and **nothing is ever sent automatically**.
+
+That is also the answer to the knock-on from removing Product selection. The reorder arithmetic was
+never worth a screen of its own — it is worth exactly what it produces — so it survives here, with
+its sixteen tests, as the engine behind a schedule rather than a page someone has to visit.
+
+**Corrections to an earlier note in this document.** Product selection's entry said OX has no
+lead-time field at all. It does, on this screen: «Срок доставки». It is missing from the _manual_
+run, not from the product.
+
+**What we changed, and why:**
+
+- **A day the month does not have is clamped to its last day, not skipped.** Someone who asks for
+  the 31st wants a run at the end of every month; silently missing February would be the one month
+  they never find out about. The rule is stated under the day picker rather than left to be
+  discovered.
+- **The dialog shows what a run would order right now**, recalculated as the numbers change — count,
+  units and rough value. A schedule is a promise about the future made out of four abstract knobs,
+  and nobody can tell from the knobs whether they have asked for eleven products or eleven hundred.
+  OX asks for the same four numbers and shows nothing until a fortnight later.
+- **"Last run" says what it produced**, linking to the order, and distinguishes _never run_ from
+  _ran and found nothing_. A run that finds nothing is a real, useful outcome — the shelves are
+  fine — and is recorded rather than silently skipped, so nobody wonders whether it happened.
+- **Run now**, for the buyer who is not waiting until the 15th. It records `trigger: 'manual'`, so
+  a hand-run and a due run stay distinguishable.
+- **The cadence reads as a sentence** — "the 1st and 15th of the month" — not a row of bare numbers
+  to decode.
+- **The horizon is spelled out**: "each delivery has to last 51 days — 30 to arrive + 14 until the
+  next order + 7 spare". Three knobs that are really one number should say so.
+
+**Not built, deliberately:** OX's «уведомляет ответственных» — who gets told. That belongs in the
+notification preferences (event type × channel), not on this screen, and the events system is not
+built yet.
 
 ## 5. Управление персоналом — Personnel management
 

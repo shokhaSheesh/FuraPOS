@@ -58,7 +58,6 @@ export const paths = {
 
   procurement: {
     root: '/procurement',
-    selection: '/procurement/selection', // OX: /app/procurement/selection
     orders: '/procurement/orders', // OX: /app/procurement/orders
     newOrder: '/procurement/orders/new',
     orderDetail: (id = ':orderId') => `/procurement/orders/${id}`,

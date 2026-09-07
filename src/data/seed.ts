@@ -15,6 +15,7 @@ import type { GoodsReceipt } from '@/features/receipts/model/receipt'
 import type { Stocktake } from '@/features/stocktaking/model/stocktake'
 import type { Repricing, RuleKind } from '@/features/repricing/model/repricing'
 import type { Supplier } from '@/features/suppliers/model/supplier'
+import type { ReorderSchedule } from '@/features/schedules/model/schedule'
 import type { PurchaseOrder } from '@/features/orders/model/order'
 import type { WalletTransaction } from '@/shared/types/wallet'
 
@@ -884,7 +885,9 @@ export const orders: PurchaseOrder[] = Array.from({ length: 11 }, (_, index) => 
       status === 'received'
         ? ordered
         : status === 'partial'
-          ? (random() > 0.4 ? ordered : between(0, ordered - 1))
+          ? random() > 0.4
+            ? ordered
+            : between(0, ordered - 1)
           : 0
 
     return {
@@ -902,8 +905,7 @@ export const orders: PurchaseOrder[] = Array.from({ length: 11 }, (_, index) => 
     }
   })
 
-  const sentAt =
-    status === 'draft' ? null : new Date(createdAt.getTime() + 3_600_000).toISOString()
+  const sentAt = status === 'draft' ? null : new Date(createdAt.getTime() + 3_600_000).toISOString()
   // Some are promised for a date that has already passed, which is the whole
   // point of tracking one.
   const expectedAt =
@@ -926,7 +928,80 @@ export const orders: PurchaseOrder[] = Array.from({ length: 11 }, (_, index) => 
     createdBy: pick(['Akhmet Dauletmuratov', 'Mansurbek']),
     createdAt: createdAt.toISOString(),
     sentAt,
-    closedAt: status === 'received' ? new Date(createdAt.getTime() + 40 * 86_400_000).toISOString() : null,
+    closedAt:
+      status === 'received' ? new Date(createdAt.getTime() + 40 * 86_400_000).toISOString() : null,
     updatedAt: createdAt.toISOString(),
   } satisfies PurchaseOrder
 })
+
+/**
+ * Reorder schedules.
+ *
+ * Three, deliberately unlike each other: a fortnightly run that has already
+ * produced a draft order, a monthly one whose last run found nothing worth
+ * ordering, and a paused one. All three states show on the list, and the middle
+ * one is the easiest to get wrong — a run that finds nothing still ran.
+ */
+export const schedules: ReorderSchedule[] = [
+  {
+    id: 'sch-1',
+    supplierId: 'sup-1',
+    supplierName: suppliers[0]!.name,
+    locationId: locations[0]!.id,
+    locationName: locations[0]!.name,
+    daysOfMonth: [1, 15],
+    timeOfDay: '09:00',
+    settings: { salesWindowDays: 90, leadTimeDays: 45, orderIntervalDays: 14, safetyDays: 10 },
+    active: true,
+    lastRun: {
+      at: new Date(Date.now() - 6 * 86_400_000).toISOString(),
+      orderId: 'po-11',
+      orderNumber: 'PO-00011',
+      products: 23,
+      units: 265,
+      value: 903_082_222,
+      trigger: 'schedule',
+    },
+    createdBy: 'Akhmet Dauletmuratov',
+    createdAt: new Date(Date.now() - 120 * 86_400_000).toISOString(),
+    updatedAt: new Date(Date.now() - 6 * 86_400_000).toISOString(),
+  },
+  {
+    id: 'sch-2',
+    supplierId: 'sup-2',
+    supplierName: suppliers[1]!.name,
+    locationId: locations[0]!.id,
+    locationName: locations[0]!.name,
+    daysOfMonth: [25],
+    timeOfDay: '08:30',
+    settings: { salesWindowDays: 60, leadTimeDays: 30, orderIntervalDays: 30, safetyDays: 7 },
+    active: true,
+    lastRun: {
+      at: new Date(Date.now() - 13 * 86_400_000).toISOString(),
+      orderId: null,
+      orderNumber: null,
+      products: 0,
+      units: 0,
+      value: 0,
+      trigger: 'schedule',
+    },
+    createdBy: 'Akhmet Dauletmuratov',
+    createdAt: new Date(Date.now() - 90 * 86_400_000).toISOString(),
+    updatedAt: new Date(Date.now() - 13 * 86_400_000).toISOString(),
+  },
+  {
+    id: 'sch-3',
+    supplierId: 'sup-3',
+    supplierName: suppliers[2]!.name,
+    locationId: locations[1]?.id ?? locations[0]!.id,
+    locationName: locations[1]?.name ?? locations[0]!.name,
+    daysOfMonth: [5, 20],
+    timeOfDay: '10:00',
+    settings: { salesWindowDays: 90, leadTimeDays: 21, orderIntervalDays: 14, safetyDays: 5 },
+    active: false,
+    lastRun: null,
+    createdBy: 'Akhmet Dauletmuratov',
+    createdAt: new Date(Date.now() - 40 * 86_400_000).toISOString(),
+    updatedAt: new Date(Date.now() - 40 * 86_400_000).toISOString(),
+  },
+]

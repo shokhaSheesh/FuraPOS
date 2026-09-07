@@ -27,7 +27,7 @@ export function AttentionCard({
       tone: 'danger' as const,
       count: attention?.outOfStock ?? 0,
       label: 'products out of stock',
-      to: paths.products.list,
+      to: `${paths.products.list}?stock=zero`,
     },
     {
       key: 'lowStock',
@@ -35,7 +35,7 @@ export function AttentionCard({
       tone: 'warning' as const,
       count: attention?.lowStock ?? 0,
       label: 'products below their reorder point',
-      to: paths.procurement.selection,
+      to: `${paths.products.list}?stock=low`,
     },
     {
       key: 'payables',

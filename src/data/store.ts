@@ -11,6 +11,9 @@ import type { Stocktake, StocktakeLine } from '@/features/stocktaking/model/stoc
 import type { Supplier } from '@/features/suppliers/model/supplier'
 import type { OrderLine, OrderStatus, PurchaseOrder } from '@/features/orders/model/order'
 import { outstandingUnits } from '@/features/orders/model/order'
+import type { ReorderSchedule } from '@/features/schedules/model/schedule'
+import type { ReorderSettings } from '@/features/schedules/model/reorder'
+import { buildReorderLines, lineCostUzs, needsOrdering } from '@/features/schedules/model/reorder'
 import type { WalletTransaction } from '@/shared/types/wallet'
 import {
   priceUnder,
@@ -38,6 +41,7 @@ import {
   repricings as seedRepricings,
   stocktakes as seedStocktakes,
   orders as seedOrders,
+  schedules as seedSchedules,
   suppliers as seedSuppliers,
   walletTransactions as seedWalletTransactions,
   transfers as seedTransfers,
@@ -63,6 +67,7 @@ interface CatalogState {
   repricings: Repricing[]
   suppliers: Supplier[]
   orders: PurchaseOrder[]
+  schedules: ReorderSchedule[]
   /** One ledger for every wallet owner, filtered by owner on read. */
   walletTransactions: WalletTransaction[]
   clients: Client[]
@@ -115,6 +120,18 @@ interface CatalogState {
     invoiceNumber: string,
   ) => { ok: true; receiptId: string } | { ok: false; error: string }
 
+  createSchedule: (input: ScheduleInput) => ReorderSchedule
+  updateSchedule: (id: string, input: ScheduleInput) => void
+  deleteSchedule: (id: string) => void
+  /**
+   * Does what the schedule exists to do: works out what to reorder and leaves
+   * a draft order for a person to check. Never sends anything to a supplier.
+   */
+  runSchedule: (
+    id: string,
+    trigger: 'schedule' | 'manual',
+  ) => { ok: true; orderId: string | null } | { ok: false; error: string }
+
   createSupplier: (input: SupplierInput) => Supplier
   updateSupplier: (id: string, input: SupplierInput) => Supplier | undefined
   /** Records money paid to a supplier: reduces the debt, writes the movement. */
@@ -165,6 +182,15 @@ export interface CreateOrderInput {
   comment: string
   lines: OrderLine[]
   status: Extract<OrderStatus, 'draft' | 'sent'>
+}
+
+export interface ScheduleInput {
+  supplierId: string
+  locationId: string
+  daysOfMonth: number[]
+  timeOfDay: string
+  settings: ReorderSettings
+  active: boolean
 }
 
 export type SupplierInput = Omit<
@@ -378,6 +404,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
   locations,
   suppliers: seedSuppliers,
   orders: seedOrders,
+  schedules: seedSchedules,
   walletTransactions: seedWalletTransactions,
 
   createSale: (input) => {
@@ -973,6 +1000,121 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       ),
     })
     return { ok: true, receiptId: receipt.id }
+  },
+
+  createSchedule: (input) => {
+    const now = new Date().toISOString()
+    const schedule: ReorderSchedule = {
+      id: `sch-${get().schedules.length + 1}-${Date.now()}`,
+      supplierId: input.supplierId,
+      supplierName: get().suppliers.find((s) => s.id === input.supplierId)?.name ?? '—',
+      locationId: input.locationId,
+      locationName: get().locations.find((l) => l.id === input.locationId)?.name ?? '—',
+      daysOfMonth: [...new Set(input.daysOfMonth)].sort((a, b) => a - b),
+      timeOfDay: input.timeOfDay,
+      settings: input.settings,
+      active: input.active,
+      lastRun: null,
+      createdBy: 'Akhmet Dauletmuratov',
+      createdAt: now,
+      updatedAt: now,
+    }
+    set({ schedules: [...get().schedules, schedule] })
+    return schedule
+  },
+
+  updateSchedule: (id, input) => {
+    set({
+      schedules: get().schedules.map((schedule) =>
+        schedule.id === id
+          ? {
+              ...schedule,
+              ...input,
+              supplierName:
+                get().suppliers.find((s) => s.id === input.supplierId)?.name ??
+                schedule.supplierName,
+              locationName:
+                get().locations.find((l) => l.id === input.locationId)?.name ??
+                schedule.locationName,
+              daysOfMonth: [...new Set(input.daysOfMonth)].sort((a, b) => a - b),
+              updatedAt: new Date().toISOString(),
+            }
+          : schedule,
+      ),
+    })
+  },
+
+  deleteSchedule: (id) => set({ schedules: get().schedules.filter((s) => s.id !== id) }),
+
+  runSchedule: (id, trigger) => {
+    const schedule = get().schedules.find((s) => s.id === id)
+    if (!schedule) return { ok: false, error: 'That schedule no longer exists' }
+
+    const lines = buildReorderLines(
+      { variations: get().variations, sales: get().sales, receipts: get().receipts },
+      schedule.settings,
+      {
+        supplierId: schedule.supplierId,
+        locationId: schedule.locationId,
+        onlyNeeded: true,
+      },
+    ).filter(needsOrdering)
+
+    const at = new Date().toISOString()
+
+    // Finding nothing is a real outcome, not a failure: it means the shelves
+    // are fine. Recording it stops anyone wondering whether the run happened.
+    if (lines.length === 0) {
+      const run = { at, orderId: null, orderNumber: null, products: 0, units: 0, value: 0, trigger }
+      set({
+        schedules: get().schedules.map((s) =>
+          s.id === id ? { ...s, lastRun: run, updatedAt: at } : s,
+        ),
+      })
+      return { ok: true, orderId: null }
+    }
+
+    /*
+      A draft, never a sent order. The schedule does the arithmetic and the
+      typing; committing money to a supplier stays a human decision.
+    */
+    const order = get().createOrder({
+      supplierId: schedule.supplierId,
+      locationId: schedule.locationId,
+      expectedAt: new Date(Date.now() + schedule.settings.leadTimeDays * 86_400_000).toISOString(),
+      comment: `Suggested by the ${schedule.supplierName} schedule`,
+      status: 'draft',
+      lines: lines.map((line, index) => ({
+        id: `sol-${id}-${index}`,
+        variationId: line.variationId,
+        productId: line.productId,
+        sku: line.sku,
+        name: line.name,
+        imageUrl: line.imageUrl,
+        unit: line.unit,
+        orderedQuantity: line.suggested,
+        receivedQuantity: 0,
+        unitCost: line.unitCost,
+        costCurrency: line.costCurrency,
+      })),
+    })
+
+    const run: ReorderSchedule['lastRun'] = {
+      at,
+      orderId: order.id,
+      orderNumber: order.number,
+      products: lines.length,
+      units: lines.reduce((sum, line) => sum + line.suggested, 0),
+      value: lines.reduce((sum, line) => sum + lineCostUzs(line, USD_RATE), 0),
+      trigger,
+    }
+
+    set({
+      schedules: get().schedules.map((s) =>
+        s.id === id ? { ...s, lastRun: run, updatedAt: at } : s,
+      ),
+    })
+    return { ok: true, orderId: order.id }
   },
 
   createSupplier: (input) => {

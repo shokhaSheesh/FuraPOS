@@ -128,9 +128,10 @@ export default function GoodsReceiptDetailPage() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Items</CardTitle>
-            {canSeeCost && receipt.status === 'received' ? (
+            {canSeeCost && extras > 0 ? (
               <span className="text-fg-subtle text-2xs">
-                Landed cost includes each line&rsquo;s share of freight and duty
+                Landed cost is the supplier&rsquo;s price plus this line&rsquo;s share of freight
+                and duty — what the part really cost, not what the invoice said
               </span>
             ) : null}
           </CardHeader>
@@ -222,6 +223,7 @@ export default function GoodsReceiptDetailPage() {
                 <CardTitle>What it cost</CardTitle>
               </CardHeader>
               <CardBody className="space-y-2 text-sm">
+                <p className="text-fg-subtle text-2xs">What was paid for this delivery, all in.</p>
                 <Row label="Supplier total" value={formatMoney(goods)} />
                 {receipt.additionalCosts.map((cost) => (
                   <Row

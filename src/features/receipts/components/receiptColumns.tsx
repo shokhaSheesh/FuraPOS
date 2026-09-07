@@ -109,7 +109,9 @@ export function buildReceiptColumns({
     */
     {
       id: 'soldThrough',
-      header: 'Sold through',
+      // Not "sold through": that is retail jargon, and the person who has to
+      // read this column every week should not have to learn a term first.
+      header: 'Sold since arrival',
       enableHiding: false,
       cell: ({ row }) => {
         const { received, sold, ratio } = soldThrough(row.original, stockAt)
@@ -117,7 +119,9 @@ export function buildReceiptColumns({
         return (
           <div
             className="flex items-center gap-2"
-            title={`About ${formatNumber(sold)} of ${formatNumber(received)} sold`}
+            title={`About ${formatNumber(sold)} of the ${formatNumber(
+              received,
+            )} units in this delivery have sold since it arrived`}
           >
             <span className="bg-surface-inset h-1.5 w-20 shrink-0 overflow-hidden rounded-full">
               <span

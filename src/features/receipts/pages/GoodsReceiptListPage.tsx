@@ -119,7 +119,7 @@ export default function GoodsReceiptListPage() {
       icon: Percent,
       label: 'Landed uplift',
       value: formatPercent(summary.uplift),
-      meta: 'freight and duty on top of invoice',
+      meta: 'freight and duty add this much to every invoice',
     },
   ]
 
@@ -127,7 +127,7 @@ export default function GoodsReceiptListPage() {
     <>
       <PageHeader
         title="Goods receipt"
-        description="What arrived from suppliers, and what it really cost once it was here."
+        description="Every delivery from a supplier: what arrived, what it cost once freight and duty are counted, and how much of it has sold since."
         action={
           can('products.goodsReceipt.create') ? (
             <Button variant="primary" asChild>
@@ -214,7 +214,7 @@ export default function GoodsReceiptListPage() {
           ) : (
             <EmptyState
               title="Nothing has arrived yet"
-              description="A goods receipt records what a supplier delivered, and turns freight and duty into a real cost price."
+              description="When a supplier's delivery arrives, a receipt records what was in it and adds it to stock. It is the only way stock goes up."
               action={
                 can('products.goodsReceipt.create') ? (
                   <Button variant="primary" asChild>

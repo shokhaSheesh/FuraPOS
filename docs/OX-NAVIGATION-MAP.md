@@ -365,6 +365,48 @@ with the single 57-second stocktake, it suggests Fura is not using either screen
 whether that is because the screens are unhelpful or because the need is not there; the answer says
 how much either is worth in the new product.
 
+### Suppliers
+
+**The first screen built with OX's version in front of us rather than after the fact**, and the
+richest one in their product: six KPI cards, an analytics block, counted lenses and a table where
+every column is money or movement. That is the insight worth keeping — **a supplier list is not a
+contact book.** The name is how you find the row; the debt is why you opened it.
+
+| OX (ru)                | Ours                        | Note                                                                                                                                                                                  |
+| ---------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Название               | Supplier                    | Contact name beneath it                                                                                                                                                               |
+| Долг                   | We owe                      | Plus days past terms, which OX does not show                                                                                                                                          |
+| Последняя дата платежа | Last paid                   |                                                                                                                                                                                       |
+| Продано                | Sold on                     | A bar, as OX draws it                                                                                                                                                                 |
+| Остаток продуктов      | Still on the shelf          | Units and value                                                                                                                                                                       |
+| Закупки                | Products / Bought from them | OX's cell carries "товары не привязаны" and "Автозаказ не запланирован", both of which belong to Procurement — not built                                                              |
+| Бренд                  | —                           | **Not built.** In our model the product's brand _is_ who we buy from, so a supplier-to-brand link would be the same fact twice. Revisit if a supplier ever sells more than one brand. |
+| Зона                   | Zone                        |                                                                                                                                                                                       |
+
+Their KPI cards map to ours as: Текущий долг → We owe, Остаток на складе → Still on the shelf,
+Закуплено → Bought, Без движения → Gone quiet. **Продано** becomes a column rather than a card, and
+**Возвраты** is not built — there is no returns concept anywhere in this app yet, and a card reading
+zero because a feature does not exist is worse than no card.
+
+We add **days past terms**, which OX does not have. A debt is not late until someone agreed when it
+was due, so `paymentTermDays` is nullable and nothing without it can be overdue.
+
+**"Без поставщика".** OX shows unattributed stock as a synthetic supplier row. We show it as a note
+above the table instead: it is a data-quality problem rather than a company, and a row you cannot
+click or pay reads like a bug.
+
+#### The wallet, finally built
+
+CLAUDE.md has said since the start that clients, employees and suppliers get the **same** wallet
+sub-view rather than three bespoke screens. Suppliers is the first of the three to have a detail
+page, so `shared/components/WalletPanel.tsx` exists now and is owner-agnostic: balances, movements
+and insights, with the labels supplied by the caller because "we owe them" and "they owe us" are
+opposite sentences about the same number. Clients and employees drop into it unchanged.
+
+`walletTransactions` is one ledger in the store for every owner type, filtered on read — the shape
+the shared component needs, and the reason a supplier payment and a client top-up will never be two
+different tables.
+
 ## 4. Закупки — Procurement
 
 | OX (ru)            | Ours (en)          | OX route                     |

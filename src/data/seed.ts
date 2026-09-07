@@ -14,6 +14,8 @@ import type { Correction, CorrectionReason } from '@/features/corrections/model/
 import type { GoodsReceipt } from '@/features/receipts/model/receipt'
 import type { Stocktake } from '@/features/stocktaking/model/stocktake'
 import type { Repricing, RuleKind } from '@/features/repricing/model/repricing'
+import type { Supplier } from '@/features/suppliers/model/supplier'
+import type { WalletTransaction } from '@/shared/types/wallet'
 
 /** Kept in step with the dashboard's exchange-rate widget. */
 export const USD_RATE = 12_225
@@ -56,13 +58,78 @@ export const brands = [
   { id: 'brand-4', name: 'Castrol' },
 ] as const
 
-/** Who we buy from. The Suppliers screen will own these properly later. */
-export const suppliers = [
-  { id: 'sup-1', name: 'AKCHAEV INC', country: 'Türkiye' },
-  { id: 'sup-2', name: 'Euro Parts DMCC', country: 'UAE' },
-  { id: 'sup-3', name: 'Sampa Otomotiv', country: 'Türkiye' },
-  { id: 'sup-4', name: 'Dinex Group', country: 'Denmark' },
-] as const
+/**
+ * Who we buy from. Debt is the number the screen is really about, so it is on
+ * the record rather than derived: an invoice can be paid before or after its
+ * goods arrive, and the two are not the same ledger.
+ */
+export const suppliers: Supplier[] = [
+  {
+    id: 'sup-1',
+    name: 'AKCHAEV INC',
+    zone: 'Uzbekistan',
+    contactName: 'Rustam Akchaev',
+    phone: '+998 90 123 45 67',
+    email: 'rustam@akchaev.uz',
+    address: 'Ташкент, ул. Амира Темура, 14',
+    paymentTermDays: 30,
+    debt: 1_306_722_438,
+    lastPaymentAt: new Date(Date.now() - 52 * 86_400_000).toISOString(),
+    comment: 'Main importer relationship',
+    status: 'active',
+    createdAt: new Date(Date.now() - 700 * 86_400_000).toISOString(),
+    updatedAt: new Date(Date.now() - 52 * 86_400_000).toISOString(),
+  },
+  {
+    id: 'sup-2',
+    name: 'Euro Parts DMCC',
+    zone: 'UAE',
+    contactName: 'Samir Haddad',
+    phone: '+971 50 887 22 10',
+    email: 'orders@europarts.ae',
+    address: 'Jebel Ali Free Zone, Dubai',
+    paymentTermDays: 45,
+    debt: 214_500_000,
+    lastPaymentAt: new Date(Date.now() - 12 * 86_400_000).toISOString(),
+    comment: null,
+    status: 'active',
+    createdAt: new Date(Date.now() - 420 * 86_400_000).toISOString(),
+    updatedAt: new Date(Date.now() - 12 * 86_400_000).toISOString(),
+  },
+  {
+    id: 'sup-3',
+    name: 'Sampa Otomotiv',
+    zone: 'Türkiye',
+    contactName: 'Emre Yıldız',
+    phone: '+90 532 447 19 03',
+    email: 'export@sampa.com.tr',
+    address: 'Samsun OSB, Türkiye',
+    paymentTermDays: 60,
+    debt: 0,
+    lastPaymentAt: new Date(Date.now() - 30 * 86_400_000).toISOString(),
+    comment: null,
+    status: 'active',
+    createdAt: new Date(Date.now() - 300 * 86_400_000).toISOString(),
+    updatedAt: new Date(Date.now() - 30 * 86_400_000).toISOString(),
+  },
+  {
+    id: 'sup-4',
+    name: 'Dinex Group',
+    zone: 'Denmark',
+    contactName: null,
+    phone: null,
+    email: 'sales@dinex.dk',
+    address: null,
+    // Nothing agreed, so nothing can be overdue.
+    paymentTermDays: null,
+    debt: 0,
+    lastPaymentAt: null,
+    comment: 'Trial supplier — one shipment only',
+    status: 'active',
+    createdAt: new Date(Date.now() - 260 * 86_400_000).toISOString(),
+    updatedAt: new Date(Date.now() - 200 * 86_400_000).toISOString(),
+  },
+]
 
 export const locations = [
   { id: 'loc-1', name: 'Central warehouse' },
@@ -613,7 +680,8 @@ export const stocktakes: Stocktake[] = Array.from({ length: 6 }, (_, index) => {
     brandId: brand?.id ?? null,
     brandName: brand?.name ?? null,
     lines,
-    comment: random() > 0.6 ? pick(['Monthly count', 'Quarterly audit', 'Brakes aisle only']) : null,
+    comment:
+      random() > 0.6 ? pick(['Monthly count', 'Quarterly audit', 'Brakes aisle only']) : null,
     createdBy: pick(['Akhmet Dauletmuratov', 'Mansurbek', 'Dilnoza']),
     createdAt: createdAt.toISOString(),
     appliedAt,
@@ -632,7 +700,13 @@ export const stocktakes: Stocktake[] = Array.from({ length: 6 }, (_, index) => {
 export const repricings: Repricing[] = Array.from({ length: 8 }, (_, index) => {
   const sequence = index + 1
   const status = pick(['draft', 'applied', 'applied', 'applied', 'reverted'] as const)
-  const kind = pick(['percent', 'percent', 'percent', 'margin', 'amount'] as const) satisfies RuleKind
+  const kind = pick([
+    'percent',
+    'percent',
+    'percent',
+    'margin',
+    'amount',
+  ] as const) satisfies RuleKind
   const category = random() > 0.6 ? pick(categories) : null
   const brand = random() > 0.75 ? pick(brands) : null
   const repriceLocation = random() > 0.8 ? pick(locations) : null
@@ -710,3 +784,48 @@ export const repricings: Repricing[] = Array.from({ length: 8 }, (_, index) => {
     updatedAt: revertedAt ?? appliedAt ?? createdAt.toISOString(),
   } satisfies Repricing
 })
+
+/**
+ * Wallet movements, for every owner type in one ledger — the shape CLAUDE.md
+ * asks for, so clients and employees drop into the same table later.
+ *
+ * Only suppliers have any yet. A charge is what an invoice added to the debt; a
+ * payment is money going the other way, which is why it is negative.
+ */
+export const walletTransactions: WalletTransaction[] = suppliers
+  .filter((supplier) => supplier.lastPaymentAt !== null)
+  .flatMap((supplier, index) => {
+    const paidAt = new Date(supplier.lastPaymentAt!)
+    const charged = supplier.debt + between(80_000_000, 400_000_000)
+    const chargedAt = new Date(paidAt.getTime() - between(5, 40) * 86_400_000)
+    const payment = charged - supplier.debt
+
+    return [
+      {
+        id: `wtx-${index + 1}-1`,
+        ownerId: supplier.id,
+        ownerType: 'supplier' as const,
+        kind: 'debt_charged' as const,
+        amount: charged,
+        balanceAfter: charged,
+        comment: 'Goods received',
+        referenceType: 'goods_receipt',
+        referenceId: null,
+        createdAt: chargedAt.toISOString(),
+        createdBy: { id: 'usr-1', name: 'Akhmet Dauletmuratov' },
+      },
+      {
+        id: `wtx-${index + 1}-2`,
+        ownerId: supplier.id,
+        ownerType: 'supplier' as const,
+        kind: 'debt_repaid' as const,
+        amount: -payment,
+        balanceAfter: supplier.debt,
+        comment: 'Bank transfer',
+        referenceType: null,
+        referenceId: null,
+        createdAt: paidAt.toISOString(),
+        createdBy: { id: 'usr-1', name: 'Akhmet Dauletmuratov' },
+      },
+    ]
+  })

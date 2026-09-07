@@ -28,6 +28,9 @@ const NewStocktakePage = lazy(() => import('@/features/stocktaking/pages/NewStoc
 const RepricingListPage = lazy(() => import('@/features/repricing/pages/RepricingListPage'))
 const RepricingDetailPage = lazy(() => import('@/features/repricing/pages/RepricingDetailPage'))
 const NewRepricingPage = lazy(() => import('@/features/repricing/pages/NewRepricingPage'))
+const SuppliersListPage = lazy(() => import('@/features/suppliers/pages/SuppliersListPage'))
+const SupplierDetailPage = lazy(() => import('@/features/suppliers/pages/SupplierDetailPage'))
+const SupplierFormPage = lazy(() => import('@/features/suppliers/pages/SupplierFormPage'))
 const NewSalePage = lazy(() => import('@/features/sales/pages/NewSalePage'))
 const AllSalesPage = lazy(() => import('@/features/sales/pages/SalesListPage'))
 const SaleDetailPage = lazy(() => import('@/features/sales/pages/SaleDetailPage'))
@@ -143,10 +146,21 @@ const routes: RouteObject[] = [
         path: paths.products.printTemplates,
         element: todo('Print templates', 'products.printTemplates.view'),
       },
-      { path: paths.products.suppliers, element: todo('Suppliers', 'products.suppliers.view') },
+      {
+        path: paths.products.suppliers,
+        element: page(<SuppliersListPage />, 'products.suppliers.view'),
+      },
+      {
+        path: paths.products.newSupplier,
+        element: page(<SupplierFormPage />, 'products.suppliers.create'),
+      },
       {
         path: paths.products.supplierDetail(),
-        element: todo('Supplier', 'products.suppliers.view'),
+        element: page(<SupplierDetailPage />, 'products.suppliers.view'),
+      },
+      {
+        path: paths.products.editSupplier(),
+        element: page(<SupplierFormPage />, 'products.suppliers.edit'),
       },
 
       // --- Procurement ----------------------------------------------------

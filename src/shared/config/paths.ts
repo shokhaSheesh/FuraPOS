@@ -51,7 +51,9 @@ export const paths = {
     repricingDetail: (id = ':repricingId') => `/products/repricing/${id}`,
     printTemplates: '/products/print-templates', // OX: /app/products/stickers
     suppliers: '/products/suppliers', // OX: /app/products/suppliers
+    newSupplier: '/products/suppliers/new',
     supplierDetail: (id = ':supplierId') => `/products/suppliers/${id}`,
+    editSupplier: (id = ':supplierId') => `/products/suppliers/${id}/edit`,
   },
 
   procurement: {

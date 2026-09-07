@@ -7,10 +7,9 @@ import type {
   CorrectionLine,
   CorrectionReason,
 } from '@/features/corrections/model/correction'
-import type {
-  Stocktake,
-  StocktakeLine,
-} from '@/features/stocktaking/model/stocktake'
+import type { Stocktake, StocktakeLine } from '@/features/stocktaking/model/stocktake'
+import type { Supplier } from '@/features/suppliers/model/supplier'
+import type { WalletTransaction } from '@/shared/types/wallet'
 import {
   priceUnder,
   type Repricing,
@@ -36,7 +35,8 @@ import {
   receipts as seedReceipts,
   repricings as seedRepricings,
   stocktakes as seedStocktakes,
-  suppliers,
+  suppliers as seedSuppliers,
+  walletTransactions as seedWalletTransactions,
   transfers as seedTransfers,
   variations as seedVariations,
 } from './seed'
@@ -58,11 +58,13 @@ interface CatalogState {
   receipts: GoodsReceipt[]
   stocktakes: Stocktake[]
   repricings: Repricing[]
+  suppliers: Supplier[]
+  /** One ledger for every wallet owner, filtered by owner on read. */
+  walletTransactions: WalletTransaction[]
   clients: Client[]
   categories: typeof categories
   brands: typeof brands
   locations: typeof locations
-  suppliers: typeof suppliers
 
   createSale: (input: CreateSaleInput) => Sale
   updateSale: (id: string, patch: { status?: SaleStatus; paid?: number }) => Sale | undefined
@@ -97,6 +99,15 @@ interface CatalogState {
   ) => { ok: true } | { ok: false; error: string }
 
   /** Prepares a price change: works out every new price but changes nothing yet. */
+  createSupplier: (input: SupplierInput) => Supplier
+  updateSupplier: (id: string, input: SupplierInput) => Supplier | undefined
+  /** Records money paid to a supplier: reduces the debt, writes the movement. */
+  paySupplier: (
+    id: string,
+    amount: number,
+    comment: string,
+  ) => { ok: true } | { ok: false; error: string }
+
   createRepricing: (input: CreateRepricingInput) => Repricing
   /** Overrides one line's new price, for hand-tuning before applying. */
   setRepricingPrice: (id: string, lineId: string, newPrice: number) => void
@@ -127,6 +138,11 @@ export interface CreateReceiptInput {
   /** Draft to keep working on it, received to post it straight away. */
   status: Extract<ReceiptStatus, 'draft' | 'received'>
 }
+
+export type SupplierInput = Omit<
+  Supplier,
+  'id' | 'debt' | 'lastPaymentAt' | 'createdAt' | 'updatedAt'
+>
 
 export interface CreateRepricingInput {
   rule: Repricing['rule']
@@ -332,7 +348,8 @@ export const useDataStore = create<CatalogState>((set, get) => ({
   categories,
   brands,
   locations,
-  suppliers,
+  suppliers: seedSuppliers,
+  walletTransactions: seedWalletTransactions,
 
   createSale: (input) => {
     const sales = get().sales
@@ -782,6 +799,78 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       })
     }
 
+    return { ok: true }
+  },
+
+  createSupplier: (input) => {
+    const sequence = get().suppliers.length + 1
+    const now = new Date().toISOString()
+    const supplier: Supplier = {
+      ...input,
+      id: `sup-${sequence}`,
+      debt: 0,
+      lastPaymentAt: null,
+      createdAt: now,
+      updatedAt: now,
+    }
+    set({ suppliers: [...get().suppliers, supplier] })
+    return supplier
+  },
+
+  updateSupplier: (id, input) => {
+    const existing = get().suppliers.find((s) => s.id === id)
+    if (!existing) return undefined
+    const supplier: Supplier = { ...existing, ...input, updatedAt: new Date().toISOString() }
+    set({
+      suppliers: get().suppliers.map((s) => (s.id === id ? supplier : s)),
+      // The name is snapshotted onto receipts, but the list of them is read
+      // live, so keeping it in step avoids two spellings of one company.
+      receipts: get().receipts.map((receipt) =>
+        receipt.supplierId === id ? { ...receipt, supplierName: supplier.name } : receipt,
+      ),
+    })
+    return supplier
+  },
+
+  paySupplier: (id, amount, comment) => {
+    const supplier = get().suppliers.find((s) => s.id === id)
+    if (!supplier) return { ok: false, error: 'That supplier no longer exists' }
+    if (amount <= 0) return { ok: false, error: 'A payment has to be more than nothing' }
+    if (amount > supplier.debt) {
+      // Overpaying is a real thing, but it makes a credit balance rather than a
+      // negative debt, and nothing here models supplier credit yet.
+      return {
+        ok: false,
+        error: `That is more than the ${supplier.name} debt — pay at most the outstanding amount`,
+      }
+    }
+
+    const now = new Date().toISOString()
+    const debt = supplier.debt - amount
+
+    set({
+      suppliers: get().suppliers.map((s) =>
+        s.id === id ? { ...s, debt, lastPaymentAt: now, updatedAt: now } : s,
+      ),
+      walletTransactions: [
+        ...get().walletTransactions,
+        {
+          id: `wtx-${get().walletTransactions.length + 1}`,
+          ownerId: id,
+          ownerType: 'supplier',
+          kind: 'debt_repaid',
+          // Negative because it moves the balance towards zero — the sign is
+          // what makes a ledger readable at a glance.
+          amount: -amount,
+          balanceAfter: debt,
+          comment: comment || null,
+          referenceType: null,
+          referenceId: null,
+          createdAt: now,
+          createdBy: { id: 'usr-1', name: 'Akhmet Dauletmuratov' },
+        },
+      ],
+    })
     return { ok: true }
   },
 

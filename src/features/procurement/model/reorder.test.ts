@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  coverageHorizon,
   DEFAULT_SETTINGS,
   dailyRate,
   daysOfCover,
@@ -9,7 +10,14 @@ import {
   urgencyOf,
 } from './reorder'
 
-const settings = { leadTimeDays: 30, coverDays: 45, historyDays: 90 }
+// 30 to arrive + 14 until the next order + 1 of slack = a 45-day horizon, so
+// the arithmetic below reads the same as it did under the old two-field model.
+const settings = {
+  salesWindowDays: 90,
+  leadTimeDays: 30,
+  orderIntervalDays: 14,
+  safetyDays: 1,
+}
 
 describe('how fast it sells', () => {
   it('averages the window', () => {
@@ -42,8 +50,8 @@ describe('when to order', () => {
 
 describe('how many to order', () => {
   it('covers the wait plus the period after it, less what is on the shelf', () => {
-    // 1/day × (30 + 45) = 75 wanted, 20 on hand → 55.
-    expect(suggestedQuantity(20, 1, null, settings)).toEqual({ shortfall: 55, suggested: 55 })
+    // 1/day × a 45-day horizon = 45 wanted, 20 on hand → 25.
+    expect(suggestedQuantity(20, 1, null, settings)).toEqual({ shortfall: 25, suggested: 25 })
   })
 
   it('orders nothing when there is already enough', () => {
@@ -51,18 +59,18 @@ describe('how many to order', () => {
   })
 
   it('rounds up to a whole supplier minimum', () => {
-    // Needs 55, supplier ships in 12s → 60, not 55, because 55 is an order
+    // Needs 25, supplier ships in 12s → 36, not 25, because 25 is an order
     // nobody can place.
-    expect(suggestedQuantity(20, 1, 12, settings)).toEqual({ shortfall: 55, suggested: 60 })
+    expect(suggestedQuantity(20, 1, 12, settings)).toEqual({ shortfall: 25, suggested: 36 })
   })
 
   it('still orders one whole minimum for a small shortfall', () => {
-    expect(suggestedQuantity(74, 1, 12, settings)).toEqual({ shortfall: 1, suggested: 12 })
+    expect(suggestedQuantity(44, 1, 12, settings)).toEqual({ shortfall: 1, suggested: 12 })
   })
 
   it('ignores a meaningless minimum', () => {
-    expect(suggestedQuantity(20, 1, 1, settings).suggested).toBe(55)
-    expect(suggestedQuantity(20, 1, 0, settings).suggested).toBe(55)
+    expect(suggestedQuantity(20, 1, 1, settings).suggested).toBe(25)
+    expect(suggestedQuantity(20, 1, 0, settings).suggested).toBe(25)
   })
 
   it('never suggests a negative order', () => {
@@ -107,7 +115,14 @@ describe('the defaults', () => {
     // An importer's delivery is weeks away; a default of 7 days would make
     // every suggestion wrong on the first screen.
     expect(DEFAULT_SETTINGS.leadTimeDays).toBeGreaterThanOrEqual(14)
-    expect(DEFAULT_SETTINGS.coverDays).toBeGreaterThan(0)
-    expect(DEFAULT_SETTINGS.historyDays).toBeGreaterThanOrEqual(30)
+    expect(DEFAULT_SETTINGS.orderIntervalDays).toBeGreaterThan(0)
+    expect(DEFAULT_SETTINGS.salesWindowDays).toBeGreaterThanOrEqual(30)
+  })
+
+  it('adds the three horizon parts together', () => {
+    // OX has only the last two; the lead time is ours, and for an importer it
+    // is the largest of the three.
+    expect(coverageHorizon(settings)).toBe(45)
+    expect(coverageHorizon({ ...settings, safetyDays: 0 })).toBe(44)
   })
 })

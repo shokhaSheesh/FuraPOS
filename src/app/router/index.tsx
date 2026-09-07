@@ -31,7 +31,8 @@ const NewRepricingPage = lazy(() => import('@/features/repricing/pages/NewRepric
 const SuppliersListPage = lazy(() => import('@/features/suppliers/pages/SuppliersListPage'))
 const SupplierDetailPage = lazy(() => import('@/features/suppliers/pages/SupplierDetailPage'))
 const SupplierFormPage = lazy(() => import('@/features/suppliers/pages/SupplierFormPage'))
-const ProductSelectionPage = lazy(() => import('@/features/procurement/pages/ProductSelectionPage'))
+const SelectionsListPage = lazy(() => import('@/features/procurement/pages/SelectionsListPage'))
+const SelectionDetailPage = lazy(() => import('@/features/procurement/pages/SelectionDetailPage'))
 const NewSalePage = lazy(() => import('@/features/sales/pages/NewSalePage'))
 const AllSalesPage = lazy(() => import('@/features/sales/pages/SalesListPage'))
 const SaleDetailPage = lazy(() => import('@/features/sales/pages/SaleDetailPage'))
@@ -168,7 +169,11 @@ const routes: RouteObject[] = [
       { path: paths.procurement.root, element: <Navigate to={paths.procurement.orders} replace /> },
       {
         path: paths.procurement.selection,
-        element: page(<ProductSelectionPage />, 'procurement.selection.view'),
+        element: page(<SelectionsListPage />, 'procurement.selection.view'),
+      },
+      {
+        path: paths.procurement.selectionDetail(),
+        element: page(<SelectionDetailPage />, 'procurement.selection.view'),
       },
       { path: paths.procurement.orders, element: todo('Orders', 'procurement.orders.view') },
       {

@@ -9,6 +9,8 @@ import type {
 } from '@/features/corrections/model/correction'
 import type { Stocktake, StocktakeLine } from '@/features/stocktaking/model/stocktake'
 import type { Supplier } from '@/features/suppliers/model/supplier'
+import type { ProductSelection } from '@/features/procurement/model/selection'
+import { buildReorderLines } from '@/features/procurement/api/reorder'
 import type { WalletTransaction } from '@/shared/types/wallet'
 import {
   priceUnder,
@@ -35,6 +37,7 @@ import {
   receipts as seedReceipts,
   repricings as seedRepricings,
   stocktakes as seedStocktakes,
+  selections as seedSelections,
   suppliers as seedSuppliers,
   walletTransactions as seedWalletTransactions,
   transfers as seedTransfers,
@@ -59,6 +62,7 @@ interface CatalogState {
   stocktakes: Stocktake[]
   repricings: Repricing[]
   suppliers: Supplier[]
+  selections: ProductSelection[]
   /** One ledger for every wallet owner, filtered by owner on read. */
   walletTransactions: WalletTransaction[]
   clients: Client[]
@@ -99,6 +103,10 @@ interface CatalogState {
   ) => { ok: true } | { ok: false; error: string }
 
   /** Prepares a price change: works out every new price but changes nothing yet. */
+  /** Runs a selection and freezes its answer, as OX's «Рассчитать» does. */
+  runSelection: (input: RunSelectionInput) => ProductSelection
+  deleteSelection: (id: string) => void
+
   createSupplier: (input: SupplierInput) => Supplier
   updateSupplier: (id: string, input: SupplierInput) => Supplier | undefined
   /** Records money paid to a supplier: reduces the debt, writes the movement. */
@@ -137,6 +145,14 @@ export interface CreateReceiptInput {
   additionalCosts: AdditionalCost[]
   /** Draft to keep working on it, received to post it straight away. */
   status: Extract<ReceiptStatus, 'draft' | 'received'>
+}
+
+export interface RunSelectionInput {
+  source: ProductSelection['source']
+  supplierId: string
+  settings: ProductSelection['settings']
+  locationIds: string[]
+  comment: string
 }
 
 export type SupplierInput = Omit<
@@ -349,6 +365,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
   brands,
   locations,
   suppliers: seedSuppliers,
+  selections: seedSelections,
   walletTransactions: seedWalletTransactions,
 
   createSale: (input) => {
@@ -801,6 +818,72 @@ export const useDataStore = create<CatalogState>((set, get) => ({
 
     return { ok: true }
   },
+
+  runSelection: (input) => {
+    const sequence = get().selections.length + 1
+    const now = new Date().toISOString()
+    const supplier = get().suppliers.find((s) => s.id === input.supplierId)
+    const locationNames = input.locationIds.map(
+      (id) => get().locations.find((l) => l.id === id)?.name ?? '—',
+    )
+
+    const base = {
+      id: `sel-${sequence}`,
+      number: `PS-${String(sequence).padStart(5, '0')}`,
+      source: input.source,
+      supplierId: input.supplierId || null,
+      supplierName: supplier?.name ?? null,
+      locationIds: input.locationIds,
+      locationNames,
+      settings: input.settings,
+      comment: input.comment || null,
+      createdBy: 'Akhmet Dauletmuratov',
+      createdAt: now,
+      orderedAt: null,
+    }
+
+    /*
+      Marketplace discovery is a different feature from restocking — it looks
+      outward for products we do not sell yet — and it is not built. Recording
+      the attempt as a failed run is more honest than hiding the option: the
+      shape is here, the source is not.
+    */
+    if (input.source === 'marketplace') {
+      const failed: ProductSelection = {
+        ...base,
+        status: 'failed',
+        lines: [],
+        failureReason:
+          'Marketplace discovery is not connected in this build — see docs/OX-NAVIGATION-MAP.md',
+      }
+      set({ selections: [...get().selections, failed] })
+      return failed
+    }
+
+    const lines = buildReorderLines(
+      { variations: get().variations, sales: get().sales, receipts: get().receipts },
+      input.settings,
+      {
+        supplierId: input.supplierId || null,
+        locationIds: input.locationIds,
+        // A run keeps every line it considered, not only the ones needing an
+        // order, so the document can show what was ruled out as well as in.
+        onlyNeeded: false,
+      },
+    )
+
+    const selection: ProductSelection = {
+      ...base,
+      status: 'ready',
+      lines,
+      failureReason: null,
+    }
+    set({ selections: [...get().selections, selection] })
+    return selection
+  },
+
+  deleteSelection: (id) =>
+    set({ selections: get().selections.filter((selection) => selection.id !== id) }),
 
   createSupplier: (input) => {
     const sequence = get().suppliers.length + 1

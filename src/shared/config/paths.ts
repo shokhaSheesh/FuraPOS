@@ -59,6 +59,7 @@ export const paths = {
   procurement: {
     root: '/procurement',
     selection: '/procurement/selection', // OX: /app/procurement/selection
+    selectionDetail: (id = ':selectionId') => `/procurement/selection/${id}`,
     orders: '/procurement/orders', // OX: /app/procurement/orders
     orderDetail: (id = ':orderId') => `/procurement/orders/${id}`,
     schedules: '/procurement/schedules', // OX: /app/procurement/schedules

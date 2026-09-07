@@ -1,77 +1,72 @@
-import { useMemo, useState } from 'react'
-import { Link } from 'react-router'
-import { AlertTriangle, Download, PackageSearch, Settings2, Coins } from 'lucide-react'
+import { useMemo } from 'react'
+import { Link, useParams } from 'react-router'
+import { AlertTriangle, ArrowLeft, Coins, Download, PackageSearch } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
 import { SearchInput } from '@/shared/components/SearchInput'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
-import { FilterSelect } from '@/shared/components/FilterSelect'
 import { ProductThumb } from '@/shared/components/ProductThumb'
-import { NumberField } from '@/shared/components/NumberField'
-import { Field } from '@/shared/components/Field'
 import { Badge } from '@/shared/ui/Badge'
-import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
+import { Card, CardBody } from '@/shared/ui/Card'
 import { Button } from '@/shared/ui/Button'
 import { toast } from '@/shared/ui/toast'
 import { useListQuery } from '@/shared/hooks/useListQuery'
 import { paths } from '@/shared/config/paths'
 import { downloadCsv } from '@/shared/lib/csv'
-import { formatMoney, formatNumber } from '@/shared/lib/format'
+import { formatDateTime, formatMoney, formatNumber } from '@/shared/lib/format'
+import { matches } from '@/data/query'
 import type { TableColumn } from '@/shared/components/table/features'
 import { useDataStore } from '@/data/store'
 import { USD_RATE } from '@/data/seed'
-import { countByUrgency, summariseReorder, useReorderLines } from '../api/reorder'
+import { countByUrgency, summariseReorder } from '../api/reorder'
 import {
+  coverageHorizon,
   DEFAULT_SETTINGS,
   lineCostUzs,
+  needsOrdering,
   urgencyLabel,
   urgencyTone,
   type ReorderLine,
-  type ReorderSettings,
   type Urgency,
 } from '../model/reorder'
+import { selectionSourceLabel, selectionStatusLabel, selectionStatusTone } from '../model/selection'
 
 /**
- * What to buy, worked out rather than remembered.
+ * One selection run, and what it found.
  *
- * The three settings at the top are the whole model, and they are on the screen
- * rather than buried in a config page because they are the assumptions the
- * answer rests on: change the lead time and every suggestion changes. A buyer
- * who cannot see them cannot trust them.
- *
- * Nothing here is stored. A suggestion is only true for as long as the stock
- * and sales behind it are, so it is computed on every read and exported when
- * someone wants to act on it.
+ * The assumptions sit at the top because they are what the answer rests on —
+ * change the lead time and every suggestion changes — but they are read-only
+ * here: a saved run answers a specific question, and editing the question
+ * afterwards would leave a document whose numbers no longer match its settings.
+ * To ask a different question, run it again.
  */
-export default function ProductSelectionPage() {
+export default function SelectionDetailPage() {
+  const { selectionId } = useParams()
   const { query, setQuery } = useListQuery()
-  const suppliers = useDataStore((s) => s.suppliers)
-  const categories = useDataStore((s) => s.categories)
-  const locations = useDataStore((s) => s.locations)
-
-  const [settings, setSettings] = useState<ReorderSettings>(DEFAULT_SETTINGS)
-  const [showSettings, setShowSettings] = useState(false)
+  const selection = useDataStore((s) => s.selections.find((entry) => entry.id === selectionId))
 
   const urgency = (query.urgency as Urgency | null) ?? null
-  const filters = useMemo(
-    () => ({
-      search: String(query.search ?? ''),
-      supplierId: (query.supplier as string | null) ?? null,
-      categoryId: (query.category as string | null) ?? null,
-      locationId: (query.location as string | null) ?? null,
-      urgency,
-      // Most of a catalogue is fine most of the time; showing all of it by
-      // default would bury the twenty rows that need a decision.
-      onlyNeeded: query.all !== '1' && !urgency,
-    }),
-    [query, urgency],
-  )
+  const term = String(query.search ?? '')
 
-  const lines = useReorderLines(settings, filters)
-  const allLines = useReorderLines(settings, { ...filters, onlyNeeded: false, urgency: null })
-  const summary = summariseReorder(allLines)
-  const counts = countByUrgency(allLines)
+  const settings = selection?.settings ?? DEFAULT_SETTINGS
+
+  /*
+    The lines are the ones this run froze, not a fresh calculation. That is the
+    point of a saved selection: it says what was true when someone asked, which
+    is what makes two runs comparable and a scheduled run worth keeping.
+  */
+  const lines = useMemo(() => {
+    if (!selection) return []
+    return selection.lines.filter((line) => {
+      if (urgency && line.urgency !== urgency) return false
+      if (query.all !== '1' && !urgency && !needsOrdering(line)) return false
+      return matches([line.name, line.sku, line.supplierName, line.categoryName], term)
+    })
+  }, [selection, urgency, term, query.all])
+
+  const summary = summariseReorder(selection?.lines ?? [])
+  const counts = countByUrgency(selection?.lines ?? [])
 
   const columns = useMemo<TableColumn<ReorderLine>[]>(
     () => [
@@ -142,7 +137,7 @@ export default function ProductSelectionPage() {
       },
       {
         id: 'sold',
-        header: `Sold in ${settings.historyDays}d`,
+        header: `Sold in ${settings.salesWindowDays}d`,
         meta: { align: 'right' },
         cell: ({ row }) => formatNumber(row.original.sold),
       },
@@ -251,120 +246,88 @@ export default function ProductSelectionPage() {
     },
   ]
 
+  if (!selection) {
+    return <EmptyState title="Selection not found" description="It may have been deleted." />
+  }
+
+  if (selection.status === 'failed') {
+    return (
+      <>
+        <BackLink />
+        <PageHeader
+          title={selection.number}
+          description="This run did not produce anything."
+          below={
+            <Badge tone={selectionStatusTone(selection.status)}>
+              {selectionStatusLabel(selection.status)}
+            </Badge>
+          }
+        />
+        <EmptyState
+          title="Nothing was calculated"
+          description={selection.failureReason ?? 'The run failed.'}
+        />
+      </>
+    )
+  }
+
   return (
     <>
+      <BackLink />
+
       <PageHeader
-        title="Product selection"
-        description="What to reorder, worked out from how fast each part sells and how long a delivery takes."
+        title={selection.number}
+        description={`${selectionSourceLabel(selection.source)}${
+          selection.supplierName ? ` · ${selection.supplierName}` : ''
+        }`}
         action={
-          <div className="flex items-center gap-2">
-            <Button variant="secondary" onClick={() => setShowSettings((open) => !open)}>
-              <Settings2 />
-              Assumptions
-            </Button>
-            <Button variant="primary" onClick={exportList}>
-              <Download />
-              Export the list
-            </Button>
-          </div>
+          <Button variant="primary" onClick={exportList}>
+            <Download />
+            Export the list
+          </Button>
         }
         below={
           <div className="flex flex-wrap items-center gap-2">
-            <StatusChips
-              ariaLabel="Filter by state"
-              options={[
-                { value: null, label: 'Needs ordering' },
-                { value: 'out', label: 'Out of stock' },
-                { value: 'critical', label: 'Will run out' },
-                { value: 'soon', label: 'Order soon' },
-                { value: 'ok', label: 'Enough' },
-                { value: 'idle', label: 'Not selling' },
-              ]}
-              value={urgency}
-              onChange={(next) => setQuery({ urgency: next, page: null })}
-              counts={{ ...counts, all: summary.needed }}
-            />
-            <FilterSelect
-              aria-label="Filter by supplier"
-              label="From"
-              allLabel="Any supplier"
-              value={(query.supplier as string | null) ?? null}
-              options={suppliers.map((s) => ({ value: s.id, label: s.name }))}
-              onChange={(next) => setQuery({ supplier: next, page: null })}
-            />
-            <FilterSelect
-              aria-label="Filter by category"
-              label="In"
-              allLabel="Every category"
-              value={(query.category as string | null) ?? null}
-              options={categories.map((c) => ({ value: c.id, label: c.path }))}
-              onChange={(next) => setQuery({ category: next, page: null })}
-            />
-            <FilterSelect
-              aria-label="Filter by location"
-              label="At"
-              allLabel="Everywhere"
-              value={(query.location as string | null) ?? null}
-              options={locations.map((l) => ({ value: l.id, label: l.name }))}
-              onChange={(next) => setQuery({ location: next, page: null })}
-            />
+            <Badge tone={selectionStatusTone(selection.status)}>
+              {selectionStatusLabel(selection.status)}
+            </Badge>
+            <span className="text-fg-muted text-sm">
+              Run {formatDateTime(selection.createdAt)} by {selection.createdBy}
+            </span>
+            {selection.comment ? (
+              <span className="text-fg-subtle text-sm">· {selection.comment}</span>
+            ) : null}
           </div>
         }
       />
 
-      {showSettings ? (
-        <Card>
-          <CardHeader className="flex-col items-stretch gap-1">
-            <CardTitle>What this assumes</CardTitle>
-            <p className="text-fg-subtle text-2xs">
-              Every suggestion below rests on these three numbers. Change one and the whole list
-              changes.
-            </p>
-          </CardHeader>
-          <CardBody className="grid gap-3 sm:grid-cols-3">
-            <Field label="A delivery takes" hint="Days from ordering to it being on the shelf">
-              {(p) => (
-                <NumberField
-                  {...p}
-                  className="w-full"
-                  nullable={false}
-                  min={1}
-                  value={settings.leadTimeDays}
-                  onChange={(next) =>
-                    setSettings((s) => ({ ...s, leadTimeDays: Math.max(1, next ?? 1) }))
-                  }
-                />
-              )}
-            </Field>
-            <Field label="Hold this much cover" hint="Days of stock to have once it lands">
-              {(p) => (
-                <NumberField
-                  {...p}
-                  className="w-full"
-                  nullable={false}
-                  min={0}
-                  value={settings.coverDays}
-                  onChange={(next) => setSettings((s) => ({ ...s, coverDays: next ?? 0 }))}
-                />
-              )}
-            </Field>
-            <Field label="Judge demand on" hint="Days of sales history to average">
-              {(p) => (
-                <NumberField
-                  {...p}
-                  className="w-full"
-                  nullable={false}
-                  min={7}
-                  value={settings.historyDays}
-                  onChange={(next) =>
-                    setSettings((s) => ({ ...s, historyDays: Math.max(7, next ?? 7) }))
-                  }
-                />
-              )}
-            </Field>
-          </CardBody>
-        </Card>
-      ) : null}
+      {/*
+        The assumptions are shown, not editable. A saved run is an answer to a
+        specific question, and letting someone change the question afterwards
+        would leave a document whose numbers no longer match its own settings.
+      */}
+      <Card>
+        <CardBody className="flex flex-wrap items-center gap-x-6 gap-y-2 p-4 text-sm">
+          <Assumption
+            label="Judged demand on"
+            value={`${settings.salesWindowDays} days of sales`}
+          />
+          <Assumption label="A delivery takes" value={`${settings.leadTimeDays} days`} />
+          <Assumption label="Next order in" value={`${settings.orderIntervalDays} days`} />
+          <Assumption label="Safety stock" value={`${settings.safetyDays} days`} />
+          <Assumption
+            label="Covering"
+            value={`${coverageHorizon(settings)} days of demand`}
+            strong
+          />
+          <Assumption
+            label="Stock counted at"
+            value={
+              selection.locationNames.length ? selection.locationNames.join(', ') : 'Everywhere'
+            }
+          />
+        </CardBody>
+      </Card>
 
       <div className="grid gap-3 sm:grid-cols-3">
         {tiles.map((tile) => (
@@ -388,26 +351,33 @@ export default function ProductSelectionPage() {
       </div>
 
       <DataTable
-        storageKey="reorder"
+        storageKey="selection-lines"
         columns={columns}
-        initialHidden={['sold', 'reorderPoint', 'category']}
+        initialHidden={['sold', 'reorderPoint', 'category', 'supplier']}
         data={lines}
         total={lines.length}
         isLoading={false}
         toolbar={
           <>
             <SearchInput
-              value={String(query.search ?? '')}
+              value={term}
               onChange={(search) => setQuery({ search })}
-              placeholder="Search by name, SKU or supplier…"
+              placeholder="Search by name or SKU…"
             />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setQuery({ all: query.all === '1' ? null : '1', urgency: null })}
-            >
-              {query.all === '1' ? 'Only what needs ordering' : 'Show the whole catalogue'}
-            </Button>
+            <StatusChips
+              ariaLabel="Filter by state"
+              options={[
+                { value: null, label: 'Worth ordering' },
+                { value: 'out', label: 'Out of stock' },
+                { value: 'critical', label: 'Will run out' },
+                { value: 'soon', label: 'Order soon' },
+                { value: 'ok', label: 'Enough' },
+                { value: 'idle', label: 'Not selling' },
+              ]}
+              value={urgency}
+              onChange={(next) => setQuery({ urgency: next })}
+              counts={{ ...counts, all: summary.needed }}
+            />
           </>
         }
         pagination={{ page: 1, pageSize: lines.length || 1 }}
@@ -415,10 +385,30 @@ export default function ProductSelectionPage() {
         emptyState={
           <EmptyState
             title="Nothing needs ordering"
-            description="Every product that sells has enough stock to outlast a delivery. Change the assumptions above, or show the whole catalogue."
+            description="Every product this run looked at has enough stock to outlast a delivery."
           />
         }
       />
     </>
+  )
+
+  function BackLink() {
+    return (
+      <Button variant="link" size="sm" className="h-auto px-0" asChild>
+        <Link to={paths.procurement.selection}>
+          <ArrowLeft />
+          Product selection
+        </Link>
+      </Button>
+    )
+  }
+}
+
+function Assumption({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+  return (
+    <span>
+      <span className="text-fg-muted">{label} </span>
+      <span className={strong ? 'text-fg font-semibold' : 'text-fg font-medium'}>{value}</span>
+    </span>
   )
 }

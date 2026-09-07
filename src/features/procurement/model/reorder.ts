@@ -10,22 +10,47 @@ import type { Id } from '@/shared/types'
  * like. None of those alone answers "what should I buy on Monday".
  */
 
+/**
+ * The four numbers a buying suggestion rests on.
+ *
+ * Three are OX's, named as OX names them, because they are the ones a buyer
+ * already thinks in: how far back to judge demand, how often they place an
+ * order, and how much slack they want on top.
+ *
+ * **`leadTimeDays` is ours, and it is the one that matters most here.** OX has
+ * no lead-time field at all, which works for a shop reordering locally and
+ * quietly breaks for an importer whose container is six weeks out: without it,
+ * a part with three weeks of stock looks comfortable when it will in fact be
+ * empty long before anything can arrive.
+ */
 export interface ReorderSettings {
-  /** How long a delivery takes. The number that makes urgency mean anything. */
+  /** OX: «Период продаж» — days of history to judge demand on. */
+  salesWindowDays: number
+  /** How long a delivery takes to arrive. Ours; OX has no equivalent. */
   leadTimeDays: number
-  /** How many days of stock to hold once a delivery lands. */
-  coverDays: number
-  /** How far back to look when working out how fast something sells. */
-  historyDays: number
+  /** OX: «До следующего заказа, дней» — the gap between orders. */
+  orderIntervalDays: number
+  /** OX: «Страховой запас» — days of cover on top of the horizon. */
+  safetyDays: number
 }
 
 export const DEFAULT_SETTINGS: ReorderSettings = {
-  // An importer's container is weeks away, not days — the default has to look
-  // like the real world or every suggestion is wrong on the first screen.
+  salesWindowDays: 90,
+  // An importer's container is weeks away, not days — a default of 7 would
+  // make every suggestion wrong on the first screen.
   leadTimeDays: 30,
-  coverDays: 45,
-  historyDays: 90,
+  orderIntervalDays: 14,
+  safetyDays: 7,
 }
+
+/**
+ * How many days a delivery has to last: long enough to arrive, then long enough
+ * to survive until the *next* delivery arrives, plus whatever slack was asked
+ * for. This is the standard periodic-review horizon, and it is where OX's two
+ * fields and our lead time meet.
+ */
+export const coverageHorizon = (settings: ReorderSettings) =>
+  settings.leadTimeDays + settings.orderIntervalDays + settings.safetyDays
 
 /**
  * How close a part is to running out, measured against how long a delivery
@@ -84,8 +109,8 @@ export interface ReorderLine {
 }
 
 /** Units per day over the window. Zero when nothing sold. */
-export const dailyRate = (sold: number, historyDays: number) =>
-  historyDays <= 0 ? 0 : sold / historyDays
+export const dailyRate = (sold: number, salesWindowDays: number) =>
+  salesWindowDays <= 0 ? 0 : sold / salesWindowDays
 
 /**
  * Days until the shelf is empty. **Null, not Infinity**, when a part does not
@@ -114,7 +139,7 @@ export function suggestedQuantity(
   moq: number | null,
   settings: ReorderSettings,
 ): { shortfall: number; suggested: number } {
-  const target = rate * (settings.leadTimeDays + settings.coverDays)
+  const target = rate * coverageHorizon(settings)
   const shortfall = Math.max(0, Math.ceil(target - onHand))
   if (shortfall === 0) return { shortfall: 0, suggested: 0 }
   if (!moq || moq <= 1) return { shortfall, suggested: shortfall }
@@ -132,8 +157,10 @@ export function urgencyOf(
   if (rate <= 0) return 'idle'
   if (onHand <= 0) return 'out'
   if (cover === null) return 'idle'
+  // Below the lead time it is already too late: whatever is ordered today, the
+  // shelf empties before it lands.
   if (cover < settings.leadTimeDays) return 'critical'
-  if (cover < settings.leadTimeDays + settings.coverDays) return 'soon'
+  if (cover < coverageHorizon(settings)) return 'soon'
   return 'ok'
 }
 

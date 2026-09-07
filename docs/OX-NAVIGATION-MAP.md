@@ -417,6 +417,45 @@ different tables.
 
 ### Product selection
 
+**Corrected after seeing OX.** The first build was a live always-on calculation with no document.
+OX's Подбор товаров is a **log of saved runs** — `Дата создания | Источник | Статус |
+Рекомендаций` — produced by a «Собрать подбор» modal and a «Рассчитать» button.
+
+That is the right shape, for three reasons the live version could not answer:
+
+1. **Расписание подбора needs something to schedule.** A recurring job has to leave an artefact.
+2. **A buyer compares runs.** "What did last month say, and did we act on it?" is unanswerable if
+   the answer is regenerated on every visit.
+3. **Not every source is instant.** OX's marketplace option asks questions and costs AI credits.
+
+| OX field                   | Ours                 | Note                                       |
+| -------------------------- | -------------------- | ------------------------------------------ |
+| Поставщик*                 | Supplier, required   | One order goes to one company              |
+| Период продаж              | Sales period         | Days of history to judge demand            |
+| До следующего заказа, дней | Until the next order |                                            |
+| Страховой запас            | Safety stock         |                                            |
+| Локации                    | Locations            | Multi-select, empty = all                  |
+| —                          | **A delivery takes** | **Ours.** OX has no lead-time field at all |
+
+**The lead time is the one thing we add, and for Fura it is the largest of the three.** OX's horizon
+is order-interval plus safety, which works for a shop reordering locally and quietly breaks for an
+importer: without it, a part with three weeks of stock looks comfortable when the container is six
+weeks out. Ours sums all three and says so on the modal — "51 days — 30 to arrive, 14 until the next
+one, 7 spare" — so the fields read as one horizon rather than three unrelated knobs.
+
+**`Источник` deliberately kept, with one source unbuilt.** OX offers either your own suppliers
+(deterministic maths) or **marketplaces — 1688, Taobao, Alibaba — via OX AI**, which studies sales,
+asks questions and proposes _niches and products you do not sell yet_. That is product **discovery**,
+a different feature from restocking, and it is tied to OX's AI-credit business model (their own UI
+refuses below $1 of balance). We keep the source field and record a marketplace run as `failed` with
+the reason, because hiding the option would misrepresent what the reference product does.
+
+Also worth recording: OX's Suppliers screen shows "товары не привязаны" — an explicit
+supplier-to-product link Fura has never set up. We have no such link either and infer it from goods
+receipts instead, which means a supplier-scoped run only covers what that supplier has actually
+delivered. That is honest, but an explicit link would be better, and it is what OX's cell is
+complaining about.
+
 **The only screen in the app that forecasts rather than records**, and the payoff for the whole
 inventory module: sales say how fast a part leaves, stock says what is left, receipts say who sells
 it, and the supplier's MOQ says what a realistic order looks like. None of those alone answers
@@ -442,10 +481,12 @@ is recomputed on read and exported when someone wants to act on it. **Creating a
 a selection is deliberately not wired yet** — Orders is the next screen, and the hand-off should be
 built once that document exists rather than guessed at.
 
-**Seed note:** this screen exposed that 18 sales across 185 variations gave almost nothing a sales
-rate, so it reported "nothing needs ordering" about a catalogue that plainly did. The sales seed is
-now 420 orders over four months with a long tail, because seed data has to exercise the features it
-is seeding for.
+**Seed notes.** This screen exposed two datasets that were too thin to exercise it. 18 sales across
+185 variations gave almost nothing a sales rate, so it reported "nothing needs ordering" about a
+catalogue that plainly did — sales are now 420 orders over four months with a long tail. And 13
+goods receipts meant a supplier-scoped run covered four products, since the supplier-to-product link
+is inferred from deliveries — receipts are now 46. Seed data has to exercise the features it seeds
+for.
 
 ## 5. Управление персоналом — Personnel management
 

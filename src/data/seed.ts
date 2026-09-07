@@ -15,6 +15,7 @@ import type { GoodsReceipt } from '@/features/receipts/model/receipt'
 import type { Stocktake } from '@/features/stocktaking/model/stocktake'
 import type { Repricing, RuleKind } from '@/features/repricing/model/repricing'
 import type { Supplier } from '@/features/suppliers/model/supplier'
+import type { ProductSelection } from '@/features/procurement/model/selection'
 import type { WalletTransaction } from '@/shared/types/wallet'
 
 /** Kept in step with the dashboard's exchange-rate widget. */
@@ -558,7 +559,7 @@ export const corrections: Correction[] = Array.from({ length: 11 }, (_, index) =
  * Extra costs are on most of them, because for an importer freight and duty are
  * the normal case rather than the exception.
  */
-export const receipts: GoodsReceipt[] = Array.from({ length: 13 }, (_, index) => {
+export const receipts: GoodsReceipt[] = Array.from({ length: 46 }, (_, index) => {
   const sequence = index + 1
   const status = pick(['draft', 'received', 'received', 'received', 'cancelled'] as const)
   const supplier = pick(suppliers)
@@ -566,7 +567,13 @@ export const receipts: GoodsReceipt[] = Array.from({ length: 13 }, (_, index) =>
   const location = random() > 0.2 ? locations[0]! : pick(locations)
   const createdAt = new Date(Date.now() - between(2, 120) * 86_400_000)
 
-  const lines = Array.from({ length: between(2, 6) }, (_, lineIndex) => {
+  /*
+    A supplier only "supplies" what it has actually delivered, since that link
+    is inferred from receipts rather than declared. With too few deliveries a
+    supplier-scoped reorder run covers a handful of products and looks broken,
+    so the seed has to give every supplier real coverage of the catalogue.
+  */
+  const lines = Array.from({ length: between(4, 12) }, (_, lineIndex) => {
     const variation = pick(variations)
     const ordered = between(5, 60)
     return {
@@ -850,3 +857,47 @@ export const walletTransactions: WalletTransaction[] = suppliers
       },
     ]
   })
+
+/**
+ * Past selection runs. Their lines are left empty: a run freezes the answer it
+ * produced at the time, and inventing plausible-looking frozen recommendations
+ * would put numbers in the app that no calculation ever produced. Opening one
+ * shows an empty run, which is the truthful state for a document restored from
+ * a seed rather than computed.
+ */
+export const selections: ProductSelection[] = [
+  {
+    id: 'sel-1',
+    number: 'PS-00001',
+    source: 'suppliers',
+    status: 'ordered',
+    supplierId: 'sup-1',
+    supplierName: 'AKCHAEV INC',
+    locationIds: [],
+    locationNames: [],
+    settings: { salesWindowDays: 90, leadTimeDays: 30, orderIntervalDays: 14, safetyDays: 7 },
+    lines: [],
+    comment: 'Monthly container',
+    createdBy: 'Akhmet Dauletmuratov',
+    createdAt: new Date(Date.now() - 34 * 86_400_000).toISOString(),
+    orderedAt: new Date(Date.now() - 33 * 86_400_000).toISOString(),
+    failureReason: null,
+  },
+  {
+    id: 'sel-2',
+    number: 'PS-00002',
+    source: 'marketplace',
+    status: 'failed',
+    supplierId: null,
+    supplierName: null,
+    locationIds: [],
+    locationNames: [],
+    settings: { salesWindowDays: 90, leadTimeDays: 30, orderIntervalDays: 14, safetyDays: 7 },
+    lines: [],
+    comment: null,
+    createdBy: 'Mansurbek',
+    createdAt: new Date(Date.now() - 9 * 86_400_000).toISOString(),
+    orderedAt: null,
+    failureReason: 'Marketplace discovery is not connected in this build',
+  },
+]

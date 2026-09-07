@@ -22,6 +22,8 @@ export interface ReorderFilters {
   supplierId?: string | null
   categoryId?: string | null
   locationId?: string | null
+  /** A selection can be scoped to several warehouses at once, as OX allows. */
+  locationIds?: string[]
   urgency?: Urgency | null
   /** Hide anything already comfortable, which is most of the catalogue. */
   onlyNeeded?: boolean
@@ -39,8 +41,28 @@ export function useReorderLines(settings: ReorderSettings, filters: ReorderFilte
   const sales = useDataStore((s) => s.sales)
   const receipts = useDataStore((s) => s.receipts)
 
-  return useMemo(() => {
-    const since = Date.now() - settings.historyDays * 86_400_000
+  return useMemo(
+    () => buildReorderLines({ variations, sales, receipts }, settings, filters),
+    [variations, sales, receipts, settings, filters],
+  )
+}
+
+/**
+ * The calculation itself, free of React so a saved selection can freeze the
+ * same answer the screen would have shown.
+ */
+export function buildReorderLines(
+  data: {
+    variations: ReturnType<typeof useDataStore.getState>['variations']
+    sales: ReturnType<typeof useDataStore.getState>['sales']
+    receipts: ReturnType<typeof useDataStore.getState>['receipts']
+  },
+  settings: ReorderSettings,
+  filters: ReorderFilters,
+): ReorderLine[] {
+  const { variations, sales, receipts } = data
+  {
+    const since = Date.now() - settings.salesWindowDays * 86_400_000
 
     /* Units sold per variation in the window. Deleted sales are excluded for
        the same reason they are excluded from revenue: a cancelled sale is not
@@ -51,6 +73,7 @@ export function useReorderLines(settings: ReorderSettings, filters: ReorderFilte
       if (sale.status === 'deleted') continue
       if (new Date(sale.createdAt).getTime() < since) continue
       if (filters.locationId && sale.locationId !== filters.locationId) continue
+      if (filters.locationIds?.length && !filters.locationIds.includes(sale.locationId)) continue
       for (const line of sale.lines) {
         sold.set(line.variationId, (sold.get(line.variationId) ?? 0) + line.quantity)
       }
@@ -80,12 +103,18 @@ export function useReorderLines(settings: ReorderSettings, filters: ReorderFilte
     const lines: ReorderLine[] = variations
       .filter((variation) => variation.status === 'active')
       .map((variation) => {
-        const onHand = filters.locationId
-          ? (variation.stockByLocation.find((row) => row.locationId === filters.locationId)
-              ?.quantity ?? 0)
+        const scope = filters.locationIds?.length
+          ? filters.locationIds
+          : filters.locationId
+            ? [filters.locationId]
+            : null
+        const onHand = scope
+          ? variation.stockByLocation
+              .filter((row) => scope.includes(row.locationId))
+              .reduce((sum, row) => sum + row.quantity, 0)
           : variation.stock
         const unitsSold = sold.get(variation.id) ?? 0
-        const rate = dailyRate(unitsSold, settings.historyDays)
+        const rate = dailyRate(unitsSold, settings.salesWindowDays)
         const cover = daysOfCover(onHand, rate)
         const { shortfall, suggested } = suggestedQuantity(onHand, rate, variation.moq, settings)
         const from = source.get(variation.id)
@@ -133,7 +162,7 @@ export function useReorderLines(settings: ReorderSettings, filters: ReorderFilte
     })
 
     return lines
-  }, [variations, sales, receipts, settings, filters])
+  }
 }
 
 export interface ReorderSummary {

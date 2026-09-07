@@ -327,6 +327,44 @@ each part actually cost — the only one that can _lower_ a price it was told to
 catalogue of drifted margins gets fixed), and by hand. All with a rounding step, because bulk
 arithmetic produces prices like 2 340 671 that nobody would print on a label.
 
+#### Columns, against OX's
+
+Read off OX's Переоценка list. More columns exist off-screen to the right and have not been seen.
+
+| OX (ru)     | Ours                   | Note                                                        |
+| ----------- | ---------------------- | ----------------------------------------------------------- |
+| ID          | Number                 |                                                             |
+| Дата        | Created                |                                                             |
+| Статус      | Status                 | OX shows only `Завершено`; ours also has Draft and Reverted |
+| Кол-во      | Products               |                                                             |
+| **Локация** | **Location**           | Added after seeing OX — see below                           |
+| Создатель   | Created by             |                                                             |
+| Бренды      | (part of "Applied to") |                                                             |
+
+**`Локация` raises a real question we should not answer by guessing.** OX scopes a repricing by
+location. Two readings, and they are very different:
+
+1. **Location narrows _which products_ are repriced** — "everything the Chilonzor shop carries".
+   Cheap, and what we now do.
+2. **Prices are per location** — the same part costs more in a shop than at the warehouse. That is a
+   model change: `salePrice` would move from the variation to a variation-location pair, and every
+   screen that shows a price would need to say _which_ price.
+
+We built (1) and wrote the assumption into the code. **Ask the client: does the same part ever sell
+for a different price at a different shop?** If yes, that is a bigger change than this screen, and
+it should be settled before Sales and the catalogue are built on further.
+
+Four columns we have that OX does not: the **rule** in words, **up / down**, **average move** and
+**below cost**. Same reasoning as everywhere else — OX's list says a repricing happened but not what
+it did, and "+8%, rounded to 1 000" is the only thing that makes a row worth reading.
+
+**And the same signal as Инвентаризация, more strongly:** twenty Переоценка records, all created
+between 07:05:16 and 07:06:09 — twenty documents in fifty-three seconds — most with a quantity of
+`0.00`. That is somebody clicking Add repeatedly, not a business repricing its catalogue. Combined
+with the single 57-second stocktake, it suggests Fura is not using either screen in OX. Worth asking
+whether that is because the screens are unhelpful or because the need is not there; the answer says
+how much either is worth in the new product.
+
 ## 4. Закупки — Procurement
 
 | OX (ru)            | Ours (en)          | OX route                     |

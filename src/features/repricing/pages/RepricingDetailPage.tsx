@@ -30,6 +30,7 @@ import {
   raisedCount,
   repricingStatusLabel,
   repricingStatusTone,
+  scopeSentence,
 } from '../model/repricing'
 
 type Lens = 'all' | 'changed' | 'risky'
@@ -87,9 +88,9 @@ export default function RepricingDetailPage() {
 
       <PageHeader
         title={repricing.number}
-        description={`${formatNumber(repricing.lines.length)} products${
-          repricing.categoryName ? ` in ${repricing.categoryName}` : ''
-        }${repricing.brandName ? ` from ${repricing.brandName}` : ''}`}
+        description={`${formatNumber(repricing.lines.length)} products · ${scopeSentence(
+          repricing,
+        )}`}
         action={
           <div className="flex items-center gap-2">
             {canRevert(repricing.status) && can('products.repricing.delete') ? (

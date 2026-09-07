@@ -30,6 +30,7 @@ import {
   loweredCount,
   raisedCount,
   repricingStatusLabel,
+  scopeSentence,
   repricingStatusTone,
   type Repricing,
 } from '../model/repricing'
@@ -79,11 +80,11 @@ export default function RepricingListPage() {
         id: 'scope',
         header: 'Applied to',
         cell: ({ row }) => {
-          const parts = [row.original.categoryName, row.original.brandName].filter(Boolean)
-          return parts.length ? (
-            parts.join(' · ')
-          ) : (
+          const sentence = scopeSentence(row.original)
+          return sentence === 'Everything' ? (
             <span className="text-fg-subtle">Everything</span>
+          ) : (
+            sentence
           )
         },
       },

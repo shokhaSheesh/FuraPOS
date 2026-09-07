@@ -40,6 +40,7 @@ export default function NewRepricingPage() {
   const navigate = useNavigate()
   const categories = useDataStore((s) => s.categories)
   const brands = useDataStore((s) => s.brands)
+  const locations = useDataStore((s) => s.locations)
   const variations = useDataStore((s) => s.variations)
   const create = useCreateRepricing()
 
@@ -51,6 +52,7 @@ export default function NewRepricingPage() {
       roundTo: 1000,
       categoryId: '',
       brandId: '',
+      locationId: '',
       comment: '',
     },
   })
@@ -60,6 +62,7 @@ export default function NewRepricingPage() {
   const roundTo = form.watch('roundTo')
   const categoryId = form.watch('categoryId')
   const brandId = form.watch('brandId')
+  const locationId = form.watch('locationId')
 
   const scope = useMemo(
     () =>
@@ -67,9 +70,12 @@ export default function NewRepricingPage() {
         if (variation.status === 'archived') return false
         if (categoryId && variation.categoryId !== categoryId) return false
         if (brandId && variation.brandId !== brandId) return false
+        if (locationId && !variation.stockByLocation.some((r) => r.locationId === locationId)) {
+          return false
+        }
         return true
       }),
-    [variations, categoryId, brandId],
+    [variations, categoryId, brandId, locationId],
   )
 
   const rule = { kind, value, roundTo }
@@ -91,6 +97,7 @@ export default function NewRepricingPage() {
           rule: { kind: values.kind, value: values.value, roundTo: values.roundTo },
           categoryId: values.categoryId,
           brandId: values.brandId,
+          locationId: values.locationId,
           comment: values.comment,
         },
         {
@@ -179,6 +186,27 @@ export default function NewRepricingPage() {
                       onChange={field.onChange}
                       placeholder="Every brand"
                       options={brands.map((b) => ({ value: b.id, label: b.name }))}
+                    />
+                  )}
+                />
+              )}
+            </Field>
+            <Field
+              label="Location"
+              hint="Narrows to what that shelf carries — the price itself is the same everywhere"
+            >
+              {(p) => (
+                <Controller
+                  control={form.control}
+                  name="locationId"
+                  render={({ field }) => (
+                    <Select
+                      {...p}
+                      className="w-full"
+                      value={field.value || undefined}
+                      onChange={field.onChange}
+                      placeholder="Every location"
+                      options={locations.map((l) => ({ value: l.id, label: l.name }))}
                     />
                   )}
                 />

@@ -131,6 +131,7 @@ describe('applying and reverting', () => {
       rule: { kind: 'percent', value: 10, roundTo: 1 },
       categoryId: '',
       brandId: '',
+      locationId: '',
       comment: 'test',
     })
     // Preparing changes nothing.
@@ -151,6 +152,7 @@ describe('applying and reverting', () => {
       rule: { kind: 'percent', value: 7, roundTo: 5000 },
       categoryId: '',
       brandId: '',
+      locationId: '',
       comment: '',
     })
     useDataStore.getState().applyRepricing(repricing.id)
@@ -174,6 +176,7 @@ describe('applying and reverting', () => {
       rule: { kind: 'percent', value: 20, roundTo: 1 },
       categoryId: '',
       brandId: '',
+      locationId: '',
       comment: '',
     })
     useDataStore.getState().applyRepricing(repricing.id)
@@ -189,6 +192,7 @@ describe('applying and reverting', () => {
       rule: { kind: 'manual', value: 0, roundTo: 1 },
       categoryId: '',
       brandId: '',
+      locationId: '',
       comment: '',
     })
     expect(useDataStore.getState().applyRepricing(repricing.id).ok).toBe(false)
@@ -200,6 +204,7 @@ describe('applying and reverting', () => {
       rule: { kind: 'percent', value: 3, roundTo: 1 },
       categoryId: '',
       brandId: '',
+      locationId: '',
       comment: '',
     })
     expect(useDataStore.getState().revertRepricing(repricing.id).ok).toBe(false)
@@ -213,6 +218,7 @@ describe('applying and reverting', () => {
       rule: { kind: 'percent', value: 5, roundTo: 100 },
       categoryId: '',
       brandId: '',
+      locationId: '',
       comment: '',
     })
     useDataStore.getState().applyRepricing(repricing.id)

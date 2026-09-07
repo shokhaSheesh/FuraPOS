@@ -109,6 +109,14 @@ export interface Repricing {
   categoryName: string | null
   brandId: Id | null
   brandName: string | null
+  /**
+   * Narrows to what a given shelf actually carries. Note this scopes *which
+   * products* are repriced, not the price itself — a variation has one sale
+   * price everywhere. Whether Fura needs per-location pricing is an open
+   * question in docs/OX-NAVIGATION-MAP.md.
+   */
+  locationId: Id | null
+  locationName: string | null
   lines: RepricingLine[]
   comment: string | null
   createdBy: string
@@ -190,6 +198,10 @@ export function marginShift(r: Pick<Repricing, 'lines'>) {
 export const belowCost = (r: Pick<Repricing, 'lines'>) =>
   r.lines.filter((line) => line.costAtTime > 0 && line.newPrice < line.costAtTime)
 
+/** The scope as a phrase, for the list and the header. */
+export const scopeSentence = (r: Pick<Repricing, 'categoryName' | 'brandName' | 'locationName'>) =>
+  [r.categoryName, r.brandName, r.locationName].filter(Boolean).join(' · ') || 'Everything'
+
 export const canApply = (status: RepricingStatus) => status === 'draft'
 export const canRevert = (status: RepricingStatus) => status === 'applied'
 
@@ -201,6 +213,7 @@ export const repricingDraftSchema = z.object({
   roundTo: z.number().positive(),
   categoryId: z.string(),
   brandId: z.string(),
+  locationId: z.string(),
   comment: z.string(),
 })
 

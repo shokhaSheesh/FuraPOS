@@ -635,6 +635,7 @@ export const repricings: Repricing[] = Array.from({ length: 8 }, (_, index) => {
   const kind = pick(['percent', 'percent', 'percent', 'margin', 'amount'] as const) satisfies RuleKind
   const category = random() > 0.6 ? pick(categories) : null
   const brand = random() > 0.75 ? pick(brands) : null
+  const repriceLocation = random() > 0.8 ? pick(locations) : null
   const createdAt = new Date(Date.now() - between(4, 150) * 86_400_000)
 
   const rule = {
@@ -646,7 +647,9 @@ export const repricings: Repricing[] = Array.from({ length: 8 }, (_, index) => {
   const scope = variations.filter(
     (variation) =>
       (!category || variation.categoryId === category.id) &&
-      (!brand || variation.brandId === brand.id),
+      (!brand || variation.brandId === brand.id) &&
+      (!repriceLocation ||
+        variation.stockByLocation.some((row) => row.locationId === repriceLocation.id)),
   )
 
   const lines = scope.slice(0, between(6, 22)).map((variation, lineIndex) => {
@@ -693,6 +696,8 @@ export const repricings: Repricing[] = Array.from({ length: 8 }, (_, index) => {
     categoryName: category?.name ?? null,
     brandId: brand?.id ?? null,
     brandName: brand?.name ?? null,
+    locationId: repriceLocation?.id ?? null,
+    locationName: repriceLocation?.name ?? null,
     lines,
     comment:
       random() > 0.5

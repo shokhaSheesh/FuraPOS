@@ -133,6 +133,8 @@ export interface CreateRepricingInput {
   /** Empty means everything. */
   categoryId: string
   brandId: string
+  /** Empty means every location; otherwise only what that shelf carries. */
+  locationId: string
   comment: string
 }
 
@@ -788,12 +790,21 @@ export const useDataStore = create<CatalogState>((set, get) => ({
     const now = new Date().toISOString()
     const category = get().categories.find((c) => c.id === input.categoryId)
     const brand = get().brands.find((b) => b.id === input.brandId)
+    const location = get().locations.find((l) => l.id === input.locationId)
 
     const lines: RepricingLine[] = get()
       .variations.filter((variation) => {
         if (variation.status === 'archived') return false
         if (input.categoryId && variation.categoryId !== input.categoryId) return false
         if (input.brandId && variation.brandId !== input.brandId) return false
+        // Location narrows to what that shelf carries — the price itself is not
+        // per location.
+        if (
+          input.locationId &&
+          !variation.stockByLocation.some((row) => row.locationId === input.locationId)
+        ) {
+          return false
+        }
         return true
       })
       .map((variation, index) => {
@@ -835,6 +846,8 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       categoryName: category?.name ?? null,
       brandId: input.brandId || null,
       brandName: brand?.name ?? null,
+      locationId: input.locationId || null,
+      locationName: location?.name ?? null,
       lines,
       comment: input.comment || null,
       createdBy: 'Akhmet Dauletmuratov',

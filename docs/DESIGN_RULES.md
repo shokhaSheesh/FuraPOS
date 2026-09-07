@@ -290,6 +290,35 @@ reads zero. A status with none shows `0`, never a blank: a missing number reads 
 Counts are what let a chip replace a nav entry. A saved filter in the sidebar earns its place only
 by telling you there is work waiting; a counted chip does that without spending a nav row.
 
+### 5.6.1 The filter row holds filters, and nothing else
+
+The row under a list's title is for **narrowing the rows**. A control that changes _how the same rows
+are displayed_ is a view switcher, not a filter, and putting it among the chips makes the row read
+as a random collection of boxes. View switchers go in the table's own toolbar, beside search —
+the catalogue's "By variation / By product" is one, and it belongs there, not next to "Active".
+
+**Chips or a dropdown, decided by the shape of the choice:**
+
+| The choice is                                             | Use            | Because                                                                      |
+| --------------------------------------------------------- | -------------- | ---------------------------------------------------------------------------- |
+| two or three fixed states                                 | `StatusChips`  | options visible without a click are always faster, and they can carry counts |
+| one of many, or open-ended (locations, brands, suppliers) | `FilterSelect` | a row of fifteen chips is not a filter row                                   |
+
+A `FilterSelect` **wears the chip's shape** — the same pill, height and filled active state — and
+only the chevron says it opens. A form `Select` dropped into a chip row reads as a foreign object;
+the control changes, the vocabulary of the row does not.
+
+### 5.6.2 A scope filter re-scopes every number on the page
+
+Some filters do not merely hide rows — they change what the remaining figures _mean_. Picking a
+location makes Stock mean "stock **here**", and the summary strip, stock-at-cost and the CSV export
+must all agree with it. Scope once, in the query layer, by rewriting the field every consumer
+already reads (`stock`), rather than teaching each screen to do its own arithmetic — that is how two
+numbers on one page end up counting different shelves.
+
+Say which scope is in force in the page description ("Stock, prices and totals at Shop — Chilonzor"),
+because a number that quietly means something new is worse than no number.
+
 ### 5.7 List state lives in the URL
 
 Page, page size, search, sort and every filter are query params, via `useListQuery()`. A filtered

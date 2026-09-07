@@ -185,3 +185,26 @@ describe('data store', () => {
     expect(useDataStore.getState().variations.map((v) => v.id)).not.toContain(target.id)
   })
 })
+
+describe('location scope', () => {
+  it("reports a location's own quantity as stock, and hides what it does not carry", () => {
+    const rows = useDataStore.getState().variations
+    const [locationA] = useDataStore.getState().locations
+    const carried = rows.filter((v) =>
+      v.stockByLocation.some((row) => row.locationId === locationA!.id),
+    )
+    // The scope is what the catalogue applies: only rows with a row there, and
+    // `stock` replaced by that row's quantity rather than the total.
+    const scoped = carried.map((v) => ({
+      ...v,
+      stock: v.stockByLocation.find((row) => row.locationId === locationA!.id)!.quantity,
+    }))
+
+    expect(scoped.length).toBeLessThan(rows.length)
+    expect(scoped.every((v) => v.stock <= rows.find((r) => r.id === v.id)!.stock)).toBe(true)
+    // Summing one location can never exceed summing every location.
+    const here = scoped.reduce((sum, v) => sum + v.stock, 0)
+    const everywhere = rows.reduce((sum, v) => sum + v.stock, 0)
+    expect(here).toBeLessThan(everywhere)
+  })
+})

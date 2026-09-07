@@ -6,6 +6,8 @@ import { DataTable } from '@/shared/components/DataTable'
 import { SearchInput } from '@/shared/components/SearchInput'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
+import { FilterSelect } from '@/shared/components/FilterSelect'
+import { SegmentedControl } from '@/shared/ui/SegmentedControl'
 import { Button } from '@/shared/ui/Button'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 import { toast } from '@/shared/ui/toast'
@@ -18,6 +20,7 @@ import {
   useCatalogStatusCounts,
   useCatalogSummary,
   useDeleteVariation,
+  useLocations,
   useProducts,
   useVariations,
 } from '../api/products'
@@ -52,9 +55,21 @@ export default function ProductsPage() {
   // query object would send ?enabled=false to the server and still fetch.
   const { data, isLoading } = useVariations(query, { enabled: !byProduct })
   const { data: parents, isLoading: parentsLoading } = useProducts(query, { enabled: byProduct })
-  const scope = { search: query.search, status: query.status, stock: query.stock }
+  const scope = {
+    search: query.search,
+    status: query.status,
+    stock: query.stock,
+    location: query.location,
+  }
   const { data: summary, isLoading: summaryLoading } = useCatalogSummary(scope)
-  const { data: counts } = useCatalogStatusCounts({ search: query.search, stock: query.stock })
+  const { data: counts } = useCatalogStatusCounts({
+    search: query.search,
+    stock: query.stock,
+    location: query.location,
+  })
+  const { data: locationData } = useLocations()
+  const locationId = (query.location as string | null) ?? null
+  const location = locationData.items.find((item) => item.id === locationId)
   const deleteVariation = useDeleteVariation()
 
   const [pendingDelete, setPendingDelete] = useState<VariationRow | null>(null)
@@ -73,7 +88,7 @@ export default function ProductsPage() {
     [can, navigate],
   )
 
-  const isFiltered = Boolean(query.search || query.status || query.stock)
+  const isFiltered = Boolean(query.search || query.status || query.stock || query.location)
 
   const confirmDelete = () => {
     if (!pendingDelete) return
@@ -126,7 +141,11 @@ export default function ProductsPage() {
     <>
       <PageHeader
         title="Products"
-        description="Everything you sell, across every location."
+        description={
+          location
+            ? `Stock, prices and totals at ${location.name}.`
+            : 'Everything you sell, across every location.'
+        }
         action={
           <div className="flex items-center gap-2">
             <Button variant="secondary" onClick={exportCsv}>
@@ -155,14 +174,16 @@ export default function ProductsPage() {
               onChange={(next) => setQuery({ status: next })}
               counts={counts}
             />
-            <StatusChips
-              ariaLabel="View"
-              options={[
-                { value: null, label: 'By variation' },
-                { value: 'products', label: 'By product' },
-              ]}
-              value={(query.view as string | null) ?? null}
-              onChange={(next) => setQuery({ view: next, page: null })}
+            <FilterSelect
+              aria-label="Filter by location"
+              label="At"
+              allLabel="All locations"
+              value={locationId}
+              options={locationData.items.map((item) => ({
+                value: item.id,
+                label: item.name,
+              }))}
+              onChange={(next) => setQuery({ location: next, page: null })}
             />
             <StatusChips
               ariaLabel="Filter by stock"
@@ -188,11 +209,24 @@ export default function ProductsPage() {
           total={parents?.total ?? 0}
           isLoading={parentsLoading}
           toolbar={
-            <SearchInput
-              value={String(query.search ?? '')}
-              onChange={(search) => setQuery({ search })}
-              placeholder="Search by name, OEM, brand or vehicle…"
-            />
+            <>
+              <SearchInput
+                value={String(query.search ?? '')}
+                onChange={(search) => setQuery({ search })}
+                placeholder="Search by name, OEM, brand or vehicle…"
+              />
+              <SegmentedControl
+                aria-label="How the catalogue is listed"
+                value={byProduct ? 'products' : 'variations'}
+                onChange={(next) =>
+                  setQuery({ view: next === 'products' ? 'products' : null, page: null })
+                }
+                options={[
+                  { value: 'variations', label: 'By variation' },
+                  { value: 'products', label: 'By product' },
+                ]}
+              />
+            </>
           }
           pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
           onPaginationChange={({ page, pageSize }) => setQuery({ page, pageSize })}
@@ -208,11 +242,24 @@ export default function ProductsPage() {
           total={data?.total ?? 0}
           isLoading={isLoading}
           toolbar={
-            <SearchInput
-              value={String(query.search ?? '')}
-              onChange={(search) => setQuery({ search })}
-              placeholder="Search by name, SKU, barcode or OEM…"
-            />
+            <>
+              <SearchInput
+                value={String(query.search ?? '')}
+                onChange={(search) => setQuery({ search })}
+                placeholder="Search by name, SKU, barcode or OEM…"
+              />
+              <SegmentedControl
+                aria-label="How the catalogue is listed"
+                value={byProduct ? 'products' : 'variations'}
+                onChange={(next) =>
+                  setQuery({ view: next === 'products' ? 'products' : null, page: null })
+                }
+                options={[
+                  { value: 'variations', label: 'By variation' },
+                  { value: 'products', label: 'By product' },
+                ]}
+              />
+            </>
           }
           pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
           onPaginationChange={({ page, pageSize }) => setQuery({ page, pageSize })}

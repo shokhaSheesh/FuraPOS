@@ -11,8 +11,25 @@ import { costInUzs, effectivePrice, type VariationRow } from '../model/product'
  * screens already expect so they did not have to change.
  */
 
+/**
+ * Narrows the catalogue to one location.
+ *
+ * This is a scope, not just a row filter: a variation the location does not
+ * carry disappears, and the ones that remain report **that location's**
+ * quantity as their stock. Every figure downstream — the Stock column, the
+ * summary strip, stock-at-cost, the CSV — reads `stock`, so scoping it here
+ * means none of them can disagree about which shelf is being counted.
+ */
+function scopeToLocation(all: VariationRow[], locationId: string) {
+  return all.flatMap((v) => {
+    const row = v.stockByLocation.find((entry) => entry.locationId === locationId)
+    return row ? [{ ...v, stock: row.quantity, stockByLocation: [row] }] : []
+  })
+}
+
 function filterVariations(all: VariationRow[], query: ListQuery) {
-  return all.filter((v) => {
+  const scoped = query.location ? scopeToLocation(all, String(query.location)) : all
+  return scoped.filter((v) => {
     if (query.status && v.status !== query.status) return false
     if (query.stock === 'zero' && v.stock !== 0) return false
     if (query.stock === 'low') {
@@ -42,6 +59,17 @@ export function useProducts(query: ListQuery, options: { enabled?: boolean } = {
     if (options.enabled === false) return undefined
     const filtered = products.filter((p) => {
       if (query.status && p.status !== query.status) return false
+      // A product belongs to a location if any of its variations is carried
+      // there — otherwise the by-product view would contradict the by-variation
+      // one about what that warehouse holds.
+      if (
+        query.location &&
+        !p.variations.some((v) =>
+          v.stockByLocation.some((row) => row.locationId === String(query.location)),
+        )
+      ) {
+        return false
+      }
       return matches([p.name, p.description, p.brandName, p.vehicleMake], query.search)
     })
     return paginate(filtered, query)

@@ -23,7 +23,7 @@ import {
   useProduct,
   useUpdateProduct,
 } from '../api/products'
-import { SegmentedControl } from '../components/SegmentedControl'
+import { SegmentedControl } from '@/shared/ui/SegmentedControl'
 import { ProductStockSection } from '../components/ProductStockSection'
 import { ProductOptionsEditor } from '../components/ProductOptionsEditor'
 import { ProductVariationsTable } from '../components/ProductVariationsTable'

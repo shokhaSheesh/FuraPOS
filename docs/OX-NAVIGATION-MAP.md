@@ -985,6 +985,47 @@ Fura does not attach clients to sales.
 also a top-40% spender and so lands in "Cannot lose" first. The logic is right; forcing the segment
 to fill would be seeding for the screenshot rather than for truth.
 
+### Promotions report — «Отчёт по акциям», read from the live tenant
+
+OX's has **thirteen KPI tiles**: discount total, revenue, discount %, sales, clients, applications,
+units discounted, «Эффект», Sell-through %, **Uplift %**, cost, margin, margin %. Then a daily
+chart, three tabs (по акциям / по оферам / по товарам) and a twelve-column table. It reads zero on
+the tenant.
+
+Two of those thirteen — «Эффект» and Uplift % — are the answer; the other eleven are the workings.
+So here **the verdict is the first column** and the workings sit behind it.
+
+**This closes a loop the Promotions module opened.** A promotion is recorded as a decision precisely
+so it can be judged afterwards, and until this screen existed nothing judged it. That required a
+real foundation first: **sales now carry `promotionId`**, set when a seller applies an offer on the
+New sale screen and seeded onto historical sales the same way. Without it a discount is an anonymous
+percentage and no report can tell a campaign's sales from anybody else's.
+
+**How it is measured.** Each promotion is compared against **the same number of days immediately
+before it started**, counting only the products it covered — measuring a brakes promotion against
+total shop revenue would drown its effect in every oil filter sold that week. The caveat is stated
+on the screen rather than hidden: this cannot separate the promotion from anything else that changed
+in those weeks, and it is the best available comparison rather than proof.
+
+**The decisions worth keeping:**
+
+- **The discount is already inside the margin.** Margin is revenue-after-discount less cost, so a
+  campaign that gave away more than it brought in shows as a smaller margin than the baseline.
+  Subtracting `discountGiven` again would charge it for the same money twice — an easy and
+  expensive mistake. The giveaway is shown beside the result as the size of the bet, never
+  subtracted from it.
+- **"About even" is a band, not a point.** A promotion 2% ahead did not beat the noise in a
+  fortnight of trading, and calling that a success is how a shop keeps repeating a bad offer.
+- **"Nobody used it" is its own verdict.** A promotion that ran while no sale was ever put through
+  with it is a finding about the counter, not about the offer, and judging the offer on it would be
+  wrong.
+- **"Too early to tell" and "nothing to compare with" are real answers.** A screen that always
+  produces a confident verdict from three sales is worse than one that admits it cannot tell.
+
+**Seed fix this surfaced:** the attribution helper used `find` among running promotions, so the
+first always won and the second was never used by anybody — one campaign showed 94 uses and its
+overlapping neighbour showed zero. It picks among all of them now.
+
 ## 12. Настройки — Settings
 
 Rendered in OX as tabs inside one page; we keep them as sidebar children.

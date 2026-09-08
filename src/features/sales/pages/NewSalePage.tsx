@@ -92,6 +92,12 @@ export default function NewSalePage() {
     [lines, variations],
   )
   const offer = useBestPromotion(promotableLines)
+  /*
+    Which promotion the seller applied, carried onto the sale. Without it the
+    discount lands as an anonymous percentage and the promotions report cannot
+    tell a campaign's sales from anybody else's.
+  */
+  const [appliedPromotionId, setAppliedPromotionId] = useState<string | null>(null)
   const alreadyDiscounted = lines.some((line) => line.discountPercent > 0)
 
   /**
@@ -103,6 +109,7 @@ export default function NewSalePage() {
    */
   const applyOffer = () => {
     if (!offer) return
+    setAppliedPromotionId(offer.promotion.id)
     const covered = promotableLines.filter((line) => covers(offer.promotion, line))
     const coveredValue = covered.reduce((sum, line) => sum + line.quantity * line.unitPrice, 0)
     if (coveredValue <= 0) return
@@ -189,6 +196,7 @@ export default function NewSalePage() {
         comment,
         paid: settling ? Number(paidText) || totals.total : 0,
         lines,
+        promotionId: appliedPromotionId,
         delivery: deliveryOn
           ? {
               address: address.trim(),

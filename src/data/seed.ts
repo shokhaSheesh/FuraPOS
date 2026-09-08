@@ -549,6 +549,85 @@ export const employees: Employee[] = (
 const sellers = employees.filter((e) => e.status !== 'archived' && e.roleId !== 'role-5')
 
 /**
+ * Promotions.
+ *
+ * One running everywhere, one scoped to a category with a minimum basket, one
+ * scheduled for next month and one that has already finished — because the
+ * status is derived from the dates, and all four cases have to be visible for
+ * that to be worth anything.
+ */
+export const promotions: Promotion[] = [
+  {
+    id: 'promo-1',
+    name: 'Autumn service check',
+    kind: 'percentage',
+    value: 10,
+    scope: 'all',
+    scopeIds: [],
+    scopeNames: [],
+    startsAt: new Date(Date.now() - 12 * 86_400_000).toISOString(),
+    endsAt: new Date(Date.now() + 9 * 86_400_000).toISOString(),
+    paused: false,
+    minimumSale: null,
+    comment: 'Runs alongside the workshop campaign',
+    createdBy: 'Akhmet Dauletmuratov',
+    createdAt: new Date(Date.now() - 20 * 86_400_000).toISOString(),
+    updatedAt: new Date(Date.now() - 12 * 86_400_000).toISOString(),
+  },
+  {
+    id: 'promo-2',
+    name: 'Brakes bundle',
+    kind: 'percentage',
+    value: 15,
+    scope: 'category',
+    scopeIds: [categories[1]!.id, categories[3]!.id],
+    scopeNames: [categories[1]!.name, categories[3]!.name],
+    startsAt: new Date(Date.now() - 4 * 86_400_000).toISOString(),
+    endsAt: new Date(Date.now() + 25 * 86_400_000).toISOString(),
+    paused: false,
+    minimumSale: 2_000_000,
+    comment: null,
+    createdBy: 'Nodira Rasulova',
+    createdAt: new Date(Date.now() - 6 * 86_400_000).toISOString(),
+    updatedAt: new Date(Date.now() - 4 * 86_400_000).toISOString(),
+  },
+  {
+    id: 'promo-3',
+    name: 'Winter opening',
+    kind: 'fixed',
+    value: 200_000,
+    scope: 'product',
+    scopeIds: [products[0]!.id, products[1]!.id, products[2]!.id],
+    scopeNames: [products[0]!.name, products[1]!.name, products[2]!.name],
+    startsAt: new Date(Date.now() + 21 * 86_400_000).toISOString(),
+    endsAt: new Date(Date.now() + 51 * 86_400_000).toISOString(),
+    paused: false,
+    minimumSale: 1_500_000,
+    comment: 'Agreed with the supplier',
+    createdBy: 'Akhmet Dauletmuratov',
+    createdAt: new Date(Date.now() - 2 * 86_400_000).toISOString(),
+    updatedAt: new Date(Date.now() - 2 * 86_400_000).toISOString(),
+  },
+  {
+    id: 'promo-4',
+    name: 'Summer clearance',
+    kind: 'percentage',
+    value: 20,
+    scope: 'all',
+    scopeIds: [],
+    scopeNames: [],
+    startsAt: new Date(Date.now() - 90 * 86_400_000).toISOString(),
+    endsAt: new Date(Date.now() - 40 * 86_400_000).toISOString(),
+    paused: false,
+    minimumSale: null,
+    comment: null,
+    createdBy: 'Nodira Rasulova',
+    createdAt: new Date(Date.now() - 100 * 86_400_000).toISOString(),
+    updatedAt: new Date(Date.now() - 40 * 86_400_000).toISOString(),
+  },
+]
+
+/**
  * How each client actually behaves, so the customer report has something to
  * report. Without this every client bought the same number of times on the
  * same days, RFM scores all tied, and the segments collapsed into one.
@@ -589,6 +668,36 @@ function pickClientFor(daysAgo: number) {
   return null
 }
 
+/**
+ * Which promotion was running on a given day, if any.
+ *
+ * Seeded sales carry the promotion that applied to them, exactly as a sale
+ * typed on the New sale screen does. Without that link a discount is an
+ * anonymous number and the promotions report can never say whether a campaign
+ * paid for itself.
+ */
+function promotionOn(daysAgo: number) {
+  const at = Date.now() - daysAgo * 86_400_000
+  // Every promotion running that day, then one at random — `find` would always
+  // return the first and the second would never be used by anybody.
+  const running = promotions.filter((promotion) => {
+    if (promotion.paused) return false
+    if (new Date(promotion.startsAt).getTime() > at) return false
+    if (promotion.endsAt && new Date(promotion.endsAt).getTime() < at) return false
+    return true
+  })
+  return running.length === 0 ? null : pick(running)
+}
+
+/** Whether that promotion's scope reaches this variation. */
+function promotionCovers(promotion: Promotion, variation: (typeof variations)[number]) {
+  if (promotion.scope === 'all') return true
+  if (promotion.scopeIds.length === 0) return false
+  return promotion.scope === 'category'
+    ? promotion.scopeIds.includes(variation.categoryId)
+    : promotion.scopeIds.includes(variation.productId)
+}
+
 export const sales: Sale[] = Array.from({ length: 420 }, (_, index) => {
   const location = pick(locations)
   /*
@@ -601,6 +710,13 @@ export const sales: Sale[] = Array.from({ length: 420 }, (_, index) => {
   */
   const daysAgo = Math.round(between(0, 300) * (random() > 0.45 ? 0.35 : 1))
   const client = random() > 0.3 ? pickClientFor(daysAgo) : null
+  /*
+    Not every sale in a promotion's window used it — a seller has to apply it,
+    and some do not. Two thirds is deliberately short of all of them, so
+    "how many sales used this" is a real number rather than a restatement of
+    how many sales happened.
+  */
+  const promotion = random() > 0.34 ? promotionOn(daysAgo) : null
   const lineCount = between(1, 5)
   /*
     Only what that shop actually stocks. Selling a part from a shelf it was
@@ -634,7 +750,14 @@ export const sales: Sale[] = Array.from({ length: 420 }, (_, index) => {
       unit: variation.unit,
       quantity,
       unitPrice: variation.salePrice,
-      discountPercent: random() > 0.75 ? between(1, 10) : 0,
+      // A covered line takes the promotion's rate; anything else keeps the
+      // ordinary ad-hoc discount a seller might give.
+      discountPercent:
+        promotion && promotion.kind === 'percentage' && promotionCovers(promotion, variation)
+          ? promotion.value
+          : random() > 0.75
+            ? between(1, 10)
+            : 0,
     }
   })
 
@@ -680,6 +803,7 @@ export const sales: Sale[] = Array.from({ length: 420 }, (_, index) => {
     locationName: location.name,
     sellerId: seller.id,
     sellerName: seller.fullName,
+    promotionId: promotion?.id ?? null,
     paymentMethod: pick(['cash', 'card', 'transfer', 'credit'] as const),
     channel: pick(['desk', 'desk', 'phone', 'online'] as const),
     comment: null,
@@ -1361,85 +1485,6 @@ export const schedules: ReorderSchedule[] = [
     lastRun: null,
     createdBy: 'Akhmet Dauletmuratov',
     createdAt: new Date(Date.now() - 40 * 86_400_000).toISOString(),
-    updatedAt: new Date(Date.now() - 40 * 86_400_000).toISOString(),
-  },
-]
-
-/**
- * Promotions.
- *
- * One running everywhere, one scoped to a category with a minimum basket, one
- * scheduled for next month and one that has already finished — because the
- * status is derived from the dates, and all four cases have to be visible for
- * that to be worth anything.
- */
-export const promotions: Promotion[] = [
-  {
-    id: 'promo-1',
-    name: 'Autumn service check',
-    kind: 'percentage',
-    value: 10,
-    scope: 'all',
-    scopeIds: [],
-    scopeNames: [],
-    startsAt: new Date(Date.now() - 12 * 86_400_000).toISOString(),
-    endsAt: new Date(Date.now() + 9 * 86_400_000).toISOString(),
-    paused: false,
-    minimumSale: null,
-    comment: 'Runs alongside the workshop campaign',
-    createdBy: 'Akhmet Dauletmuratov',
-    createdAt: new Date(Date.now() - 20 * 86_400_000).toISOString(),
-    updatedAt: new Date(Date.now() - 12 * 86_400_000).toISOString(),
-  },
-  {
-    id: 'promo-2',
-    name: 'Brakes bundle',
-    kind: 'percentage',
-    value: 15,
-    scope: 'category',
-    scopeIds: [categories[1]!.id, categories[3]!.id],
-    scopeNames: [categories[1]!.name, categories[3]!.name],
-    startsAt: new Date(Date.now() - 4 * 86_400_000).toISOString(),
-    endsAt: new Date(Date.now() + 25 * 86_400_000).toISOString(),
-    paused: false,
-    minimumSale: 2_000_000,
-    comment: null,
-    createdBy: 'Nodira Rasulova',
-    createdAt: new Date(Date.now() - 6 * 86_400_000).toISOString(),
-    updatedAt: new Date(Date.now() - 4 * 86_400_000).toISOString(),
-  },
-  {
-    id: 'promo-3',
-    name: 'Winter opening',
-    kind: 'fixed',
-    value: 200_000,
-    scope: 'product',
-    scopeIds: [products[0]!.id, products[1]!.id, products[2]!.id],
-    scopeNames: [products[0]!.name, products[1]!.name, products[2]!.name],
-    startsAt: new Date(Date.now() + 21 * 86_400_000).toISOString(),
-    endsAt: new Date(Date.now() + 51 * 86_400_000).toISOString(),
-    paused: false,
-    minimumSale: 1_500_000,
-    comment: 'Agreed with the supplier',
-    createdBy: 'Akhmet Dauletmuratov',
-    createdAt: new Date(Date.now() - 2 * 86_400_000).toISOString(),
-    updatedAt: new Date(Date.now() - 2 * 86_400_000).toISOString(),
-  },
-  {
-    id: 'promo-4',
-    name: 'Summer clearance',
-    kind: 'percentage',
-    value: 20,
-    scope: 'all',
-    scopeIds: [],
-    scopeNames: [],
-    startsAt: new Date(Date.now() - 90 * 86_400_000).toISOString(),
-    endsAt: new Date(Date.now() - 40 * 86_400_000).toISOString(),
-    paused: false,
-    minimumSale: null,
-    comment: null,
-    createdBy: 'Nodira Rasulova',
-    createdAt: new Date(Date.now() - 100 * 86_400_000).toISOString(),
     updatedAt: new Date(Date.now() - 40 * 86_400_000).toISOString(),
   },
 ]

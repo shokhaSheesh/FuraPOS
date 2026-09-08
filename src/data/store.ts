@@ -320,6 +320,8 @@ export interface CreateSaleInput {
   status: SaleStatus
   expiresAt: string | null
   delivery: Sale['delivery']
+  /** Set when the seller applied a promotion on the New sale screen. */
+  promotionId?: string | null
 }
 
 type VariationInput = Omit<
@@ -517,6 +519,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       // No auth in this build: every sale is made by the signed-in user.
       sellerId: 'emp-1',
       sellerName: 'Akhmet Dauletmuratov',
+      promotionId: input.promotionId ?? null,
       paymentMethod: input.paymentMethod,
       comment: input.comment || null,
       lines: input.lines,

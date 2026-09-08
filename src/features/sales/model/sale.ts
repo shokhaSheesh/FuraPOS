@@ -86,6 +86,14 @@ export interface Sale {
    */
   sellerId: Id | null
   sellerName: string
+  /**
+   * The promotion applied to this sale, if any.
+   *
+   * Without it a discount is an anonymous number and no report can ever say
+   * whether a campaign paid for itself — which is the whole reason promotions
+   * are recorded as decisions rather than typed into a line.
+   */
+  promotionId: Id | null
   paymentMethod: PaymentMethod
   channel: SaleChannel
   comment: string | null

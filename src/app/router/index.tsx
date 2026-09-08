@@ -31,6 +31,8 @@ const NewRepricingPage = lazy(() => import('@/features/repricing/pages/NewRepric
 const SuppliersListPage = lazy(() => import('@/features/suppliers/pages/SuppliersListPage'))
 const SupplierDetailPage = lazy(() => import('@/features/suppliers/pages/SupplierDetailPage'))
 const SupplierFormPage = lazy(() => import('@/features/suppliers/pages/SupplierFormPage'))
+const RolesPage = lazy(() => import('@/features/roles/pages/RolesPage'))
+const RoleDetailPage = lazy(() => import('@/features/roles/pages/RoleDetailPage'))
 const EmployeesPage = lazy(() => import('@/features/employees/pages/EmployeesPage'))
 const EmployeeDetailPage = lazy(() => import('@/features/employees/pages/EmployeeDetailPage'))
 const EmployeeFormPage = lazy(() => import('@/features/employees/pages/EmployeeFormPage'))
@@ -207,13 +209,11 @@ const routes: RouteObject[] = [
         path: paths.personnel.employeeDetail(),
         element: page(<EmployeeDetailPage />, 'personnel.employees.view'),
       },
+      { path: paths.personnel.roles, element: page(<RolesPage />, 'personnel.roles.view') },
       {
-        path: paths.personnel.motivation,
-        element: todo('Seller motivation', 'personnel.motivation.view'),
+        path: paths.personnel.roleDetail(),
+        element: page(<RoleDetailPage />, 'personnel.roles.view'),
       },
-      { path: paths.personnel.planning, element: todo('Planning', 'personnel.planning.view') },
-      { path: paths.personnel.roles, element: todo('Access & roles', 'personnel.roles.view') },
-      { path: paths.personnel.roleDetail(), element: todo('Role', 'personnel.roles.view') },
 
       // --- Finance ---------------------------------------------------------
       { path: paths.finance.root, element: <Navigate to={paths.finance.dashboard} replace /> },

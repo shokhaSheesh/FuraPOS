@@ -228,7 +228,7 @@ export default function EmployeeFormPage() {
           <CardBody className="grid gap-3 sm:grid-cols-2">
             <Field
               label="Base pay"
-              hint="Per month, before anything Seller motivation adds"
+              hint="Per month"
               error={form.formState.errors.salary?.message}
             >
               {(p) => (

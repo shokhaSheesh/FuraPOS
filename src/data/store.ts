@@ -13,6 +13,7 @@ import type { OrderLine, OrderStatus, PurchaseOrder } from '@/features/orders/mo
 import { outstandingUnits } from '@/features/orders/model/order'
 import type { ReorderSchedule } from '@/features/schedules/model/schedule'
 import type { Employee, EmployeeStatus } from '@/features/employees/model/employee'
+import type { Role } from '@/features/roles/model/role'
 import type { ReorderSettings } from '@/features/schedules/model/reorder'
 import { buildReorderLines, lineCostUzs, needsOrdering } from '@/features/schedules/model/reorder'
 import type { WalletTransaction } from '@/shared/types/wallet'
@@ -72,7 +73,7 @@ interface CatalogState {
   orders: PurchaseOrder[]
   schedules: ReorderSchedule[]
   employees: Employee[]
-  roles: { id: string; name: string; description: string }[]
+  roles: Role[]
   /** One ledger for every wallet owner, filtered by owner on read. */
   walletTransactions: WalletTransaction[]
   clients: Client[]
@@ -137,6 +138,11 @@ interface CatalogState {
     trigger: 'schedule' | 'manual',
   ) => { ok: true; orderId: string | null } | { ok: false; error: string }
 
+  createRole: (input: RoleInput) => Role
+  updateRole: (id: string, input: RoleInput) => void
+  setRolePermissions: (id: string, permissions: string[]) => void
+  deleteRole: (id: string) => { ok: true } | { ok: false; error: string }
+
   createEmployee: (input: EmployeeInput) => Employee
   updateEmployee: (id: string, input: EmployeeInput) => void
   setEmployeeStatus: (id: string, status: EmployeeStatus) => void
@@ -191,6 +197,11 @@ export interface CreateOrderInput {
   comment: string
   lines: OrderLine[]
   status: Extract<OrderStatus, 'draft' | 'sent'>
+}
+
+export interface RoleInput {
+  name: string
+  description: string
 }
 
 export interface EmployeeInput {
@@ -427,7 +438,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
   orders: seedOrders,
   schedules: seedSchedules,
   employees: seedEmployees,
-  roles: seedRoles.map((role) => ({ ...role })),
+  roles: seedRoles,
   walletTransactions: seedWalletTransactions,
 
   createSale: (input) => {
@@ -1140,6 +1151,59 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       ),
     })
     return { ok: true, orderId: order.id }
+  },
+
+  createRole: (input) => {
+    const now = new Date().toISOString()
+    const role: Role = {
+      id: `role-${get().roles.length + 1}-${Date.now()}`,
+      name: input.name,
+      description: input.description,
+      // A new role starts with nothing. Copying an existing one would be a
+      // convenience that quietly hands out access nobody chose.
+      permissions: [],
+      isSystem: false,
+      createdAt: now,
+      updatedAt: now,
+    }
+    set({ roles: [...get().roles, role] })
+    return role
+  },
+
+  updateRole: (id, input) => {
+    set({
+      roles: get().roles.map((role) =>
+        role.id === id ? { ...role, ...input, updatedAt: new Date().toISOString() } : role,
+      ),
+    })
+  },
+
+  setRolePermissions: (id, permissions) => {
+    const role = get().roles.find((r) => r.id === id)
+    // The system role is the way back in when someone mis-configures the rest.
+    if (!role || role.isSystem) return
+    set({
+      roles: get().roles.map((entry) =>
+        entry.id === id ? { ...entry, permissions, updatedAt: new Date().toISOString() } : entry,
+      ),
+    })
+  },
+
+  deleteRole: (id) => {
+    const role = get().roles.find((r) => r.id === id)
+    if (!role) return { ok: false, error: 'That role no longer exists' }
+    if (role.isSystem) return { ok: false, error: 'The Owner role cannot be deleted' }
+    // Deleting it would leave people holding a role that does not exist, which
+    // in practice means they can reach nothing and nobody knows why.
+    const holders = get().employees.filter((e) => e.roleId === id).length
+    if (holders > 0) {
+      return {
+        ok: false,
+        error: `${holders} ${holders === 1 ? 'person holds' : 'people hold'} this role — move them first`,
+      }
+    }
+    set({ roles: get().roles.filter((r) => r.id !== id) })
+    return { ok: true }
   },
 
   createEmployee: (input) => {

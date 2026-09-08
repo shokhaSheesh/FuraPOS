@@ -61,8 +61,6 @@ export const permissionTree: readonly PermissionNode[] = [
     label: 'Personnel management',
     children: [
       { key: 'personnel.employees', label: 'Employees', actions: crud },
-      { key: 'personnel.motivation', label: 'Seller motivation', actions: crud },
-      { key: 'personnel.planning', label: 'Planning', actions: crud },
       { key: 'personnel.roles', label: 'Access & roles', actions: crud },
       { key: 'personnel.salary', label: 'See salary & settlements', actions: readOnly },
     ],

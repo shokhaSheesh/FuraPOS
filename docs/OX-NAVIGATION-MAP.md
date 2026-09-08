@@ -519,12 +519,12 @@ built yet.
 
 ## 5. Управление персоналом — Personnel management
 
-| OX (ru)             | Ours (en)         | OX route                               |
-| ------------------- | ----------------- | -------------------------------------- |
-| Сотрудники          | Employees         | `/app/personal-management/users`       |
-| Мотивация продавцов | Seller motivation | `/app/personal-management/motivations` |
-| Планирование        | Planning          | `/app/personal-management/list/target` |
-| Доступы и роли      | Access & roles    | `/app/personal-management/roles`       |
+| OX (ru)             | Ours (en)      | OX route                               |
+| ------------------- | -------------- | -------------------------------------- |
+| Сотрудники          | Employees      | `/app/personal-management/users`       |
+| Мотивация продавцов | — (removed)    | `/app/personal-management/motivations` |
+| Планирование        | — (removed)    | `/app/personal-management/list/target` |
+| Доступы и роли      | Access & roles | `/app/personal-management/roles`       |
 
 ### Employees — «Сотрудники»
 
@@ -570,6 +570,60 @@ sell, whether they are still signing in, what the company owes them.
 Nothing in the app pays anyone or records an advance. Before wiring it we need to know how Fura
 actually pays — monthly in arrears, advances against the month, and whether Seller motivation's
 bonus lands in the same wallet.
+
+### Seller motivation and Planning — removed
+
+Both cut at the client's request, out of the sidebar, the routes, the paths and the permission
+tree. Neither had been built; the entries were placeholders. Recorded here so the omission reads as
+a decision.
+
+The one knock-on is small and already handled: Employees' base-pay field used to be captioned
+"before anything Seller motivation adds", which now refers to a screen that does not exist.
+
+### Access & roles — «Доступы и роли»
+
+Built **without an OX reference screenshot**, like every other screen since Products.
+
+**What it is.** A role is a named set of permission keys. Access is granted to the role, never to a
+person, because granting person by person does not survive staff turnover: the fifth seller you
+hire should inherit what the other four have, and a rule change should happen once.
+
+**The permission tree already existed** — `src/shared/config/permissions.ts`, 184 grantable keys —
+and already drove the route guards and sidebar visibility. This screen is the third consumer, which
+is the point: a permission a role cannot be granted is a permission nothing can check, so there is
+exactly one list.
+
+**The decisions worth keeping:**
+
+- **A grid, not a nested checkbox list.** Rows are screens, columns are the five actions. 184
+  checkboxes down a single column is a list with no shape, where "can this person delete a sale"
+  takes ten seconds to answer; across a grid it takes a glance.
+- **Partial is a first-class state.** CLAUDE.md asks for it and it is the normal case: a manager who
+  views every finance report and edits none. A yes/no parent checkbox forces whoever configures it
+  to choose between over-granting and clicking twenty boxes.
+- **A dash, not a disabled box,** where an action does not apply. "Not applicable" and "you may not
+  change this" are different statements and should not look the same.
+- **Actions imply view, and removing view removes the rest.** Someone who can edit a product but not
+  see the product list holds a permission they can never use — a configuration mistake, not a
+  choice.
+- **Changes are held until Save.** A grid that writes on every click means someone half way through
+  re-scoping a role has, for a few seconds, granted access they were about to take away. On a screen
+  about access, "for a few seconds" is the wrong amount of time. The header counts the unsaved
+  additions and removals, and Discard puts it back.
+- **The Owner role cannot be edited or deleted, and holds `*`.** It is the way back in when
+  something else is mis-configured — a product where every administrator can be locked out is one
+  that eventually locks everyone out — and `*` means a module added next month is included without
+  anyone remembering to tick it.
+- **A role people still hold cannot be deleted.** They would be left holding a role that does not
+  exist, reaching nothing, with no obvious reason why.
+- **A new role starts with nothing**, rather than copying an existing one. Copying is a convenience
+  that quietly hands out access nobody chose.
+- **"Who holds it" sits beside the grid**, naming the people a save will affect. A permission change
+  is abstract until it has faces attached.
+- **The seeded roles are different _shapes_ of access, not different amounts.** The accountant sees
+  every figure and touches no stock; the storekeeper moves stock all day and cannot see a price; the
+  seller has no `products.cost.view` at all, because someone who knows the cost price can work out
+  how far they may discount. A single "level" slider could express none of that.
 
 ## 6. Финансы — Finance
 

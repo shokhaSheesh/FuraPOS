@@ -59,7 +59,7 @@ export interface Employee {
   hiredAt: IsoDate
   /** Last time they signed in. Null when they never have. */
   lastActiveAt: IsoDate | null
-  /** Monthly base pay, before anything Seller motivation adds. */
+  /** Monthly base pay. */
   salary: number | null
   comment: string | null
   createdAt: IsoDate

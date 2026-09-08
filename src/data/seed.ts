@@ -17,6 +17,11 @@ import type { Repricing, RuleKind } from '@/features/repricing/model/repricing'
 import type { Supplier } from '@/features/suppliers/model/supplier'
 import type { ReorderSchedule } from '@/features/schedules/model/schedule'
 import type { Employee } from '@/features/employees/model/employee'
+import type { Role } from '@/features/roles/model/role'
+
+/** `expand('sales.orders', ['view','create'])` → `sales.orders.view`, … */
+const expand = (key: string, actions: readonly string[]) =>
+  actions.map((action) => `${key}.${action}`)
 import type { PurchaseOrder } from '@/features/orders/model/order'
 import type { WalletTransaction } from '@/shared/types/wallet'
 
@@ -303,16 +308,102 @@ export const clients = clientNames.map((name, index) => ({
   plainly does. Seed data has to exercise the features it is seeding for.
 */
 /**
- * Roles. Access & roles will own the permission sets; Employees only needs the
- * names, so they live here for both to share rather than being invented twice.
+ * Roles.
+ *
+ * Four real jobs plus Owner, and each one is a different *shape* of access
+ * rather than a different amount of it — which is the case the editor has to
+ * handle. The accountant sees every figure and touches no stock; the
+ * storekeeper moves stock all day and cannot see a price. A single "level"
+ * slider could express neither.
  */
-export const roles = [
-  { id: 'role-1', name: 'Owner', description: 'Everything, including billing' },
-  { id: 'role-2', name: 'Manager', description: 'Runs a shop: stock, sales, staff' },
-  { id: 'role-3', name: 'Seller', description: 'Takes sales, sees stock and clients' },
-  { id: 'role-4', name: 'Storekeeper', description: 'Receipts, transfers, stocktakes' },
-  { id: 'role-5', name: 'Accountant', description: 'Finance, read-only elsewhere' },
-] as const
+const roleSpecs: { id: string; name: string; description: string; keys: string[] }[] = [
+  {
+    id: 'role-1',
+    name: 'Owner',
+    description: 'Everything, including billing and who else gets in',
+    keys: ['*'],
+  },
+  {
+    id: 'role-2',
+    name: 'Manager',
+    description: 'Runs a shop: stock, sales, staff and the numbers behind them',
+    keys: [
+      ...expand('dashboard', ['view']),
+      ...expand('sales.orders', ['view', 'create', 'edit', 'delete', 'export']),
+      ...expand('products.list', ['view', 'create', 'edit', 'export']),
+      ...expand('products.transfers', ['view', 'create', 'edit']),
+      ...expand('products.corrections', ['view', 'create']),
+      ...expand('products.stocktaking', ['view', 'create', 'edit']),
+      ...expand('products.goodsReceipt', ['view', 'create', 'edit']),
+      ...expand('products.repricing', ['view', 'create', 'edit']),
+      ...expand('products.suppliers', ['view', 'create', 'edit']),
+      ...expand('products.cost', ['view']),
+      ...expand('procurement.orders', ['view', 'create', 'edit', 'export']),
+      ...expand('procurement.schedules', ['view', 'create', 'edit']),
+      ...expand('personnel.employees', ['view']),
+      ...expand('marketing.clients', ['view', 'create', 'edit', 'export']),
+      ...expand('analytics.sales', ['view', 'export']),
+      ...expand('analytics.customers', ['view', 'export']),
+    ],
+  },
+  {
+    id: 'role-3',
+    name: 'Seller',
+    description: 'Takes sales and looks things up. No costs, no stock moves',
+    keys: [
+      // Deliberately no `products.cost`: a seller who can see the cost price
+      // can work out how far they are allowed to discount.
+      ...expand('sales.orders', ['view', 'create', 'edit']),
+      ...expand('products.list', ['view']),
+      ...expand('marketing.clients', ['view', 'create', 'edit']),
+    ],
+  },
+  {
+    id: 'role-4',
+    name: 'Storekeeper',
+    description: 'Moves and counts stock. Sees no prices at all',
+    keys: [
+      ...expand('products.list', ['view']),
+      ...expand('products.transfers', ['view', 'create', 'edit']),
+      ...expand('products.corrections', ['view', 'create']),
+      ...expand('products.stocktaking', ['view', 'create', 'edit']),
+      ...expand('products.goodsReceipt', ['view', 'create', 'edit']),
+      ...expand('procurement.orders', ['view']),
+    ],
+  },
+  {
+    id: 'role-5',
+    name: 'Accountant',
+    description: 'Every figure in the business, and nothing that moves stock',
+    keys: [
+      ...expand('dashboard', ['view']),
+      ...expand('sales.orders', ['view', 'export']),
+      ...expand('products.cost', ['view']),
+      ...expand('products.suppliers', ['view']),
+      ...expand('personnel.salary', ['view']),
+      ...expand('finance.dashboard', ['view']),
+      ...expand('finance.transactions', ['view', 'create', 'edit', 'export']),
+      ...expand('finance.invoices', ['view', 'create', 'edit', 'export']),
+      ...expand('finance.pnl', ['view', 'export']),
+      ...expand('finance.cashflow', ['view', 'export']),
+      ...expand('finance.receivables', ['view', 'export']),
+      ...expand('finance.payables', ['view', 'export']),
+      ...expand('finance.accounts', ['view', 'edit']),
+      ...expand('finance.taxes', ['view', 'edit']),
+      ...expand('analytics.sales', ['view', 'export']),
+    ],
+  },
+]
+
+export const roles: Role[] = roleSpecs.map((spec) => ({
+  id: spec.id,
+  name: spec.name,
+  description: spec.description,
+  permissions: spec.keys,
+  isSystem: spec.id === 'role-1',
+  createdAt: new Date(Date.now() - 400 * 86_400_000).toISOString(),
+  updatedAt: new Date(Date.now() - between(5, 90) * 86_400_000).toISOString(),
+}))
 
 /**
  * Staff.

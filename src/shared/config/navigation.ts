@@ -112,12 +112,6 @@ export const navigation: NavSection[] = [
     icon: Users,
     items: [
       { label: 'Employees', to: paths.personnel.employees, permission: 'personnel.employees.view' },
-      {
-        label: 'Seller motivation',
-        to: paths.personnel.motivation,
-        permission: 'personnel.motivation.view',
-      },
-      { label: 'Planning', to: paths.personnel.planning, permission: 'personnel.planning.view' },
       { label: 'Access & roles', to: paths.personnel.roles, permission: 'personnel.roles.view' },
     ],
   },

@@ -20,6 +20,7 @@ import type { Employee } from '@/features/employees/model/employee'
 import type { Role } from '@/features/roles/model/role'
 import type { Client, ClientType } from '@/features/clients/model/client'
 import type { Promotion } from '@/features/promotions/model/promotion'
+import type { ReportDefinition } from '@/features/reports/model/report'
 
 /** `expand('sales.orders', ['view','create'])` → `sales.orders.view`, … */
 const expand = (key: string, actions: readonly string[]) =>
@@ -1319,3 +1320,68 @@ export const promotions: Promotion[] = [
     updatedAt: new Date(Date.now() - 40 * 86_400_000).toISOString(),
   },
 ]
+
+/**
+ * Starter reports.
+ *
+ * Six, not OX's seventeen. Seventeen templates over a handful of datasets are
+ * seventeen column-combinations, and five of OX's duplicate screens we already
+ * have — seller performance lives on Employees, current stock on Products,
+ * stock by supplier on Suppliers. These are the ones with no home elsewhere.
+ */
+export const reports: ReportDefinition[] = (
+  [
+    [
+      'Sales by product',
+      'sales',
+      ['product'],
+      ['revenue', 'units', 'margin', 'marginRatio'],
+      'month',
+      true,
+    ],
+    [
+      'Average check by month',
+      'sales',
+      ['month'],
+      ['revenue', 'sales', 'averageCheck'],
+      'year',
+      false,
+    ],
+    ['How people pay', 'sales', ['paymentMethod'], ['revenue', 'sales'], 'month', false],
+    [
+      'Margin by category',
+      'sales',
+      ['category'],
+      ['revenue', 'cost', 'margin', 'marginRatio'],
+      'quarter',
+      true,
+    ],
+    [
+      'Stock movement by document',
+      'movement',
+      ['kind', 'month'],
+      ['inUnits', 'outUnits', 'netUnits'],
+      'quarter',
+      false,
+    ],
+    [
+      'Who owes what',
+      'money',
+      ['partyType', 'party'],
+      ['owedToUs', 'owedByUs', 'net'],
+      'all',
+      false,
+    ],
+  ] as const
+).map(([name, source, dimensions, measures, defaultPeriod, pinned], index) => ({
+  id: `rep-${index + 1}`,
+  name,
+  source,
+  dimensions: [...dimensions],
+  measures: [...measures],
+  defaultPeriod,
+  pinned,
+  createdBy: index % 2 === 0 ? 'Akhmet Dauletmuratov' : 'Nodira Rasulova',
+  createdAt: new Date(Date.now() - between(20, 200) * 86_400_000).toISOString(),
+  updatedAt: new Date(Date.now() - between(1, 19) * 86_400_000).toISOString(),
+}))

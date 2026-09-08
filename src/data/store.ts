@@ -16,6 +16,7 @@ import type { Employee, EmployeeStatus } from '@/features/employees/model/employ
 import type { Role } from '@/features/roles/model/role'
 import type { Client, ClientStatus } from '@/features/clients/model/client'
 import type { Promotion } from '@/features/promotions/model/promotion'
+import type { ReportDefinition } from '@/features/reports/model/report'
 export type { Client }
 import type { ReorderSettings } from '@/features/schedules/model/reorder'
 import { buildReorderLines, lineCostUzs, needsOrdering } from '@/features/schedules/model/reorder'
@@ -48,6 +49,7 @@ import {
   orders as seedOrders,
   schedules as seedSchedules,
   promotions as seedPromotions,
+  reports as seedReports,
   employees as seedEmployees,
   roles as seedRoles,
   suppliers as seedSuppliers,
@@ -75,6 +77,7 @@ interface CatalogState {
   walletTransactions: WalletTransaction[]
   clients: Client[]
   promotions: Promotion[]
+  reports: ReportDefinition[]
   categories: typeof categories
   brands: typeof brands
   locations: typeof locations
@@ -135,6 +138,11 @@ interface CatalogState {
     id: string,
     trigger: 'schedule' | 'manual',
   ) => { ok: true; orderId: string | null } | { ok: false; error: string }
+
+  createReport: (input: ReportInput) => ReportDefinition
+  updateReport: (id: string, input: ReportInput) => void
+  deleteReport: (id: string) => void
+  setReportPinned: (id: string, pinned: boolean) => void
 
   createPromotion: (input: PromotionInput) => Promotion
   updatePromotion: (id: string, input: PromotionInput) => void
@@ -205,6 +213,8 @@ export interface CreateOrderInput {
   lines: OrderLine[]
   status: Extract<OrderStatus, 'draft' | 'sent'>
 }
+
+export type ReportInput = Omit<ReportDefinition, 'id' | 'createdBy' | 'createdAt' | 'updatedAt'>
 
 export interface PromotionInput {
   name: string
@@ -477,6 +487,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
   repricings: seedRepricings,
   clients,
   promotions: seedPromotions,
+  reports: seedReports,
   categories,
   brands,
   locations,
@@ -1197,6 +1208,37 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       ),
     })
     return { ok: true, orderId: order.id }
+  },
+
+  createReport: (input) => {
+    const now = new Date().toISOString()
+    const report: ReportDefinition = {
+      ...input,
+      id: `rep-${get().reports.length + 1}-${Date.now()}`,
+      createdBy: 'Akhmet Dauletmuratov',
+      createdAt: now,
+      updatedAt: now,
+    }
+    set({ reports: [...get().reports, report] })
+    return report
+  },
+
+  updateReport: (id, input) => {
+    set({
+      reports: get().reports.map((report) =>
+        report.id === id ? { ...report, ...input, updatedAt: new Date().toISOString() } : report,
+      ),
+    })
+  },
+
+  deleteReport: (id) => set({ reports: get().reports.filter((report) => report.id !== id) }),
+
+  setReportPinned: (id, pinned) => {
+    set({
+      reports: get().reports.map((report) =>
+        report.id === id ? { ...report, pinned, updatedAt: new Date().toISOString() } : report,
+      ),
+    })
   },
 
   createPromotion: (input) => {

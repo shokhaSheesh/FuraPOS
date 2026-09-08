@@ -31,6 +31,9 @@ const NewRepricingPage = lazy(() => import('@/features/repricing/pages/NewRepric
 const SuppliersListPage = lazy(() => import('@/features/suppliers/pages/SuppliersListPage'))
 const SupplierDetailPage = lazy(() => import('@/features/suppliers/pages/SupplierDetailPage'))
 const SupplierFormPage = lazy(() => import('@/features/suppliers/pages/SupplierFormPage'))
+const ReportsPage = lazy(() => import('@/features/reports/pages/ReportsPage'))
+const ReportBuilderPage = lazy(() => import('@/features/reports/pages/ReportBuilderPage'))
+const ReportViewPage = lazy(() => import('@/features/reports/pages/ReportViewPage'))
 const PromotionsPage = lazy(() => import('@/features/promotions/pages/PromotionsPage'))
 const PromotionFormPage = lazy(() => import('@/features/promotions/pages/PromotionFormPage'))
 const ClientsPage = lazy(() => import('@/features/clients/pages/ClientsPage'))
@@ -251,15 +254,23 @@ const routes: RouteObject[] = [
       // --- Analytics --------------------------------------------------------
       {
         path: paths.analytics.root,
-        element: <Navigate to={paths.analytics.reportBuilder} replace />,
+        element: <Navigate to={paths.analytics.reports} replace />,
       },
       {
-        path: paths.analytics.reportBuilder,
-        element: todo('Report generator', 'analytics.reportBuilder.view'),
+        path: paths.analytics.reports,
+        element: page(<ReportsPage />, 'analytics.reportBuilder.view'),
       },
       {
-        path: paths.analytics.reportDetail(),
-        element: todo('Report', 'analytics.reportBuilder.view'),
+        path: paths.analytics.newReport,
+        element: page(<ReportBuilderPage />, 'analytics.reportBuilder.create'),
+      },
+      {
+        path: paths.analytics.editReport(),
+        element: page(<ReportBuilderPage />, 'analytics.reportBuilder.edit'),
+      },
+      {
+        path: paths.analytics.reportView(),
+        element: page(<ReportViewPage />, 'analytics.reportBuilder.view'),
       },
       {
         path: paths.analytics.productLogs,

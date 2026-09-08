@@ -88,8 +88,10 @@ export const paths = {
 
   analytics: {
     root: '/analytics',
-    reportBuilder: '/analytics/reports', // OX: /app/statistics/reports
-    reportDetail: (id = ':reportId') => `/analytics/reports/${id}`,
+    reports: '/analytics/reports', // OX: /app/statistics/reports
+    newReport: '/analytics/reports/new',
+    reportView: (id = ':reportId') => `/analytics/reports/${id}`,
+    editReport: (id = ':reportId') => `/analytics/reports/${id}/edit`,
     productLogs: '/analytics/product-logs', // OX: /app/statistics/stock-count-histories
     storefront: '/analytics/storefront', // OX: /app/statistics/utm-reports
     sales: '/analytics/sales', // OX: /app/statistics/sell-reports

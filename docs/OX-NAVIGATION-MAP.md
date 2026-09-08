@@ -815,6 +815,45 @@ recorded for stocktakes and selections:
 So Fura has exactly one saved report and it does not run. That is the strongest argument for
 building a smaller, sturdier version rather than reproducing the wizard.
 
+#### What we built instead
+
+**Four data sources, not seventeen templates.** Read closely, OX's seventeen are seventeen preset
+column-combinations over a handful of datasets — so the datasets are the product and a template is
+a starting point. Ours: **Sales** (every sale line), **Stock** (what is on the shelf now),
+**Stock movement** (receipts, transfers, corrections and sales in one ledger) and **Money owed**
+(clients and suppliers together). Six starter reports ship with them.
+
+**Five of OX's seventeen are deliberately not repeated**, because they duplicate screens we already
+have: seller performance is on Employees, current stock on Products, stock by supplier on Suppliers.
+A report that restates a screen is a second place for the same number to be wrong.
+
+**One builder screen, not five wizard steps.** OX's steps are name → columns → sort and group →
+charts → finish. Sorting is a property of the table, charts are a separate question, and "finish"
+is a button; what is left is one real choice — what to measure and what to split it by. So the
+choice and a **live preview** sit on the same screen, because the only thing anybody wants to know
+while building is what the answer looks like.
+
+**The decisions worth keeping:**
+
+- **Measures and dimensions are named in plain words** — "Measure" (what gets added up) and "Break
+  down by" (what a row stands for). OX's «функциональные» and «информационные колонки» name the
+  implementation, not the idea.
+- **No dimensions is a valid report**, not an empty one: "what did we take last month" is a single
+  grand-total row.
+- **Ratios are never summed.** Margin % and average check are recomputed from each group's own
+  totals — adding two 50% margins to make 100% is the classic way a report screen lies. The totals
+  row recomputes them too.
+- **The totals row says what it is the total of.** The builder previews five rows but totals all of
+  them, so the footer reads "Total across all 166 rows" rather than an ambiguous "Total".
+- **Changing the period un-runs the report.** Showing last month's numbers under this month's label
+  is worse than showing nothing.
+- **Changing the data source clears the columns**, since a column belongs to a source and keeping
+  it would quietly produce a report full of blanks.
+- **Pin to the sidebar** is kept from OX's «Добавить в меню» — a report someone runs every Monday
+  should not need finding first.
+- **Filter-gated**, as OX gates theirs and CLAUDE.md requires. `FilterGate` gained an optional
+  title, because a gate that says "press Apply" beside a button marked "Run" is worse than no gate.
+
 ## 12. Настройки — Settings
 
 Rendered in OX as tabs inside one page; we keep them as sidebar children.

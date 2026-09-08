@@ -134,7 +134,7 @@ export const navigation: NavSection[] = [
     items: [
       {
         label: 'Report generator',
-        to: paths.analytics.reportBuilder,
+        to: paths.analytics.reports,
         permission: 'analytics.reportBuilder.view',
       },
       {

@@ -620,6 +620,9 @@ exactly one list.
   that quietly hands out access nobody chose.
 - **"Who holds it" sits beside the grid**, naming the people a save will affect. A permission change
   is abstract until it has faces attached.
+- **No description field.** Roles carried a one-line description; it was removed at the client's
+  request, from the row, the header and the model. The "Can reach" column says what a role is for
+  in terms of what it actually holds, which cannot go stale the way a sentence can.
 - **The seeded roles are different _shapes_ of access, not different amounts.** The accountant sees
   every figure and touches no stock; the storekeeper moves stock all day and cannot see a price; the
   seller has no `products.cost.view` at all, because someone who knows the cost price can work out

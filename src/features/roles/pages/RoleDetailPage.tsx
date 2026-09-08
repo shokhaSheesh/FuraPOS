@@ -73,7 +73,6 @@ export default function RoleDetailPage() {
 
       <PageHeader
         title={role.name}
-        description={role.description}
         action={
           locked ? null : (
             <div className="flex items-center gap-2">

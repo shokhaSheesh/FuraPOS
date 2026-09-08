@@ -316,17 +316,15 @@ export const clients = clientNames.map((name, index) => ({
  * storekeeper moves stock all day and cannot see a price. A single "level"
  * slider could express neither.
  */
-const roleSpecs: { id: string; name: string; description: string; keys: string[] }[] = [
+const roleSpecs: { id: string; name: string; keys: string[] }[] = [
   {
     id: 'role-1',
     name: 'Owner',
-    description: 'Everything, including billing and who else gets in',
     keys: ['*'],
   },
   {
     id: 'role-2',
     name: 'Manager',
-    description: 'Runs a shop: stock, sales, staff and the numbers behind them',
     keys: [
       ...expand('dashboard', ['view']),
       ...expand('sales.orders', ['view', 'create', 'edit', 'delete', 'export']),
@@ -349,7 +347,6 @@ const roleSpecs: { id: string; name: string; description: string; keys: string[]
   {
     id: 'role-3',
     name: 'Seller',
-    description: 'Takes sales and looks things up. No costs, no stock moves',
     keys: [
       // Deliberately no `products.cost`: a seller who can see the cost price
       // can work out how far they are allowed to discount.
@@ -361,7 +358,6 @@ const roleSpecs: { id: string; name: string; description: string; keys: string[]
   {
     id: 'role-4',
     name: 'Storekeeper',
-    description: 'Moves and counts stock. Sees no prices at all',
     keys: [
       ...expand('products.list', ['view']),
       ...expand('products.transfers', ['view', 'create', 'edit']),
@@ -374,7 +370,6 @@ const roleSpecs: { id: string; name: string; description: string; keys: string[]
   {
     id: 'role-5',
     name: 'Accountant',
-    description: 'Every figure in the business, and nothing that moves stock',
     keys: [
       ...expand('dashboard', ['view']),
       ...expand('sales.orders', ['view', 'export']),
@@ -398,7 +393,6 @@ const roleSpecs: { id: string; name: string; description: string; keys: string[]
 export const roles: Role[] = roleSpecs.map((spec) => ({
   id: spec.id,
   name: spec.name,
-  description: spec.description,
   permissions: spec.keys,
   isSystem: spec.id === 'role-1',
   createdAt: new Date(Date.now() - 400 * 86_400_000).toISOString(),

@@ -176,19 +176,19 @@ describe('protecting the way back in', () => {
   })
 
   it('deletes a role nobody holds', () => {
-    const role = useDataStore.getState().createRole({ name: 'Temp', description: '' })
+    const role = useDataStore.getState().createRole({ name: 'Temp' })
     expect(role.permissions).toEqual([])
     expect(useDataStore.getState().deleteRole(role.id)).toEqual({ ok: true })
   })
 
   it('starts a new role with no access rather than copying one', () => {
-    const role = useDataStore.getState().createRole({ name: 'Fresh', description: '' })
+    const role = useDataStore.getState().createRole({ name: 'Fresh' })
     expect(coverage(role).granted).toBe(0)
     expect(role.isSystem).toBe(false)
   })
 
   it('saves permissions on an ordinary role', () => {
-    const role = useDataStore.getState().createRole({ name: 'Scoped', description: '' })
+    const role = useDataStore.getState().createRole({ name: 'Scoped' })
     useDataStore.getState().setRolePermissions(role.id, ['sales.orders.view'])
     const after = useDataStore.getState().roles.find((r) => r.id === role.id)!
     expect(after.permissions).toEqual(['sales.orders.view'])

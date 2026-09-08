@@ -22,7 +22,6 @@ import {
 export interface Role {
   id: Id
   name: string
-  description: string
   /**
    * Granted `module.section.action` keys. The single entry `*` means
    * everything, and is what makes the Owner role future-proof: a module added
@@ -128,7 +127,6 @@ export function reachableModules(role: Pick<Role, 'permissions'>): string[] {
 
 export const roleDraftSchema = z.object({
   name: z.string().min(2, 'Give the role a name'),
-  description: z.string(),
 })
 
 export type RoleDraft = z.infer<typeof roleDraftSchema>

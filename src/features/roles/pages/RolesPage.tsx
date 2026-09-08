@@ -34,7 +34,7 @@ export default function RolesPage() {
   const actions = useRoleActions()
 
   const [creating, setCreating] = useState(false)
-  const [draft, setDraft] = useState({ name: '', description: '' })
+  const [draft, setDraft] = useState({ name: '' })
   const [showErrors, setShowErrors] = useState(false)
   const [deleting, setDeleting] = useState<RoleRow | null>(null)
 
@@ -42,7 +42,7 @@ export default function RolesPage() {
   const errors = showErrors && !parsed.success ? parsed.error.flatten().fieldErrors : {}
 
   const openNew = () => {
-    setDraft({ name: '', description: '' })
+    setDraft({ name: '' })
     setShowErrors(false)
     setCreating(true)
   }
@@ -73,15 +73,12 @@ export default function RolesPage() {
         header: 'Role',
         enableHiding: false,
         cell: ({ row }) => (
-          <div className="min-w-0">
-            <p className="text-fg flex items-center gap-1.5 font-medium">
-              {row.original.name}
-              {row.original.isSystem ? (
-                <Lock className="text-fg-subtle size-3" aria-label="Built in" />
-              ) : null}
-            </p>
-            <p className="text-fg-subtle text-2xs truncate">{row.original.description}</p>
-          </div>
+          <p className="text-fg flex items-center gap-1.5 font-medium">
+            {row.original.name}
+            {row.original.isSystem ? (
+              <Lock className="text-fg-subtle size-3" aria-label="Built in" />
+            ) : null}
+          </p>
         ),
       },
       {
@@ -209,28 +206,16 @@ export default function RolesPage() {
         description="Name it after the job, not the person. It starts with no access at all — you choose what it can reach next."
         primary={{ label: 'Create role', onClick: create }}
       >
-        <div className="space-y-3">
-          <Field label="Name" required error={errors.name?.[0]}>
-            {(p) => (
-              <Input
-                {...p}
-                placeholder="Senior seller"
-                value={draft.name}
-                onChange={(e) => setDraft((c) => ({ ...c, name: e.target.value }))}
-              />
-            )}
-          </Field>
-          <Field label="Description" hint="What this person does, in a line">
-            {(p) => (
-              <Input
-                {...p}
-                placeholder="Takes sales and approves discounts"
-                value={draft.description}
-                onChange={(e) => setDraft((c) => ({ ...c, description: e.target.value }))}
-              />
-            )}
-          </Field>
-        </div>
+        <Field label="Name" required error={errors.name?.[0]}>
+          {(p) => (
+            <Input
+              {...p}
+              placeholder="Senior seller"
+              value={draft.name}
+              onChange={(e) => setDraft({ name: e.target.value })}
+            />
+          )}
+        </Field>
       </Modal>
 
       <ConfirmDialog

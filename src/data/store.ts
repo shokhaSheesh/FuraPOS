@@ -201,7 +201,6 @@ export interface CreateOrderInput {
 
 export interface RoleInput {
   name: string
-  description: string
 }
 
 export interface EmployeeInput {
@@ -1158,7 +1157,6 @@ export const useDataStore = create<CatalogState>((set, get) => ({
     const role: Role = {
       id: `role-${get().roles.length + 1}-${Date.now()}`,
       name: input.name,
-      description: input.description,
       // A new role starts with nothing. Copying an existing one would be a
       // convenience that quietly hands out access nobody chose.
       permissions: [],

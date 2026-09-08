@@ -31,9 +31,6 @@ const NewRepricingPage = lazy(() => import('@/features/repricing/pages/NewRepric
 const SuppliersListPage = lazy(() => import('@/features/suppliers/pages/SuppliersListPage'))
 const SupplierDetailPage = lazy(() => import('@/features/suppliers/pages/SupplierDetailPage'))
 const SupplierFormPage = lazy(() => import('@/features/suppliers/pages/SupplierFormPage'))
-const PromotionReportPage = lazy(
-  () => import('@/features/promotionReport/pages/PromotionReportPage'),
-)
 const CustomerReportPage = lazy(() => import('@/features/customerReport/pages/CustomerReportPage'))
 const ProductLogsPage = lazy(() => import('@/features/productLogs/pages/ProductLogsPage'))
 const ReportsPage = lazy(() => import('@/features/reports/pages/ReportsPage'))
@@ -284,10 +281,6 @@ const routes: RouteObject[] = [
       {
         path: paths.analytics.customers,
         element: page(<CustomerReportPage />, 'analytics.customers.view'),
-      },
-      {
-        path: paths.analytics.promotions,
-        element: page(<PromotionReportPage />, 'analytics.promotions.view'),
       },
 
       // --- Standalone sections ------------------------------------------------

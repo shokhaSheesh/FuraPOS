@@ -147,11 +147,6 @@ export const navigation: NavSection[] = [
         to: paths.analytics.customers,
         permission: 'analytics.customers.view',
       },
-      {
-        label: 'Promotions report',
-        to: paths.analytics.promotions,
-        permission: 'analytics.promotions.view',
-      },
     ],
   },
   {

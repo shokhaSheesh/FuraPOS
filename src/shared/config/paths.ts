@@ -94,7 +94,6 @@ export const paths = {
     editReport: (id = ':reportId') => `/analytics/reports/${id}/edit`,
     productLogs: '/analytics/product-logs', // OX: /app/statistics/stock-count-histories
     customers: '/analytics/customers', // OX: /app/statistics/customer-reports
-    promotions: '/analytics/promotions', // OX: /app/statistics/promotion-report
   },
 
   uploads: '/uploads', // OX: /app/exports

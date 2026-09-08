@@ -21,6 +21,7 @@ import {
 } from '@/shared/lib/format'
 import { useSale, useUpdateSale } from '../api/sales'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
+import { useDataStore } from '@/data/store'
 import { RecordPaymentModal } from '../components/RecordPaymentModal'
 import { SaleTimeline } from '../components/SaleTimeline'
 import {
@@ -216,6 +217,9 @@ export default function SaleDetailPage() {
 }
 
 function Overview({ sale }: { sale: Sale }) {
+  const promotions = useDataStore((state) => state.promotions)
+  const promotion = promotions.find((entry) => entry.id === sale.promotionId) ?? null
+
   return (
     <div className="grid gap-3 lg:grid-cols-3">
       <Card className="lg:col-span-2">
@@ -324,6 +328,11 @@ function Overview({ sale }: { sale: Sale }) {
           <CardBody className="space-y-2">
             <Row label="Location" value={sale.locationName} />
             <Row label="Seller" value={sale.sellerName} />
+            {promotion ? (
+              // Answers "why is this discounted" without anybody having to
+              // work backwards from a percentage.
+              <Row label="Promotion" value={promotion.name} />
+            ) : null}
             <Row
               label="Source"
               value={SALE_CHANNELS.find((c) => c.value === sale.channel)?.label ?? '—'}

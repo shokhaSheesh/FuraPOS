@@ -33,8 +33,8 @@ const promo = (over: Partial<Promotion> = {}): Promotion =>
 
 const line = (over: Partial<PromotableLine> = {}): PromotableLine => ({
   variationId: 'v1',
+  productId: 'prd-1',
   categoryId: 'cat-1',
-  brandId: 'brand-1',
   quantity: 2,
   unitPrice: 100_000,
   ...over,
@@ -86,10 +86,12 @@ describe('what it covers', () => {
     expect(covers(p, line({ categoryId: 'cat-2' }))).toBe(false)
   })
 
-  it('covers only the named brand', () => {
-    const p = promo({ scope: 'brand', scopeId: 'brand-1' })
-    expect(covers(p, line({ brandId: 'brand-1' }))).toBe(true)
-    expect(covers(p, line({ brandId: null }))).toBe(false)
+  it('covers only the named product, across all its variations', () => {
+    // An offer on a part covers its left and right sides alike.
+    const p = promo({ scope: 'product', scopeId: 'prd-1' })
+    expect(covers(p, line({ productId: 'prd-1', variationId: 'v1' }))).toBe(true)
+    expect(covers(p, line({ productId: 'prd-1', variationId: 'v2' }))).toBe(true)
+    expect(covers(p, line({ productId: 'prd-9' }))).toBe(false)
   })
 })
 
@@ -117,7 +119,7 @@ describe('what it takes off', () => {
   })
 
   it('does nothing when nothing is covered', () => {
-    const p = promo({ scope: 'brand', scopeId: 'brand-9' })
+    const p = promo({ scope: 'product', scopeId: 'prd-9' })
     expect(discountFor(p, [line()], NOW)).toBe(0)
   })
 
@@ -166,8 +168,8 @@ describe('how it reads', () => {
     expect(describePromotion(promo())).toBe('10% off everything')
     expect(
       describePromotion(
-        promo({ kind: 'fixed', value: 50_000, scope: 'brand', scopeName: 'Bosch' }),
+        promo({ kind: 'fixed', value: 50_000, scope: 'product', scopeName: 'Brake pad set X30' }),
       ),
-    ).toBe(`${formatMoney(50_000)} off Bosch`)
+    ).toBe(`${formatMoney(50_000)} off Brake pad set X30`)
   })
 })

@@ -451,18 +451,18 @@ const quantityAt = (rows: { locationId: string; quantity: number }[], locationId
  * there is no backend and no network. Writes replace the relevant array so
  * subscribed components re-render.
  */
-/** A promotion stores the name of what it applies to, so a renamed category
- *  does not silently change what an old promotion claims to have covered. */
+/** A promotion stores the name of what it applies to, so a renamed category or
+ *  product does not silently change what an old promotion claims to cover. */
 function nameOfScope(
   state: {
     categories: readonly { readonly id: string; readonly name: string }[]
-    brands: readonly { readonly id: string; readonly name: string }[]
+    products: readonly { readonly id: string; readonly name: string }[]
   },
   scope: Promotion['scope'],
   scopeId: string | null,
 ): string | null {
   if (scope === 'all' || !scopeId) return null
-  const list = scope === 'category' ? state.categories : state.brands
+  const list = scope === 'category' ? state.categories : state.products
   return list.find((entry) => entry.id === scopeId)?.name ?? null
 }
 

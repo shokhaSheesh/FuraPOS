@@ -15,6 +15,7 @@ import { DatePicker } from '@/shared/ui/DatePicker'
 import { toast } from '@/shared/ui/toast'
 import { paths } from '@/shared/config/paths'
 import { formatMoney } from '@/shared/lib/format'
+import { ProductPicker } from '@/shared/components/ProductPicker'
 import { useDataStore } from '@/data/store'
 import { usePromotion, usePromotionActions } from '../api/promotions'
 import {
@@ -39,7 +40,7 @@ export default function PromotionFormPage() {
   const { promotionId } = useParams()
   const navigate = useNavigate()
   const categories = useDataStore((s) => s.categories)
-  const brands = useDataStore((s) => s.brands)
+  const products = useDataStore((s) => s.products)
   const { data: existing } = usePromotion(promotionId)
   const actions = usePromotionActions()
   const editing = Boolean(promotionId)
@@ -88,15 +89,14 @@ export default function PromotionFormPage() {
     )
   }
 
-  const scopeOptions =
-    values.scope === 'category'
-      ? categories.map((c) => ({ value: c.id, label: c.name }))
-      : brands.map((b) => ({ value: b.id, label: b.name }))
+  const chosenProduct = products.find((product) => product.id === values.scopeId)
 
   const scopeName =
     values.scope === 'all'
       ? 'everything'
-      : (scopeOptions.find((o) => o.value === values.scopeId)?.label ?? 'a selection')
+      : values.scope === 'category'
+        ? (categories.find((c) => c.id === values.scopeId)?.name ?? 'a category')
+        : (chosenProduct?.name ?? 'a product')
 
   const exampleDiscount =
     values.kind === 'percentage'
@@ -256,12 +256,8 @@ export default function PromotionFormPage() {
                 />
               )}
             </Field>
-            {values.scope !== 'all' ? (
-              <Field
-                label={values.scope === 'category' ? 'Category' : 'Brand'}
-                required
-                error={form.formState.errors.scopeId?.message}
-              >
+            {values.scope === 'category' ? (
+              <Field label="Category" required error={form.formState.errors.scopeId?.message}>
                 {(p) => (
                   <Controller
                     control={form.control}
@@ -270,14 +266,49 @@ export default function PromotionFormPage() {
                       <Select
                         {...p}
                         className="w-full"
-                        placeholder="Pick one"
+                        placeholder="Pick a category"
                         value={field.value ?? undefined}
                         onChange={field.onChange}
-                        options={scopeOptions}
+                        options={categories.map((c) => ({ value: c.id, label: c.name }))}
                       />
                     )}
                   />
                 )}
+              </Field>
+            ) : null}
+
+            {values.scope === 'product' ? (
+              <Field
+                label="Product"
+                required
+                hint="Every variation of it is covered — both sides of a part, every colour"
+                error={form.formState.errors.scopeId?.message}
+              >
+                {() =>
+                  chosenProduct ? (
+                    <div className="border-border rounded-control flex items-center justify-between gap-2 border px-3 py-2">
+                      <span className="text-fg truncate text-sm">{chosenProduct.name}</span>
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        className="h-auto shrink-0 px-0"
+                        onClick={() => form.setValue('scopeId', null)}
+                      >
+                        Change
+                      </Button>
+                    </div>
+                  ) : (
+                    <ProductPicker
+                      placeholder="Search a product…"
+                      // The picker deals in variations; a promotion covers the
+                      // whole product, so only the parent id is kept.
+                      onPick={(variation) =>
+                        form.setValue('scopeId', variation.productId, { shouldValidate: true })
+                      }
+                    />
+                  )
+                }
               </Field>
             ) : null}
           </CardBody>

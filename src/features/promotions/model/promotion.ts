@@ -24,13 +24,19 @@ export const PROMOTION_KINDS: { value: PromotionKind; label: string; hint: strin
   { value: 'fixed', label: 'Fixed amount off', hint: 'e.g. 50 000 UZS off the sale' },
 ]
 
-/** What the promotion applies to. */
-export type PromotionScope = 'all' | 'category' | 'brand'
+/**
+ * What the promotion applies to.
+ *
+ * A product, not a variation: an offer on "Brake pad set X30" means the whole
+ * part, and nobody sets up a promotion that covers the left side and not the
+ * right.
+ */
+export type PromotionScope = 'all' | 'category' | 'product'
 
 export const PROMOTION_SCOPES: { value: PromotionScope; label: string }[] = [
   { value: 'all', label: 'Everything' },
   { value: 'category', label: 'One category' },
-  { value: 'brand', label: 'One brand' },
+  { value: 'product', label: 'One product' },
 ]
 
 export type PromotionStatus = 'scheduled' | 'running' | 'finished' | 'paused'
@@ -119,8 +125,8 @@ export function daysRemaining(
 
 export interface PromotableLine {
   variationId: Id
+  productId: Id
   categoryId: Id | null
-  brandId: Id | null
   quantity: number
   unitPrice: number
 }
@@ -131,7 +137,7 @@ export const lineGross = (line: PromotableLine) => line.quantity * line.unitPric
 export function covers(promotion: Promotion, line: PromotableLine): boolean {
   if (promotion.scope === 'all') return true
   if (promotion.scope === 'category') return line.categoryId === promotion.scopeId
-  return line.brandId === promotion.scopeId
+  return line.productId === promotion.scopeId
 }
 
 /**
@@ -197,7 +203,7 @@ export const promotionDraftSchema = z
     name: z.string().min(2, 'Name it after the offer'),
     kind: z.enum(['percentage', 'fixed']),
     value: z.number().positive('A discount of nothing is not a promotion'),
-    scope: z.enum(['all', 'category', 'brand']),
+    scope: z.enum(['all', 'category', 'product']),
     scopeId: z.string().nullable(),
     startsAt: z.string(),
     endsAt: z.string().nullable(),

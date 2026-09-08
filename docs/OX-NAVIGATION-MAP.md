@@ -725,6 +725,11 @@ applies, and a label on the sales it produced.
   payment to the customer.
 - **A percentage applies only to the lines it covers**, not to the whole basket — otherwise "15% off
   brakes" quietly discounts the oil filters too.
+- **Scope is everything / a category / a product.** Brand was the third option first and was
+  replaced at the client's request. A promotion is scoped to a **product, not a variation**: an
+  offer on "Brake pad set X30" means the whole part, and nobody sets one up that covers the left
+  side and not the right. The field is the search picker rather than a dropdown, because a
+  catalogue is too long to scroll — it picks a variation and keeps only its parent id.
 - **The form works the rule through on an example sale.** Kind, value and scope are three abstract
   fields that cannot tell anyone whether they just wrote "15% off brakes" or "15 000 off
   everything", and the difference is a lot of money.

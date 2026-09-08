@@ -72,9 +72,9 @@ export default function NewSalePage() {
   )
 
   /*
-    Promotions are matched on category and brand, which a sale line does not
-    carry — it snapshots the *names*, deliberately, so history survives a
-    rename. So the ids come from the catalogue at match time.
+    Promotions are matched on category and product, which a sale line carries
+    only as *names* — deliberately, so history survives a rename. So the ids
+    come from the catalogue at match time.
   */
   const variations = useDataStore((s) => s.variations)
   const promotableLines = useMemo(
@@ -83,8 +83,8 @@ export default function NewSalePage() {
         const variation = variations.find((v) => v.id === line.variationId)
         return {
           variationId: line.variationId,
+          productId: line.productId,
           categoryId: variation?.categoryId ?? null,
-          brandId: variation?.brandId ?? null,
           quantity: line.quantity,
           unitPrice: line.unitPrice,
         }

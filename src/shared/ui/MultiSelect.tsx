@@ -1,10 +1,21 @@
 import { useMemo, useRef, useState } from 'react'
-import { Check, ChevronDown, Search, X } from 'lucide-react'
+import { Check, ChevronDown, Package, Search, X } from 'lucide-react'
 import { Popover } from './Popover'
 import { Checkbox } from './Checkbox'
 import { Button } from './Button'
 import { cn } from '@/shared/lib/cn'
 import type { SelectOption } from '@/shared/types'
+
+export interface MultiSelectOption<T extends string> extends SelectOption<T> {
+  /**
+   * A second line under the label — an SKU, a code, whatever tells two
+   * similarly named things apart. **Searched as well as the label**, so typing
+   * a part number finds the row.
+   */
+  meta?: string
+  /** Shown as a thumbnail. Null renders the same neutral tile as the catalogue. */
+  imageUrl?: string | null
+}
 
 /**
  * A dropdown that picks several things, with a search box inside it.
@@ -30,7 +41,7 @@ export function MultiSelect<T extends string>({
 }: {
   value: T[]
   onChange: (value: T[]) => void
-  options: SelectOption<T>[]
+  options: MultiSelectOption<T>[]
   placeholder?: string
   searchPlaceholder?: string
   emptyLabel?: string
@@ -47,7 +58,11 @@ export function MultiSelect<T extends string>({
   const visible = useMemo(() => {
     const needle = term.trim().toLowerCase()
     const matching = needle
-      ? options.filter((option) => option.label.toLowerCase().includes(needle))
+      ? options.filter(
+          (option) =>
+            option.label.toLowerCase().includes(needle) ||
+            option.meta?.toLowerCase().includes(needle),
+        )
       : options
     // Chosen first, so the selection is always visible without scrolling.
     return [...matching].sort((a, b) => Number(chosen.has(b.value)) - Number(chosen.has(a.value)))
@@ -132,7 +147,13 @@ export function MultiSelect<T extends string>({
                   checked={on}
                   onCheckedChange={() => toggle(option.value)}
                 />
-                <span className="text-fg min-w-0 flex-1 truncate">{option.label}</span>
+                {'imageUrl' in option ? <Thumb src={option.imageUrl} /> : null}
+                <span className="min-w-0 flex-1">
+                  <span className="text-fg block truncate">{option.label}</span>
+                  {option.meta ? (
+                    <span className="text-fg-subtle text-2xs block truncate">{option.meta}</span>
+                  ) : null}
+                </span>
                 {on ? <Check className="text-primary size-3.5 shrink-0" /> : null}
               </label>
             )
@@ -155,5 +176,35 @@ export function MultiSelect<T extends string>({
         </div>
       ) : null}
     </Popover>
+  )
+}
+
+/**
+ * The same neutral tile the catalogue uses. Inlined rather than importing
+ * `ProductThumb`, so this control keeps to `shared/ui` and does not depend on
+ * `shared/components`.
+ */
+function Thumb({ src }: { src: string | null | undefined }) {
+  const base = 'size-8 rounded-control border-border shrink-0 overflow-hidden border'
+  if (!src) {
+    return (
+      <span
+        aria-hidden
+        className={cn(base, 'bg-surface-inset text-fg-subtle flex items-center justify-center')}
+      >
+        <Package className="size-3.5" />
+      </span>
+    )
+  }
+  return (
+    <img
+      src={src}
+      alt=""
+      loading="lazy"
+      className={cn(base, 'bg-surface-inset object-cover')}
+      onError={(event) => {
+        event.currentTarget.style.display = 'none'
+      }}
+    />
   )
 }

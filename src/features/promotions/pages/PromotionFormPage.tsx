@@ -77,11 +77,31 @@ export default function PromotionFormPage() {
 
   const values = form.watch()
 
+  /*
+    Products are named alike — three "Timing belt" rows tell nobody anything —
+    so each row carries the picture, the SKU and the OEM number, and the search
+    matches those too. A product with several variations has several SKUs, so
+    the row says how many rather than picking one arbitrarily.
+  */
   const scopeOptions = useMemo(
     () =>
       values.scope === 'category'
         ? categories.map((category) => ({ value: category.id, label: category.name }))
-        : products.map((product) => ({ value: product.id, label: product.name })),
+        : products.map((product) => {
+            const skus = product.variations.map((variation) => variation.sku)
+            const identity =
+              skus.length === 1 ? skus[0] : `${skus.length} variations · ${skus[0] ?? ''}…`
+            return {
+              value: product.id,
+              label: product.name,
+              imageUrl:
+                product.variations.find((variation) => variation.imageUrl)?.imageUrl ?? null,
+              // `description` is where this product keeps its OEM number.
+              meta: [identity, product.description && `OEM ${product.description}`]
+                .filter(Boolean)
+                .join(' · '),
+            }
+          }),
     [values.scope, categories, products],
   )
 
@@ -297,7 +317,7 @@ export default function PromotionFormPage() {
                         searchPlaceholder={
                           values.scope === 'category'
                             ? 'Search categories…'
-                            : 'Search products by name…'
+                            : 'Search by name, SKU or OEM…'
                         }
                       />
                     )}

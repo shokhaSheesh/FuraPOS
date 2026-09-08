@@ -738,6 +738,11 @@ applies, and a label on the sales it produced.
     not a filter on the selection** — picks survive a changed search term, which is the classic way
     this control goes wrong. Chosen options pin to the top of the panel, so "what have I chosen"
     never needs a scroll.
+  - **Each product row carries its picture, SKU and OEM number, and the search matches all three.**
+    Parts are named alike — three "Timing belt" rows tell nobody anything — so a bare label list is
+    unusable at this catalogue's size. A product with several variations says how many rather than
+    picking one SKU arbitrarily. (`product.description` is where this codebase keeps the OEM
+    number, as the reference tenant does.)
   - The rule reads as **names while there are one or two, then a count** — "4 products" beats four
     truncated labels.
 - **The form works the rule through on an example sale.** Kind, value and scope are three abstract

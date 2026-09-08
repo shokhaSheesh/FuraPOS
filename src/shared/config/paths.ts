@@ -67,7 +67,9 @@ export const paths = {
   personnel: {
     root: '/personnel',
     employees: '/personnel/employees', // OX: /app/personal-management/users
+    newEmployee: '/personnel/employees/new',
     employeeDetail: (id = ':employeeId') => `/personnel/employees/${id}`,
+    editEmployee: (id = ':employeeId') => `/personnel/employees/${id}/edit`,
     motivation: '/personnel/motivation', // OX: /app/personal-management/motivations
     planning: '/personnel/planning', // OX: /app/personal-management/list/target
     roles: '/personnel/roles', // OX: /app/personal-management/roles

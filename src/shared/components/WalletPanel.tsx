@@ -43,6 +43,7 @@ export function WalletPanel({
   labels,
   action,
   showCashback = true,
+  balanceIsAlarming = true,
 }: {
   wallet: Wallet
   transactions: WalletTransaction[]
@@ -52,6 +53,12 @@ export function WalletPanel({
   action?: React.ReactNode
   /** Suppliers have no cashback; clients do. */
   showCashback?: boolean
+  /**
+   * Whether a positive balance is a problem. True for a supplier, where it is
+   * money owed and often overdue; false for an employee, where it is this
+   * month's salary and entirely routine. The component cannot know which.
+   */
+  balanceIsAlarming?: boolean
 }) {
   return (
     <Card>
@@ -79,7 +86,7 @@ export function WalletPanel({
           <Figure
             label={labels.balance}
             value={formatMoney(Math.abs(wallet.balance))}
-            tone={wallet.balance > 0 ? 'danger' : undefined}
+            tone={balanceIsAlarming && wallet.balance > 0 ? 'danger' : undefined}
           />
           <Figure
             label={labels.debt}

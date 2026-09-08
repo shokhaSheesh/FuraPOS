@@ -526,6 +526,51 @@ built yet.
 | Планирование        | Planning          | `/app/personal-management/list/target` |
 | Доступы и роли      | Access & roles    | `/app/personal-management/roles`       |
 
+### Employees — «Сотрудники»
+
+Built **without an OX reference screenshot**, like Transfers, Corrections, Goods receipt,
+Stocktaking, Repricing, Orders and Reorder schedules. Flagged so a later screenshot reads as new
+information rather than a contradiction.
+
+**The framing.** A staff list that is names and phone numbers is an address book, and nobody opens
+an address book to make a decision. An employee record is two things at once and the screen serves
+both: **a key** (who signs in, as what role, at which location) and **a performance record** (every
+sale already carries who made it). So the columns are the ones that change something — what they
+sell, whether they are still signing in, what the company owes them.
+
+**The decisions worth keeping:**
+
+- **The signed-in user _is_ an employee record.** `SessionProvider` now holds `emp-1` rather than a
+  parallel `usr-1`. Two identities for one person is how a staff list and an access list drift
+  apart.
+- **Sales gained `sellerId`,** with `sellerName` kept beside it. Performance is counted on the id;
+  the name is snapshotted so archiving someone does not blank the history of every sale they made.
+- **Ranked by what they sold this month, not alphabetically** — and on _the same figure the table
+  shows_. An early version sorted on all-time revenue while displaying this month, so the summary
+  tile named a leader who sat fifth. A list sorted on a number that is not on screen reads as
+  broken.
+- **"Last active" is a real column.** It finds the account nobody remembered to close: an active
+  "seller" who has not signed in for a month is either gone or is a login somebody else is using.
+  Suspended and archived people are excluded — they are _meant_ to be inactive, and flagging them
+  is noise, not a finding.
+- **Three statuses, and none of them is deletion.** Active, Suspended (leave, or something being
+  looked into — reversible, history untouched), Archived (left). Deleting a person would take their
+  sales with them.
+- **Margin per seller, labelled as an estimate.** A sale line records what it sold for but not what
+  it cost, so cost comes from the product's cost _today_. It is right enough to compare two sellers
+  over the same period and wrong for anything an accountant would sign — which is what the caption
+  says. It is the number that separates someone who sells a lot from someone who discounts a lot.
+- **The wallet is the shared component**, third owner type after clients and suppliers, exactly as
+  CLAUDE.md intends. Building it here surfaced two bugs in shared code, both fixed at source: the
+  panel hardcoded "a positive balance is alarming" (a supplier's meaning — salary owed to staff is
+  routine), and `Tabs` rendered a bare-number badge as `Movements1`, because a text label and a
+  text badge merge into one anonymous flex item and `gap` does not apply.
+
+**Open question for the client, alongside the supplier-debt one:** payroll is seeded, not generated.
+Nothing in the app pays anyone or records an advance. Before wiring it we need to know how Fura
+actually pays — monthly in arrears, advances against the month, and whether Seller motivation's
+bonus lands in the same wallet.
+
 ## 6. Финансы — Finance
 
 In OX this is a single sidebar entry that opens a **second** left-hand menu inside the module. We

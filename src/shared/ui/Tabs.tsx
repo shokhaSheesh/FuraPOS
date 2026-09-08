@@ -44,7 +44,12 @@ export function Tabs({
             )}
           >
             {item.label}
-            {item.badge}
+            {item.badge !== undefined && item.badge !== null ? (
+              // Wrapped so it is its own flex item: a bare number would merge
+              // with the label into one anonymous box and `gap-2` would not
+              // apply, rendering "Movements1".
+              <span className="text-fg-subtle text-2xs tabular-nums">{item.badge}</span>
+            ) : null}
           </RadixTabs.Trigger>
         ))}
       </RadixTabs.List>

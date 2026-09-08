@@ -16,6 +16,7 @@ import type { Stocktake } from '@/features/stocktaking/model/stocktake'
 import type { Repricing, RuleKind } from '@/features/repricing/model/repricing'
 import type { Supplier } from '@/features/suppliers/model/supplier'
 import type { ReorderSchedule } from '@/features/schedules/model/schedule'
+import type { Employee } from '@/features/employees/model/employee'
 import type { PurchaseOrder } from '@/features/orders/model/order'
 import type { WalletTransaction } from '@/shared/types/wallet'
 
@@ -301,6 +302,68 @@ export const clients = clientNames.map((name, index) => ({
   rather than records — say "nothing needs ordering" about a catalogue that
   plainly does. Seed data has to exercise the features it is seeding for.
 */
+/**
+ * Roles. Access & roles will own the permission sets; Employees only needs the
+ * names, so they live here for both to share rather than being invented twice.
+ */
+export const roles = [
+  { id: 'role-1', name: 'Owner', description: 'Everything, including billing' },
+  { id: 'role-2', name: 'Manager', description: 'Runs a shop: stock, sales, staff' },
+  { id: 'role-3', name: 'Seller', description: 'Takes sales, sees stock and clients' },
+  { id: 'role-4', name: 'Storekeeper', description: 'Receipts, transfers, stocktakes' },
+  { id: 'role-5', name: 'Accountant', description: 'Finance, read-only elsewhere' },
+] as const
+
+/**
+ * Staff.
+ *
+ * The first three are the names the seeded sales were already attributed to, so
+ * their performance figures are real rather than decorative. The rest give the
+ * list something to be: a suspended account, someone who has left, and two
+ * whose logins have gone quiet — which is the case the "Last active" column
+ * exists to catch.
+ */
+export const employees: Employee[] = (
+  [
+    ['Akhmet Dauletmuratov', 'role-1', 'loc-1', 'active', 0, 14_000_000],
+    ['Mansurbek Akchaev', 'role-3', 'loc-2', 'active', 1, 5_500_000],
+    ['Dilshod Yusupov', 'role-3', 'loc-3', 'active', 2, 5_500_000],
+    ['Nodira Rasulova', 'role-2', 'loc-2', 'active', 3, 9_000_000],
+    ['Sardor Tashmatov', 'role-4', 'loc-1', 'active', 41, 6_200_000],
+    ['Gulnora Kamilova', 'role-5', null, 'active', 63, 8_400_000],
+    ['Jasur Ibragimov', 'role-3', 'loc-3', 'suspended', 22, 5_500_000],
+    ['Aziza Yuldasheva', 'role-3', 'loc-2', 'active', 2, 5_500_000],
+    ['Bekzod Normatov', 'role-4', 'loc-1', 'archived', 210, null],
+  ] as const
+).map(([fullName, roleId, locationId, status, quietDays, salary], index) => {
+  const location = locations.find((l) => l.id === locationId) ?? null
+  const hiredAt = new Date(Date.now() - between(120, 1800) * 86_400_000).toISOString()
+  return {
+    id: `emp-${index + 1}`,
+    fullName,
+    phone: `+998 9${between(0, 9)} ${between(100, 999)}-${between(10, 99)}-${between(10, 99)}`,
+    email: `${fullName.split(' ')[0]!.toLowerCase()}@fura.uz`,
+    avatarUrl: null,
+    roleId,
+    roleName: roles.find((r) => r.id === roleId)!.name,
+    locationId: location?.id ?? null,
+    locationName: location?.name ?? null,
+    status,
+    hiredAt,
+    lastActiveAt:
+      status === 'archived'
+        ? new Date(Date.now() - quietDays * 86_400_000).toISOString()
+        : new Date(Date.now() - quietDays * 86_400_000 - between(0, 10) * 3_600_000).toISOString(),
+    salary,
+    comment: null,
+    createdAt: hiredAt,
+    updatedAt: new Date().toISOString(),
+  } satisfies Employee
+})
+
+/** Whoever can actually take a sale, for attributing the seeded ones. */
+const sellers = employees.filter((e) => e.status !== 'archived' && e.roleId !== 'role-5')
+
 export const sales: Sale[] = Array.from({ length: 420 }, (_, index) => {
   const location = pick(locations)
   const client = random() > 0.35 ? pick(clients) : null
@@ -360,6 +423,8 @@ export const sales: Sale[] = Array.from({ length: 420 }, (_, index) => {
     Date.now() - Math.round(between(0, 120) * (random() > 0.5 ? 1 : 0.4)) * 86_400_000,
   )
 
+  const seller = pick(sellers)
+
   return {
     id: `sale-${index + 1}`,
     number: `S-${String(index + 1).padStart(5, '0')}`,
@@ -368,7 +433,8 @@ export const sales: Sale[] = Array.from({ length: 420 }, (_, index) => {
     clientName: client?.name ?? null,
     locationId: location.id,
     locationName: location.name,
-    sellerName: pick(['Akhmet Dauletmuratov', 'Mansurbek Akchaev', 'Dilshod Yusupov']),
+    sellerId: seller.id,
+    sellerName: seller.fullName,
     paymentMethod: pick(['cash', 'card', 'transfer', 'credit'] as const),
     channel: pick(['desk', 'desk', 'phone', 'online'] as const),
     comment: null,
@@ -823,7 +889,7 @@ export const repricings: Repricing[] = Array.from({ length: 8 }, (_, index) => {
  * Only suppliers have any yet. A charge is what an invoice added to the debt; a
  * payment is money going the other way, which is why it is negative.
  */
-export const walletTransactions: WalletTransaction[] = suppliers
+const supplierWalletTransactions: WalletTransaction[] = suppliers
   .filter((supplier) => supplier.lastPaymentAt !== null)
   .flatMap((supplier, index) => {
     const paidAt = new Date(supplier.lastPaymentAt!)
@@ -843,7 +909,7 @@ export const walletTransactions: WalletTransaction[] = suppliers
         referenceType: 'goods_receipt',
         referenceId: null,
         createdAt: chargedAt.toISOString(),
-        createdBy: { id: 'usr-1', name: 'Akhmet Dauletmuratov' },
+        createdBy: { id: 'emp-1', name: 'Akhmet Dauletmuratov' },
       },
       {
         id: `wtx-${index + 1}-2`,
@@ -856,10 +922,58 @@ export const walletTransactions: WalletTransaction[] = suppliers
         referenceType: null,
         referenceId: null,
         createdAt: paidAt.toISOString(),
-        createdBy: { id: 'usr-1', name: 'Akhmet Dauletmuratov' },
+        createdBy: { id: 'emp-1', name: 'Akhmet Dauletmuratov' },
       },
     ]
   })
+
+/**
+ * Payroll. A month's salary paid, and for some people a mid-month advance still
+ * outstanding — which is the balance the wallet exists to show. Nothing in the
+ * app generates these yet; how Fura actually pays is a client question.
+ */
+const employeeWalletTransactions: WalletTransaction[] = employees
+  .filter((employee) => employee.status !== 'archived' && employee.salary !== null)
+  .flatMap((employee, index) => {
+    const salary = employee.salary!
+    const advance = index % 3 === 0 ? Math.round(salary * 0.3) : 0
+    const rows: WalletTransaction[] = [
+      {
+        id: `wtx-emp-${index + 1}-1`,
+        ownerId: employee.id,
+        ownerType: 'employee' as const,
+        kind: 'topup' as const,
+        amount: salary,
+        balanceAfter: salary,
+        comment: 'Salary — previous month',
+        referenceType: 'payroll',
+        referenceId: null,
+        createdAt: new Date(Date.now() - between(32, 40) * 86_400_000).toISOString(),
+        createdBy: { id: 'emp-6', name: 'Gulnora Kamilova' },
+      },
+    ]
+    if (advance > 0) {
+      rows.push({
+        id: `wtx-emp-${index + 1}-2`,
+        ownerId: employee.id,
+        ownerType: 'employee' as const,
+        kind: 'withdrawal' as const,
+        amount: -advance,
+        balanceAfter: salary - advance,
+        comment: 'Advance against this month',
+        referenceType: 'payroll',
+        referenceId: null,
+        createdAt: new Date(Date.now() - between(3, 14) * 86_400_000).toISOString(),
+        createdBy: { id: 'emp-6', name: 'Gulnora Kamilova' },
+      })
+    }
+    return rows
+  })
+
+export const walletTransactions: WalletTransaction[] = [
+  ...supplierWalletTransactions,
+  ...employeeWalletTransactions,
+]
 
 /**
  * Purchase orders. Their receipts are not linked back, because the receipts

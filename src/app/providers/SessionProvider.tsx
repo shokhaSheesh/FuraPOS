@@ -22,7 +22,9 @@ interface SessionContextValue {
 const SessionContext = createContext<SessionContextValue | null>(null)
 
 const CURRENT_USER: CurrentUser = {
-  id: 'usr-1',
+  // The signed-in user *is* an employee record — that is the point of the
+  // Employees screen, so the id is theirs rather than a parallel one.
+  id: 'emp-1',
   name: 'Akhmet Dauletmuratov',
   email: 'akhmet@fura.uz',
   avatarUrl: null,

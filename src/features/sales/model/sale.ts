@@ -79,6 +79,12 @@ export interface Sale {
   clientName: string | null
   locationId: Id
   locationName: string
+  /**
+   * Who made the sale. The id is what performance is counted on; the name is
+   * snapshotted beside it so an employee who leaves and is archived does not
+   * blank out the history of every sale they ever made.
+   */
+  sellerId: Id | null
   sellerName: string
   paymentMethod: PaymentMethod
   channel: SaleChannel

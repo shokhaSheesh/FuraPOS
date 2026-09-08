@@ -12,6 +12,7 @@ import type { Supplier } from '@/features/suppliers/model/supplier'
 import type { OrderLine, OrderStatus, PurchaseOrder } from '@/features/orders/model/order'
 import { outstandingUnits } from '@/features/orders/model/order'
 import type { ReorderSchedule } from '@/features/schedules/model/schedule'
+import type { Employee, EmployeeStatus } from '@/features/employees/model/employee'
 import type { ReorderSettings } from '@/features/schedules/model/reorder'
 import { buildReorderLines, lineCostUzs, needsOrdering } from '@/features/schedules/model/reorder'
 import type { WalletTransaction } from '@/shared/types/wallet'
@@ -42,6 +43,8 @@ import {
   stocktakes as seedStocktakes,
   orders as seedOrders,
   schedules as seedSchedules,
+  employees as seedEmployees,
+  roles as seedRoles,
   suppliers as seedSuppliers,
   walletTransactions as seedWalletTransactions,
   transfers as seedTransfers,
@@ -68,6 +71,8 @@ interface CatalogState {
   suppliers: Supplier[]
   orders: PurchaseOrder[]
   schedules: ReorderSchedule[]
+  employees: Employee[]
+  roles: { id: string; name: string; description: string }[]
   /** One ledger for every wallet owner, filtered by owner on read. */
   walletTransactions: WalletTransaction[]
   clients: Client[]
@@ -132,6 +137,10 @@ interface CatalogState {
     trigger: 'schedule' | 'manual',
   ) => { ok: true; orderId: string | null } | { ok: false; error: string }
 
+  createEmployee: (input: EmployeeInput) => Employee
+  updateEmployee: (id: string, input: EmployeeInput) => void
+  setEmployeeStatus: (id: string, status: EmployeeStatus) => void
+
   createSupplier: (input: SupplierInput) => Supplier
   updateSupplier: (id: string, input: SupplierInput) => Supplier | undefined
   /** Records money paid to a supplier: reduces the debt, writes the movement. */
@@ -182,6 +191,18 @@ export interface CreateOrderInput {
   comment: string
   lines: OrderLine[]
   status: Extract<OrderStatus, 'draft' | 'sent'>
+}
+
+export interface EmployeeInput {
+  fullName: string
+  phone: string | null
+  email: string | null
+  roleId: string
+  locationId: string | null
+  status: EmployeeStatus
+  hiredAt: string
+  salary: number | null
+  comment: string | null
 }
 
 export interface ScheduleInput {
@@ -405,6 +426,8 @@ export const useDataStore = create<CatalogState>((set, get) => ({
   suppliers: seedSuppliers,
   orders: seedOrders,
   schedules: seedSchedules,
+  employees: seedEmployees,
+  roles: seedRoles.map((role) => ({ ...role })),
   walletTransactions: seedWalletTransactions,
 
   createSale: (input) => {
@@ -423,6 +446,8 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       clientName: client?.name ?? null,
       locationId: input.locationId,
       locationName: get().locations.find((l) => l.id === input.locationId)?.name ?? '—',
+      // No auth in this build: every sale is made by the signed-in user.
+      sellerId: 'emp-1',
       sellerName: 'Akhmet Dauletmuratov',
       paymentMethod: input.paymentMethod,
       comment: input.comment || null,
@@ -1115,6 +1140,50 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       ),
     })
     return { ok: true, orderId: order.id }
+  },
+
+  createEmployee: (input) => {
+    const now = new Date().toISOString()
+    const employee: Employee = {
+      ...input,
+      id: `emp-${get().employees.length + 1}-${Date.now()}`,
+      avatarUrl: null,
+      roleName: get().roles.find((r) => r.id === input.roleId)?.name ?? '—',
+      locationName: get().locations.find((l) => l.id === input.locationId)?.name ?? null,
+      // Never signed in yet, which is exactly what a brand-new account should
+      // say rather than borrowing today's date and looking active.
+      lastActiveAt: null,
+      createdAt: now,
+      updatedAt: now,
+    }
+    set({ employees: [...get().employees, employee] })
+    return employee
+  },
+
+  updateEmployee: (id, input) => {
+    set({
+      employees: get().employees.map((employee) =>
+        employee.id === id
+          ? {
+              ...employee,
+              ...input,
+              roleName: get().roles.find((r) => r.id === input.roleId)?.name ?? employee.roleName,
+              locationName: get().locations.find((l) => l.id === input.locationId)?.name ?? null,
+              updatedAt: new Date().toISOString(),
+            }
+          : employee,
+      ),
+    })
+  },
+
+  setEmployeeStatus: (id, status) => {
+    set({
+      employees: get().employees.map((employee) =>
+        employee.id === id
+          ? { ...employee, status, updatedAt: new Date().toISOString() }
+          : employee,
+      ),
+    })
   },
 
   createSupplier: (input) => {

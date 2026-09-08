@@ -31,6 +31,9 @@ const NewRepricingPage = lazy(() => import('@/features/repricing/pages/NewRepric
 const SuppliersListPage = lazy(() => import('@/features/suppliers/pages/SuppliersListPage'))
 const SupplierDetailPage = lazy(() => import('@/features/suppliers/pages/SupplierDetailPage'))
 const SupplierFormPage = lazy(() => import('@/features/suppliers/pages/SupplierFormPage'))
+const EmployeesPage = lazy(() => import('@/features/employees/pages/EmployeesPage'))
+const EmployeeDetailPage = lazy(() => import('@/features/employees/pages/EmployeeDetailPage'))
+const EmployeeFormPage = lazy(() => import('@/features/employees/pages/EmployeeFormPage'))
 const SchedulesPage = lazy(() => import('@/features/schedules/pages/SchedulesPage'))
 const OrdersListPage = lazy(() => import('@/features/orders/pages/OrdersListPage'))
 const OrderDetailPage = lazy(() => import('@/features/orders/pages/OrderDetailPage'))
@@ -190,11 +193,19 @@ const routes: RouteObject[] = [
       { path: paths.personnel.root, element: <Navigate to={paths.personnel.employees} replace /> },
       {
         path: paths.personnel.employees,
-        element: todo('Employees', 'personnel.employees.view'),
+        element: page(<EmployeesPage />, 'personnel.employees.view'),
+      },
+      {
+        path: paths.personnel.newEmployee,
+        element: page(<EmployeeFormPage />, 'personnel.employees.create'),
+      },
+      {
+        path: paths.personnel.editEmployee(),
+        element: page(<EmployeeFormPage />, 'personnel.employees.edit'),
       },
       {
         path: paths.personnel.employeeDetail(),
-        element: todo('Employee', 'personnel.employees.view'),
+        element: page(<EmployeeDetailPage />, 'personnel.employees.view'),
       },
       {
         path: paths.personnel.motivation,

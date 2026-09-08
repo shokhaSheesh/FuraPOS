@@ -16,13 +16,17 @@ import { paths } from '@/shared/config/paths'
 import { formatNumber } from '@/shared/lib/format'
 import { usePreview, useReport, useReportActions } from '../api/reports'
 import { ResultTable } from '../components/ResultTable'
+import { ReportChartView } from '../components/ReportChartView'
 import {
+  REPORT_CHARTS,
   REPORT_PERIODS,
   REPORT_SOURCES,
   SOURCE_SCHEMAS,
+  canChart,
   describeReport,
   isDerived,
   reportDraftSchema,
+  type ReportChart,
   type ReportPeriod,
   type ReportSource,
 } from '../model/report'
@@ -36,6 +40,8 @@ interface State {
   dimensions: string[]
   measures: string[]
   defaultPeriod: ReportPeriod
+  chart: ReportChart
+  chartMeasure: string | null
   pinned: boolean
 }
 
@@ -62,6 +68,8 @@ export default function ReportBuilderPage() {
     dimensions: ['product'],
     measures: ['revenue', 'units'],
     defaultPeriod: 'month',
+    chart: 'bar',
+    chartMeasure: null,
     pinned: false,
   })
   const [showErrors, setShowErrors] = useState(false)
@@ -74,12 +82,16 @@ export default function ReportBuilderPage() {
         dimensions: existing.dimensions,
         measures: existing.measures,
         defaultPeriod: existing.defaultPeriod,
+        chart: existing.chart,
+        chartMeasure: existing.chartMeasure,
         pinned: existing.pinned,
       })
     }
   }, [existing])
 
   const schema = SOURCE_SCHEMAS[state.source]
+  // The first measure unless one was chosen, so the chart is never blank.
+  const chartMeasure = state.chartMeasure ?? state.measures[0] ?? ''
   const preview = usePreview(state.source, state.dimensions, state.measures)
   const parsed = reportDraftSchema.safeParse(state)
   const errors = showErrors && !parsed.success ? parsed.error.flatten().fieldErrors : {}
@@ -193,6 +205,49 @@ export default function ReportBuilderPage() {
                 />
               )}
             </Field>
+            <Field
+              label="Chart"
+              hint={
+                canChart(state.dimensions)
+                  ? REPORT_CHARTS.find((entry) => entry.value === state.chart)?.hint
+                  : 'A chart needs exactly one break-down column — pick one and no more.'
+              }
+            >
+              {(p) => (
+                <Select
+                  {...p}
+                  className="w-full"
+                  disabled={!canChart(state.dimensions)}
+                  value={canChart(state.dimensions) ? state.chart : 'none'}
+                  onChange={(chart) => setState((c) => ({ ...c, chart }))}
+                  options={REPORT_CHARTS.map((entry) => ({
+                    value: entry.value,
+                    label: entry.label,
+                  }))}
+                />
+              )}
+            </Field>
+
+            {state.chart !== 'none' && canChart(state.dimensions) ? (
+              <Field
+                label="Draw which measure"
+                hint="One series only — measures are on different scales"
+              >
+                {(p) => (
+                  <Select
+                    {...p}
+                    className="w-full"
+                    value={chartMeasure}
+                    onChange={(chartMeasure) => setState((c) => ({ ...c, chartMeasure }))}
+                    options={state.measures.map((key) => ({
+                      value: key,
+                      label: schema.measures.find((m) => m.key === key)?.label ?? key,
+                    }))}
+                  />
+                )}
+              </Field>
+            ) : null}
+
             <label className="flex items-center justify-between gap-3 pt-1">
               <span className="min-w-0">
                 <span className="text-fg block text-sm font-medium">Pin to the sidebar</span>
@@ -275,13 +330,24 @@ export default function ReportBuilderPage() {
         </CardHeader>
         <CardBody>
           {preview && state.measures.length > 0 ? (
-            <ResultTable
-              source={state.source}
-              dimensions={state.dimensions}
-              measures={state.measures}
-              result={preview}
-              limit={PREVIEW_ROWS}
-            />
+            <div className="space-y-4">
+              {state.chart !== 'none' && canChart(state.dimensions) && chartMeasure ? (
+                <ReportChartView
+                  source={state.source}
+                  dimension={state.dimensions[0]!}
+                  measure={chartMeasure}
+                  chart={state.chart}
+                  result={preview}
+                />
+              ) : null}
+              <ResultTable
+                source={state.source}
+                dimensions={state.dimensions}
+                measures={state.measures}
+                result={preview}
+                limit={PREVIEW_ROWS}
+              />
+            </div>
           ) : (
             <EmptyState
               icon={Table2}

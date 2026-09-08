@@ -854,6 +854,28 @@ while building is what the answer looks like.
 - **Filter-gated**, as OX gates theirs and CLAUDE.md requires. `FilterGate` gained an optional
   title, because a gate that says "press Apply" beside a button marked "Run" is worse than no gate.
 
+**Charts, added afterwards — and instead of a Sales report page.** OX's dropped wizard step earns
+its place as one field on the builder, not five screens. The chart is picked in the builder (with
+the live preview drawing it) and appears **above the table** on the report view: the shape first,
+the numbers under it. A saved report called "Sales by month" with a line chart, pinned to the
+sidebar, is then indistinguishable from a dedicated Sales report page — without a second place for
+the same numbers to be wrong.
+
+- **Only offered when the report has exactly one break-down column.** A chart needs one axis; with
+  two dimensions there is no sensible simple chart, and with none there is a single number.
+- **One series, never several.** A report's measures sit on different scales — money beside a unit
+  count — and one axis through both draws a comparison that does not exist. The chart draws the
+  chosen measure; the table carries the rest.
+- **Top 12, and the tail is handled per chart type.** A donut must total the whole, so its tail
+  becomes an "Other" slice. A bar chart is a comparison, and an "Other" bar summing 120 products
+  towers over every real bar and destroys the comparison — so bars drop the tail and the caption
+  says "top 12 of 132". A time axis is exempt from both: folding March into "Other" for being quiet
+  would be nonsense.
+- **Single-series charts use the gold slot**, which is what `chart.ts` reserves it for. An earlier
+  draft used the blue categorical hue, against the palette file's own instruction.
+- **Animation is off.** It delays a number somebody asked for by pressing Run, and it makes the
+  chart unverifiable in a screenshot — which is how the first version's invisible line was found.
+
 ### Product logs — «Логи по продуктам», read from the live tenant
 
 Route `/app/statistics/stock-count-histories` — the Russian label says "logs", the route says stock

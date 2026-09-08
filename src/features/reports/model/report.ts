@@ -133,6 +133,33 @@ export const SOURCE_SCHEMAS: Record<ReportSource, SourceSchema> = {
   },
 }
 
+/**
+ * How the result is drawn, on top of the table.
+ *
+ * OX has a whole wizard step for charts; the useful part of it is one field.
+ * A chart needs exactly one axis, so it is only offered when the report is
+ * broken down by exactly one thing — with two dimensions there is no sensible
+ * simple chart, and with none there is a single number, which is not a chart.
+ */
+export type ReportChart = 'none' | 'bar' | 'line' | 'donut'
+
+export const REPORT_CHARTS: { value: ReportChart; label: string; hint: string }[] = [
+  { value: 'none', label: 'No chart', hint: 'Just the table' },
+  { value: 'bar', label: 'Bars', hint: 'Comparing things — products, sellers, categories' },
+  { value: 'line', label: 'Line', hint: 'A trend over days or months' },
+  { value: 'donut', label: 'Donut', hint: 'Share of a total' },
+]
+
+/** A chart needs one axis: exactly one break-down column, no more, no less. */
+export const canChart = (dimensions: string[]) => dimensions.length === 1
+
+/**
+ * Bars past a dozen categories are a picket fence, and a donut past a dozen
+ * slices is confetti. The tail is folded into one "Other" slice rather than
+ * dropped, so the chart still adds up to the table.
+ */
+export const CHART_TOP_N = 12
+
 export type ReportPeriod = 'today' | 'week' | 'month' | 'quarter' | 'year' | 'all'
 
 export const REPORT_PERIODS: { value: ReportPeriod; label: string }[] = [
@@ -162,6 +189,9 @@ export interface ReportDefinition {
   measures: string[]
   /** What the report opens on. A person can change it before running. */
   defaultPeriod: ReportPeriod
+  chart: ReportChart
+  /** Which measure the chart draws. The first one when unset. */
+  chartMeasure: string | null
   /**
    * Pinned into the sidebar. OX's «Добавить в меню»; kept because a report
    * somebody runs every Monday should not need finding first.
@@ -290,7 +320,52 @@ export const reportDraftSchema = z.object({
   dimensions: z.array(z.string()),
   measures: z.array(z.string()).min(1, 'Pick at least one thing to measure'),
   defaultPeriod: z.enum(['today', 'week', 'month', 'quarter', 'year', 'all']),
+  chart: z.enum(['none', 'bar', 'line', 'donut']),
+  chartMeasure: z.string().nullable(),
   pinned: z.boolean(),
 })
 
 export type ReportDraft = z.infer<typeof reportDraftSchema>
+
+/** Time reads in date order; everything else reads biggest-first. */
+export const isTimeDimension = (dimension: string) => dimension === 'date' || dimension === 'month'
+
+/**
+ * The rows a chart should draw: the biggest `CHART_TOP_N`, and what happens to
+ * the tail **depends on the chart**.
+ *
+ * A donut has to add up to the whole, so the tail becomes one "Other" slice. A
+ * bar chart is a comparison between things, and an "Other" bar summing 120
+ * products towers over every real bar and destroys the comparison it exists to
+ * make — so bars drop the tail and the caption says how many were left out.
+ *
+ * A time dimension is exempt from both and returned in date order: folding
+ * March into "Other" because it was a quiet month would be nonsense.
+ */
+export function chartData(
+  result: ReportResult,
+  dimension: string,
+  measure: string,
+  chart: ReportChart = 'bar',
+): { label: string; value: number }[] {
+  const rows = result.rows.map((row) => ({
+    label: row.dims[dimension] ?? '—',
+    value: row.values[measure] ?? 0,
+  }))
+
+  if (isTimeDimension(dimension)) {
+    return [...rows].sort((a, b) => a.label.localeCompare(b.label))
+  }
+
+  const sorted = [...rows].sort((a, b) => b.value - a.value)
+  if (sorted.length <= CHART_TOP_N) return sorted
+
+  const head = sorted.slice(0, CHART_TOP_N)
+  if (chart !== 'donut') return head
+
+  const tail = sorted.slice(CHART_TOP_N)
+  return [
+    ...head,
+    { label: `Other (${tail.length})`, value: tail.reduce((s, r) => s + r.value, 0) },
+  ]
+}

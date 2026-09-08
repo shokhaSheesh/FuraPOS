@@ -13,7 +13,14 @@ import { paths } from '@/shared/config/paths'
 import { formatNumber } from '@/shared/lib/format'
 import { useReport, useRunReport } from '../api/reports'
 import { ResultTable } from '../components/ResultTable'
-import { REPORT_PERIODS, describeReport, sourceLabel, type ReportPeriod } from '../model/report'
+import { ReportChartView } from '../components/ReportChartView'
+import {
+  REPORT_PERIODS,
+  canChart,
+  describeReport,
+  sourceLabel,
+  type ReportPeriod,
+} from '../model/report'
 
 /**
  * Running a saved report.
@@ -107,16 +114,33 @@ export default function ReportViewPage() {
         explanation="Reports read every record in the period, so this one waits until you press Run."
       >
         {result ? (
-          <Card>
-            <CardBody>
-              <ResultTable
-                source={report.source}
-                dimensions={report.dimensions}
-                measures={report.measures}
-                result={result}
-              />
-            </CardBody>
-          </Card>
+          <div className="space-y-3">
+            {report.chart !== 'none' && canChart(report.dimensions) ? (
+              // The shape first, the numbers under it — a hundred rows of
+              // figures hide a trend that one glance at a chart gives away.
+              <Card>
+                <CardBody>
+                  <ReportChartView
+                    source={report.source}
+                    dimension={report.dimensions[0]!}
+                    measure={report.chartMeasure ?? report.measures[0]!}
+                    chart={report.chart}
+                    result={result}
+                  />
+                </CardBody>
+              </Card>
+            ) : null}
+            <Card>
+              <CardBody>
+                <ResultTable
+                  source={report.source}
+                  dimensions={report.dimensions}
+                  measures={report.measures}
+                  result={result}
+                />
+              </CardBody>
+            </Card>
+          </div>
         ) : null}
       </FilterGate>
     </>

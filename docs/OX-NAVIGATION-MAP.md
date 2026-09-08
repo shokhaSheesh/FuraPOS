@@ -628,29 +628,44 @@ exactly one list.
   seller has no `products.cost.view` at all, because someone who knows the cost price can work out
   how far they may discount. A single "level" slider could express none of that.
 
-## 6. Финансы — Finance
+## 6. Финансы — Finance — removed
 
-In OX this is a single sidebar entry that opens a **second** left-hand menu inside the module. We
-surface the same pages directly in the one sidebar, keeping OX's three groups as headings.
+The whole module is cut at the client's request: sixteen screens out of the sidebar, the routes, the
+paths and the permission tree. **Nothing had been built** — every route was a `todo()` stub and the
+feature folders were empty — so removal cost nothing already made.
 
-| Group             | OX (ru)                | Ours (en)            | OX menu key                            |
-| ----------------- | ---------------------- | -------------------- | -------------------------------------- |
-| —                 | Дашборд                | Dashboard            | `finance-dashboard`                    |
-| —                 | Транзакции             | Transactions         | `finance-transactions`                 |
-| —                 | Договора               | Contracts            | `finance-contracts`                    |
-| —                 | Счет-фактуры           | Invoices             | `finance-invoices`                     |
-| —                 | Бюджет                 | Budget               | `finance-budget`                       |
-| —                 | Сценарии               | Scenarios            | `finance-scenarios`                    |
-| ОТЧЕТЫ / Reports  | P&L                    | P&L                  | `finance-reports-pl`                   |
-| Reports           | Cashflow               | Cashflow             | `finance-reports-cashflow`             |
-| Reports           | Дебиторка              | Receivables          | `finance-reports-receivables`          |
-| Reports           | Кредиторка             | Payables             | `finance-reports-payables`             |
-| Reports           | Прогноз денег          | Cash forecast        | `finance-reports-forecast`             |
-| Reports           | Расчеты по сотрудникам | Employee settlements | `finance-reports-employee-settlements` |
-| НАСТРОЙКИ / Setup | Счета                  | Accounts             | `finance-accounts`                     |
-| Setup             | Статьи                 | Categories           | `finance-categories`                   |
-| Setup             | Закрытие периода       | Period lock          | `finance-period-lock`                  |
-| Setup             | Налоги                 | Taxes                | `finance-taxes`                        |
+The OX rows are kept here so the omission reads as a decision:
+
+| OX (ru)              | Ours (en)   | OX route                     |
+| -------------------- | ----------- | ---------------------------- |
+| Дашборд              | — (removed) | `/app/finance/dashboard`     |
+| Транзакции           | — (removed) | `/app/finance/transactions`  |
+| Договоры             | — (removed) | `/app/finance/contracts`     |
+| Счета                | — (removed) | `/app/finance/invoices`      |
+| Бюджет               | — (removed) | `/app/finance/budget`        |
+| Сценарии             | — (removed) | `/app/finance/scenarios`     |
+| Отчёты (P&L, ДДС, …) | — (removed) | `/app/finance/reports/*`     |
+| Настройки (счета, …) | — (removed) | `/app/finance/accounts` etc. |
+
+**What it was coupled to, and what happened to each:**
+
+- **The dashboard's "overdue supplier payments" row** linked to the Payables report. It now links to
+  the supplier list filtered to what we owe (`/products/suppliers?lens=owed`), which is where that
+  answer actually lives. The count was **hardcoded to `3`**; removing the destination was the push
+  to compute it properly, from supplier debt against agreed payment terms.
+- **The Accountant role** granted four `finance.*` keys. Stripped. The role-model test that asserts
+  no role grants a key outside the tree caught them immediately, which is what it was written for.
+- **The `personnel.salary` permission** was labelled "See salary & settlements". Settlements was a
+  Finance screen; it is now just "See salary". The permission itself stays — it lives in Personnel
+  and gates base pay and the wallet on the employee page.
+- **Nothing else.** Supplier debt, the employee wallet, sale payments and payment methods all live
+  in their own modules and never imported anything from Finance.
+
+**The one thing to be aware of, which blocks nothing:** «Расчёты с сотрудниками» (Employee
+settlements) was the only planned home for a payroll ledger. The employee wallet still shows salary
+and advances on the employee page, and nothing generates them either way — so this does not break
+anything, but it does mean the open payroll question has no destination screen if the client later
+wants one.
 
 ## 7. Маркетинг — Marketing
 

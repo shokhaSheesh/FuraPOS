@@ -75,26 +75,6 @@ export const paths = {
   },
 
   /** OX nests these under a second in-module menu; we surface them directly. */
-  finance: {
-    root: '/finance',
-    dashboard: '/finance/dashboard',
-    transactions: '/finance/transactions',
-    contracts: '/finance/contracts',
-    invoices: '/finance/invoices',
-    budget: '/finance/budget',
-    scenarios: '/finance/scenarios',
-    pnl: '/finance/reports/pnl',
-    cashflow: '/finance/reports/cashflow',
-    receivables: '/finance/reports/receivables',
-    payables: '/finance/reports/payables',
-    forecast: '/finance/reports/forecast',
-    settlements: '/finance/reports/employee-settlements',
-    accounts: '/finance/accounts',
-    categories: '/finance/categories',
-    periodLock: '/finance/period-lock',
-    taxes: '/finance/taxes',
-  },
-
   marketing: {
     root: '/marketing',
     clients: '/marketing/clients', // OX: /app/marketing/customers

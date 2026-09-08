@@ -215,37 +215,6 @@ const routes: RouteObject[] = [
         element: page(<RoleDetailPage />, 'personnel.roles.view'),
       },
 
-      // --- Finance ---------------------------------------------------------
-      { path: paths.finance.root, element: <Navigate to={paths.finance.dashboard} replace /> },
-      {
-        path: paths.finance.dashboard,
-        element: todo('Finance dashboard', 'finance.dashboard.view'),
-      },
-      {
-        path: paths.finance.transactions,
-        element: todo('Transactions', 'finance.transactions.view'),
-      },
-      { path: paths.finance.contracts, element: todo('Contracts', 'finance.contracts.view') },
-      { path: paths.finance.invoices, element: todo('Invoices', 'finance.invoices.view') },
-      { path: paths.finance.budget, element: todo('Budget', 'finance.budget.view') },
-      { path: paths.finance.scenarios, element: todo('Scenarios', 'finance.scenarios.view') },
-      { path: paths.finance.pnl, element: todo('Profit & loss', 'finance.pnl.view') },
-      { path: paths.finance.cashflow, element: todo('Cashflow', 'finance.cashflow.view') },
-      {
-        path: paths.finance.receivables,
-        element: todo('Receivables', 'finance.receivables.view'),
-      },
-      { path: paths.finance.payables, element: todo('Payables', 'finance.payables.view') },
-      { path: paths.finance.forecast, element: todo('Cash forecast', 'finance.forecast.view') },
-      {
-        path: paths.finance.settlements,
-        element: todo('Employee settlements', 'finance.settlements.view'),
-      },
-      { path: paths.finance.accounts, element: todo('Accounts', 'finance.accounts.view') },
-      { path: paths.finance.categories, element: todo('Categories', 'finance.categories.view') },
-      { path: paths.finance.periodLock, element: todo('Period lock', 'finance.periodLock.view') },
-      { path: paths.finance.taxes, element: todo('Taxes', 'finance.taxes.view') },
-
       // --- Marketing --------------------------------------------------------
       { path: paths.marketing.root, element: <Navigate to={paths.marketing.clients} replace /> },
       { path: paths.marketing.clients, element: todo('Clients', 'marketing.clients.view') },

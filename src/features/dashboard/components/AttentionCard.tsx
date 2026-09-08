@@ -43,7 +43,7 @@ export function AttentionCard({
       tone: 'danger' as const,
       count: attention?.overduePayables ?? 0,
       label: 'overdue supplier payments',
-      to: paths.finance.payables,
+      to: `${paths.products.suppliers}?lens=owed`,
     },
     {
       key: 'drafts',

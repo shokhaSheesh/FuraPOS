@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useDataStore } from '@/data/store'
+import { daysOverdue } from '@/features/suppliers/model/supplier'
 import type { DateRange } from '@/shared/ui/DateRangePicker'
 
 export type DashboardPeriod = 'today' | 'yesterday' | 'week' | 'month' | 'custom'
@@ -42,6 +43,7 @@ export function useDashboardSummary(period: DashboardPeriod, range?: DateRange) 
   const variations = useDataStore((s) => s.variations)
   const sales = useDataStore((s) => s.sales)
   const locations = useDataStore((s) => s.locations)
+  const suppliers = useDataStore((s) => s.suppliers)
 
   const data = useMemo(() => {
     const days =
@@ -99,11 +101,13 @@ export function useDashboardSummary(period: DashboardPeriod, range?: DateRange) 
         lowStock: variations.filter(
           (v) => v.lowStockThreshold !== null && v.stock > 0 && v.stock <= v.lowStockThreshold,
         ).length,
-        overduePayables: 3,
+        // Real, now that suppliers carry a debt and agreed terms. It used to
+        // be a hardcoded 3 pointing at a Finance report that was never built.
+        overduePayables: suppliers.filter((supplier) => daysOverdue(supplier) !== null).length,
         draftSales: sales.filter((s) => s.status === 'open').length,
       },
     }
-  }, [period, range, variations, sales, locations])
+  }, [period, range, variations, sales, locations, suppliers])
 
   return { data, isLoading: false }
 }

@@ -9,7 +9,6 @@ import {
   Truck,
   UploadCloud,
   Users,
-  Wallet,
 } from 'lucide-react'
 import { paths } from './paths'
 
@@ -113,51 +112,6 @@ export const navigation: NavSection[] = [
     items: [
       { label: 'Employees', to: paths.personnel.employees, permission: 'personnel.employees.view' },
       { label: 'Access & roles', to: paths.personnel.roles, permission: 'personnel.roles.view' },
-    ],
-  },
-  {
-    id: 'finance',
-    label: 'Finance',
-    icon: Wallet,
-    badge: 'beta',
-    items: [
-      { label: 'Dashboard', to: paths.finance.dashboard, permission: 'finance.dashboard.view' },
-      {
-        label: 'Transactions',
-        to: paths.finance.transactions,
-        permission: 'finance.transactions.view',
-      },
-      { label: 'Contracts', to: paths.finance.contracts, permission: 'finance.contracts.view' },
-      { label: 'Invoices', to: paths.finance.invoices, permission: 'finance.invoices.view' },
-      { label: 'Budget', to: paths.finance.budget, permission: 'finance.budget.view' },
-      { label: 'Scenarios', to: paths.finance.scenarios, permission: 'finance.scenarios.view' },
-      { label: 'P&L', to: paths.finance.pnl, permission: 'finance.pnl.view', group: 'Reports' },
-      { label: 'Cashflow', to: paths.finance.cashflow, permission: 'finance.cashflow.view' },
-      {
-        label: 'Receivables',
-        to: paths.finance.receivables,
-        permission: 'finance.receivables.view',
-      },
-      { label: 'Payables', to: paths.finance.payables, permission: 'finance.payables.view' },
-      { label: 'Cash forecast', to: paths.finance.forecast, permission: 'finance.forecast.view' },
-      {
-        label: 'Employee settlements',
-        to: paths.finance.settlements,
-        permission: 'finance.settlements.view',
-      },
-      {
-        label: 'Accounts',
-        to: paths.finance.accounts,
-        permission: 'finance.accounts.view',
-        group: 'Setup',
-      },
-      { label: 'Categories', to: paths.finance.categories, permission: 'finance.categories.view' },
-      {
-        label: 'Period lock',
-        to: paths.finance.periodLock,
-        permission: 'finance.periodLock.view',
-      },
-      { label: 'Taxes', to: paths.finance.taxes, permission: 'finance.taxes.view' },
     ],
   },
   {

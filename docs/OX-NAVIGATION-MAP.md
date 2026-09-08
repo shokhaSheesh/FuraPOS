@@ -765,6 +765,56 @@ the Brakes promotion — but the seed reads as nonsense. Worth tidying when the 
 | Отчёт по акциям      | Promotions report        | `/app/statistics/promotion-report`      |
 | История звонков      | Call history             | `/app/statistics/call-history`          |
 
+### Report generator — «Генератор отчета», read from the live tenant
+
+Route `/app/statistics/reports`. Read on 2026-09-08 with a read-only pass; nothing was created,
+edited or deleted (the list still shows 1 of 1 afterwards).
+
+**The list.** Columns: Название · Создатель · Кому доступно · «Добавить в меню». A ▶ run button on
+each row, a filter/search box inline beside the title, and a primary «Добавить». So a report is a
+**saved definition that is shared with people and can be pinned into the sidebar** — not a one-off
+query.
+
+**Opening a saved report is filter-gated.** The body reads «Выберите период и нажмите
+"Отфильтровать"» with the sub-line «Отчёт не загружается автоматически — это нормально», beside a
+period Select, a primary «Отфильтровать» and a pencil to edit the definition. This is the same
+pattern CLAUDE.md already asks of us (`<FilterGate>`), independently arrived at — worth noting as
+convergence rather than something to copy.
+
+**The result is a pivot-style data grid** (AG Grid — its `ag-*` input ids are in the DOM), with a
+Фильтры side panel, a page-size control and «Всего строк».
+
+**«Добавить» offers two routes: «Из шаблонов» and «Произвольный отчет».**
+
+_From templates_ — a drawer with the same five domain tabs (Все / Продукты / Продажа / Маркетинг /
+Сотрудники) over **17 canned reports**: sales by receipt, average-check dynamics, marketing and
+client-base growth, payment methods, repricing operations, stock corrections, seller performance,
+transfers, postponed items, goods receipt, sales by supplier, stock by supplier, current stock,
+product margin, stock movement, debt for goods, sales volume. Then default period, currency, and a
+filter that stays disabled until a template is chosen («Сначала выберите шаблон»).
+
+_Custom report_ — a **five-step wizard**: 1 Общая информация · 2 Колонки · 3 Сортировка и
+группировка · 4 Диаграммы · 5 Завершение.
+
+- **Step 1** picks the report type from the same five domains, a name (pre-filled with the last
+  report's name plus a timestamp), a default period, and a **Тема** — four visual skins for the
+  result grid. A help carousel about ABC analysis sits on the right.
+- **Step 2** is the substance: **Функциональные колонки** (measures, grouped by the document that
+  produces them — Вхд. перемещения, Коррекции, Исх. перемещения, Приход, Остаток, Переоценка, plus
+  «+ Пользовательскую колонку») and **Информационные колонки** (attributes), each with its own
+  search, and a live preview grid on the right.
+
+**Two things did not work on the live tenant**, and both are usage signals of the kind already
+recorded for stocktakes and selections:
+
+- The one saved report, "Sales and stock", **fails with a 500** — «Возможно, колонки настроены
+  неправильно».
+- The custom wizard **crashes into an error boundary** moving from step 2 to step 3 with no columns
+  chosen («Попробуйте: CTRL + SHIFT + R»).
+
+So Fura has exactly one saved report and it does not run. That is the strongest argument for
+building a smaller, sturdier version rather than reproducing the wizard.
+
 ## 12. Настройки — Settings
 
 Rendered in OX as tabs inside one page; we keep them as sidebar children.

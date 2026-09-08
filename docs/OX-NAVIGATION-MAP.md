@@ -854,6 +854,49 @@ while building is what the answer looks like.
 - **Filter-gated**, as OX gates theirs and CLAUDE.md requires. `FilterGate` gained an optional
   title, because a gate that says "press Apply" beside a button marked "Run" is worse than no gate.
 
+### Product logs — «Логи по продуктам», read from the live tenant
+
+Route `/app/statistics/stock-count-histories` — the Russian label says "logs", the route says stock
+count histories, and the route is the honest one.
+
+**OX's columns:** Продукт (image + name + code) · Локация · Изменение (a coloured `−1` / `+3` with
+the resulting balance beneath as `→ 1`) · Ресурс (a grey document icon) · Причина · Пользователь ·
+Время. Filters: date from/to, barcode search, locations, resource type. An Excel export top-right.
+
+Unlike most of this tenant, **it is densely used** — hundreds of rows of real movement. Two details
+are worth stealing and two are worth fixing.
+
+**Kept:** one row per stock change, newest first, and the **running balance under the delta** —
+`−1 → 2` says more in six characters than a separate column would.
+
+**Changed:**
+
+- **The document is a link, not an icon.** OX renders a grey square you cannot read. The next
+  question after "why did this number move" is always "show me", so ours prints the document number
+  and clicks through to the receipt, transfer, correction or sale.
+- **The Reason column carries a real reason.** Every row on OX says «Автоматическое обновление»,
+  which is not a reason. Ours fills it only from documents that record one — corrections and
+  stocktakes carry damaged / expired / theft / lost / found / miscount — and leaves it blank
+  elsewhere, because for a sale or a receipt the document type _is_ the reason.
+
+**Not a duplicate of the Stock movement report.** That one answers "how much moved"; this answers
+"what happened to this part, in what order, and who did it". One is arithmetic over events, the
+other is the events — collapsing them into one screen serves neither.
+
+**The running balance is derived, not stored.** Nothing records what a shelf held on a past day,
+so the opening balance is `stock today − everything that has happened since`, and the column is
+filled by walking forward. It is exact, and it means the log and the product page can never
+disagree — there is a test asserting the newest entry for every shelf equals that shelf's current
+stock.
+
+**Two bugs this surfaced, both fixed:**
+
+- Entries sharing a timestamp to the millisecond (several lines of one document) were ordered
+  differently for display than for the balance calculation, so the top row showed the wrong balance.
+  Both orderings now break ties on id.
+- The seed sold parts from shelves they had never been on, which left the balance unknowable. Sales
+  now draw only from what that location stocks — and the log was right to refuse.
+
 ## 12. Настройки — Settings
 
 Rendered in OX as tabs inside one page; we keep them as sidebar children.

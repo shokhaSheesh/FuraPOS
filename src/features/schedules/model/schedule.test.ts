@@ -86,7 +86,25 @@ describe('reading a cadence back', () => {
 describe('running a schedule', () => {
   const first = () => useDataStore.getState().schedules[0]!
 
+  /**
+   * Widens the horizon so a shortfall is certain.
+   *
+   * Without this the test depends on the seed happening to leave that supplier
+   * short — which is luck, not behaviour, and broke the moment the seed's
+   * random sequence shifted.
+   */
+  const guaranteeShortfall = () =>
+    useDataStore.getState().updateSchedule(first().id, {
+      supplierId: first().supplierId,
+      locationId: first().locationId,
+      daysOfMonth: first().daysOfMonth,
+      timeOfDay: first().timeOfDay,
+      settings: { salesWindowDays: 90, leadTimeDays: 180, orderIntervalDays: 90, safetyDays: 60 },
+      active: true,
+    })
+
   it('leaves a draft order, never a sent one', () => {
+    guaranteeShortfall()
     const before = useDataStore.getState().orders.length
     const result = useDataStore.getState().runSchedule(first().id, 'manual')
     expect(result.ok).toBe(true)
@@ -101,6 +119,7 @@ describe('running a schedule', () => {
   })
 
   it('only orders what is actually short', () => {
+    guaranteeShortfall()
     const result = useDataStore.getState().runSchedule(first().id, 'manual')
     if (!result.ok || !result.orderId) throw new Error('expected an order')
     const order = useDataStore.getState().orders.find((o) => o.id === result.orderId)!
@@ -108,6 +127,7 @@ describe('running a schedule', () => {
   })
 
   it('records what the run did, so the list can show it', () => {
+    guaranteeShortfall()
     const id = first().id
     useDataStore.getState().runSchedule(id, 'manual')
     const run = useDataStore.getState().schedules.find((s) => s.id === id)!.lastRun!

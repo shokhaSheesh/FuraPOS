@@ -490,6 +490,14 @@ export const sales: Sale[] = Array.from({ length: 420 }, (_, index) => {
   const location = pick(locations)
   const client = random() > 0.35 ? pick(clients) : null
   const lineCount = between(1, 5)
+  /*
+    Only what that shop actually stocks. Selling a part from a shelf it was
+    never on leaves the product log unable to work out a running balance, and
+    the log is right to refuse — it is the seed that was wrong.
+  */
+  const sellable = variations.filter((variation) =>
+    variation.stockByLocation.some((row) => row.locationId === location.id),
+  )
   const lines = Array.from({ length: lineCount }, (__, lineIndex) => {
     /*
       Real demand is not uniform: a minority of parts are most of the movement.
@@ -499,8 +507,8 @@ export const sales: Sale[] = Array.from({ length: 420 }, (_, index) => {
     */
     const variation =
       random() > 0.34
-        ? variations[Math.floor(random() * Math.ceil(variations.length / 4))]!
-        : pick(variations)
+        ? sellable[Math.floor(random() * Math.ceil(sellable.length / 4))]!
+        : pick(sellable)
     const quantity = between(1, 8)
     return {
       id: `line-${index}-${lineIndex}`,
@@ -542,7 +550,12 @@ export const sales: Sale[] = Array.from({ length: 420 }, (_, index) => {
   // Spread over four months so a 90-day window has history to average, with a
   // bias towards recent days because that is what a real ledger looks like.
   const createdAt = new Date(
-    Date.now() - Math.round(between(0, 120) * (random() > 0.5 ? 1 : 0.4)) * 86_400_000,
+    Date.now() -
+      Math.round(between(0, 120) * (random() > 0.5 ? 1 : 0.4)) * 86_400_000 -
+      // Spread across the trading day too. Offsetting only by whole days gave
+      // every sale the same clock time, which reads as broken on any screen
+      // that shows one — the product log especially.
+      between(0, 10 * 3600) * 1000,
   )
 
   const seller = pick(sellers)

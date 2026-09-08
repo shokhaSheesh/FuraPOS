@@ -31,6 +31,7 @@ const NewRepricingPage = lazy(() => import('@/features/repricing/pages/NewRepric
 const SuppliersListPage = lazy(() => import('@/features/suppliers/pages/SuppliersListPage'))
 const SupplierDetailPage = lazy(() => import('@/features/suppliers/pages/SupplierDetailPage'))
 const SupplierFormPage = lazy(() => import('@/features/suppliers/pages/SupplierFormPage'))
+const ProductLogsPage = lazy(() => import('@/features/productLogs/pages/ProductLogsPage'))
 const ReportsPage = lazy(() => import('@/features/reports/pages/ReportsPage'))
 const ReportBuilderPage = lazy(() => import('@/features/reports/pages/ReportBuilderPage'))
 const ReportViewPage = lazy(() => import('@/features/reports/pages/ReportViewPage'))
@@ -274,7 +275,7 @@ const routes: RouteObject[] = [
       },
       {
         path: paths.analytics.productLogs,
-        element: todo('Product logs', 'analytics.productLogs.view'),
+        element: page(<ProductLogsPage />, 'analytics.productLogs.view'),
       },
       {
         path: paths.analytics.storefront,

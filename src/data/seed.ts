@@ -283,15 +283,80 @@ export const variations: VariationRow[] = products.flatMap((product) =>
   })),
 )
 
-const clientNames = [
+/*
+  A real customer base, not a handful of names.
+
+  Eight clients sharing four hundred sales made every RFM score degenerate:
+  everybody bought today, so everybody tied on recency and the segments
+  collapsed into one. A report about who is drifting away needs customers who
+  actually differ — regulars, occasionals, and people who stopped last spring.
+*/
+const businessNames = [
   'Автосервис "Дилшод"',
   'ООО "Транс Логистик"',
-  'Бекзод Рахимов',
-  'Гулнора Каримова',
   'ИП "Мотор Плюс"',
-  'Санжар Умаров',
   'ООО "Фура Парк"',
-  'Азиз Тошматов',
+  'Автосервис "Профи"',
+  'ООО "Шёлковый путь"',
+  'ИП "Турбо Сервис"',
+  'ООО "Азия Транс"',
+  'Автобаза "Восток"',
+  'ООО "Каскад Логистик"',
+  'ИП "Дизель Мастер"',
+  'ООО "Тошкент Карго"',
+  'Автосервис "Форсаж"',
+  'ООО "Магистраль"',
+  'ИП "Ремкомплект"',
+  'ООО "Навруз Транс"',
+  'Автопарк "Чирчик"',
+  'ООО "Самарканд Авто"',
+]
+
+const personFirstNames = [
+  'Бекзод',
+  'Гулнора',
+  'Санжар',
+  'Азиз',
+  'Дилшод',
+  'Нодира',
+  'Улугбек',
+  'Феруза',
+  'Жасур',
+  'Мадина',
+  'Тимур',
+  'Зарина',
+  'Отабек',
+  'Камола',
+  'Рустам',
+  'Севара',
+  'Шухрат',
+  'Дилноза',
+  'Икром',
+  'Малика',
+  'Фаррух',
+  'Нилуфар',
+]
+
+const personLastNames = [
+  'Рахимов',
+  'Каримова',
+  'Умаров',
+  'Тошматов',
+  'Юсупов',
+  'Ахмедова',
+  'Назаров',
+  'Сафарова',
+  'Исмоилов',
+  'Хасанова',
+  'Мирзаев',
+  'Абдуллаева',
+]
+
+const clientNames = [
+  ...businessNames,
+  ...personFirstNames.map(
+    (first, index) => `${first} ${personLastNames[index % personLastNames.length]}`,
+  ),
 ]
 
 /**
@@ -302,10 +367,7 @@ const clientNames = [
  * their limit, because that is the row a credit ledger is opened to find.
  */
 export const clients: Client[] = clientNames.map((name, index) => {
-  const type: ClientType =
-    name.startsWith('ООО') || name.startsWith('ИП') || name.startsWith('Авто')
-      ? 'business'
-      : 'person'
+  const type: ClientType = businessNames.includes(name) ? 'business' : 'person'
   // Only accounts have a limit; a walk-in pays up front.
   const creditLimit = type === 'business' ? between(3, 20) * 1_000_000 : null
   const overLimit = index === 1
@@ -486,9 +548,59 @@ export const employees: Employee[] = (
 /** Whoever can actually take a sale, for attributing the seeded ones. */
 const sellers = employees.filter((e) => e.status !== 'archived' && e.roleId !== 'role-5')
 
+/**
+ * How each client actually behaves, so the customer report has something to
+ * report. Without this every client bought the same number of times on the
+ * same days, RFM scores all tied, and the segments collapsed into one.
+ *
+ *   `weight`  — how often they turn up. A few regulars, a long tail of
+ *               occasionals, which is what a real ledger looks like.
+ *   `stopped` — how many days ago they last bought anything. Non-zero for
+ *               roughly a quarter of them, so "at risk" and "lost" are real
+ *               people rather than empty segments.
+ */
+const clientProfiles = clients.map((client, index) => ({
+  id: client.id,
+  weight: index < 6 ? 12 : index < 16 ? 4 : 1,
+  /*
+    When they last bought anything, in days ago. Zero means still buying.
+
+    The cutoff has to sit *inside* the seeded ledger — sales only go back 120
+    days, so a client who "stopped 300 days ago" never bought at all and
+    arrives as "lost" with no history instead of "at risk" with a reason to
+    ring them. Two of the regulars are deliberately among the lapsed, so the
+    two segments that matter most have real people in them.
+  */
+  stoppedDaysAgo:
+    index === 1 || index === 4 ? between(100, 150) : random() > 0.82 ? between(95, 200) : 0,
+}))
+
+/** A client who was still buying on that day, or nobody — a walk-in. */
+function pickClientFor(daysAgo: number) {
+  const eligible = clientProfiles.filter(
+    (entry) => entry.stoppedDaysAgo === 0 || daysAgo >= entry.stoppedDaysAgo,
+  )
+  if (eligible.length === 0) return null
+  let ticket = random() * eligible.reduce((sum, entry) => sum + entry.weight, 0)
+  for (const entry of eligible) {
+    ticket -= entry.weight
+    if (ticket <= 0) return clients.find((c) => c.id === entry.id) ?? null
+  }
+  return null
+}
+
 export const sales: Sale[] = Array.from({ length: 420 }, (_, index) => {
   const location = pick(locations)
-  const client = random() > 0.35 ? pick(clients) : null
+  /*
+    Spread over ten months, biased hard towards recent days.
+
+    Four months was too short once the customer report arrived: a client who
+    goes quiet has to have *established* a pattern before stopping, and with a
+    90-day "gone quiet" threshold there was no room left to build one. The bias
+    keeps the recent density a reorder calculation needs.
+  */
+  const daysAgo = Math.round(between(0, 300) * (random() > 0.45 ? 0.35 : 1))
+  const client = random() > 0.3 ? pickClientFor(daysAgo) : null
   const lineCount = between(1, 5)
   /*
     Only what that shop actually stocks. Selling a part from a shelf it was
@@ -547,11 +659,9 @@ export const sales: Sale[] = Array.from({ length: 420 }, (_, index) => {
   const paid = settled ? total : random() > 0.6 ? Math.round(total / 2) : 0
   const needsDelivery = status === 'delivering' || status === 'delivered'
   const deliveryCost = needsDelivery ? between(20_000, 90_000) : 0
-  // Spread over four months so a 90-day window has history to average, with a
-  // bias towards recent days because that is what a real ledger looks like.
   const createdAt = new Date(
     Date.now() -
-      Math.round(between(0, 120) * (random() > 0.5 ? 1 : 0.4)) * 86_400_000 -
+      daysAgo * 86_400_000 -
       // Spread across the trading day too. Offsetting only by whole days gave
       // every sale the same clock time, which reads as broken on any screen
       // that shows one — the product log especially.

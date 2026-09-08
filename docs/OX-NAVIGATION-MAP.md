@@ -931,6 +931,60 @@ stock.
 - The seed sold parts from shelves they had never been on, which left the balance unknowable. Sales
   now draw only from what that location stocks — and the log was right to refuse.
 
+### Customer report — «Отчёт по клиентам», read from the live tenant
+
+OX's is an **RFM screen** — recency, frequency, money — and it is one of the better things in that
+product. Subtitle: «Кто ваши клиенты, сколько стоят, куда уходят и что с ними делать». Filter-gated
+(«Отчёт большой и грузится не сразу»), then eight KPI tiles (client base, active in period, repeat
+rate, average check, average LTV, at risk, cashback liability, receivables), a panel of ten named
+RFM segments, an acquisition-channels panel, and a table: Клиент · Сегмент · R·F·M · LTV · Покупок ·
+Ср. чек · Последняя покупка · Канал · Группы · Бонусы · Долг. It reads zero on the tenant, because
+Fura does not attach clients to sales.
+
+**Kept:** the RFM idea, the filter gate, the tiles, the segment panel, and the R·F·M column.
+
+**Changed:**
+
+- **Every segment carries what to do about it.** OX promises «что с ними делать» in its own subtitle
+  and then shows a coloured label. A diagnosis with no prescription is half a screen, so each of the
+  eight segments states the action — "ring them now, a competitor is the usual explanation".
+- **Eight segments, not ten.** «Многообещающие» and «Засыпают» blur into their neighbours; a segment
+  that does not imply a different action is a colour.
+- **Acquisition channels dropped.** That is UTM again, and it needs a web shop. Our `channel` field
+  says how a sale was _taken_, not how the customer was _found_, and labelling one as the other
+  would be a lie.
+- **Groups dropped** — that screen was cut from Marketing.
+
+**The decisions worth keeping:**
+
+- **Scores are quintiles against your own base**, never fixed thresholds. "Spends a lot" only means
+  something relative to everyone else, and a threshold tuned for a wholesaler is nonsense for a
+  corner shop.
+- **Ties take the lowest rank of the group**, so two customers who spent exactly the same always
+  score the same. Landing them in different segments cannot be explained to anybody.
+- **The lapsing segments need an absolute recency guard, not just a rank.** The first version put
+  four of eight customers in "Cannot lose" — every one of whom had bought that week. In a base where
+  everybody bought recently, somebody still scores R=1. Ranking says who is _relatively_ quiet; only
+  the calendar says who has actually gone away.
+- **The default window is a year, not a quarter.** It has to be longer than the 90-day "gone quiet"
+  threshold, or the people this report exists to find fall outside it: someone who stopped a hundred
+  days ago has no purchases in the last ninety and arrives as "lost" with no history.
+
+**Seed changes this forced**, all in the same class as the earlier ones:
+
+- **8 clients became 40.** Eight clients sharing 420 sales made every score degenerate — everyone
+  bought today, everyone tied on recency, and the segments collapsed into one.
+- **Clients gained a buying profile**: a few regulars, a long tail of occasionals, and roughly a
+  fifth who stopped buying at some point. Two of the regulars are deliberately among them, so the
+  segments that matter most are not empty.
+- **Sales history went from four months to ten**, biased hard towards recent days. A client who goes
+  quiet has to have _established_ a pattern before stopping, and a 120-day ledger against a 90-day
+  threshold left no room to build one.
+
+**Known and accepted:** "At risk" reads zero, because every lapsed frequent buyer in this seed is
+also a top-40% spender and so lands in "Cannot lose" first. The logic is right; forcing the segment
+to fill would be seeding for the screenshot rather than for truth.
+
 ## 12. Настройки — Settings
 
 Rendered in OX as tabs inside one page; we keep them as sidebar children.

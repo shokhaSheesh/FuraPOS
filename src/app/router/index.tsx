@@ -31,6 +31,11 @@ const NewRepricingPage = lazy(() => import('@/features/repricing/pages/NewRepric
 const SuppliersListPage = lazy(() => import('@/features/suppliers/pages/SuppliersListPage'))
 const SupplierDetailPage = lazy(() => import('@/features/suppliers/pages/SupplierDetailPage'))
 const SupplierFormPage = lazy(() => import('@/features/suppliers/pages/SupplierFormPage'))
+const PromotionsPage = lazy(() => import('@/features/promotions/pages/PromotionsPage'))
+const PromotionFormPage = lazy(() => import('@/features/promotions/pages/PromotionFormPage'))
+const ClientsPage = lazy(() => import('@/features/clients/pages/ClientsPage'))
+const ClientDetailPage = lazy(() => import('@/features/clients/pages/ClientDetailPage'))
+const ClientFormPage = lazy(() => import('@/features/clients/pages/ClientFormPage'))
 const RolesPage = lazy(() => import('@/features/roles/pages/RolesPage'))
 const RoleDetailPage = lazy(() => import('@/features/roles/pages/RoleDetailPage'))
 const EmployeesPage = lazy(() => import('@/features/employees/pages/EmployeesPage'))
@@ -217,20 +222,31 @@ const routes: RouteObject[] = [
 
       // --- Marketing --------------------------------------------------------
       { path: paths.marketing.root, element: <Navigate to={paths.marketing.clients} replace /> },
-      { path: paths.marketing.clients, element: todo('Clients', 'marketing.clients.view') },
-      { path: paths.marketing.clientDetail(), element: todo('Client', 'marketing.clients.view') },
-      { path: paths.marketing.groups, element: todo('Groups', 'marketing.groups.view') },
-      { path: paths.marketing.cashback, element: todo('Cashback', 'marketing.cashback.view') },
-      { path: paths.marketing.sms, element: todo('SMS campaigns', 'marketing.sms.view') },
+      { path: paths.marketing.clients, element: page(<ClientsPage />, 'marketing.clients.view') },
       {
-        path: paths.marketing.digital,
-        element: todo('Digital campaigns', 'marketing.digital.view'),
+        path: paths.marketing.newClient,
+        element: page(<ClientFormPage />, 'marketing.clients.create'),
+      },
+      {
+        path: paths.marketing.editClient(),
+        element: page(<ClientFormPage />, 'marketing.clients.edit'),
+      },
+      {
+        path: paths.marketing.clientDetail(),
+        element: page(<ClientDetailPage />, 'marketing.clients.view'),
       },
       {
         path: paths.marketing.promotions,
-        element: todo('Promotions', 'marketing.promotions.view'),
+        element: page(<PromotionsPage />, 'marketing.promotions.view'),
       },
-      { path: paths.marketing.coupons, element: todo('Coupons', 'marketing.coupons.view') },
+      {
+        path: paths.marketing.newPromotion,
+        element: page(<PromotionFormPage />, 'marketing.promotions.create'),
+      },
+      {
+        path: paths.marketing.editPromotion(),
+        element: page(<PromotionFormPage />, 'marketing.promotions.edit'),
+      },
 
       // --- Analytics --------------------------------------------------------
       {

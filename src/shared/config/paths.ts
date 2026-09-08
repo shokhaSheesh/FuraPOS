@@ -78,13 +78,12 @@ export const paths = {
   marketing: {
     root: '/marketing',
     clients: '/marketing/clients', // OX: /app/marketing/customers
+    newClient: '/marketing/clients/new',
     clientDetail: (id = ':clientId') => `/marketing/clients/${id}`,
-    groups: '/marketing/groups', // OX: /app/marketing/groups
-    cashback: '/marketing/cashback', // OX: /app/marketing/cashbacks
-    sms: '/marketing/sms', // OX: /app/marketing/newsletters
-    digital: '/marketing/digital', // OX: /app/marketing/digital-mass-messaging
+    editClient: (id = ':clientId') => `/marketing/clients/${id}/edit`,
     promotions: '/marketing/promotions', // OX: /app/marketing/promotions
-    coupons: '/marketing/coupons', // OX: /app/marketing/coupon-collections
+    newPromotion: '/marketing/promotions/new',
+    editPromotion: (id = ':promotionId') => `/marketing/promotions/${id}`,
   },
 
   analytics: {

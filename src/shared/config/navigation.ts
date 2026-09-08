@@ -120,20 +120,11 @@ export const navigation: NavSection[] = [
     icon: Megaphone,
     items: [
       { label: 'Clients', to: paths.marketing.clients, permission: 'marketing.clients.view' },
-      { label: 'Groups', to: paths.marketing.groups, permission: 'marketing.groups.view' },
-      { label: 'Cashback', to: paths.marketing.cashback, permission: 'marketing.cashback.view' },
-      { label: 'SMS campaigns', to: paths.marketing.sms, permission: 'marketing.sms.view' },
-      {
-        label: 'Digital campaigns',
-        to: paths.marketing.digital,
-        permission: 'marketing.digital.view',
-      },
       {
         label: 'Promotions',
         to: paths.marketing.promotions,
         permission: 'marketing.promotions.view',
       },
-      { label: 'Coupons', to: paths.marketing.coupons, permission: 'marketing.coupons.view' },
     ],
   },
   {

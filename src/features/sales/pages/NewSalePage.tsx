@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { ArrowLeft, Check, Clock, Truck } from 'lucide-react'
+import { ArrowLeft, Check, Clock, Tag, Truck } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
 import { Button } from '@/shared/ui/Button'
@@ -27,6 +27,9 @@ import {
   type SaleStatus,
 } from '../model/sale'
 import type { VariationRow } from '@/features/products/model/product'
+import { useDataStore } from '@/data/store'
+import { useBestPromotion } from '@/features/promotions/api/promotions'
+import { covers, describe as describePromotion } from '@/features/promotions/model/promotion'
 
 const LOCATIONS = [
   { value: 'loc-1', label: 'Central warehouse' },
@@ -67,6 +70,53 @@ export default function NewSalePage() {
     () => computeTotals(lines, Number(paidText) || 0, deliveryCost),
     [lines, paidText, deliveryCost],
   )
+
+  /*
+    Promotions are matched on category and brand, which a sale line does not
+    carry — it snapshots the *names*, deliberately, so history survives a
+    rename. So the ids come from the catalogue at match time.
+  */
+  const variations = useDataStore((s) => s.variations)
+  const promotableLines = useMemo(
+    () =>
+      lines.map((line) => {
+        const variation = variations.find((v) => v.id === line.variationId)
+        return {
+          variationId: line.variationId,
+          categoryId: variation?.categoryId ?? null,
+          brandId: variation?.brandId ?? null,
+          quantity: line.quantity,
+          unitPrice: line.unitPrice,
+        }
+      }),
+    [lines, variations],
+  )
+  const offer = useBestPromotion(promotableLines)
+  const alreadyDiscounted = lines.some((line) => line.discountPercent > 0)
+
+  /**
+   * Applies the offer as a per-line percentage.
+   *
+   * A sale only knows how to discount a line by percent, and both promotion
+   * kinds reduce to one: the discount is always a share of the value it
+   * covers, so `discount ÷ covered × 100` is exact for a fixed amount too.
+   */
+  const applyOffer = () => {
+    if (!offer) return
+    const covered = promotableLines.filter((line) => covers(offer.promotion, line))
+    const coveredValue = covered.reduce((sum, line) => sum + line.quantity * line.unitPrice, 0)
+    if (coveredValue <= 0) return
+    const percent = (offer.discount / coveredValue) * 100
+    const coveredIds = new Set(covered.map((line) => line.variationId))
+    setLines((previous) =>
+      previous.map((line) =>
+        coveredIds.has(line.variationId)
+          ? { ...line, discountPercent: Math.round(percent * 100) / 100 }
+          : line,
+      ),
+    )
+    toast.success(`${offer.promotion.name} applied`)
+  }
   const empty = lines.length === 0
   const deliveryIncomplete = deliveryOn && address.trim().length < 3
 
@@ -366,6 +416,24 @@ export default function NewSalePage() {
               </CardBody>
             )}
           </Card>
+
+          {offer && !alreadyDiscounted ? (
+            <Card className="border-primary-border/60">
+              <CardBody className="flex items-start gap-2.5">
+                <Tag className="text-fg-muted mt-0.5 size-4 shrink-0" />
+                <div className="min-w-0 flex-1 space-y-1">
+                  <p className="text-fg text-sm font-medium">{offer.promotion.name}</p>
+                  <p className="text-fg-muted text-2xs">
+                    {describePromotion(offer.promotion)} — takes {formatMoney(offer.discount)} off
+                    this sale.
+                  </p>
+                  <Button type="button" variant="secondary" size="sm" onClick={applyOffer}>
+                    Apply it
+                  </Button>
+                </div>
+              </CardBody>
+            </Card>
+          ) : null}
 
           <Card>
             <CardHeader>

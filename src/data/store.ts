@@ -14,6 +14,9 @@ import { outstandingUnits } from '@/features/orders/model/order'
 import type { ReorderSchedule } from '@/features/schedules/model/schedule'
 import type { Employee, EmployeeStatus } from '@/features/employees/model/employee'
 import type { Role } from '@/features/roles/model/role'
+import type { Client, ClientStatus } from '@/features/clients/model/client'
+import type { Promotion } from '@/features/promotions/model/promotion'
+export type { Client }
 import type { ReorderSettings } from '@/features/schedules/model/reorder'
 import { buildReorderLines, lineCostUzs, needsOrdering } from '@/features/schedules/model/reorder'
 import type { WalletTransaction } from '@/shared/types/wallet'
@@ -44,6 +47,7 @@ import {
   stocktakes as seedStocktakes,
   orders as seedOrders,
   schedules as seedSchedules,
+  promotions as seedPromotions,
   employees as seedEmployees,
   roles as seedRoles,
   suppliers as seedSuppliers,
@@ -52,13 +56,6 @@ import {
   variations as seedVariations,
 } from './seed'
 import { computeTotals } from '@/features/sales/model/sale'
-
-export interface Client {
-  id: string
-  name: string
-  phone: string
-  debt: number
-}
 
 interface CatalogState {
   products: Product[]
@@ -77,6 +74,7 @@ interface CatalogState {
   /** One ledger for every wallet owner, filtered by owner on read. */
   walletTransactions: WalletTransaction[]
   clients: Client[]
+  promotions: Promotion[]
   categories: typeof categories
   brands: typeof brands
   locations: typeof locations
@@ -138,6 +136,15 @@ interface CatalogState {
     trigger: 'schedule' | 'manual',
   ) => { ok: true; orderId: string | null } | { ok: false; error: string }
 
+  createPromotion: (input: PromotionInput) => Promotion
+  updatePromotion: (id: string, input: PromotionInput) => void
+  setPromotionPaused: (id: string, paused: boolean) => void
+  deletePromotion: (id: string) => void
+
+  createClient: (input: ClientInput) => Client
+  updateClient: (id: string, input: ClientInput) => void
+  setClientStatus: (id: string, status: ClientStatus) => void
+
   createRole: (input: RoleInput) => Role
   updateRole: (id: string, input: RoleInput) => void
   setRolePermissions: (id: string, permissions: string[]) => void
@@ -197,6 +204,30 @@ export interface CreateOrderInput {
   comment: string
   lines: OrderLine[]
   status: Extract<OrderStatus, 'draft' | 'sent'>
+}
+
+export interface PromotionInput {
+  name: string
+  kind: Promotion['kind']
+  value: number
+  scope: Promotion['scope']
+  scopeId: string | null
+  startsAt: string
+  endsAt: string | null
+  paused: boolean
+  minimumSale: number | null
+  comment: string | null
+}
+
+export interface ClientInput {
+  name: string
+  type: Client['type']
+  phone: string | null
+  email: string | null
+  address: string | null
+  creditLimit: number | null
+  status: ClientStatus
+  comment: string | null
 }
 
 export interface RoleInput {
@@ -420,6 +451,21 @@ const quantityAt = (rows: { locationId: string; quantity: number }[], locationId
  * there is no backend and no network. Writes replace the relevant array so
  * subscribed components re-render.
  */
+/** A promotion stores the name of what it applies to, so a renamed category
+ *  does not silently change what an old promotion claims to have covered. */
+function nameOfScope(
+  state: {
+    categories: readonly { readonly id: string; readonly name: string }[]
+    brands: readonly { readonly id: string; readonly name: string }[]
+  },
+  scope: Promotion['scope'],
+  scopeId: string | null,
+): string | null {
+  if (scope === 'all' || !scopeId) return null
+  const list = scope === 'category' ? state.categories : state.brands
+  return list.find((entry) => entry.id === scopeId)?.name ?? null
+}
+
 export const useDataStore = create<CatalogState>((set, get) => ({
   products: seedProducts,
   variations: seedVariations,
@@ -430,6 +476,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
   stocktakes: seedStocktakes,
   repricings: seedRepricings,
   clients,
+  promotions: seedPromotions,
   categories,
   brands,
   locations,
@@ -1150,6 +1197,78 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       ),
     })
     return { ok: true, orderId: order.id }
+  },
+
+  createPromotion: (input) => {
+    const now = new Date().toISOString()
+    const promotion: Promotion = {
+      ...input,
+      id: `promo-${get().promotions.length + 1}-${Date.now()}`,
+      scopeName: nameOfScope(get(), input.scope, input.scopeId),
+      createdBy: 'Akhmet Dauletmuratov',
+      createdAt: now,
+      updatedAt: now,
+    }
+    set({ promotions: [...get().promotions, promotion] })
+    return promotion
+  },
+
+  updatePromotion: (id, input) => {
+    set({
+      promotions: get().promotions.map((promotion) =>
+        promotion.id === id
+          ? {
+              ...promotion,
+              ...input,
+              scopeName: nameOfScope(get(), input.scope, input.scopeId),
+              updatedAt: new Date().toISOString(),
+            }
+          : promotion,
+      ),
+    })
+  },
+
+  setPromotionPaused: (id, paused) => {
+    set({
+      promotions: get().promotions.map((promotion) =>
+        promotion.id === id
+          ? { ...promotion, paused, updatedAt: new Date().toISOString() }
+          : promotion,
+      ),
+    })
+  },
+
+  deletePromotion: (id) =>
+    set({ promotions: get().promotions.filter((promotion) => promotion.id !== id) }),
+
+  createClient: (input) => {
+    const now = new Date().toISOString()
+    const client: Client = {
+      ...input,
+      id: `cli-${get().clients.length + 1}-${Date.now()}`,
+      debt: 0,
+      cashback: 0,
+      createdAt: now,
+      updatedAt: now,
+    }
+    set({ clients: [...get().clients, client] })
+    return client
+  },
+
+  updateClient: (id, input) => {
+    set({
+      clients: get().clients.map((client) =>
+        client.id === id ? { ...client, ...input, updatedAt: new Date().toISOString() } : client,
+      ),
+    })
+  },
+
+  setClientStatus: (id, status) => {
+    set({
+      clients: get().clients.map((client) =>
+        client.id === id ? { ...client, status, updatedAt: new Date().toISOString() } : client,
+      ),
+    })
   },
 
   createRole: (input) => {

@@ -669,15 +669,69 @@ wants one.
 
 ## 7. Маркетинг — Marketing
 
-| OX (ru)           | Ours (en)         | OX route                                |
-| ----------------- | ----------------- | --------------------------------------- |
-| Клиенты           | Clients           | `/app/marketing/customers`              |
-| Группы            | Groups            | `/app/marketing/groups`                 |
-| Кешбэк            | Cashback          | `/app/marketing/cashbacks`              |
-| СМС Рассылка      | SMS campaigns     | `/app/marketing/newsletters`            |
-| Цифровая рассылка | Digital campaigns | `/app/marketing/digital-mass-messaging` |
-| Акции             | Promotions        | `/app/marketing/promotions`             |
-| Купоны            | Coupons           | `/app/marketing/coupon-collections`     |
+Cut to two screens at the client's request. The OX rows are kept so the omissions read as decisions.
+
+| OX (ru)           | Ours (en)   | OX route                                |
+| ----------------- | ----------- | --------------------------------------- |
+| Клиенты           | Clients     | `/app/marketing/customers`              |
+| Группы            | — (removed) | `/app/marketing/groups`                 |
+| Кэшбэк            | — (removed) | `/app/marketing/cashbacks`              |
+| Рассылки          | — (removed) | `/app/marketing/newsletters`            |
+| Цифровые рассылки | — (removed) | `/app/marketing/digital-mass-messaging` |
+| Акции             | Promotions  | `/app/marketing/promotions`             |
+| Купоны            | — (removed) | `/app/marketing/coupon-collections`     |
+
+Nothing had been built in the five that went, and nothing referenced them. Cashback survives as a
+_field_ on a client and in the shared wallet; what was cut is the screen for configuring earn rules.
+
+### Clients — «Клиенты»
+
+**The framing.** For a parts business the customer list is not a mailing list, it is **a credit
+ledger with names on it**. Half the trade is repeat garages buying on account, and the questions
+worth a screen are: what do they owe, are they past what we allowed, and have they stopped coming.
+Sorted by debt, not alphabetically — an alphabetical customer list answers a question nobody asked.
+
+- **`creditLimit` is the field that does something.** Null means no account — they pay up front —
+  and that is deliberately different from a limit of zero. Both stop a credit sale; only one is a
+  problem, and the list says which ("Pays up front" vs "over limit").
+- **Over-limit is derived, not a flag.** Somebody who was inside their limit yesterday and is over
+  it today should show as over it without anyone re-saving the record.
+- **Blocked, not deleted.** Someone who stopped paying must stay findable, and their history is the
+  reason they were blocked in the first place.
+- **"Gone quiet" ignores clients who never bought.** They are a lead, not a lapsed customer, and
+  mixing the two makes the number useless.
+- **The wallet is the shared component**, fourth owner type after suppliers and employees, with the
+  credit limit shown and an insight when they are past it.
+- **The seed gained a shape:** businesses have accounts and individuals do not, and one business is
+  deliberately over its limit — that is the row this screen is opened to find.
+
+### Promotions — «Акции»
+
+**The framing.** Without this screen a discount is a number somebody typed into a sale, and six
+weeks later nobody can say whether the campaign made money — only that margin fell. A promotion is
+the same discount **recorded as a decision**, which makes it two things: a rule the New sale screen
+applies, and a label on the sales it produced.
+
+- **It actually fires.** New sale matches the basket against every running promotion and offers the
+  best one with the amount worked out; "Apply it" writes it onto the lines. A promotions screen that
+  does not reach the sale screen is a list of intentions.
+- **Only one applies — whichever gives the customer most.** Stacking overlapping offers is how a
+  shop sells below cost by accident, and "the better of the two" is a rule a seller can explain at
+  the counter.
+- **Status is derived from the dates**, never stored. A stored status goes stale exactly when a
+  finished promotion would otherwise keep discounting.
+- **Paused is separate from the dates**, so pausing does not destroy the schedule someone set.
+- **A fixed amount is capped at the value it covers.** A promotion must never turn a sale into a
+  payment to the customer.
+- **A percentage applies only to the lines it covers**, not to the whole basket — otherwise "15% off
+  brakes" quietly discounts the oil filters too.
+- **The form works the rule through on an example sale.** Kind, value and scope are three abstract
+  fields that cannot tell anyone whether they just wrote "15% off brakes" or "15 000 off
+  everything", and the difference is a lot of money.
+
+**Noticed while verifying, not fixed:** the seed assigns categories at random, so a product called
+"Brake pad set" can sit in "Engine parts". The scope filter behaved correctly — it refused to apply
+the Brakes promotion — but the seed reads as nonsense. Worth tidying when the vertical is confirmed.
 
 ## 8. Аналитика — Analytics
 

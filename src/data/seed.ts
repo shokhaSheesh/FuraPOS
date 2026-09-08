@@ -18,6 +18,8 @@ import type { Supplier } from '@/features/suppliers/model/supplier'
 import type { ReorderSchedule } from '@/features/schedules/model/schedule'
 import type { Employee } from '@/features/employees/model/employee'
 import type { Role } from '@/features/roles/model/role'
+import type { Client, ClientType } from '@/features/clients/model/client'
+import type { Promotion } from '@/features/promotions/model/promotion'
 
 /** `expand('sales.orders', ['view','create'])` → `sales.orders.view`, … */
 const expand = (key: string, actions: readonly string[]) =>
@@ -291,12 +293,55 @@ const clientNames = [
   'Азиз Тошматов',
 ]
 
-export const clients = clientNames.map((name, index) => ({
-  id: `cli-${index + 1}`,
-  name,
-  phone: `+998 9${between(0, 9)} ${between(100, 999)} ${between(10, 99)} ${between(10, 99)}`,
-  debt: random() > 0.6 ? between(0, 4_000_000) : 0,
-}))
+/**
+ * Clients.
+ *
+ * The businesses buy on account and the individuals do not, which is the split
+ * the screen exists to make legible — and one of them is deliberately over
+ * their limit, because that is the row a credit ledger is opened to find.
+ */
+export const clients: Client[] = clientNames.map((name, index) => {
+  const type: ClientType =
+    name.startsWith('ООО') || name.startsWith('ИП') || name.startsWith('Авто')
+      ? 'business'
+      : 'person'
+  // Only accounts have a limit; a walk-in pays up front.
+  const creditLimit = type === 'business' ? between(3, 20) * 1_000_000 : null
+  const overLimit = index === 1
+  const debt =
+    creditLimit === null
+      ? random() > 0.85
+        ? between(100_000, 900_000)
+        : 0
+      : overLimit
+        ? creditLimit + between(1_000_000, 4_000_000)
+        : random() > 0.4
+          ? between(0, creditLimit)
+          : 0
+  const createdAt = new Date(Date.now() - between(60, 900) * 86_400_000).toISOString()
+
+  return {
+    id: `cli-${index + 1}`,
+    name,
+    type,
+    phone: `+998 9${between(0, 9)} ${between(100, 999)} ${between(10, 99)} ${between(10, 99)}`,
+    email:
+      type === 'business'
+        ? `info@${['translog', 'motorplus', 'furapark', 'dilshod'][index % 4]}.uz`
+        : null,
+    address:
+      type === 'business'
+        ? `Ташкент, ул. ${pick(['Амира Темура', 'Бунёдкор', 'Навои', 'Чилонзор'])}, ${between(1, 90)}`
+        : null,
+    debt,
+    creditLimit,
+    cashback: random() > 0.5 ? between(0, 600) * 1000 : 0,
+    status: index === 6 ? 'blocked' : 'active',
+    comment: null,
+    createdAt,
+    updatedAt: new Date().toISOString(),
+  } satisfies Client
+})
 
 /** Sales accumulate at runtime as the New sale screen posts them. */
 /*
@@ -1192,6 +1237,85 @@ export const schedules: ReorderSchedule[] = [
     lastRun: null,
     createdBy: 'Akhmet Dauletmuratov',
     createdAt: new Date(Date.now() - 40 * 86_400_000).toISOString(),
+    updatedAt: new Date(Date.now() - 40 * 86_400_000).toISOString(),
+  },
+]
+
+/**
+ * Promotions.
+ *
+ * One running everywhere, one scoped to a category with a minimum basket, one
+ * scheduled for next month and one that has already finished — because the
+ * status is derived from the dates, and all four cases have to be visible for
+ * that to be worth anything.
+ */
+export const promotions: Promotion[] = [
+  {
+    id: 'promo-1',
+    name: 'Autumn service check',
+    kind: 'percentage',
+    value: 10,
+    scope: 'all',
+    scopeId: null,
+    scopeName: null,
+    startsAt: new Date(Date.now() - 12 * 86_400_000).toISOString(),
+    endsAt: new Date(Date.now() + 9 * 86_400_000).toISOString(),
+    paused: false,
+    minimumSale: null,
+    comment: 'Runs alongside the workshop campaign',
+    createdBy: 'Akhmet Dauletmuratov',
+    createdAt: new Date(Date.now() - 20 * 86_400_000).toISOString(),
+    updatedAt: new Date(Date.now() - 12 * 86_400_000).toISOString(),
+  },
+  {
+    id: 'promo-2',
+    name: 'Brakes bundle',
+    kind: 'percentage',
+    value: 15,
+    scope: 'category',
+    scopeId: categories[1]!.id,
+    scopeName: categories[1]!.name,
+    startsAt: new Date(Date.now() - 4 * 86_400_000).toISOString(),
+    endsAt: new Date(Date.now() + 25 * 86_400_000).toISOString(),
+    paused: false,
+    minimumSale: 2_000_000,
+    comment: null,
+    createdBy: 'Nodira Rasulova',
+    createdAt: new Date(Date.now() - 6 * 86_400_000).toISOString(),
+    updatedAt: new Date(Date.now() - 4 * 86_400_000).toISOString(),
+  },
+  {
+    id: 'promo-3',
+    name: 'Winter opening',
+    kind: 'fixed',
+    value: 200_000,
+    scope: 'brand',
+    scopeId: brands[0]!.id,
+    scopeName: brands[0]!.name,
+    startsAt: new Date(Date.now() + 21 * 86_400_000).toISOString(),
+    endsAt: new Date(Date.now() + 51 * 86_400_000).toISOString(),
+    paused: false,
+    minimumSale: 1_500_000,
+    comment: 'Agreed with the supplier',
+    createdBy: 'Akhmet Dauletmuratov',
+    createdAt: new Date(Date.now() - 2 * 86_400_000).toISOString(),
+    updatedAt: new Date(Date.now() - 2 * 86_400_000).toISOString(),
+  },
+  {
+    id: 'promo-4',
+    name: 'Summer clearance',
+    kind: 'percentage',
+    value: 20,
+    scope: 'all',
+    scopeId: null,
+    scopeName: null,
+    startsAt: new Date(Date.now() - 90 * 86_400_000).toISOString(),
+    endsAt: new Date(Date.now() - 40 * 86_400_000).toISOString(),
+    paused: false,
+    minimumSale: null,
+    comment: null,
+    createdBy: 'Nodira Rasulova',
+    createdAt: new Date(Date.now() - 100 * 86_400_000).toISOString(),
     updatedAt: new Date(Date.now() - 40 * 86_400_000).toISOString(),
   },
 ]

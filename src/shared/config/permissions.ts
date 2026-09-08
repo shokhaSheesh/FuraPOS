@@ -70,12 +70,7 @@ export const permissionTree: readonly PermissionNode[] = [
     label: 'Marketing',
     children: [
       { key: 'marketing.clients', label: 'Clients', actions: crudExport },
-      { key: 'marketing.groups', label: 'Groups', actions: crud },
-      { key: 'marketing.cashback', label: 'Cashback', actions: crud },
-      { key: 'marketing.sms', label: 'SMS campaigns', actions: crud },
-      { key: 'marketing.digital', label: 'Digital campaigns', actions: crud },
       { key: 'marketing.promotions', label: 'Promotions', actions: crud },
-      { key: 'marketing.coupons', label: 'Coupons', actions: crud },
     ],
   },
   {

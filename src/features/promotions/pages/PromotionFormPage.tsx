@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -11,11 +12,11 @@ import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
 import { Select } from '@/shared/ui/Select'
 import { SegmentedControl } from '@/shared/ui/SegmentedControl'
+import { MultiSelect } from '@/shared/ui/MultiSelect'
 import { DatePicker } from '@/shared/ui/DatePicker'
 import { toast } from '@/shared/ui/toast'
 import { paths } from '@/shared/config/paths'
 import { formatMoney } from '@/shared/lib/format'
-import { ProductPicker } from '@/shared/components/ProductPicker'
 import { useDataStore } from '@/data/store'
 import { usePromotion, usePromotionActions } from '../api/promotions'
 import {
@@ -53,7 +54,7 @@ export default function PromotionFormPage() {
           kind: existing.kind,
           value: existing.value,
           scope: existing.scope,
-          scopeId: existing.scopeId,
+          scopeIds: existing.scopeIds,
           startsAt: existing.startsAt,
           endsAt: existing.endsAt,
           paused: existing.paused,
@@ -65,7 +66,7 @@ export default function PromotionFormPage() {
           kind: 'percentage',
           value: 10,
           scope: 'all',
-          scopeId: null,
+          scopeIds: [],
           startsAt: new Date().toISOString(),
           endsAt: null,
           paused: false,
@@ -75,6 +76,14 @@ export default function PromotionFormPage() {
   })
 
   const values = form.watch()
+
+  const scopeOptions = useMemo(
+    () =>
+      values.scope === 'category'
+        ? categories.map((category) => ({ value: category.id, label: category.name }))
+        : products.map((product) => ({ value: product.id, label: product.name })),
+    [values.scope, categories, products],
+  )
 
   if (editing && !existing) {
     return (
@@ -89,14 +98,18 @@ export default function PromotionFormPage() {
     )
   }
 
-  const chosenProduct = products.find((product) => product.id === values.scopeId)
+  const scopeNames = (values.scopeIds ?? []).map(
+    (id) => scopeOptions.find((option) => option.value === id)?.label ?? '—',
+  )
 
   const scopeName =
     values.scope === 'all'
       ? 'everything'
-      : values.scope === 'category'
-        ? (categories.find((c) => c.id === values.scopeId)?.name ?? 'a category')
-        : (chosenProduct?.name ?? 'a product')
+      : scopeNames.length === 0
+        ? 'nothing yet'
+        : scopeNames.length <= 2
+          ? scopeNames.join(' and ')
+          : `${scopeNames.length} ${values.scope === 'category' ? 'categories' : 'products'}`
 
   const exampleDiscount =
     values.kind === 'percentage'
@@ -108,7 +121,7 @@ export default function PromotionFormPage() {
     (draft) => {
       const input = {
         ...draft,
-        scopeId: draft.scope === 'all' ? null : draft.scopeId,
+        scopeIds: draft.scope === 'all' ? [] : draft.scopeIds,
         comment: draft.comment || null,
       }
       if (editing && existing) {
@@ -246,9 +259,9 @@ export default function PromotionFormPage() {
                       value={field.value}
                       onChange={(next) => {
                         field.onChange(next)
-                        // The old id belongs to the old list and would silently
+                        // The old ids belong to the old list and would silently
                         // scope the promotion to nothing.
-                        form.setValue('scopeId', null)
+                        form.setValue('scopeIds', [])
                       }}
                       options={PROMOTION_SCOPES}
                     />
@@ -256,59 +269,40 @@ export default function PromotionFormPage() {
                 />
               )}
             </Field>
-            {values.scope === 'category' ? (
-              <Field label="Category" required error={form.formState.errors.scopeId?.message}>
+            {values.scope !== 'all' ? (
+              <Field
+                label={values.scope === 'category' ? 'Categories' : 'Products'}
+                required
+                hint={
+                  values.scope === 'category'
+                    ? 'Pick as many as the offer covers'
+                    : 'Every variation of each one is covered — both sides of a part, every colour'
+                }
+                error={form.formState.errors.scopeIds?.message}
+              >
                 {(p) => (
                   <Controller
                     control={form.control}
-                    name="scopeId"
+                    name="scopeIds"
                     render={({ field }) => (
-                      <Select
+                      <MultiSelect
                         {...p}
                         className="w-full"
-                        placeholder="Pick a category"
-                        value={field.value ?? undefined}
+                        value={field.value}
                         onChange={field.onChange}
-                        options={categories.map((c) => ({ value: c.id, label: c.name }))}
+                        options={scopeOptions}
+                        placeholder={
+                          values.scope === 'category' ? 'Pick categories' : 'Pick products'
+                        }
+                        searchPlaceholder={
+                          values.scope === 'category'
+                            ? 'Search categories…'
+                            : 'Search products by name…'
+                        }
                       />
                     )}
                   />
                 )}
-              </Field>
-            ) : null}
-
-            {values.scope === 'product' ? (
-              <Field
-                label="Product"
-                required
-                hint="Every variation of it is covered — both sides of a part, every colour"
-                error={form.formState.errors.scopeId?.message}
-              >
-                {() =>
-                  chosenProduct ? (
-                    <div className="border-border rounded-control flex items-center justify-between gap-2 border px-3 py-2">
-                      <span className="text-fg truncate text-sm">{chosenProduct.name}</span>
-                      <Button
-                        type="button"
-                        variant="link"
-                        size="sm"
-                        className="h-auto shrink-0 px-0"
-                        onClick={() => form.setValue('scopeId', null)}
-                      >
-                        Change
-                      </Button>
-                    </div>
-                  ) : (
-                    <ProductPicker
-                      placeholder="Search a product…"
-                      // The picker deals in variations; a promotion covers the
-                      // whole product, so only the parent id is kept.
-                      onPick={(variation) =>
-                        form.setValue('scopeId', variation.productId, { shouldValidate: true })
-                      }
-                    />
-                  )
-                }
               </Field>
             ) : null}
           </CardBody>

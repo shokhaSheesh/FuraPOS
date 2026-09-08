@@ -65,9 +65,15 @@ export interface Promotion {
   /** Percent when `kind` is percentage, UZS when fixed. */
   value: number
   scope: PromotionScope
-  /** Set when scope is category or brand. */
-  scopeId: Id | null
-  scopeName: string | null
+  /**
+   * The categories or products it covers. Several, because an offer is nearly
+   * always on a handful of related things rather than exactly one — and making
+   * someone create four identical promotions to cover four categories is how a
+   * screen gets worked around instead of used.
+   */
+  scopeIds: Id[]
+  /** Their names, snapshotted so a rename cannot rewrite what this covered. */
+  scopeNames: string[]
   startsAt: IsoDate
   /** Null means it runs until somebody stops it. */
   endsAt: IsoDate | null
@@ -136,8 +142,11 @@ export const lineGross = (line: PromotableLine) => line.quantity * line.unitPric
 /** Whether a single line is inside the promotion's scope. */
 export function covers(promotion: Promotion, line: PromotableLine): boolean {
   if (promotion.scope === 'all') return true
-  if (promotion.scope === 'category') return line.categoryId === promotion.scopeId
-  return line.productId === promotion.scopeId
+  // An empty scope covers nothing, which is what an unfinished promotion
+  // should do — silently covering everything would be the dangerous reading.
+  if (promotion.scopeIds.length === 0) return false
+  const key = promotion.scope === 'category' ? line.categoryId : line.productId
+  return key !== null && promotion.scopeIds.includes(key)
 }
 
 /**
@@ -186,14 +195,25 @@ export function bestPromotion(
   return best
 }
 
+/**
+ * What it applies to, in words. Names the things while there are few enough to
+ * read, then counts them — "4 categories" beats four truncated labels.
+ */
+export function describeScope(promotion: Pick<Promotion, 'scope' | 'scopeNames'>): string {
+  if (promotion.scope === 'all') return 'everything'
+  const names = promotion.scopeNames
+  if (names.length === 0) return 'nothing yet'
+  if (names.length <= 2) return names.join(' and ')
+  return `${names.length} ${promotion.scope === 'category' ? 'categories' : 'products'}`
+}
+
 /** How the rule reads in a sentence, for the list and the sale screen. */
 export function describe(promotion: Promotion): string {
   const amount =
     promotion.kind === 'percentage'
       ? `${promotion.value}% off`
       : `${formatMoney(promotion.value)} off`
-  const scope = promotion.scope === 'all' ? 'everything' : (promotion.scopeName ?? 'a selection')
-  return `${amount} ${scope}`
+  return `${amount} ${describeScope(promotion)}`
 }
 
 /* --- validation ---------------------------------------------------------- */
@@ -204,7 +224,7 @@ export const promotionDraftSchema = z
     kind: z.enum(['percentage', 'fixed']),
     value: z.number().positive('A discount of nothing is not a promotion'),
     scope: z.enum(['all', 'category', 'product']),
-    scopeId: z.string().nullable(),
+    scopeIds: z.array(z.string()),
     startsAt: z.string(),
     endsAt: z.string().nullable(),
     paused: z.boolean(),
@@ -215,9 +235,9 @@ export const promotionDraftSchema = z
     message: 'A percentage cannot be over 100',
     path: ['value'],
   })
-  .refine((draft) => draft.scope === 'all' || Boolean(draft.scopeId), {
-    message: 'Choose what it applies to',
-    path: ['scopeId'],
+  .refine((draft) => draft.scope === 'all' || draft.scopeIds.length > 0, {
+    message: 'Choose at least one',
+    path: ['scopeIds'],
   })
   .refine(
     (draft) =>

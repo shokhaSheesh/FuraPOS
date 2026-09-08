@@ -725,11 +725,21 @@ applies, and a label on the sales it produced.
   payment to the customer.
 - **A percentage applies only to the lines it covers**, not to the whole basket — otherwise "15% off
   brakes" quietly discounts the oil filters too.
-- **Scope is everything / a category / a product.** Brand was the third option first and was
-  replaced at the client's request. A promotion is scoped to a **product, not a variation**: an
-  offer on "Brake pad set X30" means the whole part, and nobody sets one up that covers the left
-  side and not the right. The field is the search picker rather than a dropdown, because a
-  catalogue is too long to scroll — it picks a variation and keeps only its parent id.
+- **Scope is everything / categories / products, and takes several of each.** Brand was the third
+  option first and was replaced at the client's request, then made multi-select: an offer is nearly
+  always on a handful of related things, and making someone create four identical promotions to
+  cover four categories is how a screen gets worked around instead of used.
+  - Scoped to a **product, not a variation** — an offer on "Brake pad set X30" means the whole part,
+    and nobody sets one up that covers the left side and not the right.
+  - **An empty scope covers nothing**, not everything. An unfinished promotion must not silently
+    discount the whole catalogue.
+  - The control is a new shared `MultiSelect` (`shared/ui/MultiSelect.tsx`, built on our Popover per
+    DESIGN_RULES § 11): a dropdown with a search box inside it. **Search is a way through the list,
+    not a filter on the selection** — picks survive a changed search term, which is the classic way
+    this control goes wrong. Chosen options pin to the top of the panel, so "what have I chosen"
+    never needs a scroll.
+  - The rule reads as **names while there are one or two, then a count** — "4 products" beats four
+    truncated labels.
 - **The form works the rule through on an example sale.** Kind, value and scope are three abstract
   fields that cannot tell anyone whether they just wrote "15% off brakes" or "15 000 off
   everything", and the difference is a lot of money.

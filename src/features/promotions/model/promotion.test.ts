@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { formatMoney } from '@/shared/lib/format'
 import {
   bestPromotion,
+  describeScope,
   covers,
   daysRemaining,
   describe as describePromotion,
@@ -22,8 +23,8 @@ const promo = (over: Partial<Promotion> = {}): Promotion =>
     kind: 'percentage',
     value: 10,
     scope: 'all',
-    scopeId: null,
-    scopeName: null,
+    scopeIds: [],
+    scopeNames: [],
     startsAt: new Date(NOW.getTime() - 5 * day).toISOString(),
     endsAt: new Date(NOW.getTime() + 5 * day).toISOString(),
     paused: false,
@@ -80,15 +81,21 @@ describe('what it covers', () => {
     expect(covers(promo(), line())).toBe(true)
   })
 
-  it('covers only the named category', () => {
-    const p = promo({ scope: 'category', scopeId: 'cat-1' })
+  it('covers only the named categories', () => {
+    const p = promo({ scope: 'category', scopeIds: ['cat-1', 'cat-3'] })
     expect(covers(p, line({ categoryId: 'cat-1' }))).toBe(true)
+    expect(covers(p, line({ categoryId: 'cat-3' }))).toBe(true)
     expect(covers(p, line({ categoryId: 'cat-2' }))).toBe(false)
+  })
+
+  it('covers nothing when the scope is empty', () => {
+    // An unfinished promotion must not silently discount the whole catalogue.
+    expect(covers(promo({ scope: 'category', scopeIds: [] }), line())).toBe(false)
   })
 
   it('covers only the named product, across all its variations', () => {
     // An offer on a part covers its left and right sides alike.
-    const p = promo({ scope: 'product', scopeId: 'prd-1' })
+    const p = promo({ scope: 'product', scopeIds: ['prd-1'] })
     expect(covers(p, line({ productId: 'prd-1', variationId: 'v1' }))).toBe(true)
     expect(covers(p, line({ productId: 'prd-1', variationId: 'v2' }))).toBe(true)
     expect(covers(p, line({ productId: 'prd-9' }))).toBe(false)
@@ -102,7 +109,7 @@ describe('what it takes off', () => {
   })
 
   it('takes a percentage of the covered lines only', () => {
-    const p = promo({ scope: 'category', scopeId: 'cat-1', value: 50 })
+    const p = promo({ scope: 'category', scopeIds: ['cat-1'], value: 50 })
     const lines = [line({ categoryId: 'cat-1' }), line({ categoryId: 'cat-2' })]
     // Half of the 200 000 that is covered, not of the 400 000 basket.
     expect(discountFor(p, lines, NOW)).toBe(100_000)
@@ -119,7 +126,7 @@ describe('what it takes off', () => {
   })
 
   it('does nothing when nothing is covered', () => {
-    const p = promo({ scope: 'product', scopeId: 'prd-9' })
+    const p = promo({ scope: 'product', scopeIds: ['prd-9'] })
     expect(discountFor(p, [line()], NOW)).toBe(0)
   })
 
@@ -164,11 +171,29 @@ describe('choosing between promotions', () => {
 })
 
 describe('how it reads', () => {
+  it('names one or two things, then counts them', () => {
+    expect(describeScope(promo())).toBe('everything')
+    expect(describeScope(promo({ scope: 'category', scopeNames: ['Brakes'] }))).toBe('Brakes')
+    expect(describeScope(promo({ scope: 'category', scopeNames: ['Brakes', 'Filters'] }))).toBe(
+      'Brakes and Filters',
+    )
+    // Four truncated labels are less readable than the count.
+    expect(describeScope(promo({ scope: 'product', scopeNames: ['A', 'B', 'C', 'D'] }))).toBe(
+      '4 products',
+    )
+    expect(describeScope(promo({ scope: 'category', scopeNames: [] }))).toBe('nothing yet')
+  })
+
   it('says the rule in a sentence', () => {
     expect(describePromotion(promo())).toBe('10% off everything')
     expect(
       describePromotion(
-        promo({ kind: 'fixed', value: 50_000, scope: 'product', scopeName: 'Brake pad set X30' }),
+        promo({
+          kind: 'fixed',
+          value: 50_000,
+          scope: 'product',
+          scopeNames: ['Brake pad set X30'],
+        }),
       ),
     ).toBe(`${formatMoney(50_000)} off Brake pad set X30`)
   })

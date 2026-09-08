@@ -211,7 +211,7 @@ export interface PromotionInput {
   kind: Promotion['kind']
   value: number
   scope: Promotion['scope']
-  scopeId: string | null
+  scopeIds: string[]
   startsAt: string
   endsAt: string | null
   paused: boolean
@@ -451,19 +451,19 @@ const quantityAt = (rows: { locationId: string; quantity: number }[], locationId
  * there is no backend and no network. Writes replace the relevant array so
  * subscribed components re-render.
  */
-/** A promotion stores the name of what it applies to, so a renamed category or
- *  product does not silently change what an old promotion claims to cover. */
-function nameOfScope(
+/** A promotion stores the names of what it applies to, so a renamed category
+ *  or product does not silently change what an old promotion claims to cover. */
+function namesOfScope(
   state: {
     categories: readonly { readonly id: string; readonly name: string }[]
     products: readonly { readonly id: string; readonly name: string }[]
   },
   scope: Promotion['scope'],
-  scopeId: string | null,
-): string | null {
-  if (scope === 'all' || !scopeId) return null
+  scopeIds: string[],
+): string[] {
+  if (scope === 'all') return []
   const list = scope === 'category' ? state.categories : state.products
-  return list.find((entry) => entry.id === scopeId)?.name ?? null
+  return scopeIds.map((id) => list.find((entry) => entry.id === id)?.name ?? '—')
 }
 
 export const useDataStore = create<CatalogState>((set, get) => ({
@@ -1204,7 +1204,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
     const promotion: Promotion = {
       ...input,
       id: `promo-${get().promotions.length + 1}-${Date.now()}`,
-      scopeName: nameOfScope(get(), input.scope, input.scopeId),
+      scopeNames: namesOfScope(get(), input.scope, input.scopeIds),
       createdBy: 'Akhmet Dauletmuratov',
       createdAt: now,
       updatedAt: now,
@@ -1220,7 +1220,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
           ? {
               ...promotion,
               ...input,
-              scopeName: nameOfScope(get(), input.scope, input.scopeId),
+              scopeNames: namesOfScope(get(), input.scope, input.scopeIds),
               updatedAt: new Date().toISOString(),
             }
           : promotion,

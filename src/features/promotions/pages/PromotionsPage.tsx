@@ -23,7 +23,12 @@ import {
   usePromotions,
   type PromotionRow,
 } from '../api/promotions'
-import { describe, promotionStatusLabel, promotionStatusTone } from '../model/promotion'
+import {
+  describe,
+  describeScope,
+  promotionStatusLabel,
+  promotionStatusTone,
+} from '../model/promotion'
 
 /**
  * Promotions.
@@ -98,7 +103,21 @@ export default function PromotionsPage() {
           row.original.scope === 'all' ? (
             <span className="text-fg-muted">Everything</span>
           ) : (
-            <Badge tone="neutral">{row.original.scopeName ?? '—'}</Badge>
+            <div className="flex flex-wrap gap-1" title={row.original.scopeNames.join(', ')}>
+              {row.original.scopeNames.slice(0, 2).map((name) => (
+                <Badge key={name} tone="neutral">
+                  {name}
+                </Badge>
+              ))}
+              {row.original.scopeNames.length > 2 ? (
+                <span className="text-fg-subtle text-2xs">
+                  +{row.original.scopeNames.length - 2}
+                </span>
+              ) : null}
+              {row.original.scopeNames.length === 0 ? (
+                <span className="text-fg-subtle">{describeScope(row.original)}</span>
+              ) : null}
+            </div>
           ),
       },
       {

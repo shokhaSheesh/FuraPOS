@@ -35,7 +35,7 @@ export function usePromotions(filters: { search?: unknown; status?: unknown } = 
       .filter((promotion) => {
         if (filters.status && promotion.status !== filters.status) return false
         return matches(
-          [promotion.name, promotion.scopeName, promotion.comment],
+          [promotion.name, ...promotion.scopeNames, promotion.comment],
           filters.search as string | undefined,
         )
       })

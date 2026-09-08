@@ -35,8 +35,8 @@ export type PromotionScope = 'all' | 'category' | 'product'
 
 export const PROMOTION_SCOPES: { value: PromotionScope; label: string }[] = [
   { value: 'all', label: 'Everything' },
-  { value: 'category', label: 'One category' },
-  { value: 'product', label: 'One product' },
+  { value: 'category', label: 'Categories' },
+  { value: 'product', label: 'Products' },
 ]
 
 export type PromotionStatus = 'scheduled' | 'running' | 'finished' | 'paused'

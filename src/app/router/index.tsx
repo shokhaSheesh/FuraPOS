@@ -277,7 +277,6 @@ const routes: RouteObject[] = [
         path: paths.analytics.productLogs,
         element: page(<ProductLogsPage />, 'analytics.productLogs.view'),
       },
-      { path: paths.analytics.sales, element: todo('Sales report', 'analytics.sales.view') },
       {
         path: paths.analytics.customers,
         element: todo('Customer report', 'analytics.customers.view'),
@@ -286,7 +285,6 @@ const routes: RouteObject[] = [
         path: paths.analytics.promotions,
         element: todo('Promotions report', 'analytics.promotions.view'),
       },
-      { path: paths.analytics.calls, element: todo('Call history', 'analytics.calls.view') },
 
       // --- Standalone sections ------------------------------------------------
       { path: paths.uploads, element: todo('My uploads', 'uploads.view') },

@@ -19,7 +19,7 @@ export function TopProductsCard({
       <CardHeader>
         <CardTitle>Top products</CardTitle>
         <Button variant="link" size="sm" className="h-auto px-0" asChild>
-          <Link to={paths.analytics.sales}>Full report</Link>
+          <Link to={paths.analytics.reports}>Full report</Link>
         </Button>
       </CardHeader>
       <CardBody>

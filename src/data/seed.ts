@@ -386,7 +386,7 @@ const roleSpecs: { id: string; name: string; keys: string[] }[] = [
       ...expand('procurement.schedules', ['view', 'create', 'edit']),
       ...expand('personnel.employees', ['view']),
       ...expand('marketing.clients', ['view', 'create', 'edit', 'export']),
-      ...expand('analytics.sales', ['view', 'export']),
+      ...expand('analytics.reportBuilder', ['view', 'create', 'edit', 'export']),
       ...expand('analytics.customers', ['view', 'export']),
     ],
   },
@@ -422,7 +422,7 @@ const roleSpecs: { id: string; name: string; keys: string[] }[] = [
       ...expand('products.cost', ['view']),
       ...expand('products.suppliers', ['view']),
       ...expand('personnel.salary', ['view']),
-      ...expand('analytics.sales', ['view', 'export']),
+      ...expand('analytics.reportBuilder', ['view', 'create', 'edit', 'export']),
     ],
   },
 ]

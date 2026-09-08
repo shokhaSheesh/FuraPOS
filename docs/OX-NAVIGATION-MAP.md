@@ -755,15 +755,27 @@ the Brakes promotion — but the seed reads as nonsense. Worth tidying when the 
 
 ## 8. Аналитика — Analytics
 
-| OX (ru)              | Ours (en)                | OX route                                |
-| -------------------- | ------------------------ | --------------------------------------- |
-| Генератор отчета     | Report generator         | `/app/statistics/reports`               |
-| Логи продуктов       | Product logs             | `/app/statistics/stock-count-histories` |
-| Отчет онлайн-витрины | Online storefront report | `/app/statistics/utm-reports`           |
-| Отчет по продажам    | Sales report             | `/app/statistics/sell-reports`          |
-| Отчёт по клиентам    | Customer report          | `/app/statistics/customer-reports`      |
-| Отчёт по акциям      | Promotions report        | `/app/statistics/promotion-report`      |
-| История звонков      | Call history             | `/app/statistics/call-history`          |
+| OX (ru)              | Ours (en)         | OX route                                |
+| -------------------- | ----------------- | --------------------------------------- |
+| Генератор отчета     | Report generator  | `/app/statistics/reports`               |
+| Логи продуктов       | Product logs      | `/app/statistics/stock-count-histories` |
+| Отчет онлайн-витрины | — (removed)       | `/app/statistics/utm-reports`           |
+| Отчет по продажам    | — (removed)       | `/app/statistics/sell-reports`          |
+| Отчёт по клиентам    | Customer report   | `/app/statistics/customer-reports`      |
+| Отчёт по акциям      | Promotions report | `/app/statistics/promotion-report`      |
+| История звонков      | — (removed)       | `/app/statistics/call-history`          |
+
+Three of the seven are cut, leaving four:
+
+- **Online storefront report** reports on UTM tags — which advert a visitor arrived from — and that
+  needs a customer-facing web shop to land on. We do not build one and sales are typed in by hand,
+  so there is nothing to tag. OX's own version never finishes loading on the tenant.
+- **Sales report** is the report generator with `source = sales`, and building it would be a second
+  place for the same numbers to be wrong. What it had that the generator lacked was charts — so
+  charts were added to the generator instead, and "Sales by month" is a saved report with a line
+  chart pinned to the sidebar.
+- **Call history** needs a phone system wired in. Integrations are out of scope, so it would show
+  zero rows forever.
 
 ### Report generator — «Генератор отчета», read from the live tenant
 

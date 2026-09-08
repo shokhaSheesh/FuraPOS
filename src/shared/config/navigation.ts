@@ -142,7 +142,6 @@ export const navigation: NavSection[] = [
         to: paths.analytics.productLogs,
         permission: 'analytics.productLogs.view',
       },
-      { label: 'Sales report', to: paths.analytics.sales, permission: 'analytics.sales.view' },
       {
         label: 'Customer report',
         to: paths.analytics.customers,
@@ -153,7 +152,6 @@ export const navigation: NavSection[] = [
         to: paths.analytics.promotions,
         permission: 'analytics.promotions.view',
       },
-      { label: 'Call history', to: paths.analytics.calls, permission: 'analytics.calls.view' },
     ],
   },
   {

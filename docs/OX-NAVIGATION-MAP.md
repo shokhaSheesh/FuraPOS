@@ -1000,7 +1000,60 @@ on New sale. The sale detail page shows it as one line — "Promotion · Summer 
 answers "why is this discounted" without anybody working backwards from a percentage. That is the
 cheap half of the idea; measuring campaign effectiveness was the expensive half.
 
-## 12. Настройки — Settings
+## 12. Настройки — Settings, read from the live tenant
+
+OX keeps Settings as **one page with nine tabs** at `/app/settings`; we surface them in the sidebar
+instead, as this document has always said.
+
+| OX (ru)       | OX route                  | Ours             |
+| ------------- | ------------------------- | ---------------- |
+| Основные      | `/app/settings/main`      | General          |
+| Бренды        | `/app/settings/brands`    | Brands           |
+| Оборудование  | `/app/settings/equipment` | — (removed)      |
+| Локации       | `/app/settings/location`  | Locations        |
+| Продажи       | `/app/settings/sells`     | — (removed)      |
+| Продукты      | `/app/settings/products`  | Categories       |
+| Клиенты       | `/app/settings/customers` | — (removed)      |
+| Биллинг       | `/app/settings/billing`   | Billing          |
+| Личные данные | `/app/settings/profile`   | Personal data    |
+| Webhooks      | `/app/settings/webhooks`  | — (out of scope) |
+| ИИ / MCP      | —                         | — (out of scope) |
+
+**Three cut, and why:**
+
+- **Оборудование** is a device list — ID, name, location, type, key — plus a visitor counter. It
+  needs a POS and hardware, neither of which exists here. Empty on the tenant too.
+- **Продажи** is four tabs: cash terminals (no POS), payment methods, a sales funnel and instalment
+  plans. Our sale statuses _are_ the funnel and they live in code; the one real part — which payment
+  methods a sale may use — folds into General rather than earning a page.
+- **Клиенты** is a custom-field builder for the client card («дата рождения, размер, любимый
+  аромат»). CLAUDE.md rules that out explicitly: attributes that matter are real typed fields.
+  Same reasoning removes most of OX's Продукты tab — variation properties, product properties,
+  receipt properties, a translation dictionary — leaving the one useful part, categories.
+
+**What each of ours does:**
+
+- **General** — company, then money and dates, then two rules with teeth. `usdRate` sits behind
+  every landed cost in the product; **which statuses count as revenue** is OX's «Настройки расчёта
+  выручки» and is the setting most likely to have two people quoting different revenue at each
+  other, so the screen says so in as many words. Deleted sales never count whatever is ticked.
+- **Brands** — with a product count per brand, and a refusal to delete one that is in use.
+- **Locations** — the most load-bearing list here: stock is held per location and every document
+  points at one. It shows what each location **holds**, in units and at cost, and the store refuses
+  to delete a location with stock on it. Parts nowhere is worse than a spare row.
+- **Categories** — two levels as an indented table rather than a collapsing tree: with six
+  categories a tree is ceremony, and a table can still be sorted and counted.
+- **Billing** — the only screen about the software rather than the business, kept because the
+  balance already sits in the top bar and a number with no page behind it is a dead end. "Top up"
+  is honest about being a hand-off; there is no payment processing anywhere in this build.
+- **Personal data** — profile, and **notification preferences as (event × channel)**, which is the
+  cross-cutting pattern CLAUDE.md asks for: ten business events down the side, four channels
+  across, counted per module. Somebody wants low stock by Telegram and an overdue payment by email,
+  and one master switch cannot express that.
+
+**Worth recording about the tooling, not the product:** Radix tab triggers activate on `mousedown`,
+not `click`, so a headless `.click()` silently does nothing. That cost a wrong diagnosis — the
+shared `Tabs` component looked broken and was not.
 
 Rendered in OX as tabs inside one page; we keep them as sidebar children.
 

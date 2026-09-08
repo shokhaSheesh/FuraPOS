@@ -21,6 +21,13 @@ import type { Role } from '@/features/roles/model/role'
 import type { Client, ClientType } from '@/features/clients/model/client'
 import type { Promotion } from '@/features/promotions/model/promotion'
 import type { ReportDefinition } from '@/features/reports/model/report'
+import type {
+  Brand,
+  CategorySettings,
+  CompanySettings,
+  LocationSettings,
+  NotificationPreferences,
+} from '@/features/settings/model/settings'
 
 /** `expand('sales.orders', ['view','create'])` → `sales.orders.view`, … */
 const expand = (key: string, actions: readonly string[]) =>
@@ -1576,3 +1583,93 @@ export const reports: ReportDefinition[] = (
     updatedAt: new Date(Date.now() - between(1, 19) * 86_400_000).toISOString(),
   }),
 )
+
+/**
+ * Company settings.
+ *
+ * The handful of facts every other screen reads. `usdRate` in particular is
+ * the same number as `USD_RATE` above — settings is where a person changes it,
+ * the constant is where the seed reads it.
+ */
+export const companySettings: CompanySettings = {
+  name: 'Fura Sentr',
+  logoUrl: null,
+  industry: 'Auto parts',
+  address: 'Ташкент, ул. Амира Темура, 41',
+  phone: '+998 71 200 40 40',
+  email: 'info@fura.uz',
+  currency: 'UZS',
+  locale: 'ru-RU',
+  timezone: 'Asia/Tashkent',
+  usdRate: USD_RATE,
+  paymentMethods: ['cash', 'card', 'transfer', 'credit'],
+  allowOverCreditLimit: false,
+  // Deliberately not `open` or `postponed`: an unfinished sale is not revenue,
+  // and counting it would flatter every figure in Analytics.
+  revenueStatuses: ['completed', 'delivered', 'processed'],
+  updatedAt: new Date(Date.now() - 30 * 86_400_000).toISOString(),
+}
+
+/** Brands, with the zone OX records against each. */
+export const brandSettings: Brand[] = brands.map((brand, index) => ({
+  id: brand.id,
+  name: brand.name,
+  zone: ['Germany', 'Japan', 'Germany', 'United Kingdom'][index] ?? null,
+  active: true,
+}))
+
+export const locationSettings: LocationSettings[] = [
+  {
+    id: 'loc-1',
+    name: 'Central warehouse',
+    kind: 'warehouse',
+    address: 'Ташкент, Сергели, склад 4',
+    areaSqm: 1200,
+    active: true,
+  },
+  {
+    id: 'loc-2',
+    name: 'Shop — Chilonzor',
+    kind: 'shop',
+    address: 'Ташкент, ул. Чилонзор, 18',
+    areaSqm: 240,
+    active: true,
+  },
+  {
+    id: 'loc-3',
+    name: 'Shop — Yunusobod',
+    kind: 'shop',
+    address: 'Ташкент, ул. Амира Темура, 108',
+    areaSqm: 180,
+    active: true,
+  },
+]
+
+/** Categories, with the parent implied by the path the catalogue already uses. */
+export const categorySettings: CategorySettings[] = (() => {
+  const parents = [...new Set(categories.map((c) => c.path.split(' > ')[0]!))]
+  return [
+    ...parents.map((name, index) => ({ id: `catgrp-${index + 1}`, name, parentId: null })),
+    ...categories.map((category) => ({
+      id: category.id,
+      name: category.name,
+      parentId: `catgrp-${parents.indexOf(category.path.split(' > ')[0]!) + 1}`,
+    })),
+  ]
+})()
+
+/**
+ * Notification preferences.
+ *
+ * Seeded partly on, because an all-off state cannot show that the shape is
+ * (event × channel) rather than one master switch.
+ */
+export const notificationPreferences: NotificationPreferences = {
+  'stock.low': ['inApp', 'telegram'],
+  'stock.out': ['inApp', 'email', 'telegram'],
+  'order.late': ['inApp', 'email'],
+  'schedule.drafted': ['inApp'],
+  'sale.overdue': ['inApp', 'email'],
+  'client.overLimit': ['inApp'],
+  'stocktake.variance': ['inApp'],
+}

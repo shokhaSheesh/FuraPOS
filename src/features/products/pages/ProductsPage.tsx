@@ -294,10 +294,10 @@ export default function ProductsPage() {
         open={importing}
         onOpenChange={setImporting}
         onQueued={(fileName) => {
-          // Imports are jobs, so the confirmation points at where they are
-          // watched rather than claiming the catalogue already changed.
-          toast.success(`${fileName} queued — track it in My uploads`)
-          navigate(paths.uploads)
+          // Still a job, not a save: the toast promises a queued file rather
+          // than a finished import, and stays put now that there is no upload
+          // log to send anybody to.
+          toast.success(`${fileName} queued — the catalogue updates once it is processed`)
         }}
       />
 

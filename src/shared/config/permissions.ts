@@ -82,7 +82,6 @@ export const permissionTree: readonly PermissionNode[] = [
       { key: 'analytics.customers', label: 'Customer report', actions: readExport },
     ],
   },
-  { key: 'uploads', label: 'My uploads', actions: ['view', 'create'] },
   {
     key: 'settings',
     label: 'Settings',

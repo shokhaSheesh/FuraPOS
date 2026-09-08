@@ -33,6 +33,14 @@ const SupplierDetailPage = lazy(() => import('@/features/suppliers/pages/Supplie
 const SupplierFormPage = lazy(() => import('@/features/suppliers/pages/SupplierFormPage'))
 const CustomerReportPage = lazy(() => import('@/features/customerReport/pages/CustomerReportPage'))
 const ProductLogsPage = lazy(() => import('@/features/productLogs/pages/ProductLogsPage'))
+const GeneralSettingsPage = lazy(() => import('@/features/settings/pages/GeneralSettingsPage'))
+const BrandsSettingsPage = lazy(() => import('@/features/settings/pages/BrandsSettingsPage'))
+const LocationsSettingsPage = lazy(() => import('@/features/settings/pages/LocationsSettingsPage'))
+const CategoriesSettingsPage = lazy(
+  () => import('@/features/settings/pages/CategoriesSettingsPage'),
+)
+const BillingSettingsPage = lazy(() => import('@/features/settings/pages/BillingSettingsPage'))
+const PersonalSettingsPage = lazy(() => import('@/features/settings/pages/PersonalSettingsPage'))
 const ReportsPage = lazy(() => import('@/features/reports/pages/ReportsPage'))
 const ReportBuilderPage = lazy(() => import('@/features/reports/pages/ReportBuilderPage'))
 const ReportViewPage = lazy(() => import('@/features/reports/pages/ReportViewPage'))
@@ -284,26 +292,31 @@ const routes: RouteObject[] = [
       },
 
       // --- Standalone sections ------------------------------------------------
-      { path: paths.uploads, element: todo('My uploads', 'uploads.view') },
       { path: paths.activityLog, element: todo('Activity log') },
 
       // --- Settings -------------------------------------------------------------
       { path: paths.settings.root, element: <Navigate to={paths.settings.general} replace /> },
-      { path: paths.settings.general, element: todo('General', 'settings.general.view') },
-      { path: paths.settings.brands, element: todo('Brands', 'settings.brands.view') },
-      { path: paths.settings.equipment, element: todo('Equipment', 'settings.equipment.view') },
-      { path: paths.settings.locations, element: todo('Locations', 'settings.locations.view') },
-      { path: paths.settings.sales, element: todo('Sales configuration', 'settings.sales.view') },
       {
-        path: paths.settings.products,
-        element: todo('Product configuration', 'settings.products.view'),
+        path: paths.settings.general,
+        element: page(<GeneralSettingsPage />, 'settings.general.view'),
       },
       {
-        path: paths.settings.clients,
-        element: todo('Client configuration', 'settings.clients.view'),
+        path: paths.settings.brands,
+        element: page(<BrandsSettingsPage />, 'settings.brands.view'),
       },
-      { path: paths.settings.billing, element: todo('Billing', 'settings.billing.view') },
-      { path: paths.settings.personal, element: todo('Personal data') },
+      {
+        path: paths.settings.locations,
+        element: page(<LocationsSettingsPage />, 'settings.locations.view'),
+      },
+      {
+        path: paths.settings.categories,
+        element: page(<CategoriesSettingsPage />, 'settings.products.view'),
+      },
+      {
+        path: paths.settings.billing,
+        element: page(<BillingSettingsPage />, 'settings.billing.view'),
+      },
+      { path: paths.settings.personal, element: page(<PersonalSettingsPage />) },
 
       { path: '*', element: todo('Page not found') },
     ],

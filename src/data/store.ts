@@ -17,6 +17,14 @@ import type { Role } from '@/features/roles/model/role'
 import type { Client, ClientStatus } from '@/features/clients/model/client'
 import type { Promotion } from '@/features/promotions/model/promotion'
 import type { ReportDefinition } from '@/features/reports/model/report'
+import type {
+  Brand,
+  CategorySettings,
+  CompanySettings,
+  LocationSettings,
+  NotificationChannel,
+  NotificationPreferences,
+} from '@/features/settings/model/settings'
 export type { Client }
 import type { ReorderSettings } from '@/features/schedules/model/reorder'
 import { buildReorderLines, lineCostUzs, needsOrdering } from '@/features/schedules/model/reorder'
@@ -50,6 +58,11 @@ import {
   schedules as seedSchedules,
   promotions as seedPromotions,
   reports as seedReports,
+  companySettings as seedCompany,
+  brandSettings as seedBrandSettings,
+  locationSettings as seedLocationSettings,
+  categorySettings as seedCategorySettings,
+  notificationPreferences as seedNotifications,
   employees as seedEmployees,
   roles as seedRoles,
   suppliers as seedSuppliers,
@@ -78,6 +91,11 @@ interface CatalogState {
   clients: Client[]
   promotions: Promotion[]
   reports: ReportDefinition[]
+  company: CompanySettings
+  brandSettings: Brand[]
+  locationSettings: LocationSettings[]
+  categorySettings: CategorySettings[]
+  notifications: NotificationPreferences
   categories: typeof categories
   brands: typeof brands
   locations: typeof locations
@@ -138,6 +156,22 @@ interface CatalogState {
     id: string,
     trigger: 'schedule' | 'manual',
   ) => { ok: true; orderId: string | null } | { ok: false; error: string }
+
+  updateCompany: (input: Partial<CompanySettings>) => void
+
+  createBrand: (input: Omit<Brand, 'id'>) => Brand
+  updateBrand: (id: string, input: Omit<Brand, 'id'>) => void
+  deleteBrand: (id: string) => { ok: true } | { ok: false; error: string }
+
+  createLocation: (input: Omit<LocationSettings, 'id'>) => LocationSettings
+  updateLocation: (id: string, input: Omit<LocationSettings, 'id'>) => void
+  deleteLocation: (id: string) => { ok: true } | { ok: false; error: string }
+
+  createCategory: (input: Omit<CategorySettings, 'id'>) => CategorySettings
+  updateCategory: (id: string, input: Omit<CategorySettings, 'id'>) => void
+  deleteCategory: (id: string) => { ok: true } | { ok: false; error: string }
+
+  toggleNotification: (event: string, channel: NotificationChannel) => void
 
   createReport: (input: ReportInput) => ReportDefinition
   updateReport: (id: string, input: ReportInput) => void
@@ -490,6 +524,11 @@ export const useDataStore = create<CatalogState>((set, get) => ({
   clients,
   promotions: seedPromotions,
   reports: seedReports,
+  company: seedCompany,
+  brandSettings: seedBrandSettings,
+  locationSettings: seedLocationSettings,
+  categorySettings: seedCategorySettings,
+  notifications: seedNotifications,
   categories,
   brands,
   locations,
@@ -1211,6 +1250,89 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       ),
     })
     return { ok: true, orderId: order.id }
+  },
+
+  updateCompany: (input) =>
+    set({ company: { ...get().company, ...input, updatedAt: new Date().toISOString() } }),
+
+  createBrand: (input) => {
+    const brand: Brand = { ...input, id: `brand-${Date.now()}` }
+    set({ brandSettings: [...get().brandSettings, brand] })
+    return brand
+  },
+  updateBrand: (id, input) =>
+    set({
+      brandSettings: get().brandSettings.map((brand) =>
+        brand.id === id ? { ...brand, ...input } : brand,
+      ),
+    }),
+  deleteBrand: (id) => {
+    // Products snapshot the brand name, but they still point at the id — and a
+    // product pointing at a brand that no longer exists is a blank column.
+    const used = get().variations.filter((variation) => variation.brandId === id).length
+    if (used > 0) {
+      return { ok: false, error: `${used} products use this brand — change them first` }
+    }
+    set({ brandSettings: get().brandSettings.filter((brand) => brand.id !== id) })
+    return { ok: true }
+  },
+
+  createLocation: (input) => {
+    const location: LocationSettings = { ...input, id: `loc-${Date.now()}` }
+    set({ locationSettings: [...get().locationSettings, location] })
+    return location
+  },
+  updateLocation: (id, input) =>
+    set({
+      locationSettings: get().locationSettings.map((location) =>
+        location.id === id ? { ...location, ...input } : location,
+      ),
+    }),
+  deleteLocation: (id) => {
+    // Stock lives at a location. Deleting one with stock on it would leave
+    // parts nowhere, which is worse than an extra row in a list.
+    const units = get().variations.reduce(
+      (sum, variation) =>
+        sum + (variation.stockByLocation.find((row) => row.locationId === id)?.quantity ?? 0),
+      0,
+    )
+    if (units > 0) {
+      return { ok: false, error: `${units} units are still stored here — move them first` }
+    }
+    set({ locationSettings: get().locationSettings.filter((location) => location.id !== id) })
+    return { ok: true }
+  },
+
+  createCategory: (input) => {
+    const category: CategorySettings = { ...input, id: `cat-${Date.now()}` }
+    set({ categorySettings: [...get().categorySettings, category] })
+    return category
+  },
+  updateCategory: (id, input) =>
+    set({
+      categorySettings: get().categorySettings.map((category) =>
+        category.id === id ? { ...category, ...input } : category,
+      ),
+    }),
+  deleteCategory: (id) => {
+    const used = get().variations.filter((variation) => variation.categoryId === id).length
+    if (used > 0) {
+      return { ok: false, error: `${used} products are in this category — move them first` }
+    }
+    const children = get().categorySettings.filter((category) => category.parentId === id).length
+    if (children > 0) {
+      return { ok: false, error: `It has ${children} sub-categories — remove those first` }
+    }
+    set({ categorySettings: get().categorySettings.filter((category) => category.id !== id) })
+    return { ok: true }
+  },
+
+  toggleNotification: (event, channel) => {
+    const current = get().notifications[event] ?? []
+    const next = current.includes(channel)
+      ? current.filter((entry) => entry !== channel)
+      : [...current, channel]
+    set({ notifications: { ...get().notifications, [event]: next } })
   },
 
   createReport: (input) => {

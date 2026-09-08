@@ -96,17 +96,12 @@ export const paths = {
     customers: '/analytics/customers', // OX: /app/statistics/customer-reports
   },
 
-  uploads: '/uploads', // OX: /app/exports
-
   settings: {
     root: '/settings',
     general: '/settings/general', // OX: Основные
     brands: '/settings/brands',
-    equipment: '/settings/equipment',
     locations: '/settings/locations',
-    sales: '/settings/sales',
-    products: '/settings/products',
-    clients: '/settings/clients',
+    categories: '/settings/categories', // OX: /app/settings/products
     billing: '/settings/billing',
     personal: '/settings/personal', // OX: Личные данные
   },

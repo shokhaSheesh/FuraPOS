@@ -28,9 +28,8 @@ const TEMPLATE_COLUMNS = [
  * Bulk import, as a job rather than a save.
  *
  * A spreadsheet of a thousand parts cannot be validated while the user waits,
- * so this hands the file over and sends them to My uploads to watch it — the
- * modal promises a queued job, never a finished import. Nothing in the
- * catalogue changes here.
+ * so this hands the file over and promises a queued job, never a finished
+ * import. Nothing in the catalogue changes here.
  *
  * One row per variation, with the option columns naming the axis and the
  * value: that is the same shape the form builds, so a file exported from the

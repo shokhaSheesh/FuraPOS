@@ -7,7 +7,6 @@ import {
   Settings,
   ShoppingCart,
   Truck,
-  UploadCloud,
   Users,
 } from 'lucide-react'
 import { paths } from './paths'
@@ -150,24 +149,14 @@ export const navigation: NavSection[] = [
     ],
   },
   {
-    id: 'uploads',
-    label: 'My uploads',
-    icon: UploadCloud,
-    to: paths.uploads,
-    permission: 'uploads.view',
-  },
-  {
     id: 'settings',
     label: 'Settings',
     icon: Settings,
     items: [
       { label: 'General', to: paths.settings.general, permission: 'settings.general.view' },
       { label: 'Brands', to: paths.settings.brands, permission: 'settings.brands.view' },
-      { label: 'Equipment', to: paths.settings.equipment, permission: 'settings.equipment.view' },
       { label: 'Locations', to: paths.settings.locations, permission: 'settings.locations.view' },
-      { label: 'Sales', to: paths.settings.sales, permission: 'settings.sales.view' },
-      { label: 'Products', to: paths.settings.products, permission: 'settings.products.view' },
-      { label: 'Clients', to: paths.settings.clients, permission: 'settings.clients.view' },
+      { label: 'Categories', to: paths.settings.categories, permission: 'settings.products.view' },
       { label: 'Billing', to: paths.settings.billing, permission: 'settings.billing.view' },
       { label: 'Personal data', to: paths.settings.personal },
     ],

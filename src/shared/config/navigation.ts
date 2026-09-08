@@ -142,11 +142,6 @@ export const navigation: NavSection[] = [
         to: paths.analytics.productLogs,
         permission: 'analytics.productLogs.view',
       },
-      {
-        label: 'Online storefront report',
-        to: paths.analytics.storefront,
-        permission: 'analytics.storefront.view',
-      },
       { label: 'Sales report', to: paths.analytics.sales, permission: 'analytics.sales.view' },
       {
         label: 'Customer report',

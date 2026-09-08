@@ -93,7 +93,6 @@ export const paths = {
     reportView: (id = ':reportId') => `/analytics/reports/${id}`,
     editReport: (id = ':reportId') => `/analytics/reports/${id}/edit`,
     productLogs: '/analytics/product-logs', // OX: /app/statistics/stock-count-histories
-    storefront: '/analytics/storefront', // OX: /app/statistics/utm-reports
     sales: '/analytics/sales', // OX: /app/statistics/sell-reports
     customers: '/analytics/customers', // OX: /app/statistics/customer-reports
     promotions: '/analytics/promotions', // OX: /app/statistics/promotion-report

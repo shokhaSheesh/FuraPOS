@@ -277,10 +277,6 @@ const routes: RouteObject[] = [
         path: paths.analytics.productLogs,
         element: page(<ProductLogsPage />, 'analytics.productLogs.view'),
       },
-      {
-        path: paths.analytics.storefront,
-        element: todo('Online storefront report', 'analytics.storefront.view'),
-      },
       { path: paths.analytics.sales, element: todo('Sales report', 'analytics.sales.view') },
       {
         path: paths.analytics.customers,

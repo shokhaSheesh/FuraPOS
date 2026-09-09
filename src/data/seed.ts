@@ -23,6 +23,7 @@ import type { Promotion } from '@/features/promotions/model/promotion'
 import type { ReportDefinition } from '@/features/reports/model/report'
 import type { PrintTemplate } from '@/features/printTemplates/model/template'
 import type { CashRegister, CashShift } from '@/features/cashShifts/model/shift'
+import type { Driver } from '@/features/drivers/model/driver'
 import type {
   Brand,
   CategorySettings,
@@ -574,6 +575,9 @@ export const promotions: Promotion[] = [
     scope: 'all',
     scopeIds: [],
     scopeNames: [],
+    audience: 'everyone',
+    clientIds: [],
+    clientNames: [],
     startsAt: new Date(Date.now() - 12 * 86_400_000).toISOString(),
     endsAt: new Date(Date.now() + 9 * 86_400_000).toISOString(),
     paused: false,
@@ -588,6 +592,9 @@ export const promotions: Promotion[] = [
     name: 'Brakes bundle',
     kind: 'percentage',
     value: 15,
+    audience: 'everyone',
+    clientIds: [],
+    clientNames: [],
     scope: 'category',
     scopeIds: [categories[1]!.id, categories[3]!.id],
     scopeNames: [categories[1]!.name, categories[3]!.name],
@@ -605,6 +612,9 @@ export const promotions: Promotion[] = [
     name: 'Winter opening',
     kind: 'fixed',
     value: 200_000,
+    audience: 'everyone',
+    clientIds: [],
+    clientNames: [],
     scope: 'product',
     scopeIds: [products[0]!.id, products[1]!.id, products[2]!.id],
     scopeNames: [products[0]!.name, products[1]!.name, products[2]!.name],
@@ -625,6 +635,9 @@ export const promotions: Promotion[] = [
     scope: 'all',
     scopeIds: [],
     scopeNames: [],
+    audience: 'everyone',
+    clientIds: [],
+    clientNames: [],
     startsAt: new Date(Date.now() - 90 * 86_400_000).toISOString(),
     endsAt: new Date(Date.now() - 40 * 86_400_000).toISOString(),
     paused: false,
@@ -1633,6 +1646,45 @@ export const printTemplates: PrintTemplate[] = [
     updatedAt: new Date(Date.now() - 5 * 86_400_000).toISOString(),
   },
 ]
+
+/**
+ * Drivers.
+ *
+ * The people who actually turn up at the counter for the haulage companies.
+ * Attached to a company client where there is one, and a couple of
+ * owner-drivers who buy for themselves.
+ */
+export const drivers: Driver[] = (
+  [
+    ['Bekzod Normatov', '+998 90 111 22 33', 0, '01 A 123 AA', 'active'],
+    ['Sherzod Qodirov', '+998 90 222 33 44', 0, '01 A 456 BB', 'active'],
+    ['Ulugbek Toshev', '+998 90 333 44 55', 1, '01 B 789 CC', 'active'],
+    ['Farrux Ismoilov', '+998 91 444 55 66', 1, '01 B 234 DD', 'active'],
+    ['Jahongir Aliyev', '+998 93 555 66 77', 2, '10 C 567 EE', 'active'],
+    ['Ravshan Sobirov', '+998 94 666 77 88', 2, '10 C 890 FF', 'inactive'],
+    ['Otabek Yusupov', '+998 97 777 88 99', 3, '01 D 345 GG', 'active'],
+    ['Shuhrat Nazarov', '+998 99 888 99 00', null, '40 E 678 HH', 'active'],
+    ['Doniyor Rahimov', '+998 90 999 00 11', null, '25 F 901 II', 'active'],
+    ['Aziz Karimov', '+998 91 100 20 30', 4, '01 G 234 JJ', 'active'],
+  ] as const
+).map(([fullName, phone, clientIndex, vehiclePlate, status], index) => {
+  // Businesses only: a driver drives for a company, never for a walk-in.
+  const companies = clients.filter((client) => client.type === 'business')
+  const client = clientIndex === null ? null : (companies[clientIndex] ?? null)
+  return {
+    id: `driver-${index + 1}`,
+    fullName,
+    phone,
+    clientId: client?.id ?? null,
+    clientName: client?.name ?? null,
+    vehiclePlate,
+    licenceNumber: `AB${between(1000000, 9999999)}`,
+    comment: null,
+    status,
+    createdAt: new Date(Date.now() - between(30, 900) * 86_400_000).toISOString(),
+    updatedAt: new Date(Date.now() - between(1, 30) * 86_400_000).toISOString(),
+  }
+})
 
 /**
  * Cash registers — one desk per location.

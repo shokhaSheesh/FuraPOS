@@ -8,6 +8,7 @@ import { RequirePermission } from './guards'
 import { RouteError } from './RouteError'
 
 const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPage'))
+const DriversPage = lazy(() => import('@/features/drivers/pages/DriversPage'))
 const CashShiftsPage = lazy(() => import('@/features/cashShifts/pages/CashShiftsPage'))
 const CashShiftDetailPage = lazy(() => import('@/features/cashShifts/pages/CashShiftDetailPage'))
 const RegistersSettingsPage = lazy(
@@ -175,6 +176,10 @@ const routes: RouteObject[] = [
       {
         path: paths.products.repricingDetail(),
         element: page(<RepricingDetailPage />, 'products.repricing.view'),
+      },
+      {
+        path: paths.marketing.drivers,
+        element: page(<DriversPage />, 'marketing.drivers.view'),
       },
       {
         path: paths.sales.shifts,

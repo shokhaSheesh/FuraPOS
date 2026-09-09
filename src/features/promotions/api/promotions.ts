@@ -84,9 +84,18 @@ export function usePromotionCounts() {
  * by accident, and "the customer gets the better of the two" is a rule that
  * can be explained at the counter.
  */
-export function useBestPromotion(lines: PromotableLine[]) {
+/**
+ * The best offer for this basket **and this customer**.
+ *
+ * Passing the client is what makes a targeted promotion targeted: without it
+ * New sale would offer a haulier's negotiated rate to a walk-in.
+ */
+export function useBestPromotion(lines: PromotableLine[], clientId: string | null = null) {
   const promotions = useDataStore((s) => s.promotions)
-  return useMemo(() => bestPromotion(promotions, lines), [promotions, lines])
+  return useMemo(
+    () => bestPromotion(promotions, lines, new Date(), clientId),
+    [promotions, lines, clientId],
+  )
 }
 
 export function usePromotionActions() {

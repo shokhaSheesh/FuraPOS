@@ -755,6 +755,22 @@ Sorted by debt, not alphabetically — an alphabetical customer list answers a q
 - **The seed gained a shape:** businesses have accounts and individuals do not, and one business is
   deliberately over its limit — that is the row this screen is opened to find.
 
+### Drivers — no OX equivalent, built at the client's request
+
+OX has no such screen. The client sells to haulage companies, and asked to see
+the drivers who collect the parts.
+
+The company stays the client — it holds the account, the debt and the credit
+limit. A driver is a name, a phone, a truck plate and a licence, linked to that
+company. Deliberately **not** a user, an employee or a second kind of client:
+they buy nothing on their own account, so they have no wallet and no balance.
+
+The original request was for a fleet module — vehicles, drivers and a
+negotiated rate per fleet, with the discount firing only when a truck was named
+on the sale. That was scoped and then cut back at the client's direction to
+this plus a promotion audience, which reaches the same outcome with one new
+entity instead of three and no second discount engine.
+
 ### Promotions — «Акции»
 
 **The framing.** Without this screen a discount is a number somebody typed into a sale, and six

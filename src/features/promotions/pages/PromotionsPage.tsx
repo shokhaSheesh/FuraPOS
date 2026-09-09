@@ -25,6 +25,7 @@ import {
 } from '../api/promotions'
 import {
   describe,
+  describeAudience,
   describeScope,
   promotionStatusLabel,
   promotionStatusTone,
@@ -118,6 +119,18 @@ export default function PromotionsPage() {
                 <span className="text-fg-subtle">{describeScope(row.original)}</span>
               ) : null}
             </div>
+          ),
+      },
+      {
+        id: 'audience',
+        header: 'Who gets it',
+        cell: ({ row }) =>
+          row.original.audience === 'everyone' ? (
+            <span className="text-fg-muted">Everyone</span>
+          ) : (
+            <Badge tone="info" title={row.original.clientNames.join(', ')}>
+              {describeAudience(row.original)}
+            </Badge>
           ),
       },
       {

@@ -21,6 +21,7 @@ import { useDataStore } from '@/data/store'
 import { usePromotion, usePromotionActions } from '../api/promotions'
 import {
   PROMOTION_KINDS,
+  PROMOTION_AUDIENCES,
   PROMOTION_SCOPES,
   promotionDraftSchema,
   type PromotionDraft,
@@ -42,6 +43,7 @@ export default function PromotionFormPage() {
   const navigate = useNavigate()
   const categories = useDataStore((s) => s.categories)
   const products = useDataStore((s) => s.products)
+  const clients = useDataStore((s) => s.clients)
   const { data: existing } = usePromotion(promotionId)
   const actions = usePromotionActions()
   const editing = Boolean(promotionId)
@@ -55,6 +57,8 @@ export default function PromotionFormPage() {
           value: existing.value,
           scope: existing.scope,
           scopeIds: existing.scopeIds,
+          audience: existing.audience,
+          clientIds: existing.clientIds,
           startsAt: existing.startsAt,
           endsAt: existing.endsAt,
           paused: existing.paused,
@@ -67,6 +71,8 @@ export default function PromotionFormPage() {
           value: 10,
           scope: 'all',
           scopeIds: [],
+          audience: 'everyone',
+          clientIds: [],
           startsAt: new Date().toISOString(),
           endsAt: null,
           paused: false,
@@ -83,6 +89,19 @@ export default function PromotionFormPage() {
     matches those too. A product with several variations has several SKUs, so
     the row says how many rather than picking one arbitrarily.
   */
+  const clientOptions = useMemo(
+    () =>
+      clients
+        .filter((client) => client.status === 'active')
+        .map((client) => ({
+          value: client.id,
+          label: client.name,
+          // Two customers can share a name; the phone is what tells them apart.
+          meta: client.phone ?? undefined,
+        })),
+    [clients],
+  )
+
   const scopeOptions = useMemo(
     () =>
       values.scope === 'category'
@@ -122,6 +141,20 @@ export default function PromotionFormPage() {
     (id) => scopeOptions.find((option) => option.value === id)?.label ?? '—',
   )
 
+  // The sentence has to carry the audience too, or a targeted promotion reads
+  // in the preview exactly like one for everybody.
+  const clientNames = (values.clientIds ?? []).map(
+    (id) => clientOptions.find((option) => option.value === id)?.label ?? '—',
+  )
+  const audienceName =
+    values.audience === 'everyone'
+      ? ''
+      : clientNames.length === 0
+        ? ' — for nobody yet'
+        : clientNames.length <= 2
+          ? ` for ${clientNames.join(' and ')}`
+          : ` for ${clientNames.length} clients`
+
   const scopeName =
     values.scope === 'all'
       ? 'everything'
@@ -142,6 +175,7 @@ export default function PromotionFormPage() {
       const input = {
         ...draft,
         scopeIds: draft.scope === 'all' ? [] : draft.scopeIds,
+        clientIds: draft.audience === 'everyone' ? [] : draft.clientIds,
         comment: draft.comment || null,
       }
       if (editing && existing) {
@@ -329,6 +363,66 @@ export default function PromotionFormPage() {
         </Card>
 
         <Card>
+          <CardHeader className="flex-col items-stretch gap-1">
+            <CardTitle>Who gets it</CardTitle>
+            {/* Separate from the scope on purpose: "15% off brakes" and "15%
+                off, but only for these hauliers" are different offers. */}
+            <p className="text-fg-subtle text-2xs">
+              What it covers and who it is for are two different questions. A targeted offer only
+              fires when that client is on the sale.
+            </p>
+          </CardHeader>
+          <CardBody className="grid gap-3 sm:grid-cols-2">
+            <Field label="Audience">
+              {(p) => (
+                <Controller
+                  control={form.control}
+                  name="audience"
+                  render={({ field }) => (
+                    <Select
+                      {...p}
+                      className="w-full"
+                      value={field.value}
+                      onChange={(next) => {
+                        field.onChange(next)
+                        form.setValue('clientIds', [])
+                      }}
+                      options={PROMOTION_AUDIENCES}
+                    />
+                  )}
+                />
+              )}
+            </Field>
+            {values.audience !== 'everyone' ? (
+              <Field
+                label="Clients"
+                required
+                hint="A walk-in sale with no client on it never gets a targeted offer"
+                error={form.formState.errors.clientIds?.message}
+              >
+                {(p) => (
+                  <Controller
+                    control={form.control}
+                    name="clientIds"
+                    render={({ field }) => (
+                      <MultiSelect
+                        {...p}
+                        className="w-full"
+                        value={field.value}
+                        onChange={field.onChange}
+                        options={clientOptions}
+                        placeholder="Pick clients"
+                        searchPlaceholder="Search by name or phone…"
+                      />
+                    )}
+                  />
+                )}
+              </Field>
+            ) : null}
+          </CardBody>
+        </Card>
+
+        <Card>
           <CardHeader>
             <CardTitle>When it runs</CardTitle>
           </CardHeader>
@@ -381,8 +475,8 @@ export default function PromotionFormPage() {
             <div className="min-w-0 space-y-1">
               <p className="text-fg text-sm font-medium">
                 {values.kind === 'percentage'
-                  ? `${values.value || 0}% off ${scopeName}`
-                  : `${formatMoney(values.value || 0)} off ${scopeName}`}
+                  ? `${values.value || 0}% off ${scopeName}${audienceName}`
+                  : `${formatMoney(values.value || 0)} off ${scopeName}${audienceName}`}
               </p>
               <p className="text-fg-muted text-2xs">
                 {blockedByMinimum

@@ -121,6 +121,7 @@ export const navigation: NavSection[] = [
     icon: Megaphone,
     items: [
       { label: 'Clients', to: paths.marketing.clients, permission: 'marketing.clients.view' },
+      { label: 'Drivers', to: paths.marketing.drivers, permission: 'marketing.drivers.view' },
       {
         label: 'Promotions',
         to: paths.marketing.promotions,

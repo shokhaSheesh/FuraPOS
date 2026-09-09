@@ -167,7 +167,7 @@ makes an argument about stock settleable.
 | Seller | task | *(yes)* Choose the client, or add a new one | Sales → New sale |
 | System | task | Show that client's wallet — balance, debt, cashback, credit limit | Marketing → Clients |
 | Seller | task | Add the lines: part, quantity, price | Sales → New sale |
-| System | task | Apply any running promotion that matches the category or the product | Marketing → Promotions |
+| System | task | Apply the best running promotion that matches **the parts and this client** | Marketing → Promotions |
 | Seller | task | Choose how it is being paid | Sales → New sale |
 | System | ◆ gateway | **Paying cash, with no drawer open here?** | — |
 | System | task | *(no drawer)* Refuse the cash sale — open a shift, or take payment another way | Sales → Cash shifts |
@@ -209,7 +209,7 @@ at Column 1's gateway, which is why that setting deserved a diamond.
 | Owner | task | *(stock)* Replay a part's movements to settle a question | Analytics → Product logs |
 | Owner | task | *(customers)* Read the segments — champions, at risk, cannot lose | Analytics → Customer report |
 | Owner | ◆ gateway | **Is anyone good drifting away?** | — |
-| Owner | task | *(yes)* Run a promotion at them — categories or products, dates, discount | Marketing → Promotions |
+| Owner | task | *(yes)* Run a promotion at them — what it covers, and **which clients get it** | Marketing → Promotions |
 | System | task | The promotion starts applying itself on the sale screen | → *back to Column 5* |
 | Owner | task | *(money)* Build the report — pick a source, group it, measure it, chart it | Analytics → Report generator |
 | Owner | task | Save the report so next month is one click | Analytics → Report generator |

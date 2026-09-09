@@ -39,6 +39,21 @@ export const PROMOTION_SCOPES: { value: PromotionScope; label: string }[] = [
   { value: 'product', label: 'Products' },
 ]
 
+/**
+ * **Who** gets the promotion, as opposed to what it covers.
+ *
+ * The two are separate questions and a promotion answers both: "15% off
+ * brakes" and "15% off, but only for these three haulage companies" are
+ * different offers, and collapsing them into one field would make the second
+ * impossible to express.
+ */
+export type PromotionAudience = 'everyone' | 'clients'
+
+export const PROMOTION_AUDIENCES: { value: PromotionAudience; label: string; hint: string }[] = [
+  { value: 'everyone', label: 'Everyone', hint: 'Any customer, including walk-ins' },
+  { value: 'clients', label: 'Chosen clients', hint: 'Only the customers picked below' },
+]
+
 export type PromotionStatus = 'scheduled' | 'running' | 'finished' | 'paused'
 
 export const PROMOTION_STATUSES: {
@@ -74,6 +89,12 @@ export interface Promotion {
   scopeIds: Id[]
   /** Their names, snapshotted so a rename cannot rewrite what this covered. */
   scopeNames: string[]
+  /** Who it is for. See {@link PromotionAudience}. */
+  audience: PromotionAudience
+  /** The clients it is for, when the audience is not everyone. */
+  clientIds: Id[]
+  /** Their names, snapshotted for the same reason as `scopeNames`. */
+  clientNames: string[]
   startsAt: IsoDate
   /** Null means it runs until somebody stops it. */
   endsAt: IsoDate | null
@@ -139,6 +160,26 @@ export interface PromotableLine {
 
 export const lineGross = (line: PromotableLine) => line.quantity * line.unitPrice
 
+/**
+ * Whether this customer is one the promotion is for.
+ *
+ * A walk-in (`null`) only ever matches an everyone promotion — a targeted
+ * offer that fired for an anonymous sale would be untraceable, and the point
+ * of targeting is knowing who got it.
+ */
+export function appliesToClient(
+  promotion: Pick<Promotion, 'audience' | 'clientIds'>,
+  clientId: Id | null,
+): boolean {
+  // Tested against 'clients' rather than 'everyone' on purpose: a promotion
+  // that predates this field, or one built without it, must keep applying to
+  // everybody. Restricting is the deliberate act, so it takes the explicit
+  // value; anything else means no restriction.
+  if (promotion.audience !== 'clients') return true
+  if (clientId === null) return false
+  return promotion.clientIds.includes(clientId)
+}
+
 /** Whether a single line is inside the promotion's scope. */
 export function covers(promotion: Promotion, line: PromotableLine): boolean {
   if (promotion.scope === 'all') return true
@@ -160,8 +201,11 @@ export function discountFor(
   promotion: Promotion,
   lines: PromotableLine[],
   now: Date = new Date(),
+  /** Who is buying. Undefined means "do not filter by customer". */
+  clientId: Id | null = null,
 ): number {
   if (!isLive(promotion, now)) return 0
+  if (!appliesToClient(promotion, clientId)) return 0
 
   const covered = lines.filter((line) => covers(promotion, line))
   const coveredValue = covered.reduce((sum, line) => sum + lineGross(line), 0)
@@ -186,10 +230,11 @@ export function bestPromotion(
   promotions: Promotion[],
   lines: PromotableLine[],
   now: Date = new Date(),
+  clientId: Id | null = null,
 ): { promotion: Promotion; discount: number } | null {
   let best: { promotion: Promotion; discount: number } | null = null
   for (const promotion of promotions) {
-    const discount = discountFor(promotion, lines, now)
+    const discount = discountFor(promotion, lines, now, clientId)
     if (discount > 0 && (!best || discount > best.discount)) best = { promotion, discount }
   }
   return best
@@ -207,13 +252,23 @@ export function describeScope(promotion: Pick<Promotion, 'scope' | 'scopeNames'>
   return `${names.length} ${promotion.scope === 'category' ? 'categories' : 'products'}`
 }
 
+/** Who it is for, in words — the counterpart to {@link describeScope}. */
+export function describeAudience(promotion: Pick<Promotion, 'audience' | 'clientNames'>): string {
+  if (promotion.audience === 'everyone') return 'everyone'
+  const names = promotion.clientNames
+  if (names.length === 0) return 'nobody yet'
+  if (names.length <= 2) return names.join(' and ')
+  return `${names.length} clients`
+}
+
 /** How the rule reads in a sentence, for the list and the sale screen. */
 export function describe(promotion: Promotion): string {
   const amount =
     promotion.kind === 'percentage'
       ? `${promotion.value}% off`
       : `${formatMoney(promotion.value)} off`
-  return `${amount} ${describeScope(promotion)}`
+  const who = promotion.audience === 'everyone' ? '' : ` for ${describeAudience(promotion)}`
+  return `${amount} ${describeScope(promotion)}${who}`
 }
 
 /* --- validation ---------------------------------------------------------- */
@@ -225,6 +280,8 @@ export const promotionDraftSchema = z
     value: z.number().positive('A discount of nothing is not a promotion'),
     scope: z.enum(['all', 'category', 'product']),
     scopeIds: z.array(z.string()),
+    audience: z.enum(['everyone', 'clients']),
+    clientIds: z.array(z.string()),
     startsAt: z.string(),
     endsAt: z.string().nullable(),
     paused: z.boolean(),
@@ -238,6 +295,12 @@ export const promotionDraftSchema = z
   .refine((draft) => draft.scope === 'all' || draft.scopeIds.length > 0, {
     message: 'Choose at least one',
     path: ['scopeIds'],
+  })
+  // A targeted promotion with nobody in it would sit there looking live and
+  // discount nothing, which is worse than being told to pick somebody.
+  .refine((draft) => draft.audience === 'everyone' || draft.clientIds.length > 0, {
+    message: 'Choose at least one client',
+    path: ['clientIds'],
   })
   .refine(
     (draft) =>

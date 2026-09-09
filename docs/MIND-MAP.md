@@ -94,9 +94,11 @@ Fura POS  →  Back-office (web)  →  8 modules  →  screens  →  what is on 
 
 ## 6 · Marketing
 - **Clients** (contacts, region, purchase history; wallet: balance, debt, cashback, credit limit, AI insights — the list a seller picks from on New sale)
+- **Drivers** (who collects for a fleet customer — name, phone, truck plate, licence, which company; links to that company's account)
 - **Promotions**
   - Dates, discount (percent or amount)
-  - Applies to (everything, categories, products)
+  - Applies to — **what**: everything, categories, products
+  - Applies to — **who**: everyone, or chosen clients (a walk-in never gets a targeted offer)
   - Categories and products picked from multi-select dropdowns with search
   - Product rows carry image, SKU and OEM codes — parts are named alike
 

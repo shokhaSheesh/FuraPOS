@@ -86,6 +86,7 @@ export const paths = {
     newClient: '/marketing/clients/new',
     clientDetail: (id = ':clientId') => `/marketing/clients/${id}`,
     editClient: (id = ':clientId') => `/marketing/clients/${id}/edit`,
+    drivers: '/marketing/drivers',
     promotions: '/marketing/promotions', // OX: /app/marketing/promotions
     newPromotion: '/marketing/promotions/new',
     editPromotion: (id = ':promotionId') => `/marketing/promotions/${id}`,

@@ -18,6 +18,7 @@ import type { Client, ClientStatus } from '@/features/clients/model/client'
 import type { Promotion } from '@/features/promotions/model/promotion'
 import type { ReportDefinition } from '@/features/reports/model/report'
 import type { PrintTemplate } from '@/features/printTemplates/model/template'
+import type { Driver, DriverDraft } from '@/features/drivers/model/driver'
 import {
   openShiftFor,
   type CashMovement,
@@ -66,6 +67,7 @@ import {
   promotions as seedPromotions,
   reports as seedReports,
   printTemplates as seedPrintTemplates,
+  drivers as seedDrivers,
   cashRegisters as seedCashRegisters,
   cashShifts as seedCashShifts,
   companySettings as seedCompany,
@@ -102,6 +104,7 @@ interface CatalogState {
   promotions: Promotion[]
   reports: ReportDefinition[]
   printTemplates: PrintTemplate[]
+  drivers: Driver[]
   cashRegisters: CashRegister[]
   cashShifts: CashShift[]
   company: CompanySettings
@@ -204,6 +207,10 @@ interface CatalogState {
     id: string,
     input: { kind: CashMovement['kind']; reason: string; amount: number; comment: string | null },
   ) => { ok: true } | { ok: false; error: string }
+  createDriver: (input: DriverDraft) => Driver
+  updateDriver: (id: string, input: DriverDraft) => void
+  deleteDriver: (id: string) => void
+
   createCashRegister: (input: Omit<CashRegister, 'id' | 'locationName'>) => CashRegister
   updateCashRegister: (id: string, input: Omit<CashRegister, 'id' | 'locationName'>) => void
   deleteCashRegister: (id: string) => { ok: true } | { ok: false; error: string }
@@ -297,6 +304,8 @@ export interface PromotionInput {
   value: number
   scope: Promotion['scope']
   scopeIds: string[]
+  audience: Promotion['audience']
+  clientIds: string[]
   startsAt: string
   endsAt: string | null
   paused: boolean
@@ -553,6 +562,16 @@ function namesOfScope(
   return scopeIds.map((id) => list.find((entry) => entry.id === id)?.name ?? '—')
 }
 
+/** Client names for a targeted promotion, snapshotted the same way. */
+function namesOfClients(
+  state: { clients: readonly { readonly id: string; readonly name: string }[] },
+  audience: Promotion['audience'],
+  clientIds: string[],
+): string[] {
+  if (audience === 'everyone') return []
+  return clientIds.map((id) => state.clients.find((client) => client.id === id)?.name ?? '—')
+}
+
 export const useDataStore = create<CatalogState>((set, get) => ({
   products: seedProducts,
   variations: seedVariations,
@@ -566,6 +585,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
   promotions: seedPromotions,
   reports: seedReports,
   printTemplates: seedPrintTemplates,
+  drivers: seedDrivers,
   cashRegisters: seedCashRegisters,
   cashShifts: seedCashShifts,
   company: seedCompany,
@@ -1464,6 +1484,37 @@ export const useDataStore = create<CatalogState>((set, get) => ({
     return { ok: true }
   },
 
+  createDriver: (input) => {
+    const now = new Date().toISOString()
+    const driver: Driver = {
+      ...input,
+      id: `driver-${get().drivers.length + 1}-${Date.now()}`,
+      clientName: get().clients.find((client) => client.id === input.clientId)?.name ?? null,
+      createdAt: now,
+      updatedAt: now,
+    }
+    set({ drivers: [...get().drivers, driver] })
+    return driver
+  },
+
+  updateDriver: (id, input) => {
+    set({
+      drivers: get().drivers.map((driver) =>
+        driver.id === id
+          ? {
+              ...driver,
+              ...input,
+              clientName:
+                get().clients.find((client) => client.id === input.clientId)?.name ?? null,
+              updatedAt: new Date().toISOString(),
+            }
+          : driver,
+      ),
+    })
+  },
+
+  deleteDriver: (id) => set({ drivers: get().drivers.filter((driver) => driver.id !== id) }),
+
   createCashRegister: (input) => {
     const register: CashRegister = {
       ...input,
@@ -1578,6 +1629,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       ...input,
       id: `promo-${get().promotions.length + 1}-${Date.now()}`,
       scopeNames: namesOfScope(get(), input.scope, input.scopeIds),
+      clientNames: namesOfClients(get(), input.audience, input.clientIds),
       createdBy: 'Akhmet Dauletmuratov',
       createdAt: now,
       updatedAt: now,
@@ -1594,6 +1646,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
               ...promotion,
               ...input,
               scopeNames: namesOfScope(get(), input.scope, input.scopeIds),
+              clientNames: namesOfClients(get(), input.audience, input.clientIds),
               updatedAt: new Date().toISOString(),
             }
           : promotion,

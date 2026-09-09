@@ -100,7 +100,7 @@ export default function NewSalePage() {
       }),
     [lines, variations],
   )
-  const offer = useBestPromotion(promotableLines)
+  const offer = useBestPromotion(promotableLines, client?.id ?? null)
   /*
     Which promotion the seller applied, carried onto the sale. Without it the
     discount lands as an anonymous percentage and the promotions report cannot

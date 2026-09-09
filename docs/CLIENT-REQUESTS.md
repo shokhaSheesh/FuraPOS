@@ -6,9 +6,18 @@ yet; this is the audit and the plan.
 **Score: 8 of 13 covered, 2 partly, 3 missing — and one of the missing three is
 a scope decision, not a screen.**
 
-> **Update:** the client chose option 1 below — cash shifts in the back office,
-> entered by hand, no till. **Built.** Sales → Cash shifts, plus Settings →
-> Cash registers. Gaps 2 and 3 are still open.
+> **Update:** two of the three gaps are now closed.
+>
+> - **Gap 1 — Касса / кассовые смены**: option 1 below, cash shifts in the back
+>   office with no till. **Built.** Sales → Cash shifts, Settings → Cash registers.
+> - **Gap 2 — fleet discounts**: built in a simpler shape than planned. Rather
+>   than a fleet module with vehicles and per-client rates, a promotion now
+>   carries a **"who gets it"** alongside its "what it applies to" — everyone,
+>   or chosen clients — and a **Drivers** page records who collects for each
+>   company. Same outcome, one entity instead of three, and no new discount
+>   engine: a targeted offer is just a promotion, so the "better of the two
+>   wins" rule that was already there still holds.
+> - **Gap 3 — sold in the last 3 / 6 months on transfers**: still open.
 
 ---
 

@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { formatMoney } from '@/shared/lib/format'
 import {
+  appliesToClient,
   bestPromotion,
+  describeAudience,
   describeScope,
   covers,
   daysRemaining,
@@ -25,6 +27,9 @@ const promo = (over: Partial<Promotion> = {}): Promotion =>
     scope: 'all',
     scopeIds: [],
     scopeNames: [],
+    audience: 'everyone',
+    clientIds: [],
+    clientNames: [],
     startsAt: new Date(NOW.getTime() - 5 * day).toISOString(),
     endsAt: new Date(NOW.getTime() + 5 * day).toISOString(),
     paused: false,
@@ -196,5 +201,97 @@ describe('how it reads', () => {
         }),
       ),
     ).toBe(`${formatMoney(50_000)} off Brake pad set X30`)
+  })
+})
+
+describe('appliesToClient', () => {
+  const targeted = promo({
+    audience: 'clients',
+    clientIds: ['cl-1', 'cl-2'],
+    clientNames: ['Fura Logistics', "Yo'l Trans"],
+  })
+
+  it('lets an everyone promotion reach anybody, named or not', () => {
+    expect(appliesToClient(promo(), 'cl-9')).toBe(true)
+    expect(appliesToClient(promo(), null)).toBe(true)
+  })
+
+  it('reaches a client on the list', () => {
+    expect(appliesToClient(targeted, 'cl-2')).toBe(true)
+  })
+
+  it('does not reach a client who is not on it', () => {
+    expect(appliesToClient(targeted, 'cl-9')).toBe(false)
+  })
+
+  it('never reaches a walk-in — a targeted offer nobody can be traced to is untraceable', () => {
+    expect(appliesToClient(targeted, null)).toBe(false)
+  })
+
+  it('applies to everyone when the field is missing entirely', () => {
+    // A promotion made before audiences existed must not quietly stop working.
+    const legacy = { clientIds: [] } as unknown as Promotion
+    expect(appliesToClient(legacy, null)).toBe(true)
+  })
+})
+
+describe('discountFor with an audience', () => {
+  const targeted = promo({ audience: 'clients', clientIds: ['cl-1'], clientNames: ['Fura'] })
+  const lines = [line({ quantity: 2, unitPrice: 100_000 })]
+
+  it('discounts for the client it is aimed at', () => {
+    expect(discountFor(targeted, lines, NOW, 'cl-1')).toBe(20_000)
+  })
+
+  it('discounts nothing for anybody else', () => {
+    expect(discountFor(targeted, lines, NOW, 'cl-2')).toBe(0)
+    expect(discountFor(targeted, lines, NOW, null)).toBe(0)
+  })
+})
+
+describe('bestPromotion with an audience', () => {
+  const lines = [line({ quantity: 1, unitPrice: 1_000_000 })]
+  const general = promo({ id: 'p-general', value: 5 })
+  const forFura = promo({
+    id: 'p-fura',
+    value: 12,
+    audience: 'clients',
+    clientIds: ['cl-1'],
+    clientNames: ['Fura'],
+  })
+
+  it('gives a targeted client the better, targeted offer', () => {
+    expect(bestPromotion([general, forFura], lines, NOW, 'cl-1')?.promotion.id).toBe('p-fura')
+  })
+
+  it('falls back to the general offer for everybody else', () => {
+    expect(bestPromotion([general, forFura], lines, NOW, 'cl-2')?.promotion.id).toBe('p-general')
+  })
+
+  it('still gives one discount, never both', () => {
+    // The rule this screen has always had: the better of the two, not the sum.
+    expect(bestPromotion([general, forFura], lines, NOW, 'cl-1')?.discount).toBe(120_000)
+  })
+})
+
+describe('describeAudience', () => {
+  it('says everyone', () => {
+    expect(describeAudience(promo())).toBe('everyone')
+  })
+
+  it('names one or two clients', () => {
+    expect(describeAudience({ audience: 'clients', clientNames: ['Fura', 'Trans'] })).toBe(
+      'Fura and Trans',
+    )
+  })
+
+  it('counts more than two', () => {
+    expect(describeAudience({ audience: 'clients', clientNames: ['A', 'B', 'C'] })).toBe(
+      '3 clients',
+    )
+  })
+
+  it('says so when nobody is chosen yet', () => {
+    expect(describeAudience({ audience: 'clients', clientNames: [] })).toBe('nobody yet')
   })
 })

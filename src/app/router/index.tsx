@@ -9,6 +9,8 @@ import { RouteError } from './RouteError'
 
 const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPage'))
 const ProductsPage = lazy(() => import('@/features/products/pages/ProductsPage'))
+const PrintTemplatesPage = lazy(() => import('@/features/printTemplates/pages/PrintTemplatesPage'))
+const TemplateFormPage = lazy(() => import('@/features/printTemplates/pages/TemplateFormPage'))
 const ProductDetailPage = lazy(() => import('@/features/products/pages/ProductDetailPage'))
 const ProductFormPage = lazy(() => import('@/features/products/pages/ProductFormPage'))
 const TransfersListPage = lazy(() => import('@/features/transfers/pages/TransfersListPage'))
@@ -171,7 +173,15 @@ const routes: RouteObject[] = [
       },
       {
         path: paths.products.printTemplates,
-        element: todo('Print templates', 'products.printTemplates.view'),
+        element: page(<PrintTemplatesPage />, 'products.printTemplates.view'),
+      },
+      {
+        path: paths.products.newPrintTemplate,
+        element: page(<TemplateFormPage />, 'products.printTemplates.create'),
+      },
+      {
+        path: paths.products.editPrintTemplate(),
+        element: page(<TemplateFormPage />, 'products.printTemplates.edit'),
       },
       {
         path: paths.products.suppliers,

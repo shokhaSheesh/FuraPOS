@@ -62,7 +62,11 @@ Fura POS  →  Back-office (web)  →  8 modules  →  screens  →  what is on 
 - **Stocktaking** (count a location, variance line by line, approve → stock set to counted)
 - **Goods receipt** (received against a purchase order; freight + duty + USD rate → landed cost)
 - **Repricing** (by percentage, supplier or category; applies from a date)
-- **Print templates** (shelf and barcode labels)
+- **Print templates**
+  - Three kinds (product label, shelf label, receipt), filtered by counted chips
+  - Size in mm (presets or typed), barcode / QR / none, ordered fields with one headline
+  - Preview drawn at true millimetre size
+  - Print a sheet (pick parts, copies each, laid out to fit A4)
 - **Suppliers** (terms, currency, lead time, wallet: balance / debt / AI insights)
 
 ## 4 · Procurement `New`

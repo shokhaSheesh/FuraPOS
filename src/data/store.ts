@@ -17,6 +17,7 @@ import type { Role } from '@/features/roles/model/role'
 import type { Client, ClientStatus } from '@/features/clients/model/client'
 import type { Promotion } from '@/features/promotions/model/promotion'
 import type { ReportDefinition } from '@/features/reports/model/report'
+import type { PrintTemplate } from '@/features/printTemplates/model/template'
 import type {
   Brand,
   CategorySettings,
@@ -58,6 +59,7 @@ import {
   schedules as seedSchedules,
   promotions as seedPromotions,
   reports as seedReports,
+  printTemplates as seedPrintTemplates,
   companySettings as seedCompany,
   brandSettings as seedBrandSettings,
   locationSettings as seedLocationSettings,
@@ -91,6 +93,7 @@ interface CatalogState {
   clients: Client[]
   promotions: Promotion[]
   reports: ReportDefinition[]
+  printTemplates: PrintTemplate[]
   company: CompanySettings
   brandSettings: Brand[]
   locationSettings: LocationSettings[]
@@ -173,6 +176,11 @@ interface CatalogState {
 
   toggleNotification: (event: string, channel: NotificationChannel) => void
 
+  createPrintTemplate: (input: TemplateInput) => PrintTemplate
+  updatePrintTemplate: (id: string, input: TemplateInput) => void
+  duplicatePrintTemplate: (id: string) => PrintTemplate | undefined
+  deletePrintTemplate: (id: string) => void
+
   createReport: (input: ReportInput) => ReportDefinition
   updateReport: (id: string, input: ReportInput) => void
   deleteReport: (id: string) => void
@@ -249,6 +257,7 @@ export interface CreateOrderInput {
 }
 
 export type ReportInput = Omit<ReportDefinition, 'id' | 'createdBy' | 'createdAt' | 'updatedAt'>
+export type TemplateInput = Omit<PrintTemplate, 'id' | 'createdBy' | 'updatedAt'>
 
 export interface PromotionInput {
   name: string
@@ -524,6 +533,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
   clients,
   promotions: seedPromotions,
   reports: seedReports,
+  printTemplates: seedPrintTemplates,
   company: seedCompany,
   brandSettings: seedBrandSettings,
   locationSettings: seedLocationSettings,
@@ -1334,6 +1344,48 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       : [...current, channel]
     set({ notifications: { ...get().notifications, [event]: next } })
   },
+
+  createPrintTemplate: (input) => {
+    const template: PrintTemplate = {
+      ...input,
+      id: `tpl-${get().printTemplates.length + 1}-${Date.now()}`,
+      createdBy: 'Akhmet Dauletmuratov',
+      updatedAt: new Date().toISOString(),
+    }
+    set({ printTemplates: [...get().printTemplates, template] })
+    return template
+  },
+
+  updatePrintTemplate: (id, input) => {
+    set({
+      printTemplates: get().printTemplates.map((template) =>
+        template.id === id
+          ? { ...template, ...input, updatedAt: new Date().toISOString() }
+          : template,
+      ),
+    })
+  },
+
+  /**
+   * The realistic way a second label gets made: copy the one that works and
+   * change the size. Cheaper than starting from an empty sticker.
+   */
+  duplicatePrintTemplate: (id) => {
+    const source = get().printTemplates.find((template) => template.id === id)
+    if (!source) return undefined
+    const copy: PrintTemplate = {
+      ...source,
+      id: `tpl-${get().printTemplates.length + 1}-${Date.now()}`,
+      name: `${source.name} (copy)`,
+      createdBy: 'Akhmet Dauletmuratov',
+      updatedAt: new Date().toISOString(),
+    }
+    set({ printTemplates: [...get().printTemplates, copy] })
+    return copy
+  },
+
+  deletePrintTemplate: (id) =>
+    set({ printTemplates: get().printTemplates.filter((template) => template.id !== id) }),
 
   createReport: (input) => {
     const now = new Date().toISOString()

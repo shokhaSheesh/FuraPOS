@@ -50,6 +50,8 @@ export const paths = {
     newRepricing: '/products/repricing/new',
     repricingDetail: (id = ':repricingId') => `/products/repricing/${id}`,
     printTemplates: '/products/print-templates', // OX: /app/products/stickers
+    newPrintTemplate: '/products/print-templates/new',
+    editPrintTemplate: (id = ':templateId') => `/products/print-templates/${id}`,
     suppliers: '/products/suppliers', // OX: /app/products/suppliers
     newSupplier: '/products/suppliers/new',
     supplierDetail: (id = ':supplierId') => `/products/suppliers/${id}`,

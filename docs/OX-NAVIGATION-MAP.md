@@ -407,6 +407,29 @@ opposite sentences about the same number. Clients and employees drop into it unc
 the shared component needs, and the reason a supplier payment and a client top-up will never be two
 different tables.
 
+### Print templates — «Шаблоны для печати», read from the live tenant
+
+OX's screen is a card grid: a type filter with counts (`Чек: 0 · Счет фактура: 0 · Этикетка: 2`),
+one card per template showing its preview, its type badge and its size in millimetres, and a
+`Новый шаблон` button that first asks which **brand** the template belongs to, then opens a
+free drag-and-drop canvas — you place `$Product_name`, `barcode_text` and the rest at any x/y.
+
+**Ours keeps the grid and replaces the canvas with a form.**
+
+| OX | Ours | Why |
+|----|------|-----|
+| Чек / Счет фактура / Этикетка | Product label / Shelf label / Receipt | Same three-way split, named by where it ends up rather than by document type. An invoice is a Finance artefact and Finance is cut. |
+| Brand chosen first | — | The template is not brand-specific in our data; asking for one before the name is a question with no consequence. |
+| Free x/y placement of every element | Ordered list of fields, with one headline | The hard part of a label is whether the SKU is on it and whether the name fits at 58 mm — not where the SKU sits. **This is a real trade**: a print shop would want the canvas. A parts counter wants five fields in a sensible order. |
+| `$Product_name`-style tokens | Real fields, ticked | Nothing to learn and nothing to mistype; a field cannot go stale against the catalogue. |
+| Preview image | Preview drawn to true millimetre scale | The only question a preview must answer honestly is whether it fits. Cards use one scale so a 40 mm sticker and a 150 mm receipt sit in equal cards. |
+| — | Fields filtered by kind | A price belongs on a shelf label, not on a part sticker. Changing the kind drops the fields the new one cannot carry, and says how many went. |
+| — | Print sheet | OX's designer makes a template; ours also prints one. Pick parts, set copies, and the sheet lays out at true size — `perRow × perColumn` of A4, so a 58 × 40 mm sticker gives 18 to a page. |
+
+The barcode and QR code are **drawn, not encoded** — there is no encoder in this build and printing
+is out of scope. They are to scale and obviously not scannable, which answers the only question the
+preview is being asked: how much room does the code take.
+
 ## 4. Закупки — Procurement
 
 | OX (ru)            | Ours (en)         | OX route                     |

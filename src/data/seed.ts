@@ -21,6 +21,7 @@ import type { Role } from '@/features/roles/model/role'
 import type { Client, ClientType } from '@/features/clients/model/client'
 import type { Promotion } from '@/features/promotions/model/promotion'
 import type { ReportDefinition } from '@/features/reports/model/report'
+import type { PrintTemplate } from '@/features/printTemplates/model/template'
 import type {
   Brand,
   CategorySettings,
@@ -1583,6 +1584,51 @@ export const reports: ReportDefinition[] = (
     updatedAt: new Date(Date.now() - between(1, 19) * 86_400_000).toISOString(),
   }),
 )
+
+/**
+ * Print templates.
+ *
+ * Three, because three is what a parts business actually prints: a sticker for
+ * the part, a priced card for the rack, and a receipt for the customer.
+ */
+export const printTemplates: PrintTemplate[] = [
+  {
+    id: 'tpl-1',
+    name: 'Part sticker',
+    kind: 'label',
+    widthMm: 58,
+    heightMm: 40,
+    code: 'barcode',
+    fields: ['productName', 'sku', 'brand', 'oem'],
+    headlineField: 'productName',
+    createdBy: 'Akhmet Dauletmuratov',
+    updatedAt: new Date(Date.now() - 64 * 86_400_000).toISOString(),
+  },
+  {
+    id: 'tpl-2',
+    name: 'Shelf card',
+    kind: 'shelf',
+    widthMm: 80,
+    heightMm: 50,
+    code: 'qr',
+    fields: ['productName', 'price', 'shelf', 'vehicle', 'category'],
+    headlineField: 'price',
+    createdBy: 'Akhmet Dauletmuratov',
+    updatedAt: new Date(Date.now() - 21 * 86_400_000).toISOString(),
+  },
+  {
+    id: 'tpl-3',
+    name: 'Counter receipt',
+    kind: 'receipt',
+    widthMm: 80,
+    heightMm: 150,
+    code: 'qr',
+    fields: ['company', 'productName', 'sku', 'price', 'date'],
+    headlineField: 'company',
+    createdBy: 'Mansur Karimov',
+    updatedAt: new Date(Date.now() - 5 * 86_400_000).toISOString(),
+  },
+]
 
 /**
  * Company settings.

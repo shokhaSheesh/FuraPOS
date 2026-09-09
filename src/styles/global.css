@@ -43,3 +43,29 @@
     outline-color: var(--color-primary);
   }
 }
+
+/*
+ * Printing a sheet of labels.
+ *
+ * The one place this product actually reaches a printer, so the rule is
+ * deliberately blunt: everything is hidden except the sheet, which is then
+ * laid out at true millimetre size on the page.
+ */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .print-sheet,
+  .print-sheet * {
+    visibility: visible;
+  }
+
+  .print-sheet {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    padding: 10mm;
+    background: white;
+  }
+}

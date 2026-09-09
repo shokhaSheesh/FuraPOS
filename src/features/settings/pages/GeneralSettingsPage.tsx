@@ -10,26 +10,23 @@ import { Select } from '@/shared/ui/Select'
 import { Switch } from '@/shared/ui/Switch'
 import { Checkbox } from '@/shared/ui/Checkbox'
 import { toast } from '@/shared/ui/toast'
-import { formatDateTime, formatMoney } from '@/shared/lib/format'
+import { formatDateTime } from '@/shared/lib/format'
 import { useDataStore } from '@/data/store'
 import { PAYMENT_METHODS, SALE_STATUSES } from '@/features/sales/model/sale'
-import {
-  CURRENCIES,
-  INDUSTRIES,
-  TIMEZONES,
-  companySchema,
-  type CompanyDraft,
-} from '../model/settings'
+import { INDUSTRIES, companySchema, type CompanyDraft } from '../model/settings'
 
 /**
  * General settings.
  *
  * OX's «Основные» carries company details, a map provider, a delivery-distance
  * method, a base unit weight and a password policy. Half of those belong to
- * features this product does not have, so what is left is the company itself,
- * how money and dates are written, and the two rules that change numbers
- * elsewhere: which payment methods a sale may use, and which statuses count as
- * revenue.
+ * features this product does not have.
+ *
+ * Currency, locale and time zone were here too and are deliberately gone: a
+ * currency picker that changes the symbol without converting anything is a trap,
+ * not a setting. What is left is the company, the dollar rate, and the two rules
+ * that change numbers elsewhere — which payment methods a sale may use, and
+ * which statuses count as revenue.
  */
 export default function GeneralSettingsPage() {
   const company = useDataStore((s) => s.company)
@@ -41,9 +38,6 @@ export default function GeneralSettingsPage() {
     address: company.address,
     phone: company.phone,
     email: company.email,
-    currency: company.currency,
-    locale: company.locale,
-    timezone: company.timezone,
     usdRate: company.usdRate,
     paymentMethods: company.paymentMethods,
     allowOverCreditLimit: company.allowOverCreditLimit,
@@ -76,7 +70,7 @@ export default function GeneralSettingsPage() {
     <>
       <PageHeader
         title="General"
-        description="Who the company is, how money and dates are written, and the two rules that change numbers on other screens."
+        description="Who the company is, the dollar rate behind every cost, and the two rules that change numbers on other screens."
         action={
           <Button variant="primary" onClick={save}>
             <Save />
@@ -147,58 +141,18 @@ export default function GeneralSettingsPage() {
 
       <Card>
         <CardHeader className="flex-col items-stretch gap-1">
-          <CardTitle>Money and dates</CardTitle>
+          <CardTitle>Exchange rate</CardTitle>
           <p className="text-fg-subtle text-2xs">
-            Every figure and date in the product is written using these.
+            Suppliers invoice in dollars and customers pay in so'm, so this one number sits behind
+            every landed cost, margin and order value in the product.
           </p>
         </CardHeader>
-        <CardBody className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Field label="Currency">
-            {(p) => (
-              <Select
-                {...p}
-                className="w-full"
-                value={draft.currency}
-                onChange={(currency) => setDraft((c) => ({ ...c, currency }))}
-                options={CURRENCIES.map((entry) => ({ value: entry, label: entry }))}
-              />
-            )}
-          </Field>
-          <Field label="Number and date format">
-            {(p) => (
-              <Select
-                {...p}
-                className="w-full"
-                value={draft.locale}
-                onChange={(locale) => setDraft((c) => ({ ...c, locale }))}
-                options={[
-                  { value: 'ru-RU', label: 'Russian (1 234,56)' },
-                  { value: 'en-GB', label: 'English (1,234.56)' },
-                  { value: 'uz-UZ', label: 'Uzbek' },
-                ]}
-              />
-            )}
-          </Field>
-          <Field label="Time zone">
-            {(p) => (
-              <Select
-                {...p}
-                className="w-full"
-                value={draft.timezone}
-                onChange={(timezone) => setDraft((c) => ({ ...c, timezone }))}
-                options={TIMEZONES.map((entry) => ({ value: entry, label: entry }))}
-              />
-            )}
-          </Field>
-          <Field
-            label="US dollar rate"
-            hint="Suppliers invoice in USD; customers pay in UZS"
-            error={errors.usdRate?.[0]}
-          >
+        <CardBody>
+          <Field label="US dollar rate" required error={errors.usdRate?.[0]}>
             {(p) => (
               <NumberField
                 {...p}
-                className="w-full"
+                className="w-full sm:max-w-56"
                 nullable={false}
                 min={1}
                 value={draft.usdRate}
@@ -293,13 +247,6 @@ export default function GeneralSettingsPage() {
               </p>
             </div>
           </div>
-        </CardBody>
-      </Card>
-
-      <Card className="bg-surface-inset">
-        <CardBody className="text-fg-subtle text-2xs">
-          A sale of {formatMoney(1_000_000)} reads as shown above under the current format. Changing
-          the currency does not convert anything already recorded — it changes the symbol only.
         </CardBody>
       </Card>
     </>

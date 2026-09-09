@@ -19,10 +19,6 @@ export interface CompanySettings {
   phone: string | null
   email: string | null
 
-  /** Everything money is displayed in. */
-  currency: string
-  locale: string
-  timezone: string
   /**
    * What one USD costs. Supplier invoices are in USD and customers pay in
    * UZS, so this rate sits behind every landed cost in the product.
@@ -56,19 +52,12 @@ export const INDUSTRIES = [
   'Other',
 ]
 
-export const TIMEZONES = ['Asia/Tashkent', 'Asia/Almaty', 'Europe/Moscow', 'Europe/London', 'UTC']
-
-export const CURRENCIES = ['UZS', 'USD', 'RUB', 'KZT']
-
 export const companySchema = z.object({
   name: z.string().min(2, 'The company needs a name'),
   industry: z.string(),
   address: z.string().nullable(),
   phone: z.string().nullable(),
   email: z.string().email('That is not an email address').or(z.literal('')).nullable(),
-  currency: z.string(),
-  locale: z.string(),
-  timezone: z.string(),
   usdRate: z.number().positive('A rate of zero would make every cost zero'),
   paymentMethods: z.array(z.string()).min(1, 'A sale has to be payable somehow'),
   allowOverCreditLimit: z.boolean(),

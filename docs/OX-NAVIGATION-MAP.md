@@ -1033,10 +1033,15 @@ instead, as this document has always said.
 
 **What each of ours does:**
 
-- **General** — company, then money and dates, then two rules with teeth. `usdRate` sits behind
+- **General** — company, then the exchange rate, then two rules with teeth. `usdRate` sits behind
   every landed cost in the product; **which statuses count as revenue** is OX's «Настройки расчёта
   выручки» and is the setting most likely to have two people quoting different revenue at each
   other, so the screen says so in as many words. Deleted sales never count whatever is ticked.
+  **Currency, locale and time zone were built and then removed.** A currency picker that changes
+  the symbol without converting anything already recorded is a trap rather than a setting, and
+  `format.ts` reads its own constants regardless — so the control promised something it could not
+  do. The right version of it is a decision about the target market (CLAUDE.md's open question),
+  not a dropdown.
 - **Brands** — with a product count per brand, and a refusal to delete one that is in use.
 - **Locations** — the most load-bearing list here: stock is held per location and every document
   points at one. It shows what each location **holds**, in units and at cost, and the store refuses

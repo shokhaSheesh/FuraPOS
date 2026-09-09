@@ -169,6 +169,8 @@ makes an argument about stock settleable.
 | Seller | task | Add the lines: part, quantity, price | Sales → New sale |
 | System | task | Apply any running promotion that matches the category or the product | Marketing → Promotions |
 | Seller | task | Choose how it is being paid | Sales → New sale |
+| System | ◆ gateway | **Paying cash, with no drawer open here?** | — |
+| System | task | *(no drawer)* Refuse the cash sale — open a shift, or take payment another way | Sales → Cash shifts |
 | System | ◆ gateway | **On account, and past their credit limit?** | — |
 | System | task | *(past it, and limits are enforced)* Stop the sale | — |
 | System | task | *(past it, and limits only warn)* Warn, and record the debt anyway | — |
@@ -176,11 +178,14 @@ makes an argument about stock settleable.
 | System | task | Take the units off the shelf | — |
 | Seller | task | Walk it through the lifecycle: new → processed → delivering → delivered → completed | Sales → All sales |
 | System | task | Count it as revenue once it reaches a status ticked in Column 1 | — |
-| System | ◆ gateway | **Paying cash, with no drawer open?** | — |
-| System | task | *(no drawer)* Refuse the cash sale until a shift is opened | Sales → Cash shifts |
+| System | task | Attach the cash taken to the open drawer | — |
 | Seller | task | At the end of the day, count the drawer and close the shift | Sales → Cash shifts |
 | System | task | Compare counted against expected — the **difference** is the number that matters | — |
 | Seller | ⬤ end | The sale is done and counted, and the drawer balanced | — |
+
+**The drawer brackets the column.** It opens before the first sale and closes
+after the last one, and the two cash nodes in between are the reason it is worth
+drawing: a refused cash sale, and a difference at the end.
 
 **Two arrows leave this column.** The "not in stock" branch feeds Column 3 —
 that is how demand becomes a purchase order. And the revenue task points back

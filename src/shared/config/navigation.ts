@@ -56,8 +56,10 @@ export const navigation: NavSection[] = [
     id: 'sales',
     label: 'Sales',
     icon: ShoppingCart,
-    to: paths.sales.orders,
-    permission: 'sales.orders.view',
+    items: [
+      { label: 'All sales', to: paths.sales.orders, permission: 'sales.orders.view' },
+      { label: 'Cash shifts', to: paths.sales.shifts, permission: 'sales.cashShifts.view' },
+    ],
   },
   {
     id: 'products',
@@ -155,6 +157,11 @@ export const navigation: NavSection[] = [
     items: [
       { label: 'General', to: paths.settings.general, permission: 'settings.general.view' },
       { label: 'Brands', to: paths.settings.brands, permission: 'settings.brands.view' },
+      {
+        label: 'Cash registers',
+        to: paths.settings.registers,
+        permission: 'settings.registers.view',
+      },
       { label: 'Locations', to: paths.settings.locations, permission: 'settings.locations.view' },
       { label: 'Categories', to: paths.settings.categories, permission: 'settings.products.view' },
       { label: 'Billing', to: paths.settings.billing, permission: 'settings.billing.view' },

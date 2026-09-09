@@ -18,6 +18,12 @@ import type { Client, ClientStatus } from '@/features/clients/model/client'
 import type { Promotion } from '@/features/promotions/model/promotion'
 import type { ReportDefinition } from '@/features/reports/model/report'
 import type { PrintTemplate } from '@/features/printTemplates/model/template'
+import {
+  openShiftFor,
+  type CashMovement,
+  type CashRegister,
+  type CashShift,
+} from '@/features/cashShifts/model/shift'
 import type {
   Brand,
   CategorySettings,
@@ -60,6 +66,8 @@ import {
   promotions as seedPromotions,
   reports as seedReports,
   printTemplates as seedPrintTemplates,
+  cashRegisters as seedCashRegisters,
+  cashShifts as seedCashShifts,
   companySettings as seedCompany,
   brandSettings as seedBrandSettings,
   locationSettings as seedLocationSettings,
@@ -94,6 +102,8 @@ interface CatalogState {
   promotions: Promotion[]
   reports: ReportDefinition[]
   printTemplates: PrintTemplate[]
+  cashRegisters: CashRegister[]
+  cashShifts: CashShift[]
   company: CompanySettings
   brandSettings: Brand[]
   locationSettings: LocationSettings[]
@@ -175,6 +185,28 @@ interface CatalogState {
   deleteCategory: (id: string) => { ok: true } | { ok: false; error: string }
 
   toggleNotification: (event: string, channel: NotificationChannel) => void
+
+  /**
+   * Opens a drawer. Refuses a second one on the same register: two open shifts
+   * on one drawer means neither person can be held to its contents.
+   */
+  openShift: (input: {
+    registerId: string
+    employeeId: string
+    openingFloat: number
+  }) => { ok: true; shift: CashShift } | { ok: false; error: string }
+  closeShift: (
+    id: string,
+    countedCash: number,
+    closingComment: string | null,
+  ) => { ok: true } | { ok: false; error: string }
+  addCashMovement: (
+    id: string,
+    input: { kind: CashMovement['kind']; reason: string; amount: number; comment: string | null },
+  ) => { ok: true } | { ok: false; error: string }
+  createCashRegister: (input: Omit<CashRegister, 'id' | 'locationName'>) => CashRegister
+  updateCashRegister: (id: string, input: Omit<CashRegister, 'id' | 'locationName'>) => void
+  deleteCashRegister: (id: string) => { ok: true } | { ok: false; error: string }
 
   createPrintTemplate: (input: TemplateInput) => PrintTemplate
   updatePrintTemplate: (id: string, input: TemplateInput) => void
@@ -534,6 +566,8 @@ export const useDataStore = create<CatalogState>((set, get) => ({
   promotions: seedPromotions,
   reports: seedReports,
   printTemplates: seedPrintTemplates,
+  cashRegisters: seedCashRegisters,
+  cashShifts: seedCashShifts,
   company: seedCompany,
   brandSettings: seedBrandSettings,
   locationSettings: seedLocationSettings,
@@ -570,6 +604,12 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       sellerName: 'Akhmet Dauletmuratov',
       promotionId: input.promotionId ?? null,
       paymentMethod: input.paymentMethod,
+      // Only cash reaches a drawer. The New sale screen refuses a cash sale
+      // with no shift open, so this is the record of which one took it.
+      shiftId:
+        input.paymentMethod === 'cash'
+          ? (openShiftFor(get().cashShifts, input.locationId)?.id ?? null)
+          : null,
       comment: input.comment || null,
       lines: input.lines,
       subtotal: totals.subtotal,
@@ -1343,6 +1383,120 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       ? current.filter((entry) => entry !== channel)
       : [...current, channel]
     set({ notifications: { ...get().notifications, [event]: next } })
+  },
+
+  openShift: ({ registerId, employeeId, openingFloat }) => {
+    const register = get().cashRegisters.find((entry) => entry.id === registerId)
+    if (!register) return { ok: false, error: 'That register no longer exists' }
+
+    const already = get().cashShifts.find(
+      (shift) => shift.status === 'open' && shift.registerId === registerId,
+    )
+    if (already) {
+      return {
+        ok: false,
+        error: `${already.employeeName} already has ${register.name} open — close ${already.number} first`,
+      }
+    }
+
+    const employee = get().employees.find((entry) => entry.id === employeeId)
+    const sequence = get().cashShifts.length + 1
+    const shift: CashShift = {
+      id: `shift-${sequence}-${Date.now()}`,
+      number: `CS-${String(sequence).padStart(5, '0')}`,
+      registerId,
+      registerName: register.name,
+      locationId: register.locationId,
+      locationName: register.locationName,
+      employeeId,
+      employeeName: employee?.fullName ?? '—',
+      status: 'open',
+      openedAt: new Date().toISOString(),
+      closedAt: null,
+      openingFloat,
+      movements: [],
+      countedCash: null,
+      closingComment: null,
+    }
+    set({ cashShifts: [shift, ...get().cashShifts] })
+    return { ok: true, shift }
+  },
+
+  closeShift: (id, countedCash, closingComment) => {
+    const shift = get().cashShifts.find((entry) => entry.id === id)
+    if (!shift) return { ok: false, error: 'That shift no longer exists' }
+    if (shift.status === 'closed') return { ok: false, error: 'That shift is already closed' }
+
+    set({
+      cashShifts: get().cashShifts.map((entry) =>
+        entry.id === id
+          ? {
+              ...entry,
+              status: 'closed' as const,
+              closedAt: new Date().toISOString(),
+              countedCash,
+              closingComment,
+            }
+          : entry,
+      ),
+    })
+    return { ok: true }
+  },
+
+  addCashMovement: (id, input) => {
+    const shift = get().cashShifts.find((entry) => entry.id === id)
+    if (!shift) return { ok: false, error: 'That shift no longer exists' }
+    // A closed shift is a settled record. Letting money into one after the
+    // fact would silently change a variance somebody already signed off.
+    if (shift.status === 'closed') return { ok: false, error: 'That shift is closed' }
+
+    const movement: CashMovement = {
+      id: `mov-${shift.movements.length + 1}-${Date.now()}`,
+      ...input,
+      at: new Date().toISOString(),
+      by: 'Akhmet Dauletmuratov',
+    }
+    set({
+      cashShifts: get().cashShifts.map((entry) =>
+        entry.id === id ? { ...entry, movements: [...entry.movements, movement] } : entry,
+      ),
+    })
+    return { ok: true }
+  },
+
+  createCashRegister: (input) => {
+    const register: CashRegister = {
+      ...input,
+      id: `reg-${get().cashRegisters.length + 1}-${Date.now()}`,
+      locationName: get().locations.find((l) => l.id === input.locationId)?.name ?? '—',
+    }
+    set({ cashRegisters: [...get().cashRegisters, register] })
+    return register
+  },
+
+  updateCashRegister: (id, input) => {
+    set({
+      cashRegisters: get().cashRegisters.map((register) =>
+        register.id === id
+          ? {
+              ...register,
+              ...input,
+              locationName: get().locations.find((l) => l.id === input.locationId)?.name ?? '—',
+            }
+          : register,
+      ),
+    })
+  },
+
+  deleteCashRegister: (id) => {
+    // Shifts are the audit trail of a drawer; deleting the register they name
+    // would orphan them, so a register with history is kept and deactivated.
+    const used = get().cashShifts.some((shift) => shift.registerId === id)
+    if (used) {
+      return { ok: false, error: 'This register has shifts against it — deactivate it instead' }
+    }
+    set({ cashRegisters: get().cashRegisters.filter((register) => register.id !== id) })
+    return { ok: true }
   },
 
   createPrintTemplate: (input) => {

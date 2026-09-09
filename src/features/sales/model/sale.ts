@@ -95,6 +95,13 @@ export interface Sale {
    */
   promotionId: Id | null
   paymentMethod: PaymentMethod
+  /**
+   * Which cash shift took the money. Only ever set on a cash sale — a card
+   * payment never touches a drawer, so tying it to one would make every
+   * cash-up wrong. Null on anything paid another way, and on the history from
+   * before shifts existed.
+   */
+  shiftId: Id | null
   channel: SaleChannel
   comment: string | null
   lines: SaleLine[]

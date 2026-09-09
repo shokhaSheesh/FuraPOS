@@ -10,6 +10,8 @@ import { DatePicker } from '@/shared/ui/DatePicker'
 import { toast } from '@/shared/ui/toast'
 import { paths } from '@/shared/config/paths'
 import { useSession } from '@/app/providers/SessionProvider'
+import { useOpenShiftAt } from '@/features/cashShifts/api/shifts'
+import { cashSaleBlocked } from '@/features/cashShifts/model/shift'
 import { formatMoney } from '@/shared/lib/format'
 import { cn } from '@/shared/lib/cn'
 import { useCreateSale } from '../api/sales'
@@ -54,6 +56,13 @@ export default function NewSalePage() {
   const [client, setClient] = useState<Client | null>(null)
   const [locationId, setLocationId] = useState('loc-2')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash')
+  /*
+    Cash needs an open drawer. Without this rule the cash-up on Cash shifts
+    compares counted money against sales that were never attributable to
+    anybody, and the variance it reports means nothing.
+  */
+  const openShift = useOpenShiftAt(locationId)
+  const noDrawer = cashSaleBlocked(paymentMethod, openShift !== null)
   const [channel, setChannel] = useState<SaleChannel>('desk')
   const [comment, setComment] = useState('')
   const [paidText, setPaidText] = useState('')
@@ -252,7 +261,7 @@ export default function NewSalePage() {
           <div className="flex items-center gap-2">
             <Button
               variant="secondary"
-              disabled={empty || createSale.isPending}
+              disabled={empty || noDrawer || createSale.isPending}
               loading={
                 createSale.isPending &&
                 (createSale.variables?.status === 'open' || createSale.variables?.status === 'new')
@@ -263,7 +272,7 @@ export default function NewSalePage() {
             </Button>
             <Button
               variant="secondary"
-              disabled={empty || createSale.isPending}
+              disabled={empty || noDrawer || createSale.isPending}
               loading={createSale.isPending && createSale.variables?.status === 'postponed'}
               onClick={() => submit('postponed')}
             >
@@ -272,7 +281,7 @@ export default function NewSalePage() {
             </Button>
             <Button
               variant="primary"
-              disabled={empty || deliveryIncomplete || createSale.isPending}
+              disabled={empty || noDrawer || deliveryIncomplete || createSale.isPending}
               loading={
                 createSale.isPending &&
                 (createSale.variables?.status === 'completed' ||
@@ -335,7 +344,14 @@ export default function NewSalePage() {
                   className="w-full"
                 />
               </Field>
-              <Field label="Payment method">
+              <Field
+                label="Payment method"
+                error={
+                  noDrawer
+                    ? 'No cash drawer is open at this location — open a shift, or take payment another way'
+                    : undefined
+                }
+              >
                 <Select
                   value={paymentMethod}
                   onChange={setPaymentMethod}
@@ -486,11 +502,20 @@ export default function NewSalePage() {
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  error,
+  children,
+}: {
+  label: string
+  error?: string
+  children: React.ReactNode
+}) {
   return (
     <label className="block space-y-1">
       <span className="text-fg-muted text-sm">{label}</span>
       {children}
+      {error ? <span className="text-danger text-2xs block">{error}</span> : null}
     </label>
   )
 }

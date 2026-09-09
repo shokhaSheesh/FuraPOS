@@ -430,6 +430,33 @@ The barcode and QR code are **drawn, not encoded** — there is no encoder in th
 is out of scope. They are to scale and obviously not scannable, which answers the only question the
 preview is being asked: how much room does the code take.
 
+### Cash shifts — «Кассовые смены», built at the client's request
+
+Added after a client meeting. OX ships a full POS on a separate domain and its
+cash shifts belong to that till; **this build still has no till** — sales are
+typed by hand on New sale, and the client agreed to that. What they wanted was
+the accountability a drawer needs, not the hardware.
+
+So a shift here records who had a drawer, what went through it, and whether it
+balanced:
+
+| Piece | What it does |
+|-------|--------------|
+| **Cash registers** (Settings) | One drawer per counter. A register with shifts against it cannot be deleted — those shifts are the audit trail — so it is retired instead. |
+| **Open a shift** | Register, who is answerable, opening float. A second shift on the same register is refused: two people cannot both be answerable for one drawer. |
+| **Cash in and out** | Everything that moves cash without being a sale — a refund, petty cash, a collection to the safe. The reason decides the direction. |
+| **Close the drawer** | A counted amount, compared with what the system expected. **The expected figure is deliberately not pre-filled** — pre-filling turns a count into a click. A difference beyond the tolerance requires a note. |
+| **The rule** | A cash sale is refused when no drawer is open at that location. Without it the variance compares counted money against cash nobody was answerable for, and means nothing. |
+
+Two decisions worth recording:
+
+- **Only cash reaches a drawer.** Card, transfer and on-account are shown on the
+  shift for context and labelled *not in the drawer*. Counting them into a
+  cash-up is the classic way one stops balancing.
+- **Over is a warning, not a success.** More cash than expected usually means a
+  sale went unrecorded, which is worse than being slightly short. Only an exact
+  or near-exact drawer is green.
+
 ## 4. Закупки — Procurement
 
 | OX (ru)            | Ours (en)         | OX route                     |

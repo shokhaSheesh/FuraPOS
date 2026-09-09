@@ -8,6 +8,11 @@ import { RequirePermission } from './guards'
 import { RouteError } from './RouteError'
 
 const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPage'))
+const CashShiftsPage = lazy(() => import('@/features/cashShifts/pages/CashShiftsPage'))
+const CashShiftDetailPage = lazy(() => import('@/features/cashShifts/pages/CashShiftDetailPage'))
+const RegistersSettingsPage = lazy(
+  () => import('@/features/cashShifts/pages/RegistersSettingsPage'),
+)
 const ProductsPage = lazy(() => import('@/features/products/pages/ProductsPage'))
 const PrintTemplatesPage = lazy(() => import('@/features/printTemplates/pages/PrintTemplatesPage'))
 const TemplateFormPage = lazy(() => import('@/features/printTemplates/pages/TemplateFormPage'))
@@ -170,6 +175,18 @@ const routes: RouteObject[] = [
       {
         path: paths.products.repricingDetail(),
         element: page(<RepricingDetailPage />, 'products.repricing.view'),
+      },
+      {
+        path: paths.sales.shifts,
+        element: page(<CashShiftsPage />, 'sales.cashShifts.view'),
+      },
+      {
+        path: paths.sales.shiftDetail(),
+        element: page(<CashShiftDetailPage />, 'sales.cashShifts.view'),
+      },
+      {
+        path: paths.settings.registers,
+        element: page(<RegistersSettingsPage />, 'settings.registers.view'),
       },
       {
         path: paths.products.printTemplates,

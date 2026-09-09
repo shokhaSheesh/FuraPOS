@@ -45,6 +45,11 @@ Fura POS  →  Back-office (web)  →  8 modules  →  screens  →  what is on 
   - Promotion applied automatically
   - Payment method
   - Credit-limit check (blocks or warns, per Settings)
+- **Cash shifts** (the cash-up, not a till)
+  - Open a drawer (register, who is answerable, opening float)
+  - Cash in and out by hand (refund, petty expense, collection to the safe)
+  - Close it with a counted amount → **difference** against what was expected
+  - A cash sale is refused when no drawer is open at that location
 - **All sales** (one ledger)
   - Status chips (open, new, processed, delivering, delivered, completed, postponed, deleted)
   - Deleted sales excluded from the list and its totals
@@ -103,6 +108,7 @@ Fura POS  →  Back-office (web)  →  8 modules  →  screens  →  what is on 
 ## 8 · Settings
 - **General** (company, USD rate, payment methods, which statuses count as revenue, credit-limit rule)
 - **Brands** (name, zone, active — cannot delete one still in use)
+- **Cash registers** (one per counter; a register with shifts against it is retired, never deleted)
 - **Locations** (warehouse / shop, address, area, units and cost held — cannot delete one still holding stock)
 - **Categories** (two levels: group → category — cannot delete one with products in it)
 - **Billing** (balance, plan, invoices)

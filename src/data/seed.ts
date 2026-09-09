@@ -22,6 +22,7 @@ import type { Client, ClientType } from '@/features/clients/model/client'
 import type { Promotion } from '@/features/promotions/model/promotion'
 import type { ReportDefinition } from '@/features/reports/model/report'
 import type { PrintTemplate } from '@/features/printTemplates/model/template'
+import type { CashRegister, CashShift } from '@/features/cashShifts/model/shift'
 import type {
   Brand,
   CategorySettings,
@@ -812,6 +813,9 @@ export const sales: Sale[] = Array.from({ length: 420 }, (_, index) => {
     sellerId: seller.id,
     sellerName: seller.fullName,
     promotionId: promotion?.id ?? null,
+    // Filled in below, once the shifts exist: a sale knows which drawer it
+    // went into, and only cash sales ever do.
+    shiftId: null,
     paymentMethod: pick(['cash', 'card', 'transfer', 'credit'] as const),
     channel: pick(['desk', 'desk', 'phone', 'online'] as const),
     comment: null,
@@ -1629,6 +1633,132 @@ export const printTemplates: PrintTemplate[] = [
     updatedAt: new Date(Date.now() - 5 * 86_400_000).toISOString(),
   },
 ]
+
+/**
+ * Cash registers — one desk per location.
+ */
+export const cashRegisters: CashRegister[] = locations.map((location, index) => ({
+  id: `reg-${index + 1}`,
+  name: index === 0 ? 'Main desk' : `${location.name} desk`,
+  locationId: location.id,
+  locationName: location.name,
+  active: true,
+}))
+
+/**
+ * Cash shifts, built *from* the sales rather than beside them.
+ *
+ * A shift whose expected cash does not match the sales it contains would make
+ * every screen lie, so the day's cash sales are gathered first and the drawer
+ * is derived from them. Counted cash is then jittered the way a real day goes:
+ * usually exact, sometimes a few thousand out, occasionally properly wrong —
+ * because a variance column where nothing ever varies teaches nobody anything.
+ */
+export const cashShifts: CashShift[] = (() => {
+  const shifts: CashShift[] = []
+  const startOfDay = (daysAgo: number) => {
+    const date = new Date(Date.now() - daysAgo * 86_400_000)
+    date.setHours(9, 0, 0, 0)
+    return date
+  }
+
+  let sequence = 0
+  for (let daysAgo = 13; daysAgo >= 0; daysAgo -= 1) {
+    for (const register of cashRegisters) {
+      const opened = startOfDay(daysAgo)
+      const closes = new Date(opened.getTime() + 10 * 3_600_000)
+      // The one open drawer: today, at the main desk. Everything else is done.
+      const isOpen = daysAgo === 0 && register.id === 'reg-1'
+
+      // Matched by calendar day, not by the 09:00-19:00 window the shift
+      // displays: the seeded sales are spread across the clock, and a cash
+      // sale that fell outside trading hours belonging to no drawer at all
+      // would be a seeding artefact rather than anything a real day does.
+      const dayStart = new Date(opened)
+      dayStart.setHours(0, 0, 0, 0)
+      const dayEnd = new Date(dayStart.getTime() + 86_400_000)
+      const daySales = sales.filter(
+        (sale) =>
+          sale.paymentMethod === 'cash' &&
+          // Money in the drawer, not sales on the book: a cash sale still
+          // unpaid has put nothing in it.
+          sale.paid > 0 &&
+          sale.locationId === register.locationId &&
+          new Date(sale.createdAt) >= dayStart &&
+          new Date(sale.createdAt) < dayEnd,
+      )
+      if (daySales.length === 0 && !isOpen) continue
+
+      sequence += 1
+      const id = `shift-${sequence}`
+      for (const sale of daySales) sale.shiftId = id
+
+      const staff =
+        employees.find(
+          (employee) => employee.locationId === register.locationId && employee.status === 'active',
+        ) ?? employees[0]!
+
+      const openingFloat = 200_000
+      // The reason decides the direction. Picking them independently produced
+      // "Extra float added -90 000", which reads as broken because it is.
+      const [movementReason, movementKind] = pick([
+        ['float', 'in'],
+        ['expense', 'out'],
+        ['collection', 'out'],
+        ['supplier', 'out'],
+      ] as const)
+      const movements =
+        random() > 0.6
+          ? [
+              {
+                id: `${id}-m1`,
+                kind: movementKind as 'in' | 'out',
+                reason: movementReason,
+                amount: Math.round(between(20_000, 400_000) / 1000) * 1000,
+                comment: null,
+                at: new Date(opened.getTime() + 4 * 3_600_000).toISOString(),
+                by: staff.fullName,
+              },
+            ]
+          : []
+
+      const cashTaken = daySales.reduce((sum, sale) => sum + sale.paid, 0)
+      const expected =
+        openingFloat +
+        cashTaken +
+        movements.filter((m) => m.kind === 'in').reduce((sum, m) => sum + m.amount, 0) -
+        movements.filter((m) => m.kind === 'out').reduce((sum, m) => sum + m.amount, 0)
+
+      const roll = random()
+      const drift =
+        roll > 0.75
+          ? 0
+          : roll > 0.35
+            ? Math.round(between(-4, 4)) * 1000
+            : Math.round(between(-60, 40)) * 1000
+
+      shifts.push({
+        id,
+        number: `CS-${String(sequence).padStart(5, '0')}`,
+        registerId: register.id,
+        registerName: register.name,
+        locationId: register.locationId,
+        locationName: register.locationName,
+        employeeId: staff.id,
+        employeeName: staff.fullName,
+        status: isOpen ? 'open' : 'closed',
+        openedAt: opened.toISOString(),
+        closedAt: isOpen ? null : closes.toISOString(),
+        openingFloat,
+        movements,
+        countedCash: isOpen ? null : Math.max(0, expected + drift),
+        closingComment: null,
+      })
+    }
+  }
+
+  return shifts.reverse()
+})()
 
 /**
  * Company settings.

@@ -26,6 +26,9 @@ export const paths = {
      */
     ordersByStatus: (status: string) => `/sales/orders?status=${status}`,
     orderDetail: (id = ':orderId') => `/sales/orders/${id}`,
+    /** Cash shifts — OX: «Кассовые смены», /app/sells/cash-shifts. */
+    shifts: '/sales/shifts',
+    shiftDetail: (id = ':shiftId') => `/sales/shifts/${id}`,
   },
 
   products: {
@@ -102,6 +105,7 @@ export const paths = {
     root: '/settings',
     general: '/settings/general', // OX: Основные
     brands: '/settings/brands',
+    registers: '/settings/registers',
     locations: '/settings/locations',
     categories: '/settings/categories', // OX: /app/settings/products
     billing: '/settings/billing',

@@ -160,6 +160,7 @@ makes an argument about stock settleable.
 | Lane | Type | Node | Screen |
 |------|------|------|--------|
 | Seller | ● start | A customer wants a part | — |
+| Seller | task | Open the cash drawer for the day (register, float) | Sales → Cash shifts |
 | Seller | task | Find it by SKU, OEM code, barcode or name | Sales → New sale |
 | System | ◆ gateway | **Is it in stock at this location?** | — |
 | Seller | task | *(no)* Check the other locations, or add it to the next order | → *back to Column 3* |
@@ -175,7 +176,11 @@ makes an argument about stock settleable.
 | System | task | Take the units off the shelf | — |
 | Seller | task | Walk it through the lifecycle: new → processed → delivering → delivered → completed | Sales → All sales |
 | System | task | Count it as revenue once it reaches a status ticked in Column 1 | — |
-| Seller | ⬤ end | The sale is done, and counted the way the owner defined | — |
+| System | ◆ gateway | **Paying cash, with no drawer open?** | — |
+| System | task | *(no drawer)* Refuse the cash sale until a shift is opened | Sales → Cash shifts |
+| Seller | task | At the end of the day, count the drawer and close the shift | Sales → Cash shifts |
+| System | task | Compare counted against expected — the **difference** is the number that matters | — |
+| Seller | ⬤ end | The sale is done and counted, and the drawer balanced | — |
 
 **Two arrows leave this column.** The "not in stock" branch feeds Column 3 —
 that is how demand becomes a purchase order. And the revenue task points back

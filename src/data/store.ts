@@ -956,7 +956,12 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       if (receipt.status !== 'draft') return { ok: false, error: 'This receipt is already posted' }
       lines = receipt.lines.map((line) => ({
         ...line,
-        receivedQuantity: Math.max(0, quantities?.[line.id] ?? line.orderedQuantity),
+        // Falls back to the invoiced figure only when nobody has counted:
+        // a receipt booked in against an order already carries the count.
+        receivedQuantity: Math.max(
+          0,
+          quantities?.[line.id] ?? line.receivedQuantity ?? line.orderedQuantity,
+        ),
       }))
       if (lines.every((line) => (line.receivedQuantity ?? 0) === 0)) {
         return { ok: false, error: 'Nothing to receive — every line is zero' }
@@ -1142,13 +1147,14 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       rather than quietly inflating this one.
     */
     const arriving = order.lines
-      .map((line) => ({
-        line,
-        quantity: Math.min(
-          Math.max(0, quantities[line.id] ?? 0),
-          Math.max(0, line.orderedQuantity - line.receivedQuantity),
-        ),
-      }))
+      .map((line) => {
+        const outstanding = Math.max(0, line.orderedQuantity - line.receivedQuantity)
+        return {
+          line,
+          outstanding,
+          quantity: Math.min(Math.max(0, quantities[line.id] ?? 0), outstanding),
+        }
+      })
       .filter((entry) => entry.quantity > 0)
 
     if (arriving.length === 0) {
@@ -1165,7 +1171,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       comment: order.comment ?? '',
       orderId: order.id,
       orderNumber: order.number,
-      lines: arriving.map(({ line, quantity }) => ({
+      lines: arriving.map(({ line, outstanding, quantity }) => ({
         id: `grl-${order.id}-${line.id}`,
         variationId: line.variationId,
         productId: line.productId,
@@ -1173,8 +1179,17 @@ export const useDataStore = create<CatalogState>((set, get) => ({
         name: line.name,
         imageUrl: line.imageUrl,
         unit: line.unit,
-        orderedQuantity: quantity,
-        receivedQuantity: null,
+        /*
+          The two numbers come from two different places, and conflating them
+          was hiding every short delivery: what was still outstanding on the
+          order is what the supplier is expected to have sent, and what a
+          person counted on the dock is what actually turned up. Writing the
+          counted figure into both made "42 invoiced, 40 received" read as
+          "40 and 40" — no shortage, no claim, and freight spread over the
+          wrong number of units.
+        */
+        orderedQuantity: outstanding,
+        receivedQuantity: quantity,
         unitCost: line.unitCost,
         costCurrency: line.costCurrency,
       })),

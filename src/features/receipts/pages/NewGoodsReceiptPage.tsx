@@ -175,8 +175,13 @@ export default function NewGoodsReceiptPage() {
                 </span>
               ) : null}
             </div>
+            {/* The label people got wrong: this column is the supplier's
+                paperwork, not the count off the lorry. Saying so here is what
+                makes a short delivery visible later. */}
             <p className="text-fg-subtle text-2xs">
-              Enter the supplier&rsquo;s price in the currency they invoiced. Landed cost is worked
+              <strong className="text-fg-muted font-medium">Invoiced</strong> is what their
+              paperwork says, priced in the currency they billed. You count what actually arrived
+              when you post the receipt, and the difference is the shortage. Landed cost is worked
               out below.
             </p>
           </CardHeader>
@@ -225,7 +230,7 @@ export default function NewGoodsReceiptPage() {
                   <thead className="bg-canvas">
                     <tr className="text-fg-muted text-2xs tracking-wide uppercase">
                       <th className="px-3 py-2 text-left font-semibold">Product</th>
-                      <th className="px-3 py-2 text-right font-semibold">Quantity</th>
+                      <th className="px-3 py-2 text-right font-semibold">Invoiced</th>
                       <th className="px-3 py-2 text-right font-semibold">Unit price</th>
                       <th className="px-3 py-2 text-right font-semibold">Landed</th>
                       <th className="w-10" />
@@ -260,7 +265,7 @@ export default function NewGoodsReceiptPage() {
                                   className="w-20"
                                   nullable={false}
                                   min={1}
-                                  aria-label={`Quantity of ${line?.name}`}
+                                  aria-label={`Invoiced quantity of ${line?.name}`}
                                   value={f.value}
                                   onChange={(v) => f.onChange(v ?? 0)}
                                   onBlur={f.onBlur}

@@ -208,3 +208,63 @@ describe('location scope', () => {
     expect(here).toBeLessThan(everywhere)
   })
 })
+
+describe('booking a delivery against an order', () => {
+  /** An order still waiting on stock, so there is something to short-ship. */
+  const openOrder = () =>
+    useDataStore
+      .getState()
+      .orders.find((order) =>
+        order.lines.some((line) => line.orderedQuantity - line.receivedQuantity > 0),
+      )
+
+  it('keeps the invoiced and the counted figures apart when a delivery is short', () => {
+    const order = openOrder()!
+    const line = order.lines.find((l) => l.orderedQuantity - l.receivedQuantity > 1)!
+    const outstanding = line.orderedQuantity - line.receivedQuantity
+    const counted = outstanding - 1
+
+    const result = useDataStore
+      .getState()
+      .receiveAgainstOrder(order.id, { [line.id]: counted }, 'INV-SHORT')
+    expect(result.ok).toBe(true)
+
+    const receipt = useDataStore.getState().receipts.at(-1)!
+    const received = receipt.lines.find((l) => l.variationId === line.variationId)!
+
+    // The bug this pins: both used to be the counted number, so a short
+    // delivery vanished and freight was spread over the wrong unit count.
+    expect(received.orderedQuantity).toBe(outstanding)
+    expect(received.receivedQuantity).toBe(counted)
+    expect(received.orderedQuantity - (received.receivedQuantity ?? 0)).toBe(1)
+  })
+
+  it('leaves the missing units outstanding on the order', () => {
+    const order = openOrder()!
+    const line = order.lines.find((l) => l.orderedQuantity - l.receivedQuantity > 1)!
+    const outstanding = line.orderedQuantity - line.receivedQuantity
+
+    useDataStore
+      .getState()
+      .receiveAgainstOrder(order.id, { [line.id]: outstanding - 1 }, 'INV-SHORT-2')
+
+    const after = useDataStore.getState().orders.find((o) => o.id === order.id)!
+    const sameLine = after.lines.find((l) => l.id === line.id)!
+    expect(sameLine.orderedQuantity - sameLine.receivedQuantity).toBe(1)
+    expect(after.status).toBe('partial')
+  })
+
+  it('never books in more than the order still expects', () => {
+    const order = openOrder()!
+    const line = order.lines.find((l) => l.orderedQuantity - l.receivedQuantity > 0)!
+    const outstanding = line.orderedQuantity - line.receivedQuantity
+
+    useDataStore
+      .getState()
+      .receiveAgainstOrder(order.id, { [line.id]: outstanding + 10 }, 'INV-OVER')
+
+    const receipt = useDataStore.getState().receipts.at(-1)!
+    const received = receipt.lines.find((l) => l.variationId === line.variationId)!
+    expect(received.receivedQuantity).toBe(outstanding)
+  })
+})

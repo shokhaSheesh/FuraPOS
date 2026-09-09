@@ -301,6 +301,35 @@ Cancelling a posted receipt takes its stock back, and is **refused** if any of i
 sold or moved on, because that would push a shelf below zero. The message says to correct it
 instead.
 
+### Goods receipt — invoiced against received
+
+Two numbers, entered at two different moments, and keeping them apart is the
+whole value of the screen:
+
+- **Invoiced** — what the supplier's paperwork says they sent. Typed when the
+  receipt is created, or carried from the purchase order's outstanding quantity
+  when the delivery is booked against one.
+- **Received** — what a person counted on the dock. Typed when the receipt is
+  posted.
+
+The difference is a **short delivery**: a claim against the supplier, not stock
+that went missing. Nothing is added for the missing units, and freight and duty
+are spread over what actually arrived — divide by the invoiced figure instead
+and every unit's landed cost is understated, along with every margin taken from
+it.
+
+**This was broken and is now fixed.** Booking a delivery against an order wrote
+the *counted* quantity into both fields, so "42 invoiced, 40 received" was
+recorded as "40 and 40" — the shortage disappeared and the landed cost divided
+by the wrong number. The column on the manual receipt form was also labelled
+just "Quantity", which reads as "how many arrived", so people typed the count
+there too.
+
+**Over-delivery is deliberately not handled here.** Booking in is capped at what
+the order still expects; a supplier who ships more has sent something that was
+not ordered, and it belongs on its own receipt rather than quietly inflating
+this one.
+
 ### Repricing
 
 Changing what many products sell for at once, as a document. Built list, price sheet and set-up. As

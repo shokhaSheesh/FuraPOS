@@ -25,9 +25,7 @@ import { useDriverActions, useDriverCounts, useDrivers } from '../api/drivers'
 import {
   DRIVER_SECTIONS,
   DRIVER_STATUSES,
-  KIND_LABEL,
   driverSchema,
-  kindOf,
   type Driver,
   type DriverDraft,
   type DriverStatus,
@@ -116,15 +114,6 @@ export default function DriversPage() {
             </p>
           </div>
         ),
-      },
-      {
-        id: 'kind',
-        header: 'Buys as',
-        enableHiding: false,
-        cell: ({ row }) => {
-          const kind = kindOf(row.original)
-          return <Badge tone={kind === 'both' ? 'info' : 'neutral'}>{KIND_LABEL[kind]}</Badge>
-        },
       },
       {
         id: 'autopark',

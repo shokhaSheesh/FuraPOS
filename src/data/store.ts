@@ -306,6 +306,7 @@ export interface PromotionInput {
   scopeIds: string[]
   audience: Promotion['audience']
   clientIds: string[]
+  driverIds: string[]
   startsAt: string
   endsAt: string | null
   paused: boolean
@@ -572,8 +573,18 @@ function namesOfClients(
   audience: Promotion['audience'],
   clientIds: string[],
 ): string[] {
-  if (audience === 'everyone') return []
+  if (audience !== 'clients') return []
   return clientIds.map((id) => state.clients.find((client) => client.id === id)?.name ?? '—')
+}
+
+/** Driver names for a driver-targeted promotion, snapshotted the same way. */
+function namesOfDrivers(
+  state: { drivers: readonly { readonly id: string; readonly fullName: string }[] },
+  audience: Promotion['audience'],
+  driverIds: string[],
+): string[] {
+  if (audience !== 'drivers') return []
+  return driverIds.map((id) => state.drivers.find((driver) => driver.id === id)?.fullName ?? '—')
 }
 
 export const useDataStore = create<CatalogState>((set, get) => ({
@@ -1658,6 +1669,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       id: `promo-${get().promotions.length + 1}-${Date.now()}`,
       scopeNames: namesOfScope(get(), input.scope, input.scopeIds),
       clientNames: namesOfClients(get(), input.audience, input.clientIds),
+      driverNames: namesOfDrivers(get(), input.audience, input.driverIds),
       createdBy: 'Akhmet Dauletmuratov',
       createdAt: now,
       updatedAt: now,
@@ -1675,6 +1687,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
               ...input,
               scopeNames: namesOfScope(get(), input.scope, input.scopeIds),
               clientNames: namesOfClients(get(), input.audience, input.clientIds),
+              driverNames: namesOfDrivers(get(), input.audience, input.driverIds),
               updatedAt: new Date().toISOString(),
             }
           : promotion,

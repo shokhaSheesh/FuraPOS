@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useDataStore, type PromotionInput } from '@/data/store'
 import { matches } from '@/data/query'
 import {
+  NO_BUYER,
   bestPromotion,
   daysRemaining,
   promotionStatus,
@@ -90,11 +91,15 @@ export function usePromotionCounts() {
  * Passing the client is what makes a targeted promotion targeted: without it
  * New sale would offer a haulier's negotiated rate to a walk-in.
  */
-export function useBestPromotion(lines: PromotableLine[], clientId: string | null = null) {
+export function useBestPromotion(
+  lines: PromotableLine[],
+  buyer: { clientId: string | null; driverId: string | null } = NO_BUYER,
+) {
   const promotions = useDataStore((s) => s.promotions)
+  const { clientId, driverId } = buyer
   return useMemo(
-    () => bestPromotion(promotions, lines, new Date(), clientId),
-    [promotions, lines, clientId],
+    () => bestPromotion(promotions, lines, new Date(), { clientId, driverId }),
+    [promotions, lines, clientId, driverId],
   )
 }
 

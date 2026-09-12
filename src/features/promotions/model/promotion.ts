@@ -47,7 +47,7 @@ export const PROMOTION_SCOPES: { value: PromotionScope; label: string }[] = [
  * different offers, and collapsing them into one field would make the second
  * impossible to express.
  */
-export type PromotionAudience = 'everyone' | 'clients'
+export type PromotionAudience = 'everyone' | 'clients' | 'drivers'
 
 export const PROMOTION_AUDIENCES: { value: PromotionAudience; label: string; hint: string }[] = [
   { value: 'everyone', label: 'Everyone', hint: 'Any sale, whoever it is for' },
@@ -57,6 +57,11 @@ export const PROMOTION_AUDIENCES: { value: PromotionAudience; label: string; hin
     promotion already saved against it — a migration bought for a word.
   */
   { value: 'clients', label: 'Chosen autoparks', hint: 'Only the companies picked below' },
+  /*
+    Owner-drivers buy with no account behind them, so an autopark-targeted
+    offer can never reach them. This is how they are reached instead.
+  */
+  { value: 'drivers', label: 'Chosen drivers', hint: 'Owner-drivers, who have no autopark' },
 ]
 
 export type PromotionStatus = 'scheduled' | 'running' | 'finished' | 'paused'
@@ -100,6 +105,10 @@ export interface Promotion {
   clientIds: Id[]
   /** Their names, snapshotted for the same reason as `scopeNames`. */
   clientNames: string[]
+  /** The owner-drivers it is for, when the audience is drivers. */
+  driverIds: Id[]
+  /** Snapshotted, so a rename cannot rewrite who an offer was aimed at. */
+  driverNames: string[]
   startsAt: IsoDate
   /** Null means it runs until somebody stops it. */
   endsAt: IsoDate | null
@@ -172,17 +181,35 @@ export const lineGross = (line: PromotableLine) => line.quantity * line.unitPric
  * offer that fired for an anonymous sale would be untraceable, and the point
  * of targeting is knowing who got it.
  */
-export function appliesToClient(
-  promotion: Pick<Promotion, 'audience' | 'clientIds'>,
-  clientId: Id | null,
+/**
+ * Who is buying: the account the sale lands in, and the man who collected.
+ *
+ * Both are needed because they are reached by different offers. An autopark
+ * sale carries a client; an owner-driver buying for himself carries only a
+ * driver, and would otherwise be unreachable by any targeted promotion.
+ */
+export interface Buyer {
+  clientId: Id | null
+  driverId: Id | null
+}
+
+export const NO_BUYER: Buyer = { clientId: null, driverId: null }
+
+export function appliesTo(
+  promotion: Pick<Promotion, 'audience' | 'clientIds' | 'driverIds'>,
+  buyer: Buyer,
 ): boolean {
-  // Tested against 'clients' rather than 'everyone' on purpose: a promotion
-  // that predates this field, or one built without it, must keep applying to
-  // everybody. Restricting is the deliberate act, so it takes the explicit
-  // value; anything else means no restriction.
-  if (promotion.audience !== 'clients') return true
-  if (clientId === null) return false
-  return promotion.clientIds.includes(clientId)
+  // Tested against the restricting values rather than against 'everyone' on
+  // purpose: a promotion that predates these fields, or one built without
+  // them, must keep applying to everybody. Restricting is the deliberate act,
+  // so it takes an explicit value; anything else means no restriction.
+  if (promotion.audience === 'clients') {
+    return buyer.clientId !== null && promotion.clientIds.includes(buyer.clientId)
+  }
+  if (promotion.audience === 'drivers') {
+    return buyer.driverId !== null && (promotion.driverIds ?? []).includes(buyer.driverId)
+  }
+  return true
 }
 
 /** Whether a single line is inside the promotion's scope. */
@@ -206,11 +233,11 @@ export function discountFor(
   promotion: Promotion,
   lines: PromotableLine[],
   now: Date = new Date(),
-  /** Who is buying. Undefined means "do not filter by customer". */
-  clientId: Id | null = null,
+  /** Who is buying. The default reaches only untargeted offers. */
+  buyer: Buyer = NO_BUYER,
 ): number {
   if (!isLive(promotion, now)) return 0
-  if (!appliesToClient(promotion, clientId)) return 0
+  if (!appliesTo(promotion, buyer)) return 0
 
   const covered = lines.filter((line) => covers(promotion, line))
   const coveredValue = covered.reduce((sum, line) => sum + lineGross(line), 0)
@@ -235,11 +262,11 @@ export function bestPromotion(
   promotions: Promotion[],
   lines: PromotableLine[],
   now: Date = new Date(),
-  clientId: Id | null = null,
+  buyer: Buyer = NO_BUYER,
 ): { promotion: Promotion; discount: number } | null {
   let best: { promotion: Promotion; discount: number } | null = null
   for (const promotion of promotions) {
-    const discount = discountFor(promotion, lines, now, clientId)
+    const discount = discountFor(promotion, lines, now, buyer)
     if (discount > 0 && (!best || discount > best.discount)) best = { promotion, discount }
   }
   return best
@@ -258,12 +285,15 @@ export function describeScope(promotion: Pick<Promotion, 'scope' | 'scopeNames'>
 }
 
 /** Who it is for, in words — the counterpart to {@link describeScope}. */
-export function describeAudience(promotion: Pick<Promotion, 'audience' | 'clientNames'>): string {
+export function describeAudience(
+  promotion: Pick<Promotion, 'audience' | 'clientNames' | 'driverNames'>,
+): string {
   if (promotion.audience === 'everyone') return 'everyone'
-  const names = promotion.clientNames
+  const drivers = promotion.audience === 'drivers'
+  const names = drivers ? (promotion.driverNames ?? []) : promotion.clientNames
   if (names.length === 0) return 'nobody yet'
   if (names.length <= 2) return names.join(' and ')
-  return `${names.length} autoparks`
+  return `${names.length} ${drivers ? 'drivers' : 'autoparks'}`
 }
 
 /** How the rule reads in a sentence, for the list and the sale screen. */
@@ -285,8 +315,9 @@ export const promotionDraftSchema = z
     value: z.number().positive('A discount of nothing is not a promotion'),
     scope: z.enum(['all', 'category', 'product']),
     scopeIds: z.array(z.string()),
-    audience: z.enum(['everyone', 'clients']),
+    audience: z.enum(['everyone', 'clients', 'drivers']),
     clientIds: z.array(z.string()),
+    driverIds: z.array(z.string()),
     startsAt: z.string(),
     endsAt: z.string().nullable(),
     paused: z.boolean(),
@@ -303,9 +334,13 @@ export const promotionDraftSchema = z
   })
   // A targeted promotion with nobody in it would sit there looking live and
   // discount nothing, which is worse than being told to pick somebody.
-  .refine((draft) => draft.audience === 'everyone' || draft.clientIds.length > 0, {
-    message: 'Choose at least one client',
+  .refine((draft) => draft.audience !== 'clients' || draft.clientIds.length > 0, {
+    message: 'Choose at least one autopark',
     path: ['clientIds'],
+  })
+  .refine((draft) => draft.audience !== 'drivers' || draft.driverIds.length > 0, {
+    message: 'Choose at least one driver',
+    path: ['driverIds'],
   })
   .refine(
     (draft) =>

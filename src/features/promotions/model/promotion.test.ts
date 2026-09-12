@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { formatMoney } from '@/shared/lib/format'
 import {
-  appliesToClient,
+  NO_BUYER,
+  appliesTo,
   bestPromotion,
   describeAudience,
   describeScope,
@@ -30,6 +31,8 @@ const promo = (over: Partial<Promotion> = {}): Promotion =>
     audience: 'everyone',
     clientIds: [],
     clientNames: [],
+    driverIds: [],
+    driverNames: [],
     startsAt: new Date(NOW.getTime() - 5 * day).toISOString(),
     endsAt: new Date(NOW.getTime() + 5 * day).toISOString(),
     paused: false,
@@ -204,7 +207,7 @@ describe('how it reads', () => {
   })
 })
 
-describe('appliesToClient', () => {
+describe('appliesTo', () => {
   const targeted = promo({
     audience: 'clients',
     clientIds: ['cl-1', 'cl-2'],
@@ -212,26 +215,26 @@ describe('appliesToClient', () => {
   })
 
   it('lets an everyone promotion reach anybody, named or not', () => {
-    expect(appliesToClient(promo(), 'cl-9')).toBe(true)
-    expect(appliesToClient(promo(), null)).toBe(true)
+    expect(appliesTo(promo(), { clientId: 'cl-9', driverId: null })).toBe(true)
+    expect(appliesTo(promo(), NO_BUYER)).toBe(true)
   })
 
   it('reaches a client on the list', () => {
-    expect(appliesToClient(targeted, 'cl-2')).toBe(true)
+    expect(appliesTo(targeted, { clientId: 'cl-2', driverId: null })).toBe(true)
   })
 
   it('does not reach a client who is not on it', () => {
-    expect(appliesToClient(targeted, 'cl-9')).toBe(false)
+    expect(appliesTo(targeted, { clientId: 'cl-9', driverId: null })).toBe(false)
   })
 
   it('never reaches a walk-in — a targeted offer nobody can be traced to is untraceable', () => {
-    expect(appliesToClient(targeted, null)).toBe(false)
+    expect(appliesTo(targeted, NO_BUYER)).toBe(false)
   })
 
   it('applies to everyone when the field is missing entirely', () => {
     // A promotion made before audiences existed must not quietly stop working.
-    const legacy = { clientIds: [] } as unknown as Promotion
-    expect(appliesToClient(legacy, null)).toBe(true)
+    const legacy = { clientIds: [], driverIds: [] } as unknown as Promotion
+    expect(appliesTo(legacy, NO_BUYER)).toBe(true)
   })
 })
 
@@ -240,12 +243,12 @@ describe('discountFor with an audience', () => {
   const lines = [line({ quantity: 2, unitPrice: 100_000 })]
 
   it('discounts for the client it is aimed at', () => {
-    expect(discountFor(targeted, lines, NOW, 'cl-1')).toBe(20_000)
+    expect(discountFor(targeted, lines, NOW, { clientId: 'cl-1', driverId: null })).toBe(20_000)
   })
 
   it('discounts nothing for anybody else', () => {
-    expect(discountFor(targeted, lines, NOW, 'cl-2')).toBe(0)
-    expect(discountFor(targeted, lines, NOW, null)).toBe(0)
+    expect(discountFor(targeted, lines, NOW, { clientId: 'cl-2', driverId: null })).toBe(0)
+    expect(discountFor(targeted, lines, NOW, NO_BUYER)).toBe(0)
   })
 })
 
@@ -261,16 +264,24 @@ describe('bestPromotion with an audience', () => {
   })
 
   it('gives a targeted client the better, targeted offer', () => {
-    expect(bestPromotion([general, forFura], lines, NOW, 'cl-1')?.promotion.id).toBe('p-fura')
+    expect(
+      bestPromotion([general, forFura], lines, NOW, { clientId: 'cl-1', driverId: null })?.promotion
+        .id,
+    ).toBe('p-fura')
   })
 
   it('falls back to the general offer for everybody else', () => {
-    expect(bestPromotion([general, forFura], lines, NOW, 'cl-2')?.promotion.id).toBe('p-general')
+    expect(
+      bestPromotion([general, forFura], lines, NOW, { clientId: 'cl-2', driverId: null })?.promotion
+        .id,
+    ).toBe('p-general')
   })
 
   it('still gives one discount, never both', () => {
     // The rule this screen has always had: the better of the two, not the sum.
-    expect(bestPromotion([general, forFura], lines, NOW, 'cl-1')?.discount).toBe(120_000)
+    expect(
+      bestPromotion([general, forFura], lines, NOW, { clientId: 'cl-1', driverId: null })?.discount,
+    ).toBe(120_000)
   })
 })
 
@@ -280,18 +291,75 @@ describe('describeAudience', () => {
   })
 
   it('names one or two clients', () => {
-    expect(describeAudience({ audience: 'clients', clientNames: ['Fura', 'Trans'] })).toBe(
-      'Fura and Trans',
-    )
+    expect(
+      describeAudience({ audience: 'clients', clientNames: ['Fura', 'Trans'], driverNames: [] }),
+    ).toBe('Fura and Trans')
   })
 
   it('counts more than two', () => {
-    expect(describeAudience({ audience: 'clients', clientNames: ['A', 'B', 'C'] })).toBe(
-      '3 autoparks',
-    )
+    expect(
+      describeAudience({ audience: 'clients', clientNames: ['A', 'B', 'C'], driverNames: [] }),
+    ).toBe('3 autoparks')
   })
 
   it('says so when nobody is chosen yet', () => {
-    expect(describeAudience({ audience: 'clients', clientNames: [] })).toBe('nobody yet')
+    expect(describeAudience({ audience: 'clients', clientNames: [], driverNames: [] })).toBe(
+      'nobody yet',
+    )
+  })
+})
+
+describe('promotions aimed at owner-drivers', () => {
+  const lines = [line({ quantity: 1, unitPrice: 1_000_000 })]
+  const forDrivers = promo({
+    id: 'p-drivers',
+    value: 8,
+    audience: 'drivers',
+    driverIds: ['driver-9'],
+    driverNames: ['Doniyor Rahimov'],
+  })
+
+  it('reaches the driver it names, who carries no account at all', () => {
+    // The case autopark targeting cannot cover: an owner-driver buying for
+    // himself has no client on the sale.
+    expect(discountFor(forDrivers, lines, NOW, { clientId: null, driverId: 'driver-9' })).toBe(
+      80_000,
+    )
+  })
+
+  it('does not reach a different driver', () => {
+    expect(discountFor(forDrivers, lines, NOW, { clientId: null, driverId: 'driver-1' })).toBe(0)
+  })
+
+  it('does not reach a sale with no driver on it', () => {
+    expect(discountFor(forDrivers, lines, NOW, NO_BUYER)).toBe(0)
+  })
+
+  it('is not reached by an autopark being on the sale', () => {
+    expect(discountFor(forDrivers, lines, NOW, { clientId: 'cl-1', driverId: null })).toBe(0)
+  })
+
+  it('still gives the customer only the better of two offers', () => {
+    const general = promo({ id: 'p-general', value: 5 })
+    const best = bestPromotion([general, forDrivers], lines, NOW, {
+      clientId: null,
+      driverId: 'driver-9',
+    })
+    expect(best?.promotion.id).toBe('p-drivers')
+    expect(best?.discount).toBe(80_000)
+  })
+})
+
+describe('describeAudience for drivers', () => {
+  it('names one or two', () => {
+    expect(
+      describeAudience({ audience: 'drivers', clientNames: [], driverNames: ['Doniyor'] }),
+    ).toBe('Doniyor')
+  })
+
+  it('counts more than two as drivers, not autoparks', () => {
+    expect(
+      describeAudience({ audience: 'drivers', clientNames: [], driverNames: ['A', 'B', 'C'] }),
+    ).toBe('3 drivers')
   })
 })

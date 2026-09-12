@@ -44,6 +44,7 @@ export default function PromotionFormPage() {
   const categories = useDataStore((s) => s.categories)
   const products = useDataStore((s) => s.products)
   const clients = useDataStore((s) => s.clients)
+  const drivers = useDataStore((s) => s.drivers)
   const { data: existing } = usePromotion(promotionId)
   const actions = usePromotionActions()
   const editing = Boolean(promotionId)
@@ -59,6 +60,7 @@ export default function PromotionFormPage() {
           scopeIds: existing.scopeIds,
           audience: existing.audience,
           clientIds: existing.clientIds,
+          driverIds: existing.driverIds ?? [],
           startsAt: existing.startsAt,
           endsAt: existing.endsAt,
           paused: existing.paused,
@@ -73,6 +75,7 @@ export default function PromotionFormPage() {
           scopeIds: [],
           audience: 'everyone',
           clientIds: [],
+          driverIds: [],
           startsAt: new Date().toISOString(),
           endsAt: null,
           paused: false,
@@ -100,6 +103,18 @@ export default function PromotionFormPage() {
           meta: client.phone ?? undefined,
         })),
     [clients],
+  )
+
+  const driverOptions = useMemo(
+    () =>
+      drivers
+        .filter((driver) => driver.status === 'active' && driver.autoparkId === null)
+        .map((driver) => ({
+          value: driver.id,
+          label: driver.fullName,
+          meta: [driver.phone, driver.ownTrucks[0]?.plate].filter(Boolean).join(' · ') || undefined,
+        })),
+    [drivers],
   )
 
   const scopeOptions = useMemo(
@@ -143,8 +158,11 @@ export default function PromotionFormPage() {
 
   // The sentence has to carry the audience too, or a targeted promotion reads
   // in the preview exactly like one for everybody.
-  const clientNames = (values.clientIds ?? []).map(
-    (id) => clientOptions.find((option) => option.value === id)?.label ?? '—',
+  const targetOptions = values.audience === 'drivers' ? driverOptions : clientOptions
+  const targetIds =
+    values.audience === 'drivers' ? (values.driverIds ?? []) : (values.clientIds ?? [])
+  const clientNames = targetIds.map(
+    (id) => targetOptions.find((option) => option.value === id)?.label ?? '—',
   )
   const audienceName =
     values.audience === 'everyone'
@@ -153,7 +171,7 @@ export default function PromotionFormPage() {
         ? ' — for nobody yet'
         : clientNames.length <= 2
           ? ` for ${clientNames.join(' and ')}`
-          : ` for ${clientNames.length} autoparks`
+          : ` for ${clientNames.length} ${values.audience === 'drivers' ? 'drivers' : 'autoparks'}`
 
   const scopeName =
     values.scope === 'all'
@@ -175,7 +193,8 @@ export default function PromotionFormPage() {
       const input = {
         ...draft,
         scopeIds: draft.scope === 'all' ? [] : draft.scopeIds,
-        clientIds: draft.audience === 'everyone' ? [] : draft.clientIds,
+        clientIds: draft.audience === 'clients' ? draft.clientIds : [],
+        driverIds: draft.audience === 'drivers' ? draft.driverIds : [],
         comment: draft.comment || null,
       }
       if (editing && existing) {
@@ -359,6 +378,33 @@ export default function PromotionFormPage() {
                 )}
               </Field>
             ) : null}
+
+            {values.audience === 'drivers' ? (
+              <Field
+                label="Drivers"
+                required
+                hint="Owner-drivers only — a company's driver is reached through its contract"
+                error={form.formState.errors.driverIds?.message}
+              >
+                {(p) => (
+                  <Controller
+                    control={form.control}
+                    name="driverIds"
+                    render={({ field }) => (
+                      <MultiSelect
+                        {...p}
+                        className="w-full"
+                        value={field.value}
+                        onChange={field.onChange}
+                        options={driverOptions}
+                        placeholder="Pick drivers"
+                        searchPlaceholder="Search by name, phone or plate…"
+                      />
+                    )}
+                  />
+                )}
+              </Field>
+            ) : null}
           </CardBody>
         </Card>
 
@@ -394,7 +440,7 @@ export default function PromotionFormPage() {
                 />
               )}
             </Field>
-            {values.audience !== 'everyone' ? (
+            {values.audience === 'clients' ? (
               <Field
                 label="Autoparks"
                 required

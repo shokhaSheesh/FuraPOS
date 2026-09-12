@@ -170,6 +170,10 @@ export default function NewTransferPage() {
   const from = locations.find((l) => l.id === fromLocationId)
   const to = locations.find((l) => l.id === toLocationId)
 
+  /** Whose sales are worth showing against each line. */
+  const demandLocationId = requesting ? toLocationId : fromLocationId
+  const demandLocation = requesting ? to : from
+
   return (
     <form>
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
@@ -446,7 +450,7 @@ export default function NewTransferPage() {
                         At {to?.name ?? 'destination'}
                       </th>
                       <th className="px-3 py-2 text-right font-semibold">
-                        Sold at {from?.name ?? 'source'}
+                        Sold at {demandLocation?.name ?? (requesting ? 'here' : 'source')}
                       </th>
                       <th className="px-3 py-2 text-right font-semibold">Move</th>
                       <th className="w-10" />
@@ -458,7 +462,13 @@ export default function NewTransferPage() {
                       const here = line ? availableAt(line.variationId) : 0
                       const there =
                         line && toLocationId ? stockAt(line.variationId, toLocationId) : null
-                      const demand = line ? demandAt(sales, line.variationId, fromLocationId) : null
+                      // Without a location there is nothing to count, and a
+                      // bare zero would read as "never sells" rather than
+                      // "not chosen yet".
+                      const demand =
+                        line && demandLocationId
+                          ? demandAt(sales, line.variationId, demandLocationId)
+                          : null
                       const error = form.formState.errors.lines?.[index]?.requestedQuantity?.message
                       return (
                         <tr key={field.id} className="border-border border-t">
@@ -486,12 +496,18 @@ export default function NewTransferPage() {
                                 the two together say what one cannot: sales six
                                 months ago with none since is a part that has
                                 stopped moving. */}
-                            <p className="text-fg tabular-nums">
-                              {formatNumber(demand?.[3] ?? 0)} in 3 months
-                            </p>
-                            <p className="text-fg-subtle text-2xs tabular-nums">
-                              {formatNumber(demand?.[6] ?? 0)} in 6 months
-                            </p>
+                            {demand ? (
+                              <>
+                                <p className="text-fg tabular-nums">
+                                  {formatNumber(demand[3])} in 3 months
+                                </p>
+                                <p className="text-fg-subtle text-2xs tabular-nums">
+                                  {formatNumber(demand[6])} in 6 months
+                                </p>
+                              </>
+                            ) : (
+                              <span className="text-fg-subtle">pick a destination</span>
+                            )}
                             {demand && hasStalled(demand) ? (
                               <p className="text-warning text-2xs">not selling lately</p>
                             ) : null}

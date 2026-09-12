@@ -167,7 +167,6 @@ describe('driverSchema', () => {
   const valid = {
     fullName: 'Bekzod Normatov',
     phone: '+998 90 123 45 67',
-    licenceNumber: null,
     ownTrucks: [{ plate: '01 A 123 AA', make: 'MAN', model: 'TGX' }],
     autoparkId: null,
     autoparkTruck: null,

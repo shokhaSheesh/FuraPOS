@@ -1728,7 +1728,6 @@ export const drivers: Driver[] = (
     code: `DRV-${String(index + 1).padStart(5, '0')}`,
     fullName,
     phone,
-    licenceNumber: `AB${between(1000000, 9999999)}`,
     ownTrucks: ownTrucks.map(([plate, make, model]) => ({ plate, make, model })),
     autoparkId: autopark?.id ?? null,
     autoparkName: autopark?.name ?? null,

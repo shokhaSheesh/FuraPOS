@@ -36,7 +36,6 @@ import {
 const EMPTY: DriverDraft = {
   fullName: '',
   phone: null,
-  licenceNumber: null,
   ownTrucks: [],
   autoparkId: null,
   autoparkTruck: null,
@@ -79,7 +78,6 @@ export default function DriversPage() {
         ? {
             fullName: driver.fullName,
             phone: driver.phone,
-            licenceNumber: driver.licenceNumber,
             ownTrucks: driver.ownTrucks,
             autoparkId: driver.autoparkId,
             autoparkTruck: driver.autoparkTruck,
@@ -345,17 +343,6 @@ export default function DriversPage() {
                   value={draft.phone ?? ''}
                   onChange={(event) =>
                     setDraft((c) => ({ ...c, phone: event.target.value || null }))
-                  }
-                />
-              )}
-            </Field>
-            <Field label="Licence number">
-              {(p) => (
-                <Input
-                  {...p}
-                  value={draft.licenceNumber ?? ''}
-                  onChange={(event) =>
-                    setDraft((c) => ({ ...c, licenceNumber: event.target.value || null }))
                   }
                 />
               )}

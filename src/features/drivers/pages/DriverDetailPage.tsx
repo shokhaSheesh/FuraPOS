@@ -93,14 +93,6 @@ export default function DriverDetailPage() {
         <CardBody className="space-y-2">
           <Row label="Code" value={<span className="font-mono">{driver.code}</span>} />
           <Row label="Phone" value={driver.phone ?? '—'} />
-          {/* Off the table and onto here: nobody scans a list for a licence
-              number, but it has to live somewhere. */}
-          <Row
-            label="Licence"
-            value={
-              driver.licenceNumber ? <span className="font-mono">{driver.licenceNumber}</span> : '—'
-            }
-          />
           <Row
             label="Autopark"
             value={

@@ -62,7 +62,6 @@ export interface Driver {
   code: string
   fullName: string
   phone: string | null
-  licenceNumber: string | null
 
   /**
    * The trucks he owns. Several is normal — an owner-driver who does well
@@ -194,7 +193,6 @@ export const driverSchema = z
   .object({
     fullName: z.string().min(2, 'A driver needs a name'),
     phone: z.string().nullable(),
-    licenceNumber: z.string().nullable(),
     ownTrucks: z.array(truckSchema),
     autoparkId: z.string().nullable(),
     autoparkTruck: truckSchema.nullable(),

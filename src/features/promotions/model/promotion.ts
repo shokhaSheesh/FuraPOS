@@ -50,8 +50,13 @@ export const PROMOTION_SCOPES: { value: PromotionScope; label: string }[] = [
 export type PromotionAudience = 'everyone' | 'clients'
 
 export const PROMOTION_AUDIENCES: { value: PromotionAudience; label: string; hint: string }[] = [
-  { value: 'everyone', label: 'Everyone', hint: 'Any customer, including walk-ins' },
-  { value: 'clients', label: 'Chosen clients', hint: 'Only the customers picked below' },
+  { value: 'everyone', label: 'Everyone', hint: 'Any sale, whoever it is for' },
+  /*
+    The stored value stays `clients`. Fura's account customers are autoparks
+    and the label says so, but renaming the value would invalidate every
+    promotion already saved against it — a migration bought for a word.
+  */
+  { value: 'clients', label: 'Chosen autoparks', hint: 'Only the companies picked below' },
 ]
 
 export type PromotionStatus = 'scheduled' | 'running' | 'finished' | 'paused'
@@ -258,7 +263,7 @@ export function describeAudience(promotion: Pick<Promotion, 'audience' | 'client
   const names = promotion.clientNames
   if (names.length === 0) return 'nobody yet'
   if (names.length <= 2) return names.join(' and ')
-  return `${names.length} clients`
+  return `${names.length} autoparks`
 }
 
 /** How the rule reads in a sentence, for the list and the sale screen. */

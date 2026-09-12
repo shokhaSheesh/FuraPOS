@@ -92,11 +92,11 @@ export default function PromotionFormPage() {
   const clientOptions = useMemo(
     () =>
       clients
-        .filter((client) => client.status === 'active')
+        .filter((client) => client.status === 'active' && client.type === 'business')
         .map((client) => ({
           value: client.id,
           label: client.name,
-          // Two customers can share a name; the phone is what tells them apart.
+          // Two companies can share a name; the phone is what tells them apart.
           meta: client.phone ?? undefined,
         })),
     [clients],
@@ -153,7 +153,7 @@ export default function PromotionFormPage() {
         ? ' — for nobody yet'
         : clientNames.length <= 2
           ? ` for ${clientNames.join(' and ')}`
-          : ` for ${clientNames.length} clients`
+          : ` for ${clientNames.length} autoparks`
 
   const scopeName =
     values.scope === 'all'
@@ -369,7 +369,8 @@ export default function PromotionFormPage() {
                 off, but only for these hauliers" are different offers. */}
             <p className="text-fg-subtle text-2xs">
               What it covers and who it is for are two different questions. A targeted offer only
-              fires when that client is on the sale.
+              fires when that autopark is on the sale — which happens when one of its drivers is
+              buying on its contract.
             </p>
           </CardHeader>
           <CardBody className="grid gap-3 sm:grid-cols-2">
@@ -395,9 +396,9 @@ export default function PromotionFormPage() {
             </Field>
             {values.audience !== 'everyone' ? (
               <Field
-                label="Clients"
+                label="Autoparks"
                 required
-                hint="A walk-in sale with no client on it never gets a targeted offer"
+                hint="A sale with no autopark on it — an owner-driver buying for himself — never gets a targeted offer"
                 error={form.formState.errors.clientIds?.message}
               >
                 {(p) => (
@@ -411,7 +412,7 @@ export default function PromotionFormPage() {
                         value={field.value}
                         onChange={field.onChange}
                         options={clientOptions}
-                        placeholder="Pick clients"
+                        placeholder="Pick autoparks"
                         searchPlaceholder="Search by name or phone…"
                       />
                     )}

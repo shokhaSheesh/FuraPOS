@@ -287,7 +287,7 @@ describe('describeAudience', () => {
 
   it('counts more than two', () => {
     expect(describeAudience({ audience: 'clients', clientNames: ['A', 'B', 'C'] })).toBe(
-      '3 clients',
+      '3 autoparks',
     )
   })
 

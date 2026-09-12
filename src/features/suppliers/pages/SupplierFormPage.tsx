@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -10,10 +10,24 @@ import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
 import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
 import { Select } from '@/shared/ui/Select'
+import { Switch } from '@/shared/ui/Switch'
 import { toast } from '@/shared/ui/toast'
+import { useSession } from '@/app/providers/SessionProvider'
 import { paths } from '@/shared/config/paths'
-import { useCreateSupplier, useSupplier, useUpdateSupplier } from '../api/suppliers'
-import { supplierFormSchema, type SupplierFormValues } from '../model/supplier'
+import { useDataStore } from '@/data/store'
+import {
+  useCreateSupplier,
+  useIssueSupplierPassword,
+  useSupplier,
+  useUpdateSupplier,
+} from '../api/suppliers'
+import { CredentialsModal } from '../components/CredentialsModal'
+import {
+  isUsernameTaken,
+  suggestUsername,
+  supplierFormSchema,
+  type SupplierFormValues,
+} from '../model/supplier'
 
 /**
  * Create and edit a supplier. Contact details only — what we owe them comes
@@ -25,9 +39,20 @@ export default function SupplierFormPage() {
   const { supplierId } = useParams()
   const editing = Boolean(supplierId && supplierId !== 'new')
 
+  const { can } = useSession()
   const { data: existing } = useSupplier(editing ? supplierId! : '')
+  const suppliers = useDataStore((s) => s.suppliers)
   const create = useCreateSupplier()
   const update = useUpdateSupplier(supplierId ?? '')
+  const issuePassword = useIssueSupplierPassword()
+
+  /** The one-time hand-off, held only until the modal closes. */
+  const [issued, setIssued] = useState<{
+    supplierId: string
+    companyName: string
+    username: string
+    password: string
+  } | null>(null)
 
   const defaults = useMemo<SupplierFormValues>(
     () =>
@@ -42,6 +67,8 @@ export default function SupplierFormPage() {
             paymentTermDays: existing.supplier.paymentTermDays,
             comment: existing.supplier.comment ?? '',
             status: existing.supplier.status,
+            access: existing.supplier.access,
+            username: existing.supplier.username ?? '',
           }
         : {
             name: '',
@@ -53,6 +80,8 @@ export default function SupplierFormPage() {
             paymentTermDays: null,
             comment: '',
             status: 'active',
+            access: 'none',
+            username: '',
           },
     [existing],
   )
@@ -62,6 +91,8 @@ export default function SupplierFormPage() {
     defaultValues: defaults,
     values: defaults,
   })
+
+  const access = form.watch('access')
 
   const submit = form.handleSubmit(
     (values) => {
@@ -77,20 +108,52 @@ export default function SupplierFormPage() {
         paymentTermDays: values.paymentTermDays,
         comment: values.comment.trim() || null,
         status: values.status,
+        access: values.access,
+        username: values.username.trim() || null,
+      }
+
+      // Two companies signing in as one name would be two companies in one
+      // account, and the schema cannot see the other suppliers to catch it.
+      if (payload.username && isUsernameTaken(suppliers, payload.username, supplierId)) {
+        form.setError('username', { message: 'Another supplier already signs in with this login' })
+        toast.error('That login is already taken')
+        return
+      }
+
+      /* A granted login with no password yet cannot be signed in with, so the
+         password is minted straight away and shown once. Navigation waits for
+         that modal to close — leaving the page is what destroys the only copy. */
+      const handOver = (id: string, name: string) => {
+        if (payload.access === 'none' || !payload.username) {
+          navigate(paths.products.supplierDetail(id))
+          return
+        }
+        if (existing?.supplier.passwordSetAt && existing.supplier.username === payload.username) {
+          navigate(paths.products.supplierDetail(id))
+          return
+        }
+        issuePassword.mutate(id, {
+          onSuccess: (password) =>
+            setIssued({ supplierId: id, companyName: name, username: payload.username!, password }),
+          onError: (message) => {
+            toast.error(message)
+            navigate(paths.products.supplierDetail(id))
+          },
+        })
       }
 
       if (editing) {
         update.mutate(payload, {
           onSuccess: () => {
             toast.success(`${payload.name} saved`)
-            navigate(paths.products.supplierDetail(supplierId!))
+            handOver(supplierId!, payload.name)
           },
         })
       } else {
         create.mutate(payload, {
           onSuccess: (supplier) => {
             toast.success(`${supplier.name} added`)
-            navigate(paths.products.supplierDetail(supplier.id))
+            handOver(supplier.id, supplier.name)
           },
         })
       }
@@ -188,10 +251,14 @@ export default function SupplierFormPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Contact</CardTitle>
+            <CardTitle>Manager</CardTitle>
           </CardHeader>
           <CardBody className="grid gap-3 sm:grid-cols-2">
-            <Field label="Contact name">
+            <Field
+              label="Name"
+              hint="The person answerable for this company — who you ring, and who holds the login"
+              error={form.formState.errors.contactName?.message}
+            >
               {(p) => (
                 <Input {...p} placeholder="Rustam Akchaev" {...form.register('contactName')} />
               )}
@@ -216,7 +283,88 @@ export default function SupplierFormPage() {
             </Field>
           </CardBody>
         </Card>
+
+        {/* Handing out an account is its own permission: plenty of people
+            should be able to fix a supplier's address without being able to
+            create a login to our data. */}
+        {can('products.supplierPortal.edit') ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Supplier portal</CardTitle>
+            </CardHeader>
+            <CardBody className="space-y-3">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-fg text-sm font-medium">Let their manager sign in</p>
+                  <p className="text-fg-subtle text-2xs">
+                    They get their own login to the supplier portal, where they see what we order
+                    from them. They never see our sales, stock or prices.
+                  </p>
+                </div>
+                <Controller
+                  control={form.control}
+                  name="access"
+                  render={({ field }) => (
+                    <Switch
+                      aria-label="Let their manager sign in"
+                      checked={field.value !== 'none'}
+                      onCheckedChange={(on) => {
+                        field.onChange(on ? 'granted' : 'none')
+                        // A login typed by hand is a login that collides, so
+                        // one is proposed from the company name.
+                        if (on && !form.getValues('username')) {
+                          form.setValue('username', suggestUsername(form.getValues('name')))
+                        }
+                      }}
+                    />
+                  )}
+                />
+              </div>
+
+              {access !== 'none' ? (
+                <>
+                  <Field
+                    label="Login"
+                    required
+                    hint="Lowercase, no spaces — it gets read down a phone line"
+                    error={form.formState.errors.username?.message}
+                  >
+                    {(p) => <Input {...p} placeholder="akchaev" {...form.register('username')} />}
+                  </Field>
+                  <p className="text-fg-subtle text-2xs">
+                    {existing?.supplier.passwordSetAt
+                      ? 'A password is already set. Changing the login here does not change it — reset it from the supplier’s page.'
+                      : 'A password is generated when you save, and shown to you once.'}
+                  </p>
+                  {access === 'disabled' ? (
+                    <p className="text-warning text-2xs">
+                      Sign-in is switched off for this login. Turn it back on from the supplier’s
+                      page.
+                    </p>
+                  ) : null}
+                </>
+              ) : null}
+            </CardBody>
+          </Card>
+        ) : null}
       </div>
+
+      {issued ? (
+        <CredentialsModal
+          open
+          onOpenChange={(open) => {
+            if (open) return
+            // Only now is it safe to leave: the password is gone after this.
+            const id = issued.supplierId
+            setIssued(null)
+            navigate(paths.products.supplierDetail(id))
+          }}
+          companyName={issued.companyName}
+          managerName={form.getValues('contactName').trim() || null}
+          username={issued.username}
+          password={issued.password}
+        />
+      ) : null}
     </form>
   )
 }

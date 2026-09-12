@@ -18,6 +18,12 @@ export interface Supplier {
   name: string
   /** Broad region, as OX's `Зона` column — "Uzbekistan", "Türkiye". */
   zone: string | null
+  /**
+   * The one person answerable for this company — who gets rung, and who holds
+   * the portal login below. Deliberately the same person rather than a
+   * "manager" beside a "contact": two name fields for one human is how a record
+   * ends up with two spellings and nobody knowing which of them to call.
+   */
   contactName: string | null
   phone: string | null
   email: string | null
@@ -31,10 +37,125 @@ export interface Supplier {
    */
   debt: number
   lastPaymentAt: IsoDate | null
+  /**
+   * Whether their manager can sign in to the supplier portal — the separate
+   * app where they see what we order from them. This is the *grant*, not the
+   * state: `portalState` below works out whether a granted login has actually
+   * been used, because two stored fields that must agree eventually disagree.
+   */
+  access: SupplierAccess
+  /** What they sign in as. Kept when access is switched off, so turning it back on is the same login. */
+  username: string | null
+  /**
+   * When a password was last issued. The password itself is deliberately not
+   * here: it is generated, shown once, and never stored — a credential a
+   * back-office user can read forever is a credential nobody can rotate.
+   */
+  passwordSetAt: IsoDate | null
+  /** Null when they have never signed in — which is what separates invited from active. */
+  lastSignedInAt: IsoDate | null
   comment: string | null
   status: 'active' | 'archived'
   createdAt: IsoDate
   updatedAt: IsoDate
+}
+
+/** Whether a login exists at all, and whether it is currently allowed to work. */
+export type SupplierAccess = 'none' | 'granted' | 'disabled'
+
+/**
+ * What the screen shows, which is one step richer than what is stored: a
+ * granted login that has never been used is an invitation nobody accepted, and
+ * that is the row worth chasing.
+ */
+export type PortalState = 'none' | 'invited' | 'active' | 'disabled'
+
+export function portalState(
+  supplier: Pick<Supplier, 'access' | 'username' | 'lastSignedInAt'>,
+): PortalState {
+  if (supplier.access === 'none' || !supplier.username) return 'none'
+  if (supplier.access === 'disabled') return 'disabled'
+  return supplier.lastSignedInAt ? 'active' : 'invited'
+}
+
+export const PORTAL_STATES: {
+  value: PortalState
+  label: string
+  tone: 'success' | 'info' | 'warning' | 'neutral'
+  hint: string
+}[] = [
+  {
+    value: 'none',
+    label: 'No login',
+    tone: 'neutral',
+    hint: 'Nobody from this company can sign in',
+  },
+  {
+    value: 'invited',
+    label: 'Invited',
+    tone: 'info',
+    hint: 'A password was issued and has not been used yet',
+  },
+  { value: 'active', label: 'Active', tone: 'success', hint: 'Signs in to the supplier portal' },
+  {
+    value: 'disabled',
+    // Reversible and deliberately not deletion: the login is kept so that
+    // turning access back on does not mean re-issuing an identity.
+    label: 'Access off',
+    tone: 'warning',
+    hint: 'The login is kept, but sign-in is blocked',
+  },
+]
+
+const portalMeta = (state: PortalState) => PORTAL_STATES.find((entry) => entry.value === state)!
+
+export const portalStateLabel = (state: PortalState) => portalMeta(state).label
+export const portalStateTone = (state: PortalState) => portalMeta(state).tone
+export const portalStateHint = (state: PortalState) => portalMeta(state).hint
+
+/**
+ * A username proposed from the company name, because one typed by hand is one
+ * that collides. Punctuation and case go, because a login somebody has to
+ * spell down a phone line should not contain either.
+ */
+export function suggestUsername(companyName: string): string {
+  return companyName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 24)
+}
+
+export const USERNAME_PATTERN = /^[a-z0-9][a-z0-9._-]{2,}$/
+
+/** Two suppliers signing in as the same name would be two companies in one account. */
+export function isUsernameTaken(
+  suppliers: Pick<Supplier, 'id' | 'username'>[],
+  username: string,
+  exceptId?: string,
+): boolean {
+  const wanted = username.trim().toLowerCase()
+  if (!wanted) return false
+  return suppliers.some(
+    (entry) => entry.id !== exceptId && (entry.username ?? '').toLowerCase() === wanted,
+  )
+}
+
+/*
+ * Ambiguous glyphs are left out on purpose. These passwords get read aloud or
+ * copied into a message, and `I`/`l`/`1` and `O`/`0` are where that goes wrong.
+ */
+const PASSWORD_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
+export const PASSWORD_LENGTH = 12
+
+export function generatePassword(length = PASSWORD_LENGTH): string {
+  const size = PASSWORD_ALPHABET.length
+  // crypto where it exists, because a predictable password is not a password.
+  const random =
+    typeof globalThis.crypto?.getRandomValues === 'function'
+      ? Array.from(globalThis.crypto.getRandomValues(new Uint32Array(length)))
+      : Array.from({ length }, () => Math.floor(Math.random() * size))
+  return random.map((value) => PASSWORD_ALPHABET[value % size]).join('')
 }
 
 /**
@@ -89,17 +210,39 @@ export function daysOverdue(
 
 /* --- validation --------------------------------------------------------- */
 
-export const supplierFormSchema = z.object({
-  name: z.string().min(2, 'A supplier needs a name'),
-  zone: z.string(),
-  contactName: z.string(),
-  phone: z.string(),
-  email: z.string().refine((value) => value === '' || /.+@.+\..+/.test(value), 'Not an email'),
-  address: z.string(),
-  paymentTermDays: z.number().int().nonnegative().nullable(),
-  comment: z.string(),
-  status: z.enum(['active', 'archived']),
-})
+export const supplierFormSchema = z
+  .object({
+    name: z.string().min(2, 'A supplier needs a name'),
+    zone: z.string(),
+    contactName: z.string(),
+    phone: z.string(),
+    email: z.string().refine((value) => value === '' || /.+@.+\..+/.test(value), 'Not an email'),
+    address: z.string(),
+    paymentTermDays: z.number().int().nonnegative().nullable(),
+    comment: z.string(),
+    status: z.enum(['active', 'archived']),
+    access: z.enum(['none', 'granted', 'disabled']),
+    username: z.string(),
+  })
+  .superRefine((values, ctx) => {
+    // A username only has to be valid if it is going to be signed in with.
+    if (values.access === 'none') return
+    if (!values.contactName.trim()) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['contactName'],
+        message: 'Name the person who will hold the login',
+      })
+    }
+    if (!USERNAME_PATTERN.test(values.username.trim())) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['username'],
+        message:
+          'At least 3 characters: lowercase letters, digits, dot, dash or underscore, starting with a letter or digit',
+      })
+    }
+  })
 
 export type SupplierFormValues = z.infer<typeof supplierFormSchema>
 

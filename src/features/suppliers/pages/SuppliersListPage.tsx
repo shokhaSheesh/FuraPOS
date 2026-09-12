@@ -22,7 +22,13 @@ import {
   useSuppliersSummary,
   type SupplierRow,
 } from '../api/suppliers'
-import { daysOverdue, isDormant } from '../model/supplier'
+import {
+  daysOverdue,
+  isDormant,
+  portalState,
+  portalStateLabel,
+  portalStateTone,
+} from '../model/supplier'
 
 /**
  * Who we buy from — and, mostly, what that relationship is costing.
@@ -42,6 +48,7 @@ export default function SuppliersListPage() {
   const { data: counts } = useSupplierLensCounts(scope)
   const summary = useSuppliersSummary(scope)
   const canSeeCost = can('products.cost.view')
+  const canSeePortal = can('products.supplierPortal.view')
 
   const zones = useMemo(
     () => [...new Set(suppliers.map((s) => s.zone).filter(Boolean))] as string[],
@@ -158,6 +165,26 @@ export default function SuppliersListPage() {
         header: 'Zone',
         cell: ({ row }) => row.original.supplier.zone ?? <span className="text-fg-subtle">—</span>,
       },
+      ...(canSeePortal
+        ? [
+            {
+              id: 'portal',
+              header: 'Portal login',
+              cell: ({ row }: { row: { original: SupplierRow } }) => {
+                const state = portalState(row.original.supplier)
+                if (state === 'none') return <span className="text-fg-subtle">—</span>
+                return (
+                  <div className="min-w-0">
+                    <Badge tone={portalStateTone(state)}>{portalStateLabel(state)}</Badge>
+                    <p className="text-fg-subtle text-2xs mt-0.5 truncate font-mono">
+                      {row.original.supplier.username}
+                    </p>
+                  </div>
+                )
+              },
+            },
+          ]
+        : []),
       {
         id: 'activity',
         header: 'Activity',
@@ -179,7 +206,7 @@ export default function SuppliersListPage() {
         cell: ({ row }) => row.original.supplier.phone ?? <span className="text-fg-subtle">—</span>,
       },
     ],
-    [canSeeCost],
+    [canSeeCost, canSeePortal],
   )
 
   const tiles = [

@@ -5,7 +5,12 @@ import { USD_RATE } from '@/data/seed'
 import { landedTotal, landedUnitCost } from '@/features/receipts/model/receipt'
 import type { ListQuery } from '@/shared/types'
 import type { WalletTransaction } from '@/shared/types/wallet'
-import { isDormant, type Supplier, type SupplierStats } from '../model/supplier'
+import {
+  isDormant,
+  type Supplier,
+  type SupplierAccess,
+  type SupplierStats,
+} from '../model/supplier'
 
 /**
  * A supplier's numbers are derived from receipts and live stock rather than
@@ -237,6 +242,43 @@ export function useUpdateSupplier(id: string) {
     mutate: (input: SupplierInput, opts?: { onSuccess?: () => void }) => {
       update(id, input)
       opts?.onSuccess?.()
+    },
+  }
+}
+
+/**
+ * Turning portal access on or off. Separate from the form because it is a
+ * single deliberate act, not one field among fifteen saved together.
+ */
+export function useSetSupplierAccess(id: string) {
+  const set = useDataStore((s) => s.setSupplierAccess)
+  return {
+    isPending: false,
+    mutate: (access: SupplierAccess, opts?: { onSuccess?: () => void }) => {
+      set(id, access)
+      opts?.onSuccess?.()
+    },
+  }
+}
+
+/**
+ * Issuing a password. The password comes back through `onSuccess` rather than
+ * being readable from the store afterwards, because that one hand-off is the
+ * only place it exists.
+ */
+export function useIssueSupplierPassword() {
+  const issue = useDataStore((s) => s.issueSupplierPassword)
+  return {
+    isPending: false,
+    // The id is passed at call time rather than bound: the form issues the
+    // first password for a supplier that did not exist when the hook ran.
+    mutate: (
+      id: string,
+      opts?: { onSuccess?: (password: string) => void; onError?: (m: string) => void },
+    ) => {
+      const result = issue(id)
+      if (result.ok) opts?.onSuccess?.(result.password)
+      else opts?.onError?.(result.error)
     },
   }
 }

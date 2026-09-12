@@ -48,6 +48,14 @@ export const permissionTree: readonly PermissionNode[] = [
       { key: 'products.repricing', label: 'Repricing', actions: crud },
       { key: 'products.printTemplates', label: 'Print templates', actions: crud },
       { key: 'products.suppliers', label: 'Suppliers', actions: crud },
+      // Separate from editing a supplier on purpose: fixing an address and
+      // handing somebody an account are not the same act, and plenty of people
+      // should be trusted with the first but not the second.
+      {
+        key: 'products.supplierPortal',
+        label: 'Supplier logins',
+        actions: ['view', 'edit'],
+      },
       { key: 'products.cost', label: 'See cost price & margin', actions: readOnly },
     ],
   },

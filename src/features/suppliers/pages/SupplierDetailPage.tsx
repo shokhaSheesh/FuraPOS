@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
-import { ArrowLeft, Banknote, Pencil } from 'lucide-react'
+import { ArrowLeft, Banknote, KeyRound, Pencil, ShieldCheck, ShieldOff } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { PageHeader } from '@/shared/components/PageHeader'
@@ -18,8 +18,24 @@ import { useSession } from '@/app/providers/SessionProvider'
 import { paths } from '@/shared/config/paths'
 import { formatDate, formatMoney, formatNumber, formatPercent } from '@/shared/lib/format'
 import { useDataStore } from '@/data/store'
-import { usePaySupplier, useSupplier, useSupplierWallet } from '../api/suppliers'
-import { daysOverdue, isDormant, paymentSchema, type PaymentValues } from '../model/supplier'
+import {
+  useIssueSupplierPassword,
+  usePaySupplier,
+  useSetSupplierAccess,
+  useSupplier,
+  useSupplierWallet,
+} from '../api/suppliers'
+import { CredentialsModal } from '../components/CredentialsModal'
+import {
+  daysOverdue,
+  isDormant,
+  paymentSchema,
+  portalState,
+  portalStateHint,
+  portalStateLabel,
+  portalStateTone,
+  type PaymentValues,
+} from '../model/supplier'
 
 export default function SupplierDetailPage() {
   const { supplierId } = useParams()
@@ -27,8 +43,12 @@ export default function SupplierDetailPage() {
   const { data } = useSupplier(supplierId ?? '')
   const { wallet, transactions } = useSupplierWallet(supplierId ?? '')
   const pay = usePaySupplier(supplierId ?? '')
+  const issuePassword = useIssueSupplierPassword()
+  const setAccess = useSetSupplierAccess(supplierId ?? '')
   const receipts = useDataStore((s) => s.receipts)
   const [paying, setPaying] = useState(false)
+  /** A freshly issued password, held only until the modal closes. */
+  const [issued, setIssued] = useState<string | null>(null)
 
   const form = useForm<PaymentValues>({
     resolver: zodResolver(paymentSchema),
@@ -41,6 +61,9 @@ export default function SupplierDetailPage() {
 
   const { supplier, stats } = data
   const canSeeCost = can('products.cost.view')
+  const canSeePortal = can('products.supplierPortal.view')
+  const canManagePortal = can('products.supplierPortal.edit')
+  const portal = portalState(supplier)
   const overdue = daysOverdue(supplier)
   const theirReceipts = receipts
     .filter((receipt) => receipt.supplierId === supplier.id)
@@ -237,23 +260,103 @@ export default function SupplierDetailPage() {
           </CardBody>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Contact</CardTitle>
-          </CardHeader>
-          <CardBody className="space-y-2 text-sm">
-            <Row label="Contact" value={supplier.contactName ?? '—'} />
-            <Row label="Phone" value={supplier.phone ?? '—'} />
-            <Row label="Email" value={supplier.email ?? '—'} />
-            <Row label="Zone" value={supplier.zone ?? '—'} />
-            <Row label="Address" value={supplier.address ?? '—'} />
-            <Row
-              label="Payment terms"
-              value={supplier.paymentTermDays ? `${supplier.paymentTermDays} days` : 'Not agreed'}
-            />
-            {supplier.comment ? <Row label="Note" value={supplier.comment} /> : null}
-          </CardBody>
-        </Card>
+        {/* Both cards describe the same company, so they stack in one column
+            rather than leaving a gap beside the deliveries table. */}
+        <div className="space-y-3">
+          <Card>
+            <CardHeader>
+              <CardTitle>Manager</CardTitle>
+            </CardHeader>
+            <CardBody className="space-y-2 text-sm">
+              <Row label="Name" value={supplier.contactName ?? '—'} />
+              <Row label="Phone" value={supplier.phone ?? '—'} />
+              <Row label="Email" value={supplier.email ?? '—'} />
+              <Row label="Zone" value={supplier.zone ?? '—'} />
+              <Row label="Address" value={supplier.address ?? '—'} />
+              <Row
+                label="Payment terms"
+                value={supplier.paymentTermDays ? `${supplier.paymentTermDays} days` : 'Not agreed'}
+              />
+              {supplier.comment ? <Row label="Note" value={supplier.comment} /> : null}
+            </CardBody>
+          </Card>
+
+          {/* Their own way in. Read-only to them and nothing to do with our
+            sales: the portal shows what we order from this company. */}
+          {canSeePortal ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Supplier portal</CardTitle>
+              </CardHeader>
+              <CardBody className="space-y-3 text-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <Badge tone={portalStateTone(portal)}>{portalStateLabel(portal)}</Badge>
+                  <span className="text-fg-subtle text-2xs text-right">
+                    {portalStateHint(portal)}
+                  </span>
+                </div>
+
+                {portal === 'none' ? (
+                  <p className="text-fg-muted">
+                    {supplier.contactName ?? 'Nobody here'} cannot sign in. A login is created by
+                    editing this supplier.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    <Row label="Login" value={supplier.username ?? '—'} mono />
+                    <Row
+                      label="Password set"
+                      value={supplier.passwordSetAt ? formatDate(supplier.passwordSetAt) : 'Never'}
+                    />
+                    <Row
+                      label="Last signed in"
+                      value={
+                        supplier.lastSignedInAt ? formatDate(supplier.lastSignedInAt) : 'Never'
+                      }
+                    />
+                  </div>
+                )}
+
+                {canManagePortal && portal !== 'none' ? (
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() =>
+                        issuePassword.mutate(supplier.id, {
+                          onSuccess: (password) => setIssued(password),
+                          onError: (message) => toast.error(message),
+                        })
+                      }
+                    >
+                      <KeyRound />
+                      {supplier.passwordSetAt ? 'Reset password' : 'Issue a password'}
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() =>
+                        setAccess.mutate(supplier.access === 'disabled' ? 'granted' : 'disabled', {
+                          onSuccess: () =>
+                            toast.success(
+                              supplier.access === 'disabled'
+                                ? `${supplier.name} can sign in again`
+                                : `${supplier.name} can no longer sign in`,
+                            ),
+                        })
+                      }
+                    >
+                      {supplier.access === 'disabled' ? <ShieldCheck /> : <ShieldOff />}
+                      {supplier.access === 'disabled'
+                        ? 'Switch access back on'
+                        : 'Switch access off'}
+                    </Button>
+                  </div>
+                ) : null}
+              </CardBody>
+            </Card>
+          ) : null}
+        </div>
       </div>
 
       <Modal
@@ -291,6 +394,19 @@ export default function SupplierDetailPage() {
           </Field>
         </div>
       </Modal>
+
+      {issued ? (
+        <CredentialsModal
+          open
+          onOpenChange={(open) => {
+            if (!open) setIssued(null)
+          }}
+          companyName={supplier.name}
+          managerName={supplier.contactName}
+          username={supplier.username ?? ''}
+          password={issued}
+        />
+      ) : null}
     </>
   )
 }
@@ -305,11 +421,12 @@ function Figure({ label, value, meta }: { label: string; value: string; meta: st
   )
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div className="flex items-start justify-between gap-3">
       <span className="text-fg-muted shrink-0">{label}</span>
-      <span className="text-fg text-right">{value}</span>
+      {/* A login is read character by character, so it gets a mono face. */}
+      <span className={mono ? 'text-fg text-right font-mono' : 'text-fg text-right'}>{value}</span>
     </div>
   )
 }

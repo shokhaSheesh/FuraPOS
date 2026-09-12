@@ -319,7 +319,7 @@ and every unit's landed cost is understated, along with every margin taken from
 it.
 
 **This was broken and is now fixed.** Booking a delivery against an order wrote
-the *counted* quantity into both fields, so "42 invoiced, 40 received" was
+the _counted_ quantity into both fields, so "42 invoiced, 40 received" was
 recorded as "40 and 40" — the shortage disappeared and the landed cost divided
 by the wrong number. The column on the manual receipt form was also labelled
 just "Quantity", which reads as "how many arrived", so people typed the count
@@ -436,6 +436,32 @@ opposite sentences about the same number. Clients and employees drop into it unc
 the shared component needs, and the reason a supplier payment and a client top-up will never be two
 different tables.
 
+#### Manager and portal login — no OX equivalent, built at the client's request
+
+OX has no notion of a supplier signing in; this comes from the client, and it changes what a supplier
+record _is_. Fura is not the only tenant of this platform: a supplier gets their own login and sees
+what is ordered from them, which is also the groundwork for selecting a supplier on an order and
+being shown their products.
+
+Four decisions worth recording, because each had a worse obvious alternative:
+
+1. **The manager _is_ the portal user.** OX's `Контакт` becomes **Manager** — one person who is both
+   who you ring and who holds the login. A separate `managerName` beside `contactName` would be two
+   fields for one human, which is how a record ends up with two spellings of a name.
+2. **The password is never stored.** It is generated, shown once with a copy action, and after that
+   the record knows only `passwordSetAt`. A credential any back-office user can read forever is a
+   credential nobody can rotate. Losing it is recoverable — **Reset password** issues another.
+3. **`invited` vs `active` is derived, not stored.** `access` records the grant
+   (`none` / `granted` / `disabled`); `portalState()` reads `lastSignedInAt` to tell an invitation
+   nobody accepted from a login in use. Two stored fields that must agree eventually disagree.
+4. **Issuing a login is its own permission** — `products.supplierPortal`, separate from
+   `products.suppliers.edit`, on the same principle as `products.cost`. Fixing an address and
+   creating an account into our data are different acts, and plenty of staff should do the first
+   but not the second.
+
+Switching access off keeps the username, so turning it back on is the same identity rather than a
+new one — the same reasoning as an employee's `suspended` status, and deliberately not deletion.
+
 ### Print templates — «Шаблоны для печати», read from the live tenant
 
 OX's screen is a card grid: a type filter with counts (`Чек: 0 · Счет фактура: 0 · Этикетка: 2`),
@@ -445,15 +471,15 @@ free drag-and-drop canvas — you place `$Product_name`, `barcode_text` and the 
 
 **Ours keeps the grid and replaces the canvas with a form.**
 
-| OX | Ours | Why |
-|----|------|-----|
-| Чек / Счет фактура / Этикетка | Product label / Shelf label / Receipt | Same three-way split, named by where it ends up rather than by document type. An invoice is a Finance artefact and Finance is cut. |
-| Brand chosen first | — | The template is not brand-specific in our data; asking for one before the name is a question with no consequence. |
+| OX                                  | Ours                                      | Why                                                                                                                                                                                                                                    |
+| ----------------------------------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Чек / Счет фактура / Этикетка       | Product label / Shelf label / Receipt     | Same three-way split, named by where it ends up rather than by document type. An invoice is a Finance artefact and Finance is cut.                                                                                                     |
+| Brand chosen first                  | —                                         | The template is not brand-specific in our data; asking for one before the name is a question with no consequence.                                                                                                                      |
 | Free x/y placement of every element | Ordered list of fields, with one headline | The hard part of a label is whether the SKU is on it and whether the name fits at 58 mm — not where the SKU sits. **This is a real trade**: a print shop would want the canvas. A parts counter wants five fields in a sensible order. |
-| `$Product_name`-style tokens | Real fields, ticked | Nothing to learn and nothing to mistype; a field cannot go stale against the catalogue. |
-| Preview image | Preview drawn to true millimetre scale | The only question a preview must answer honestly is whether it fits. Cards use one scale so a 40 mm sticker and a 150 mm receipt sit in equal cards. |
-| — | Fields filtered by kind | A price belongs on a shelf label, not on a part sticker. Changing the kind drops the fields the new one cannot carry, and says how many went. |
-| — | Print sheet | OX's designer makes a template; ours also prints one. Pick parts, set copies, and the sheet lays out at true size — `perRow × perColumn` of A4, so a 58 × 40 mm sticker gives 18 to a page. |
+| `$Product_name`-style tokens        | Real fields, ticked                       | Nothing to learn and nothing to mistype; a field cannot go stale against the catalogue.                                                                                                                                                |
+| Preview image                       | Preview drawn to true millimetre scale    | The only question a preview must answer honestly is whether it fits. Cards use one scale so a 40 mm sticker and a 150 mm receipt sit in equal cards.                                                                                   |
+| —                                   | Fields filtered by kind                   | A price belongs on a shelf label, not on a part sticker. Changing the kind drops the fields the new one cannot carry, and says how many went.                                                                                          |
+| —                                   | Print sheet                               | OX's designer makes a template; ours also prints one. Pick parts, set copies, and the sheet lays out at true size — `perRow × perColumn` of A4, so a 58 × 40 mm sticker gives 18 to a page.                                            |
 
 The barcode and QR code are **drawn, not encoded** — there is no encoder in this build and printing
 is out of scope. They are to scale and obviously not scannable, which answers the only question the
@@ -469,18 +495,18 @@ the accountability a drawer needs, not the hardware.
 So a shift here records who had a drawer, what went through it, and whether it
 balanced:
 
-| Piece | What it does |
-|-------|--------------|
-| **Cash registers** (Settings) | One drawer per counter. A register with shifts against it cannot be deleted — those shifts are the audit trail — so it is retired instead. |
-| **Open a shift** | Register, who is answerable, opening float. A second shift on the same register is refused: two people cannot both be answerable for one drawer. |
-| **Cash in and out** | Everything that moves cash without being a sale — a refund, petty cash, a collection to the safe. The reason decides the direction. |
-| **Close the drawer** | A counted amount, compared with what the system expected. **The expected figure is deliberately not pre-filled** — pre-filling turns a count into a click. A difference beyond the tolerance requires a note. |
-| **The rule** | A cash sale is refused when no drawer is open at that location. Without it the variance compares counted money against cash nobody was answerable for, and means nothing. |
+| Piece                         | What it does                                                                                                                                                                                                  |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Cash registers** (Settings) | One drawer per counter. A register with shifts against it cannot be deleted — those shifts are the audit trail — so it is retired instead.                                                                    |
+| **Open a shift**              | Register, who is answerable, opening float. A second shift on the same register is refused: two people cannot both be answerable for one drawer.                                                              |
+| **Cash in and out**           | Everything that moves cash without being a sale — a refund, petty cash, a collection to the safe. The reason decides the direction.                                                                           |
+| **Close the drawer**          | A counted amount, compared with what the system expected. **The expected figure is deliberately not pre-filled** — pre-filling turns a count into a click. A difference beyond the tolerance requires a note. |
+| **The rule**                  | A cash sale is refused when no drawer is open at that location. Without it the variance compares counted money against cash nobody was answerable for, and means nothing.                                     |
 
 Two decisions worth recording:
 
 - **Only cash reaches a drawer.** Card, transfer and on-account are shown on the
-  shift for context and labelled *not in the drawer*. Counting them into a
+  shift for context and labelled _not in the drawer_. Counting them into a
   cash-up is the classic way one stops balancing.
 - **Over is a warning, not a success.** More cash than expected usually means a
   sale went unrecorded, which is worse than being slightly short. Only an exact
@@ -809,7 +835,7 @@ company. Deliberately **not** a user, an employee or a second kind of client:
 they buy nothing on their own account, so they have no wallet and no balance.
 
 **A driver buys in one of two capacities, and can have both.** He may own
-trucks *and* drive for an autopark; those are two different customers. So the
+trucks _and_ drive for an autopark; those are two different customers. So the
 capacity is asked at the till rather than stored on him, and it settles three
 things at once: whose account the sale lands in, which truck collects the
 history, and whether the autopark's contracted promotion fires. A driver with

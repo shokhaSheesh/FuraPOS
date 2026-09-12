@@ -8,7 +8,11 @@ import type {
   CorrectionReason,
 } from '@/features/corrections/model/correction'
 import type { Stocktake, StocktakeLine } from '@/features/stocktaking/model/stocktake'
-import type { Supplier } from '@/features/suppliers/model/supplier'
+import {
+  generatePassword,
+  type Supplier,
+  type SupplierAccess,
+} from '@/features/suppliers/model/supplier'
 import type { OrderLine, OrderStatus, PurchaseOrder } from '@/features/orders/model/order'
 import { outstandingUnits } from '@/features/orders/model/order'
 import type { ReorderSchedule } from '@/features/schedules/model/schedule'
@@ -245,6 +249,19 @@ interface CatalogState {
 
   createSupplier: (input: SupplierInput) => Supplier
   updateSupplier: (id: string, input: SupplierInput) => Supplier | undefined
+  /**
+   * Switches portal sign-in on or off without touching the login itself, so
+   * turning access back on does not mean issuing a new identity.
+   */
+  setSupplierAccess: (id: string, access: SupplierAccess) => void
+  /**
+   * Mints a password, records that one was set, and hands it back — the only
+   * moment it exists anywhere. Nothing stores it, so the caller has one chance
+   * to put it in front of somebody.
+   */
+  issueSupplierPassword: (
+    id: string,
+  ) => { ok: true; password: string } | { ok: false; error: string }
   /** Records money paid to a supplier: reduces the debt, writes the movement. */
   paySupplier: (
     id: string,
@@ -350,9 +367,14 @@ export interface ScheduleInput {
   active: boolean
 }
 
+/*
+ * `passwordSetAt` and `lastSignedInAt` are deliberately not part of the form's
+ * payload: one is written only by issuing a password, the other only by the
+ * supplier actually signing in. Neither is a field anybody should be able to type.
+ */
 export type SupplierInput = Omit<
   Supplier,
-  'id' | 'debt' | 'lastPaymentAt' | 'createdAt' | 'updatedAt'
+  'id' | 'debt' | 'lastPaymentAt' | 'passwordSetAt' | 'lastSignedInAt' | 'createdAt' | 'updatedAt'
 >
 
 export interface CreateRepricingInput {
@@ -1849,6 +1871,10 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       id: `sup-${sequence}`,
       debt: 0,
       lastPaymentAt: null,
+      // A brand-new supplier has no password yet even when access is granted:
+      // the screen issues one straight after, and that is what reveals it.
+      passwordSetAt: null,
+      lastSignedInAt: null,
       createdAt: now,
       updatedAt: now,
     }
@@ -1869,6 +1895,41 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       ),
     })
     return supplier
+  },
+
+  setSupplierAccess: (id, access) => {
+    set({
+      suppliers: get().suppliers.map((s) =>
+        s.id === id ? { ...s, access, updatedAt: new Date().toISOString() } : s,
+      ),
+    })
+  },
+
+  issueSupplierPassword: (id) => {
+    const supplier = get().suppliers.find((s) => s.id === id)
+    if (!supplier) return { ok: false, error: 'That supplier no longer exists' }
+    if (!supplier.username) {
+      // Guards the half-filled record: a password with nothing to sign in as
+      // would be a credential nobody could use and nobody could revoke.
+      return { ok: false, error: `${supplier.name} has no login to set a password for` }
+    }
+
+    const password = generatePassword()
+    set({
+      suppliers: get().suppliers.map((s) =>
+        s.id === id
+          ? {
+              ...s,
+              // Issuing a password does not grant access on its own, but it is
+              // meaningless while access is off, so `none` becomes granted.
+              access: s.access === 'none' ? 'granted' : s.access,
+              passwordSetAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            }
+          : s,
+      ),
+    })
+    return { ok: true, password }
   },
 
   paySupplier: (id, amount, comment) => {

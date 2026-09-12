@@ -12,31 +12,30 @@ import {
 const access = (over: Partial<Parameters<typeof portalState>[0]> = {}) => ({
   access: 'granted' as const,
   username: 'akchaev',
-  lastSignedInAt: null,
   ...over,
 })
 
 describe('portalState', () => {
-  it('is none when no access was granted', () => {
-    expect(portalState(access({ access: 'none' }))).toBe('none')
+  it('is active when a granted login exists', () => {
+    expect(portalState(access())).toBe('active')
   })
 
-  it('is none when access was granted but there is no login to use', () => {
+  it('is inactive when no access was granted', () => {
+    expect(portalState(access({ access: 'none' }))).toBe('inactive')
+  })
+
+  it('is inactive when access was withdrawn', () => {
+    expect(portalState(access({ access: 'disabled' }))).toBe('inactive')
+  })
+
+  it('is inactive when access was granted but there is no login to use', () => {
     // Guards the half-filled record: a grant without a username is not a login.
-    expect(portalState(access({ username: null }))).toBe('none')
+    expect(portalState(access({ username: null }))).toBe('inactive')
   })
 
-  it('is invited while a granted login has never been used', () => {
-    expect(portalState(access())).toBe('invited')
-  })
-
-  it('becomes active once they have signed in', () => {
-    expect(portalState(access({ lastSignedInAt: new Date().toISOString() }))).toBe('active')
-  })
-
-  it('reads as off when access is withdrawn, even after they signed in', () => {
-    const withdrawn = access({ access: 'disabled', lastSignedInAt: new Date().toISOString() })
-    expect(portalState(withdrawn)).toBe('disabled')
+  it('does not care whether they have ever signed in', () => {
+    // Sign-in history is on the supplier's page; it is not a status.
+    expect(portalState({ access: 'granted', username: 'akchaev' })).toBe('active')
   })
 })
 

@@ -172,13 +172,16 @@ export default function SuppliersListPage() {
               header: 'Portal login',
               cell: ({ row }: { row: { original: SupplierRow } }) => {
                 const state = portalState(row.original.supplier)
-                if (state === 'none') return <span className="text-fg-subtle">—</span>
                 return (
                   <div className="min-w-0">
                     <Badge tone={portalStateTone(state)}>{portalStateLabel(state)}</Badge>
-                    <p className="text-fg-subtle text-2xs mt-0.5 truncate font-mono">
-                      {row.original.supplier.username}
-                    </p>
+                    {/* The login underneath when there is one — a supplier with
+                        no account at all has nothing to show but the status. */}
+                    {row.original.supplier.username ? (
+                      <p className="text-fg-subtle text-2xs mt-0.5 truncate font-mono">
+                        {row.original.supplier.username}
+                      </p>
+                    ) : null}
                   </div>
                 )
               },

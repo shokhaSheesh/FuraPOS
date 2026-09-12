@@ -460,9 +460,16 @@ Four decisions worth recording, because each had a worse obvious alternative:
    actually wants — being able to re-issue and re-send credentials without ceremony — is satisfied
    by **Change password**, which works the same way against a hash.
 
-3. **`invited` vs `active` is derived, not stored.** `access` records the grant
-   (`none` / `granted` / `disabled`); `portalState()` reads `lastSignedInAt` to tell an invitation
-   nobody accepted from a login in use. Two stored fields that must agree eventually disagree.
+3. **The status is two states, and it is derived.** `access` records the grant
+   (`none` / `granted` / `disabled`) and `portalState()` collapses it with the username into
+   **Active** or **Inactive** — active meaning a granted login that actually exists.
+
+   It was four at first (no login / invited / active / access off), splitting out whether a granted
+   login had ever been used and whether an unusable one had a username behind it. The client cut it
+   back, rightly: both facts are on the supplier's own page, where `Last signed in` answers the
+   first directly, and in a list they were noise dressed as information. Deriving rather than
+   storing it is what made the reduction a one-line change.
+
 4. **Issuing a login is its own permission** — `products.supplierPortal`, separate from
    `products.suppliers.edit`, on the same principle as `products.cost`. Fixing an address and
    creating an account into our data are different acts, and plenty of staff should do the first

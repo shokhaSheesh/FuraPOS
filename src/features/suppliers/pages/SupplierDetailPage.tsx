@@ -392,7 +392,7 @@ export default function SupplierDetailPage() {
                   </span>
                 </div>
 
-                {portal === 'none' ? (
+                {!supplier.username ? (
                   <p className="text-fg-muted">
                     {supplier.contactName ?? 'Nobody here'} cannot sign in. A login is created by
                     editing this supplier.
@@ -434,7 +434,7 @@ export default function SupplierDetailPage() {
                   </div>
                 )}
 
-                {canManagePortal && portal !== 'none' ? (
+                {canManagePortal && supplier.username ? (
                   <div className="flex flex-wrap gap-2 pt-1">
                     <Button
                       variant="secondary"

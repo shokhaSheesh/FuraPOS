@@ -61,7 +61,7 @@ export interface Supplier {
   password: string | null
   /** When the password was last changed. */
   passwordSetAt: IsoDate | null
-  /** Null when they have never signed in — which is what separates invited from active. */
+  /** Null when they have never signed in. Shown on their page, not in the status. */
   lastSignedInAt: IsoDate | null
   comment: string | null
   status: 'active' | 'archived'
@@ -73,46 +73,36 @@ export interface Supplier {
 export type SupplierAccess = 'none' | 'granted' | 'disabled'
 
 /**
- * What the screen shows, which is one step richer than what is stored: a
- * granted login that has never been used is an invitation nobody accepted, and
- * that is the row worth chasing.
+ * Whether they can sign in, and nothing more.
+ *
+ * This was four states once — no login, invited, active, access off — which
+ * distinguished things the person reading the column does not have to care
+ * about. Whether a granted login has been used yet, and whether an unusable one
+ * has a username behind it, are both answerable from the supplier's own page;
+ * in a list they are noise dressed as information.
  */
-export type PortalState = 'none' | 'invited' | 'active' | 'disabled'
+export type PortalState = 'active' | 'inactive'
 
-export function portalState(
-  supplier: Pick<Supplier, 'access' | 'username' | 'lastSignedInAt'>,
-): PortalState {
-  if (supplier.access === 'none' || !supplier.username) return 'none'
-  if (supplier.access === 'disabled') return 'disabled'
-  return supplier.lastSignedInAt ? 'active' : 'invited'
+export function portalState(supplier: Pick<Supplier, 'access' | 'username'>): PortalState {
+  // A grant with no login behind it cannot be signed in with, so it is not
+  // active however the access flag reads.
+  return supplier.access === 'granted' && supplier.username ? 'active' : 'inactive'
 }
 
 export const PORTAL_STATES: {
   value: PortalState
   label: string
-  tone: 'success' | 'info' | 'warning' | 'neutral'
+  tone: 'success' | 'neutral'
   hint: string
 }[] = [
+  { value: 'active', label: 'Active', tone: 'success', hint: 'Can sign in to the supplier portal' },
   {
-    value: 'none',
-    label: 'No login',
+    value: 'inactive',
+    // Covers both "never had a login" and "had one, switched off" — the second
+    // stays reversible, because the username is kept either way.
+    label: 'Inactive',
     tone: 'neutral',
-    hint: 'Nobody from this company can sign in',
-  },
-  {
-    value: 'invited',
-    label: 'Invited',
-    tone: 'info',
-    hint: 'A password was issued and has not been used yet',
-  },
-  { value: 'active', label: 'Active', tone: 'success', hint: 'Signs in to the supplier portal' },
-  {
-    value: 'disabled',
-    // Reversible and deliberately not deletion: the login is kept so that
-    // turning access back on does not mean re-issuing an identity.
-    label: 'Access off',
-    tone: 'warning',
-    hint: 'The login is kept, but sign-in is blocked',
+    hint: 'Cannot sign in',
   },
 ]
 

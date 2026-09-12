@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { useFieldArray, useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -18,6 +18,8 @@ import { formatNumber } from '@/shared/lib/format'
 import { useDataStore } from '@/data/store'
 import { useCreateTransfer } from '../api/transfers'
 import { transferDraftSchema, type TransferDraft } from '../model/transfer'
+import { demandAt, hasStalled } from '../model/demand'
+import type { VariationRow } from '@/features/products/model/product'
 
 /**
  * Build a transfer.
@@ -60,6 +62,41 @@ export default function NewTransferPage() {
     [variations, fromLocationId],
   )
 
+  const toLocationId = form.watch('toLocationId')
+  const sales = useDataStore((s) => s.sales)
+  const categories = useDataStore((s) => s.categories)
+  const brands = useDataStore((s) => s.brands)
+
+  /** What any shelf holds of one variation. */
+  const stockAt = useMemo(
+    () => (variationId: string, locationId: string) =>
+      variations
+        .find((v) => v.id === variationId)
+        ?.stockByLocation.find((row) => row.locationId === locationId)?.quantity ?? 0,
+    [variations],
+  )
+
+  /*
+    Narrowing the catalogue before searching it. Somebody topping up a shop
+    thinks in "brakes" or "Bosch" long before they think of a part number, and
+    with a filter on, the picker opens on its own rather than waiting to be
+    typed into.
+  */
+  const [categoryId, setCategoryId] = useState('')
+  const [brandId, setBrandId] = useState('')
+
+  const pickerFilter = useMemo(() => {
+    if (!categoryId && !brandId) return undefined
+    return (variation: VariationRow) =>
+      (!categoryId || variation.categoryId === categoryId) &&
+      (!brandId || variation.brandId === brandId)
+  }, [categoryId, brandId])
+
+  const filterLabel =
+    [categories.find((c) => c.id === categoryId)?.name, brands.find((b) => b.id === brandId)?.name]
+      .filter(Boolean)
+      .join(' · ') || undefined
+
   const totalUnits = lines.reduce(
     (sum, line) => sum + (Number.isFinite(line.requestedQuantity) ? line.requestedQuantity : 0),
     0,
@@ -98,6 +135,7 @@ export default function NewTransferPage() {
     )
 
   const from = locations.find((l) => l.id === fromLocationId)
+  const to = locations.find((l) => l.id === toLocationId)
 
   return (
     <form>
@@ -198,7 +236,42 @@ export default function NewTransferPage() {
             </p>
           </CardHeader>
           <CardBody className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Category" hint="Narrows the search below">
+                {(p) => (
+                  <Select
+                    {...p}
+                    className="w-full"
+                    value={categoryId || undefined}
+                    onChange={setCategoryId}
+                    placeholder="Any category"
+                    options={[
+                      { value: '', label: 'Any category' },
+                      ...categories.map((c) => ({ value: c.id, label: c.name })),
+                    ]}
+                  />
+                )}
+              </Field>
+              <Field label="Brand" hint="Narrows the search below">
+                {(p) => (
+                  <Select
+                    {...p}
+                    className="w-full"
+                    value={brandId || undefined}
+                    onChange={setBrandId}
+                    placeholder="Any brand"
+                    options={[
+                      { value: '', label: 'Any brand' },
+                      ...brands.map((b) => ({ value: b.id, label: b.name })),
+                    ]}
+                  />
+                )}
+              </Field>
+            </div>
+
             <ProductPicker
+              filter={pickerFilter}
+              filterLabel={filterLabel}
               placeholder={`Search a product to move out of ${from?.name ?? 'the source'}…`}
               disabled={!fromLocationId}
               stockLabel={(variation) => {
@@ -254,8 +327,18 @@ export default function NewTransferPage() {
                     <tr className="text-fg-muted text-2xs tracking-wide uppercase">
                       <th className="px-3 py-2 text-left font-semibold">Product</th>
                       <th className="px-3 py-2 text-left font-semibold">SKU</th>
-                      <th className="px-3 py-2 text-right font-semibold">At source</th>
-                      <th className="px-3 py-2 text-right font-semibold">Order</th>
+                      {/* Named rather than "source" and "destination": nobody
+                          should have to remember which end is which. */}
+                      <th className="px-3 py-2 text-right font-semibold">
+                        At {from?.name ?? 'source'}
+                      </th>
+                      <th className="px-3 py-2 text-right font-semibold">
+                        At {to?.name ?? 'destination'}
+                      </th>
+                      <th className="px-3 py-2 text-right font-semibold">
+                        Sold at {from?.name ?? 'source'}
+                      </th>
+                      <th className="px-3 py-2 text-right font-semibold">Move</th>
                       <th className="w-10" />
                     </tr>
                   </thead>
@@ -263,6 +346,9 @@ export default function NewTransferPage() {
                     {fields.map((field, index) => {
                       const line = lines[index]
                       const here = line ? availableAt(line.variationId) : 0
+                      const there =
+                        line && toLocationId ? stockAt(line.variationId, toLocationId) : null
+                      const demand = line ? demandAt(sales, line.variationId, fromLocationId) : null
                       const error = form.formState.errors.lines?.[index]?.requestedQuantity?.message
                       return (
                         <tr key={field.id} className="border-border border-t">
@@ -277,6 +363,28 @@ export default function NewTransferPage() {
                           </td>
                           <td className="text-fg-muted px-3 py-2 text-right tabular-nums">
                             {formatNumber(here)} {line?.unit}
+                          </td>
+                          <td className="text-fg-muted px-3 py-2 text-right tabular-nums">
+                            {there === null ? (
+                              <span className="text-fg-subtle">pick a destination</span>
+                            ) : (
+                              `${formatNumber(there)} ${line?.unit ?? ''}`
+                            )}
+                          </td>
+                          <td className="px-3 py-2 text-right">
+                            {/* Spelled out in words rather than "3m / 6m", and
+                                the two together say what one cannot: sales six
+                                months ago with none since is a part that has
+                                stopped moving. */}
+                            <p className="text-fg tabular-nums">
+                              {formatNumber(demand?.[3] ?? 0)} in 3 months
+                            </p>
+                            <p className="text-fg-subtle text-2xs tabular-nums">
+                              {formatNumber(demand?.[6] ?? 0)} in 6 months
+                            </p>
+                            {demand && hasStalled(demand) ? (
+                              <p className="text-warning text-2xs">not selling lately</p>
+                            ) : null}
                           </td>
                           <td className="px-2 py-1.5 text-right">
                             <Controller

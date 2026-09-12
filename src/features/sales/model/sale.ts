@@ -94,6 +94,21 @@ export interface Sale {
    * are recorded as decisions rather than typed into a line.
    */
   promotionId: Id | null
+  /**
+   * Who collected the parts, and which truck they were for.
+   *
+   * Neither is used by this back-office directly — they exist because two
+   * other apps read them. The e-commerce app shows a driver his offline
+   * purchases under "My orders"; the autopark owner's app hangs an operation
+   * on the truck's page. Without both on the sale, neither app has anything
+   * to show, and an offline purchase simply disappears from the customer's view.
+   *
+   * The name is snapshotted beside the id for the same reason the seller's is:
+   * a driver who leaves must not blank the history of what he bought.
+   */
+  driverId: Id | null
+  driverName: string | null
+  truckPlate: string | null
   paymentMethod: PaymentMethod
   /**
    * Which cash shift took the money. Only ever set on a cash sale — a card

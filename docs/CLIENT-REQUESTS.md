@@ -18,6 +18,14 @@ a scope decision, not a screen.**
 >   engine: a targeted offer is just a promotion, so the "better of the two
 >   wins" rule that was already there still holds.
 > - **Gap 3 — sold in the last 3 / 6 months on transfers**: still open.
+>
+> **Second client meeting** reopened the fleet work with the real requirement:
+> Fura has two other apps (an e-commerce app for drivers, and an autopark
+> owner's app), and **this system is the source of what both display**. A sale
+> now carries the **driver** and the **truck** it was for, and a driver who both
+> owns a truck and drives for an autopark is asked which at the till. The rest
+> of that meeting's notes — companies/multi-store, transfer generation,
+> supplier-scoped procurement, the China order with a PDF — are not built.
 
 ---
 

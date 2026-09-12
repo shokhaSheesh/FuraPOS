@@ -328,6 +328,10 @@ function Overview({ sale }: { sale: Sale }) {
           <CardBody className="space-y-2">
             <Row label="Location" value={sale.locationName} />
             <Row label="Seller" value={sale.sellerName} />
+            {/* Only shown when there is one: most counter sales have no
+                driver, and an empty row would just be noise. */}
+            {sale.driverName ? <Row label="Collected by" value={sale.driverName} /> : null}
+            {sale.truckPlate ? <Row label="Truck" value={sale.truckPlate} /> : null}
             {promotion ? (
               // Answers "why is this discounted" without anybody having to
               // work backwards from a percentage.

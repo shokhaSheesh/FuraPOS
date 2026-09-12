@@ -65,6 +65,21 @@ const columns: TableColumn<Sale>[] = [
   { accessorKey: 'locationName', header: 'Location' },
   { accessorKey: 'sellerName', header: 'Seller' },
   {
+    accessorKey: 'driverName',
+    header: 'Driver',
+    cell: ({ row }) => row.original.driverName ?? <span className="text-fg-subtle">—</span>,
+  },
+  {
+    accessorKey: 'truckPlate',
+    header: 'Truck',
+    cell: ({ row }) =>
+      row.original.truckPlate ? (
+        <span className="font-mono text-xs">{row.original.truckPlate}</span>
+      ) : (
+        <span className="text-fg-subtle">—</span>
+      ),
+  },
+  {
     accessorKey: 'channel',
     header: 'Channel',
     cell: ({ row }) => SALE_CHANNELS.find((c) => c.value === row.original.channel)?.label ?? '—',

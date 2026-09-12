@@ -406,6 +406,10 @@ export interface CreateSaleInput {
   delivery: Sale['delivery']
   /** Set when the seller applied a promotion on the New sale screen. */
   promotionId?: string | null
+  /** Who collected the parts, scanned at the counter. */
+  driverId?: string | null
+  /** The truck the purchase was for — his own, or his autopark's. */
+  truckPlate?: string | null
 }
 
 type VariationInput = Omit<
@@ -623,6 +627,14 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       sellerId: 'emp-1',
       sellerName: 'Akhmet Dauletmuratov',
       promotionId: input.promotionId ?? null,
+      /*
+        The two facts the customer-facing apps read: the driver so his own
+        "My orders" can show an offline purchase, and the truck so the
+        autopark owner sees an operation on the right vehicle.
+      */
+      driverId: input.driverId ?? null,
+      driverName: get().drivers.find((d) => d.id === input.driverId)?.fullName ?? null,
+      truckPlate: input.truckPlate ?? null,
       paymentMethod: input.paymentMethod,
       // Only cash reaches a drawer. The New sale screen refuses a cash sale
       // with no shift open, so this is the record of which one took it.
@@ -1504,7 +1516,8 @@ export const useDataStore = create<CatalogState>((set, get) => ({
     const driver: Driver = {
       ...input,
       id: `driver-${get().drivers.length + 1}-${Date.now()}`,
-      clientName: get().clients.find((client) => client.id === input.clientId)?.name ?? null,
+      code: `DRV-${String(get().drivers.length + 1).padStart(5, '0')}`,
+      autoparkName: get().clients.find((client) => client.id === input.autoparkId)?.name ?? null,
       createdAt: now,
       updatedAt: now,
     }
@@ -1519,8 +1532,8 @@ export const useDataStore = create<CatalogState>((set, get) => ({
           ? {
               ...driver,
               ...input,
-              clientName:
-                get().clients.find((client) => client.id === input.clientId)?.name ?? null,
+              autoparkName:
+                get().clients.find((client) => client.id === input.autoparkId)?.name ?? null,
               updatedAt: new Date().toISOString(),
             }
           : driver,

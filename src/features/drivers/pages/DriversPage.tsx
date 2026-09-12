@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
-import { IdCard, Pencil, Plus, Trash2, Truck } from 'lucide-react'
+import { Pencil, Plus, Trash2, Truck } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
 import { SearchInput } from '@/shared/components/SearchInput'
@@ -23,7 +23,9 @@ import { useDataStore } from '@/data/store'
 import { useDriverActions, useDriverCounts, useDrivers } from '../api/drivers'
 import {
   DRIVER_STATUSES,
+  KIND_LABEL,
   driverSchema,
+  kindOf,
   type Driver,
   type DriverDraft,
   type DriverStatus,
@@ -32,9 +34,10 @@ import {
 const EMPTY: DriverDraft = {
   fullName: '',
   phone: null,
-  clientId: null,
-  vehiclePlate: null,
   licenceNumber: null,
+  ownTruckPlate: null,
+  autoparkId: null,
+  autoparkTruckPlate: null,
   comment: null,
   status: 'active',
 }
@@ -42,18 +45,19 @@ const EMPTY: DriverDraft = {
 /**
  * Drivers.
  *
- * Who turns up at the counter for the haulage companies. The company is the
- * client — it holds the account and the debt — but a client record cannot say
- * *which of their people* came in, and that is the name a parts counter
- * actually deals with.
- *
- * A driver buys nothing on their own account: the discount belongs to the
- * company, set on the promotion that targets them.
+ * Split into the two sections the business actually thinks in — owner-drivers
+ * and autopark drivers — with the important wrinkle that **a driver can be
+ * both**, and those appear in each. He buys for himself some days and on his
+ * company's contract on others, and the counter asks which at the till.
  */
 export default function DriversPage() {
   const { can } = useSession()
   const { query, setQuery } = useListQuery()
-  const { data } = useDrivers({ search: query.search, status: query.status })
+  const { data } = useDrivers({
+    search: query.search,
+    section: query.section,
+    status: query.status,
+  })
   const counts = useDriverCounts()
   const actions = useDriverActions()
   const clients = useDataStore((s) => s.clients)
@@ -74,9 +78,10 @@ export default function DriversPage() {
         ? {
             fullName: driver.fullName,
             phone: driver.phone,
-            clientId: driver.clientId,
-            vehiclePlate: driver.vehiclePlate,
             licenceNumber: driver.licenceNumber,
+            ownTruckPlate: driver.ownTruckPlate,
+            autoparkId: driver.autoparkId,
+            autoparkTruckPlate: driver.autoparkTruckPlate,
             comment: driver.comment,
             status: driver.status,
           }
@@ -104,37 +109,60 @@ export default function DriversPage() {
         cell: ({ row }) => (
           <div className="min-w-0">
             <p className="text-fg truncate font-medium">{row.original.fullName}</p>
-            <p className="text-fg-subtle text-2xs truncate">{row.original.phone ?? 'No phone'}</p>
+            <p className="text-fg-subtle text-2xs truncate">
+              <span className="font-mono">{row.original.code}</span>
+              {row.original.phone ? ` · ${row.original.phone}` : ''}
+            </p>
           </div>
         ),
       },
       {
-        id: 'client',
-        header: 'Drives for',
+        id: 'kind',
+        header: 'Buys as',
         enableHiding: false,
-        cell: ({ row }) =>
-          row.original.clientId ? (
-            // The link is what stops this being a dead list: from a driver to
-            // the company's account, debt and history in one click.
-            <Link
-              to={paths.marketing.clientDetail(row.original.clientId)}
-              className="text-fg hover:underline"
-            >
-              {row.original.clientName}
-            </Link>
-          ) : (
-            <span className="text-fg-subtle">Owner-driver</span>
-          ),
+        cell: ({ row }) => {
+          const kind = kindOf(row.original)
+          return <Badge tone={kind === 'both' ? 'info' : 'neutral'}>{KIND_LABEL[kind]}</Badge>
+        },
       },
       {
-        accessorKey: 'vehiclePlate',
-        header: 'Truck',
+        id: 'autopark',
+        header: 'Autopark',
+        enableHiding: false,
         cell: ({ row }) =>
-          row.original.vehiclePlate ? (
-            <span className="font-mono text-xs">{row.original.vehiclePlate}</span>
+          row.original.autoparkId ? (
+            // From a driver to the company that holds the contract, the debt
+            // and the promotion — in one click.
+            <Link
+              to={paths.marketing.clientDetail(row.original.autoparkId)}
+              className="text-fg hover:underline"
+            >
+              {row.original.autoparkName}
+            </Link>
           ) : (
             <span className="text-fg-subtle">—</span>
           ),
+      },
+      {
+        id: 'trucks',
+        header: 'Trucks',
+        enableHiding: false,
+        cell: ({ row }) => (
+          <div className="space-y-0.5">
+            {row.original.ownTruckPlate ? (
+              <p className="font-mono text-xs">
+                {row.original.ownTruckPlate}
+                <span className="text-fg-subtle ml-1.5 font-sans">own</span>
+              </p>
+            ) : null}
+            {row.original.autoparkTruckPlate ? (
+              <p className="font-mono text-xs">
+                {row.original.autoparkTruckPlate}
+                <span className="text-fg-subtle ml-1.5 font-sans">autopark</span>
+              </p>
+            ) : null}
+          </div>
+        ),
       },
       {
         accessorKey: 'licenceNumber',
@@ -184,11 +212,15 @@ export default function DriversPage() {
     [can],
   )
 
+  const autoparks = clients
+    .filter((client) => client.type === 'business' && client.status === 'active')
+    .map((client) => ({ value: client.id, label: client.name }))
+
   return (
     <>
       <PageHeader
         title="Drivers"
-        description="Who turns up at the counter for the companies you sell to. The account stays with the company; this is the person."
+        description="Who collects parts at the counter. Scanning a driver puts the purchase in his own app, and on the right truck in his autopark's."
         action={
           can('marketing.drivers.create') ? (
             <Button variant="primary" onClick={() => openFor(null)}>
@@ -203,16 +235,35 @@ export default function DriversPage() {
         <SearchInput
           value={(query.search as string) ?? ''}
           onChange={(search) => setQuery({ search })}
-          placeholder="Search by name, phone, company or plate…"
+          placeholder="Search by name, code, phone or plate…"
         />
-        <StatusChips<DriverStatus>
-          ariaLabel="Filter by status"
-          value={(query.status as DriverStatus) ?? null}
-          onChange={(status) => setQuery({ status })}
+        <StatusChips<'independent' | 'autopark'>
+          ariaLabel="Filter by who they drive for"
+          value={(query.section as 'independent' | 'autopark') ?? null}
+          onChange={(section) => setQuery({ section })}
           counts={counts}
-          options={[{ value: null, label: 'All' }, ...DRIVER_STATUSES]}
+          options={[
+            { value: null, label: 'All' },
+            { value: 'independent', label: 'Independent' },
+            { value: 'autopark', label: 'Autopark' },
+          ]}
+        />
+        <Select
+          className="w-44"
+          aria-label="Filter by status"
+          placeholder="Any status"
+          value={(query.status as string) || undefined}
+          onChange={(status) => setQuery({ status })}
+          options={[{ value: '', label: 'Any status' }, ...DRIVER_STATUSES]}
         />
       </div>
+
+      {/* The counts add up to more than the total, and that is correct — this
+          says why before anybody reports it as a bug. */}
+      <p className="text-fg-subtle text-2xs">
+        A driver who owns a truck and also drives for an autopark appears in both sections, marked{' '}
+        <span className="text-fg-muted">Both</span>.
+      </p>
 
       <DataTable
         storageKey="drivers"
@@ -226,7 +277,7 @@ export default function DriversPage() {
           <EmptyState
             icon={Truck}
             title="No drivers yet"
-            description="Add the people who collect parts for your fleet customers."
+            description="Add the people who collect parts — owner-drivers, and the drivers of the autoparks you have contracts with."
           />
         }
       />
@@ -235,88 +286,137 @@ export default function DriversPage() {
         open={open}
         onOpenChange={setOpen}
         title={editing ? `Edit ${editing.fullName}` : 'New driver'}
+        description="A driver buys for his own truck, for an autopark's, or both."
         primary={{ label: editing ? 'Save changes' : 'Add driver', onClick: save }}
       >
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Name" required error={errors.fullName?.[0]} className="sm:col-span-2">
-            {(p) => (
-              <Input
-                {...p}
-                placeholder="Bekzod Normatov"
-                value={draft.fullName}
-                onChange={(event) => setDraft((c) => ({ ...c, fullName: event.target.value }))}
-              />
-            )}
-          </Field>
-          <Field label="Phone">
-            {(p) => (
-              <Input
-                {...p}
-                placeholder="+998 90 123 45 67"
-                value={draft.phone ?? ''}
-                onChange={(event) => setDraft((c) => ({ ...c, phone: event.target.value || null }))}
-              />
-            )}
-          </Field>
-          <Field label="Truck" hint="Number plate">
-            {(p) => (
-              <Input
-                {...p}
-                placeholder="01 A 123 AA"
-                value={draft.vehiclePlate ?? ''}
-                onChange={(event) =>
-                  setDraft((c) => ({ ...c, vehiclePlate: event.target.value || null }))
-                }
-              />
-            )}
-          </Field>
-          <Field label="Drives for" hint="Leave empty for an owner-driver">
-            {(p) => (
-              <Select
-                {...p}
-                className="w-full"
-                placeholder="Owner-driver"
-                value={draft.clientId ?? undefined}
-                onChange={(clientId) => setDraft((c) => ({ ...c, clientId: clientId || null }))}
-                options={clients
-                  .filter((client) => client.type === 'business' && client.status === 'active')
-                  .map((client) => ({ value: client.id, label: client.name }))}
-              />
-            )}
-          </Field>
-          <Field label="Status">
-            {(p) => (
-              <Select
-                {...p}
-                className="w-full"
-                value={draft.status}
-                onChange={(status) => setDraft((c) => ({ ...c, status: status as DriverStatus }))}
-                options={DRIVER_STATUSES}
-              />
-            )}
-          </Field>
-          <Field label="Licence number" className="sm:col-span-2">
-            {(p) => (
-              <Input
-                {...p}
-                value={draft.licenceNumber ?? ''}
-                onChange={(event) =>
-                  setDraft((c) => ({ ...c, licenceNumber: event.target.value || null }))
-                }
-              />
-            )}
-          </Field>
-          <Field label="Note" className="sm:col-span-2">
-            {(p) => (
-              <Input
-                {...p}
-                value={draft.comment ?? ''}
-                onChange={(event) =>
-                  setDraft((c) => ({ ...c, comment: event.target.value || null }))
-                }
-              />
-            )}
-          </Field>
+        <div className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Name" required error={errors.fullName?.[0]} className="sm:col-span-2">
+              {(p) => (
+                <Input
+                  {...p}
+                  placeholder="Bekzod Normatov"
+                  value={draft.fullName}
+                  onChange={(event) => setDraft((c) => ({ ...c, fullName: event.target.value }))}
+                />
+              )}
+            </Field>
+            <Field label="Phone">
+              {(p) => (
+                <Input
+                  {...p}
+                  placeholder="+998 90 123 45 67"
+                  value={draft.phone ?? ''}
+                  onChange={(event) =>
+                    setDraft((c) => ({ ...c, phone: event.target.value || null }))
+                  }
+                />
+              )}
+            </Field>
+            <Field label="Licence number">
+              {(p) => (
+                <Input
+                  {...p}
+                  value={draft.licenceNumber ?? ''}
+                  onChange={(event) =>
+                    setDraft((c) => ({ ...c, licenceNumber: event.target.value || null }))
+                  }
+                />
+              )}
+            </Field>
+          </div>
+
+          <div className="border-border rounded-card space-y-3 border p-3">
+            <p className="text-fg text-sm font-medium">His own truck</p>
+            <Field
+              label="Number plate"
+              hint="Leave empty if he only drives for an autopark"
+              error={errors.ownTruckPlate?.[0]}
+            >
+              {(p) => (
+                <Input
+                  {...p}
+                  placeholder="40 E 678 HH"
+                  value={draft.ownTruckPlate ?? ''}
+                  onChange={(event) =>
+                    setDraft((c) => ({ ...c, ownTruckPlate: event.target.value || null }))
+                  }
+                />
+              )}
+            </Field>
+          </div>
+
+          <div className="border-border rounded-card space-y-3 border p-3">
+            <p className="text-fg text-sm font-medium">Autopark</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Company" hint="Leave empty for an owner-driver">
+                {(p) => (
+                  <Select
+                    {...p}
+                    className="w-full"
+                    placeholder="None"
+                    value={draft.autoparkId ?? undefined}
+                    onChange={(autoparkId) =>
+                      setDraft((c) => ({
+                        ...c,
+                        autoparkId: autoparkId || null,
+                        // Their truck belongs to them: clearing the company
+                        // has to clear the plate, or it would be attributed to
+                        // a company he no longer drives for.
+                        autoparkTruckPlate: autoparkId ? c.autoparkTruckPlate : null,
+                      }))
+                    }
+                    options={autoparks}
+                  />
+                )}
+              </Field>
+              <Field
+                label="Their truck"
+                required={draft.autoparkId !== null}
+                error={errors.autoparkTruckPlate?.[0]}
+              >
+                {(p) => (
+                  <Input
+                    {...p}
+                    placeholder="01 A 123 AA"
+                    disabled={draft.autoparkId === null}
+                    value={draft.autoparkTruckPlate ?? ''}
+                    onChange={(event) =>
+                      setDraft((c) => ({
+                        ...c,
+                        autoparkTruckPlate: event.target.value || null,
+                      }))
+                    }
+                  />
+                )}
+              </Field>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Status">
+              {(p) => (
+                <Select
+                  {...p}
+                  className="w-full"
+                  value={draft.status}
+                  onChange={(status) => setDraft((c) => ({ ...c, status: status as DriverStatus }))}
+                  options={DRIVER_STATUSES}
+                />
+              )}
+            </Field>
+            <Field label="Note">
+              {(p) => (
+                <Input
+                  {...p}
+                  value={draft.comment ?? ''}
+                  onChange={(event) =>
+                    setDraft((c) => ({ ...c, comment: event.target.value || null }))
+                  }
+                />
+              )}
+            </Field>
+          </div>
         </div>
       </Modal>
 
@@ -326,7 +426,7 @@ export default function DriversPage() {
           if (!next) setDeleting(null)
         }}
         title={`Delete ${deleting?.fullName}?`}
-        body="The company's sales are unaffected — a driver is a contact, not an account."
+        body="Sales he collected keep his name — a driver is a contact, not an account."
         confirmLabel="Delete"
         destructive
         onConfirm={() => {
@@ -336,14 +436,6 @@ export default function DriversPage() {
           toast.success('Driver deleted')
         }}
       />
-
-      {data.total === 0 ? null : (
-        <p className="text-fg-subtle text-2xs flex items-center gap-1.5">
-          <IdCard className="size-3.5" />
-          Discounts belong to the company, not the driver — set them on a promotion under “Who gets
-          it”.
-        </p>
-      )}
     </>
   )
 }

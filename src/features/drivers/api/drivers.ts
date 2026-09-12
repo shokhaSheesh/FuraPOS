@@ -1,35 +1,82 @@
 import { useMemo } from 'react'
 import { useDataStore } from '@/data/store'
 import { matches } from '@/data/query'
-import type { Driver, DriverDraft, DriverStatus } from '../model/driver'
+import { inSection, type Driver, type DriverDraft, type DriverStatus } from '../model/driver'
 
-export function useDrivers(filters: { search?: unknown; status?: unknown } = {}) {
+export function useDrivers(
+  filters: { search?: unknown; section?: unknown; status?: unknown } = {},
+) {
   const drivers = useDataStore((s) => s.drivers)
 
   return useMemo(() => {
     const items = drivers
       .filter((driver) => {
         if (filters.status && driver.status !== filters.status) return false
+        if (filters.section && !inSection(driver, filters.section as 'independent' | 'autopark')) {
+          return false
+        }
+        // Plates are searched too: at the counter people know the truck
+        // before they know the name.
         return matches(
-          [driver.fullName, driver.phone, driver.clientName, driver.vehiclePlate],
+          [
+            driver.fullName,
+            driver.code,
+            driver.phone,
+            driver.autoparkName,
+            driver.ownTruckPlate,
+            driver.autoparkTruckPlate,
+          ],
           filters.search as string | undefined,
         )
       })
       .sort((a, b) => a.fullName.localeCompare(b.fullName))
 
     return { data: { items, total: items.length }, isLoading: false }
-  }, [drivers, filters.status, filters.search])
+  }, [drivers, filters.section, filters.status, filters.search])
 }
 
+/**
+ * Counts for the section chips.
+ *
+ * These **deliberately overlap**: a driver who owns a truck and also drives
+ * for an autopark is counted in both, because he buys in both capacities. The
+ * list marks him so the arithmetic is explicable rather than looking broken.
+ */
 export function useDriverCounts(): Record<string, number> {
   const drivers = useDataStore((s) => s.drivers)
-  return useMemo(() => {
-    const counts: Record<string, number> = { all: drivers.length }
-    for (const status of ['active', 'inactive'] as DriverStatus[]) {
-      counts[status] = drivers.filter((driver) => driver.status === status).length
-    }
-    return counts
-  }, [drivers])
+  return useMemo(
+    () => ({
+      all: drivers.length,
+      independent: drivers.filter((driver) => inSection(driver, 'independent')).length,
+      autopark: drivers.filter((driver) => inSection(driver, 'autopark')).length,
+    }),
+    [drivers],
+  )
+}
+
+/** Active drivers only — the counter never sells to somebody who has left. */
+export function useActiveDrivers(search: string) {
+  const drivers = useDataStore((s) => s.drivers)
+  return useMemo(
+    () =>
+      drivers
+        .filter((driver) => driver.status === 'active')
+        .filter((driver) =>
+          matches(
+            [
+              driver.fullName,
+              driver.code,
+              driver.phone,
+              driver.autoparkName,
+              driver.ownTruckPlate,
+              driver.autoparkTruckPlate,
+            ],
+            search,
+          ),
+        )
+        .slice(0, 50),
+    [drivers, search],
+  )
 }
 
 export function useDriverActions() {
@@ -48,4 +95,4 @@ export function useDriverActions() {
   )
 }
 
-export type { Driver }
+export type { Driver, DriverStatus }

@@ -826,6 +826,10 @@ export const sales: Sale[] = Array.from({ length: 420 }, (_, index) => {
     sellerId: seller.id,
     sellerName: seller.fullName,
     promotionId: promotion?.id ?? null,
+    // Filled in by the pass below, once the drivers exist.
+    driverId: null,
+    driverName: null,
+    truckPlate: null,
     // Filled in below, once the shifts exist: a sale knows which drawer it
     // went into, and only cash sales ever do.
     shiftId: null,
@@ -1654,37 +1658,89 @@ export const printTemplates: PrintTemplate[] = [
  * Attached to a company client where there is one, and a couple of
  * owner-drivers who buy for themselves.
  */
+/**
+ * Drivers.
+ *
+ * Three shapes, because all three walk into the shop: owner-drivers buying for
+ * their own truck, company drivers buying on their autopark's contract, and a
+ * couple who are both — the case that makes the counter ask which.
+ */
 export const drivers: Driver[] = (
   [
-    ['Bekzod Normatov', '+998 90 111 22 33', 0, '01 A 123 AA', 'active'],
-    ['Sherzod Qodirov', '+998 90 222 33 44', 0, '01 A 456 BB', 'active'],
-    ['Ulugbek Toshev', '+998 90 333 44 55', 1, '01 B 789 CC', 'active'],
-    ['Farrux Ismoilov', '+998 91 444 55 66', 1, '01 B 234 DD', 'active'],
-    ['Jahongir Aliyev', '+998 93 555 66 77', 2, '10 C 567 EE', 'active'],
-    ['Ravshan Sobirov', '+998 94 666 77 88', 2, '10 C 890 FF', 'inactive'],
-    ['Otabek Yusupov', '+998 97 777 88 99', 3, '01 D 345 GG', 'active'],
-    ['Shuhrat Nazarov', '+998 99 888 99 00', null, '40 E 678 HH', 'active'],
-    ['Doniyor Rahimov', '+998 90 999 00 11', null, '25 F 901 II', 'active'],
-    ['Aziz Karimov', '+998 91 100 20 30', 4, '01 G 234 JJ', 'active'],
+    // name, phone, autopark index, own truck, autopark truck, status
+    ['Bekzod Normatov', '+998 90 111 22 33', 0, null, '01 A 123 AA', 'active'],
+    ['Sherzod Qodirov', '+998 90 222 33 44', 0, '01 K 777 AA', '01 A 456 BB', 'active'],
+    ['Ulugbek Toshev', '+998 90 333 44 55', 1, null, '01 B 789 CC', 'active'],
+    ['Farrux Ismoilov', '+998 91 444 55 66', 1, null, '01 B 234 DD', 'active'],
+    ['Jahongir Aliyev', '+998 93 555 66 77', 2, '10 M 555 ZZ', '10 C 567 EE', 'active'],
+    ['Ravshan Sobirov', '+998 94 666 77 88', 2, null, '10 C 890 FF', 'inactive'],
+    ['Otabek Yusupov', '+998 97 777 88 99', 3, null, '01 D 345 GG', 'active'],
+    ['Shuhrat Nazarov', '+998 99 888 99 00', null, '40 E 678 HH', null, 'active'],
+    ['Doniyor Rahimov', '+998 90 999 00 11', null, '25 F 901 II', null, 'active'],
+    ['Aziz Karimov', '+998 91 100 20 30', 4, null, '01 G 234 JJ', 'active'],
   ] as const
-).map(([fullName, phone, clientIndex, vehiclePlate, status], index) => {
-  // Businesses only: a driver drives for a company, never for a walk-in.
-  const companies = clients.filter((client) => client.type === 'business')
-  const client = clientIndex === null ? null : (companies[clientIndex] ?? null)
-  return {
-    id: `driver-${index + 1}`,
-    fullName,
-    phone,
-    clientId: client?.id ?? null,
-    clientName: client?.name ?? null,
-    vehiclePlate,
-    licenceNumber: `AB${between(1000000, 9999999)}`,
-    comment: null,
-    status,
-    createdAt: new Date(Date.now() - between(30, 900) * 86_400_000).toISOString(),
-    updatedAt: new Date(Date.now() - between(1, 30) * 86_400_000).toISOString(),
+).map(
+  ([fullName, phone, autoparkIndex, ownTruckPlate, autoparkTruckPlate, status], index): Driver => {
+    // Businesses only: a driver drives for a company, never for a walk-in.
+    const companies = clients.filter((client) => client.type === 'business')
+    const autopark = autoparkIndex === null ? null : (companies[autoparkIndex] ?? null)
+    return {
+      id: `driver-${index + 1}`,
+      code: `DRV-${String(index + 1).padStart(5, '0')}`,
+      fullName,
+      phone,
+      licenceNumber: `AB${between(1000000, 9999999)}`,
+      ownTruckPlate,
+      autoparkId: autopark?.id ?? null,
+      autoparkName: autopark?.name ?? null,
+      autoparkTruckPlate: autopark ? autoparkTruckPlate : null,
+      comment: null,
+      status,
+      createdAt: new Date(Date.now() - between(30, 900) * 86_400_000).toISOString(),
+      updatedAt: new Date(Date.now() - between(1, 30) * 86_400_000).toISOString(),
+    }
+  },
+)
+
+/**
+ * Who collected each sale.
+ *
+ * Run after the drivers exist, because a sale cannot name one before then.
+ * A sale to a haulage company is attributed to one of *their* drivers and
+ * their truck — anything else would put a purchase on a truck belonging to a
+ * different company, which is exactly the mistake the two apps would surface.
+ */
+{
+  const byAutopark = new Map<string, Driver[]>()
+  for (const driver of drivers) {
+    if (!driver.autoparkId) continue
+    byAutopark.set(driver.autoparkId, [...(byAutopark.get(driver.autoparkId) ?? []), driver])
   }
-})
+  const owners = drivers.filter((driver) => driver.ownTruckPlate !== null)
+
+  for (const sale of sales) {
+    if (sale.clientId) {
+      const fleet = byAutopark.get(sale.clientId)
+      // Not every company purchase comes through a driver — somebody from the
+      // office collects too, and those sales rightly have no truck.
+      if (fleet?.length && random() > 0.25) {
+        const driver = pick(fleet)
+        sale.driverId = driver.id
+        sale.driverName = driver.fullName
+        sale.truckPlate = driver.autoparkTruckPlate
+      }
+      continue
+    }
+    // A walk-in who turns out to be a known owner-driver: scanned at the
+    // counter, so the purchase reaches his own app even with no account behind it.
+    if (random() > 0.75) {
+      const driver = pick(owners)
+      sale.driverId = driver.id
+      sale.driverName = driver.fullName
+      sale.truckPlate = driver.ownTruckPlate
+    }
+  }
+}
 
 /**
  * Cash registers — one desk per location.

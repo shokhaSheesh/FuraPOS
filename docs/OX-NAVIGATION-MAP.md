@@ -794,11 +794,27 @@ limit. A driver is a name, a phone, a truck plate and a licence, linked to that
 company. Deliberately **not** a user, an employee or a second kind of client:
 they buy nothing on their own account, so they have no wallet and no balance.
 
-The original request was for a fleet module — vehicles, drivers and a
-negotiated rate per fleet, with the discount firing only when a truck was named
-on the sale. That was scoped and then cut back at the client's direction to
-this plus a promotion audience, which reaches the same outcome with one new
-entity instead of three and no second discount engine.
+**A driver buys in one of two capacities, and can have both.** He may own a
+truck *and* drive for an autopark; those are two different customers. So the
+capacity is asked at the till rather than stored on him, and it settles three
+things at once: whose account the sale lands in, which truck collects the
+history, and whether the autopark's contracted promotion fires. A driver with
+only one capacity is never asked.
+
+The list splits into **Independent** and **Autopark**, and a driver who is both
+appears in both — the counts deliberately overlap, because he is a customer
+twice over and hiding him from either section would hide half his purchases.
+
+**Why the sale carries a driver and a truck at all:** two customer-facing apps
+read them, neither built here. The e-commerce app shows a driver his offline
+purchases under "My orders"; the autopark owner's app hangs an operation on the
+truck's page. Without both on the sale, an offline purchase simply disappears
+from the customer's view.
+
+There is no negotiated rate on the driver or the fleet: a contracted discount
+is an ordinary promotion aimed at that autopark, so choosing the autopark
+capacity sets the client and the existing audience logic does the rest — one
+discount engine, not two.
 
 ### Promotions — «Акции»
 

@@ -249,6 +249,8 @@ export type SupplierFormValues = z.infer<typeof supplierFormSchema>
 export const paymentSchema = z.object({
   amount: z.number().positive('How much was paid?'),
   comment: z.string(),
+  /** A receipt id, or the sentinel meaning "spread it across what is owed". */
+  receiptId: z.string(),
 })
 
 export type PaymentValues = z.infer<typeof paymentSchema>

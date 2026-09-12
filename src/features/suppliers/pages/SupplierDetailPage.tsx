@@ -13,6 +13,7 @@ import { Badge } from '@/shared/ui/Badge'
 import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
 import { Modal } from '@/shared/ui/Modal'
+import { Select } from '@/shared/ui/Select'
 import { toast } from '@/shared/ui/toast'
 import { useSession } from '@/app/providers/SessionProvider'
 import { paths } from '@/shared/config/paths'
@@ -26,6 +27,7 @@ import {
   useSupplierWallet,
 } from '../api/suppliers'
 import { CredentialsModal } from '../components/CredentialsModal'
+import { OLDEST_FIRST, outstanding, settlementsFor } from '../model/settlement'
 import {
   daysOverdue,
   isDormant,
@@ -52,7 +54,7 @@ export default function SupplierDetailPage() {
 
   const form = useForm<PaymentValues>({
     resolver: zodResolver(paymentSchema),
-    defaultValues: { amount: 0, comment: '' },
+    defaultValues: { amount: 0, comment: '', receiptId: OLDEST_FIRST },
   })
 
   if (!data) {
@@ -70,15 +72,34 @@ export default function SupplierDetailPage() {
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, 8)
 
+  const settlements = settlementsFor(
+    receipts.filter((receipt) => receipt.supplierId === supplier.id),
+    transactions,
+  )
+  const unpaid = outstanding(settlements)
+  /** Only the deliveries actually on screen, so the footer totals what is shown. */
+  const listed = settlements.filter((entry) =>
+    theirReceipts.some((receipt) => receipt.id === entry.receiptId),
+  )
+  const paidFor = form.watch('receiptId')
+  /** "Pay it all" means this invoice when one is chosen, the account otherwise. */
+  const payableNow = unpaid.find((entry) => entry.receiptId === paidFor)?.pending ?? supplier.debt
+
   const submitPayment = form.handleSubmit((values) => {
-    pay.mutate(values, {
-      onSuccess: () => {
-        toast.success(`${formatMoney(values.amount)} recorded against ${supplier.name}`)
-        setPaying(false)
-        form.reset({ amount: 0, comment: '' })
+    pay.mutate(
+      {
+        ...values,
+        receiptId: values.receiptId === OLDEST_FIRST ? null : values.receiptId,
       },
-      onError: (message) => toast.error(message),
-    })
+      {
+        onSuccess: () => {
+          toast.success(`${formatMoney(values.amount)} recorded against ${supplier.name}`)
+          setPaying(false)
+          form.reset({ amount: 0, comment: '', receiptId: OLDEST_FIRST })
+        },
+        onError: (message) => toast.error(message),
+      },
+    )
   })
 
   return (
@@ -218,7 +239,9 @@ export default function SupplierDetailPage() {
                     <tr className="text-fg-muted text-2xs tracking-wide uppercase">
                       <th className="px-4 py-2 text-left font-semibold">Receipt</th>
                       <th className="px-4 py-2 text-left font-semibold">Landed at</th>
-                      <th className="px-4 py-2 text-right font-semibold">Items</th>
+                      <th className="px-4 py-2 text-right font-semibold">Invoiced</th>
+                      <th className="px-4 py-2 text-right font-semibold">Paid</th>
+                      <th className="px-4 py-2 text-right font-semibold">Pending</th>
                       <th className="px-4 py-2 text-left font-semibold">Status</th>
                     </tr>
                   </thead>
@@ -237,9 +260,41 @@ export default function SupplierDetailPage() {
                           </span>
                         </td>
                         <td className="text-fg-muted px-4 py-2">{receipt.locationName}</td>
-                        <td className="text-fg-muted px-4 py-2 text-right tabular-nums">
-                          {formatNumber(receipt.lines.length)}
-                        </td>
+                        {/* What it cost, what has been paid against it, and what
+                            is left — the three figures somebody needs when the
+                            supplier rings about one invoice. */}
+                        {(() => {
+                          const settled = settlements.find((s) => s.receiptId === receipt.id)
+                          if (!settled) {
+                            return (
+                              <td className="text-fg-subtle px-4 py-2 text-right" colSpan={3}>
+                                Nothing charged
+                              </td>
+                            )
+                          }
+                          return (
+                            <>
+                              <td className="text-fg-muted px-4 py-2 text-right tabular-nums">
+                                {formatMoney(settled.invoiced)}
+                              </td>
+                              <td className="text-success px-4 py-2 text-right tabular-nums">
+                                {settled.paid > 0 ? formatMoney(settled.paid) : '—'}
+                              </td>
+                              <td className="px-4 py-2 text-right tabular-nums">
+                                {settled.pending > 0 ? (
+                                  <span className="text-danger font-medium">
+                                    {formatMoney(settled.pending)}
+                                  </span>
+                                ) : (
+                                  // A dash, not a badge: the Status column
+                                  // already carries one, and two badges on a row
+                                  // makes neither of them mean anything.
+                                  <span className="text-fg-subtle">—</span>
+                                )}
+                              </td>
+                            </>
+                          )
+                        })()}
                         <td className="px-4 py-2">
                           <Badge
                             tone={
@@ -260,6 +315,31 @@ export default function SupplierDetailPage() {
                       </tr>
                     ))}
                   </tbody>
+                  {/*
+                    The totals, so the Pending column can be read against the
+                    debt at the top of the page rather than added up by eye.
+                    This is the same question one level up: a figure you cannot
+                    reconcile is a figure you cannot trust.
+                  */}
+                  <tfoot className="bg-canvas">
+                    <tr className="border-border text-2xs border-t font-semibold">
+                      <td className="text-fg-muted px-4 py-2" colSpan={2}>
+                        {theirReceipts.length === stats.receipts
+                          ? 'All deliveries'
+                          : `These ${formatNumber(theirReceipts.length)} deliveries`}
+                      </td>
+                      <td className="text-fg px-4 py-2 text-right tabular-nums">
+                        {formatMoney(listed.reduce((sum, entry) => sum + entry.invoiced, 0))}
+                      </td>
+                      <td className="text-success px-4 py-2 text-right tabular-nums">
+                        {formatMoney(listed.reduce((sum, entry) => sum + entry.paid, 0))}
+                      </td>
+                      <td className="text-danger px-4 py-2 text-right tabular-nums">
+                        {formatMoney(listed.reduce((sum, entry) => sum + entry.pending, 0))}
+                      </td>
+                      <td />
+                    </tr>
+                  </tfoot>
                 </table>
               </div>
             )}
@@ -376,6 +456,41 @@ export default function SupplierDetailPage() {
         primary={{ label: 'Record payment', onClick: submitPayment }}
       >
         <div className="space-y-3">
+          {/* Which invoice the money is for. Without this a payment lands on
+              the account as a lump and nobody can tell afterwards which
+              deliveries it settled. */}
+          <Field
+            label="Paying for"
+            hint="Pick the delivery this payment covers, or spread it across the oldest first"
+          >
+            {(p) => (
+              <Select
+                {...p}
+                className="w-full"
+                value={paidFor}
+                onChange={(next) => {
+                  form.setValue('receiptId', next)
+                  const chosen = unpaid.find((entry) => entry.receiptId === next)
+                  // Paying an invoice almost always means paying it in full.
+                  form.setValue('amount', chosen ? chosen.pending : supplier.debt, {
+                    shouldValidate: true,
+                  })
+                }}
+                options={[
+                  {
+                    value: OLDEST_FIRST,
+                    label: `Oldest first — across ${unpaid.length} ${
+                      unpaid.length === 1 ? 'delivery' : 'deliveries'
+                    }`,
+                  },
+                  ...unpaid.map((entry) => ({
+                    value: entry.receiptId,
+                    label: `${entry.number} — ${formatMoney(entry.pending)} pending`,
+                  })),
+                ]}
+              />
+            )}
+          </Field>
           <Field label="Amount" required error={form.formState.errors.amount?.message}>
             {(p) => (
               <NumberField
@@ -391,9 +506,9 @@ export default function SupplierDetailPage() {
             type="button"
             variant="secondary"
             size="sm"
-            onClick={() => form.setValue('amount', supplier.debt, { shouldValidate: true })}
+            onClick={() => form.setValue('amount', payableNow, { shouldValidate: true })}
           >
-            Pay it all — {formatMoney(supplier.debt)}
+            Pay it all — {formatMoney(payableNow)}
           </Button>
           <Field label="Reference" hint="Transfer number, or how it was paid">
             {(p) => <Input {...p} placeholder="Bank transfer" {...form.register('comment')} />}

@@ -13,6 +13,10 @@ import {
   type Supplier,
   type SupplierAccess,
 } from '@/features/suppliers/model/supplier'
+import { allocate, settlementsFor } from '@/features/suppliers/model/settlement'
+// Money in a message still goes through the one formatter — a raw 3528942401
+// in an error is a number nobody can read back to the person who caused it.
+import { formatMoney } from '@/shared/lib/format'
 import type { OrderLine, OrderStatus, PurchaseOrder } from '@/features/orders/model/order'
 import { outstandingUnits } from '@/features/orders/model/order'
 import type { ReorderSchedule } from '@/features/schedules/model/schedule'
@@ -263,11 +267,19 @@ interface CatalogState {
   issueSupplierPassword: (
     id: string,
   ) => { ok: true; password: string } | { ok: false; error: string }
-  /** Records money paid to a supplier: reduces the debt, writes the movement. */
+  /**
+   * Records money paid to a supplier: reduces the debt, and writes one movement
+   * per delivery it settles.
+   *
+   * `receiptId` says which delivery is being paid for; null spreads the payment
+   * across what is outstanding, oldest first. Either way the movements name a
+   * receipt, so "which invoices have we actually paid" stays answerable.
+   */
   paySupplier: (
     id: string,
     amount: number,
     comment: string,
+    receiptId?: string | null,
   ) => { ok: true } | { ok: false; error: string }
 
   createRepricing: (input: CreateRepricingInput) => Repricing
@@ -1977,7 +1989,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
     return { ok: true, password }
   },
 
-  paySupplier: (id, amount, comment) => {
+  paySupplier: (id, amount, comment, receiptId = null) => {
     const supplier = get().suppliers.find((s) => s.id === id)
     if (!supplier) return { ok: false, error: 'That supplier no longer exists' }
     if (amount <= 0) return { ok: false, error: 'A payment has to be more than nothing' }
@@ -1990,31 +2002,61 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       }
     }
 
+    /*
+      Money is paid against deliveries, not into a void. Working out which ones
+      here rather than at the screen means a payment recorded anywhere carries
+      the same trail, and the supplier's page can answer "is GR-00021 paid?"
+      without anybody keeping a spreadsheet.
+    */
+    const theirs = get().receipts.filter((receipt) => receipt.supplierId === id)
+    const settlements = settlementsFor(theirs, get().walletTransactions)
+    const scoped = receiptId
+      ? settlements.filter((settlement) => settlement.receiptId === receiptId)
+      : settlements
+
+    if (receiptId && scoped.length === 0) {
+      return { ok: false, error: 'That delivery is not on this supplier’s account' }
+    }
+
+    const { allocations, unallocated } = allocate(scoped, amount)
+    if (unallocated > 0) {
+      // Paying more than a delivery owes is nearly always the wrong receipt
+      // picked, so it is refused with the figure rather than quietly spread.
+      const target = scoped[0]
+      return {
+        ok: false,
+        error: receiptId
+          ? `${target?.number ?? 'That delivery'} only has ${formatMoney(target?.pending ?? 0)} outstanding`
+          : 'That is more than the deliveries on this account still owe',
+      }
+    }
+
     const now = new Date().toISOString()
-    const debt = supplier.debt - amount
+    let balance = supplier.debt
+    const movements = allocations.map((allocation, index) => {
+      balance -= allocation.amount
+      return {
+        id: `wtx-${get().walletTransactions.length + index + 1}`,
+        ownerId: id,
+        ownerType: 'supplier' as const,
+        kind: 'debt_repaid' as const,
+        // Negative because it moves the balance towards zero — the sign is
+        // what makes a ledger readable at a glance.
+        amount: -allocation.amount,
+        balanceAfter: balance,
+        comment: comment ? `${comment} — ${allocation.number}` : `Payment for ${allocation.number}`,
+        referenceType: 'goods_receipt',
+        referenceId: allocation.receiptId,
+        createdAt: now,
+        createdBy: { id: 'usr-1', name: 'Akhmet Dauletmuratov' },
+      }
+    })
 
     set({
       suppliers: get().suppliers.map((s) =>
-        s.id === id ? { ...s, debt, lastPaymentAt: now, updatedAt: now } : s,
+        s.id === id ? { ...s, debt: balance, lastPaymentAt: now, updatedAt: now } : s,
       ),
-      walletTransactions: [
-        ...get().walletTransactions,
-        {
-          id: `wtx-${get().walletTransactions.length + 1}`,
-          ownerId: id,
-          ownerType: 'supplier',
-          kind: 'debt_repaid',
-          // Negative because it moves the balance towards zero — the sign is
-          // what makes a ledger readable at a glance.
-          amount: -amount,
-          balanceAfter: debt,
-          comment: comment || null,
-          referenceType: null,
-          referenceId: null,
-          createdAt: now,
-          createdBy: { id: 'usr-1', name: 'Akhmet Dauletmuratov' },
-        },
-      ],
+      walletTransactions: [...get().walletTransactions, ...movements],
     })
     return { ok: true }
   },

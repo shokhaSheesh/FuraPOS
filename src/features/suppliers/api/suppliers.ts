@@ -288,10 +288,10 @@ export function usePaySupplier(id: string) {
   return {
     isPending: false,
     mutate: (
-      input: { amount: number; comment: string },
+      input: { amount: number; comment: string; receiptId?: string | null },
       opts?: { onSuccess?: () => void; onError?: (message: string) => void },
     ) => {
-      const result = pay(id, input.amount, input.comment)
+      const result = pay(id, input.amount, input.comment, input.receiptId ?? null)
       if (result.ok) opts?.onSuccess?.()
       else opts?.onError?.(result.error)
     },

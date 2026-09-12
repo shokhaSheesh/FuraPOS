@@ -1,3 +1,4 @@
+import { Link } from 'react-router'
 import { Sparkles, Wallet as WalletIcon } from 'lucide-react'
 import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
 import { Badge } from '@/shared/ui/Badge'
@@ -44,6 +45,7 @@ export function WalletPanel({
   action,
   showCashback = true,
   balanceIsAlarming = true,
+  referenceHref,
 }: {
   wallet: Wallet
   transactions: WalletTransaction[]
@@ -53,6 +55,15 @@ export function WalletPanel({
   action?: React.ReactNode
   /** Suppliers have no cashback; clients do. */
   showCashback?: boolean
+  /**
+   * Where a movement came from, as a route. The caller resolves it, so this
+   * component still knows nothing about receipts, sales or payroll — it only
+   * knows that a movement may be traceable to a document.
+   *
+   * Without it a balance is a number with no story, which is exactly how a debt
+   * becomes something nobody can explain or argue with.
+   */
+  referenceHref?: (entry: WalletTransaction) => string | null
   /**
    * Whether a positive balance is a problem. True for a supplier, where it is
    * money owed and often overdue; false for an employee, where it is this
@@ -127,11 +138,26 @@ export function WalletPanel({
                             </td>
                             <td className="px-3 py-2">
                               <span className="text-fg">{KIND_LABELS[entry.kind]}</span>
-                              {entry.comment ? (
-                                <span className="text-fg-subtle text-2xs ml-2">
-                                  {entry.comment}
-                                </span>
-                              ) : null}
+                              {entry.comment
+                                ? (() => {
+                                    const href = referenceHref?.(entry) ?? null
+                                    // The document it came from, when there is
+                                    // one to open — otherwise the same words,
+                                    // because a dead link reads as a bug.
+                                    return href ? (
+                                      <Link
+                                        to={href}
+                                        className="text-fg-muted text-2xs ml-2 underline-offset-2 hover:underline"
+                                      >
+                                        {entry.comment}
+                                      </Link>
+                                    ) : (
+                                      <span className="text-fg-subtle text-2xs ml-2">
+                                        {entry.comment}
+                                      </span>
+                                    )
+                                  })()
+                                : null}
                             </td>
                             <td
                               className={cn(

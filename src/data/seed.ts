@@ -11,7 +11,7 @@ import type {
 import type { Sale } from '@/features/sales/model/sale'
 import type { Transfer } from '@/features/transfers/model/transfer'
 import type { Correction, CorrectionReason } from '@/features/corrections/model/correction'
-import type { GoodsReceipt } from '@/features/receipts/model/receipt'
+import { supplierInvoicedTotal, type GoodsReceipt } from '@/features/receipts/model/receipt'
 import type { Stocktake } from '@/features/stocktaking/model/stocktake'
 import type { Repricing, RuleKind } from '@/features/repricing/model/repricing'
 import type { Supplier } from '@/features/suppliers/model/supplier'
@@ -1314,46 +1314,101 @@ export const repricings: Repricing[] = Array.from({ length: 8 }, (_, index) => {
  * Wallet movements, for every owner type in one ledger — the shape CLAUDE.md
  * asks for, so clients and employees drop into the same table later.
  *
- * Only suppliers have any yet. A charge is what an invoice added to the debt; a
- * payment is money going the other way, which is why it is negative.
+ * **Every supplier charge is replayed from a real delivery.** An earlier version
+ * invented one lump per supplier (`debt + between(80m, 400m)`) with a null
+ * reference, which meant the debt on screen came from nowhere and pointed at
+ * nothing — you could see what was owed and never find out why. Here each
+ * received receipt charges its invoiced value and carries its own id, so the
+ * balance can be traced back to the deliveries that built it.
+ *
+ * The debt is the *invoiced* figure rather than what was counted: a short
+ * delivery is a claim against the supplier, not a discount they agreed to.
+ * Freight and duty are excluded — they belong in the cost price, but they are
+ * owed to a broker, not to this supplier.
+ *
+ * The oldest deliveries are settled and the last two are left outstanding,
+ * which is what an ordinary trading relationship looks like — and it makes
+ * `supplier.debt` the sum of these rows rather than an unrelated number.
+ *
+ * **Built in two passes, and that matters.** The events are collected first and
+ * the running balance is applied only once they are in date order. Accumulating
+ * it while walking receipt-by-receipt instead produced a "Balance after" column
+ * that jumped 0 → X → 0 down the screen: the figures reconciled, but the order
+ * they were computed in was not the order the table shows them in, so the column
+ * could not be read down. A running balance that does not run is worse than none.
  */
-const supplierWalletTransactions: WalletTransaction[] = suppliers
-  .filter((supplier) => supplier.lastPaymentAt !== null)
-  .flatMap((supplier, index) => {
-    const paidAt = new Date(supplier.lastPaymentAt!)
-    const charged = supplier.debt + between(80_000_000, 400_000_000)
-    const chargedAt = new Date(paidAt.getTime() - between(5, 40) * 86_400_000)
-    const payment = charged - supplier.debt
+const supplierWalletTransactions: WalletTransaction[] = suppliers.flatMap((supplier) => {
+  const delivered = receipts
+    .filter((receipt) => receipt.supplierId === supplier.id && receipt.status === 'received')
+    .sort((a, b) => (a.receivedAt ?? '').localeCompare(b.receivedAt ?? ''))
+
+  /* Pass one: what happened, without deciding what anything added up to. */
+  const events = delivered.flatMap((receipt, index) => {
+    const invoiced = Math.round(supplierInvoicedTotal(receipt, USD_RATE))
+    if (invoiced <= 0) return []
+
+    const receivedAt = receipt.receivedAt ?? receipt.createdAt
+    const charge = {
+      id: `wtx-${supplier.id}-${receipt.id}-charge`,
+      kind: 'debt_charged' as const,
+      amount: invoiced,
+      comment: `Goods received · ${receipt.number}`,
+      createdAt: receivedAt,
+      receiptId: receipt.id,
+    }
+
+    // Everything but the last two deliveries has been paid for.
+    if (index >= delivered.length - 2) return [charge]
 
     return [
+      charge,
       {
-        id: `wtx-${index + 1}-1`,
-        ownerId: supplier.id,
-        ownerType: 'supplier' as const,
-        kind: 'debt_charged' as const,
-        amount: charged,
-        balanceAfter: charged,
-        comment: 'Goods received',
-        referenceType: 'goods_receipt',
-        referenceId: null,
-        createdAt: chargedAt.toISOString(),
-        createdBy: { id: 'emp-1', name: 'Akhmet Dauletmuratov' },
-      },
-      {
-        id: `wtx-${index + 1}-2`,
-        ownerId: supplier.id,
-        ownerType: 'supplier' as const,
+        id: `wtx-${supplier.id}-${receipt.id}-payment`,
         kind: 'debt_repaid' as const,
-        amount: -payment,
-        balanceAfter: supplier.debt,
-        comment: 'Bank transfer',
-        referenceType: null,
-        referenceId: null,
-        createdAt: paidAt.toISOString(),
-        createdBy: { id: 'emp-1', name: 'Akhmet Dauletmuratov' },
+        amount: -invoiced,
+        comment: `Bank transfer for ${receipt.number}`,
+        createdAt: new Date(
+          new Date(receivedAt).getTime() + between(3, 25) * 86_400_000,
+        ).toISOString(),
+        receiptId: receipt.id,
       },
     ]
   })
+
+  /* Pass two: replay them in the order they happened, which is the order the
+     ledger is read in. */
+  let balance = 0
+  const rows = events
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    .map((event) => {
+      balance += event.amount
+      return {
+        id: event.id,
+        ownerId: supplier.id,
+        ownerType: 'supplier' as const,
+        kind: event.kind,
+        amount: event.amount,
+        balanceAfter: balance,
+        comment: event.comment,
+        referenceType: 'goods_receipt',
+        referenceId: event.receiptId,
+        createdAt: event.createdAt,
+        createdBy: { id: 'emp-1', name: 'Akhmet Dauletmuratov' },
+      } satisfies WalletTransaction
+    })
+
+  /*
+    The balance is what these movements add up to, so the figure at the top of
+    the supplier's page and the ledger underneath it can never disagree. Written
+    back onto the record because `debt` is stored rather than derived — an
+    invoice can be paid before or after its goods arrive.
+  */
+  supplier.debt = balance
+  supplier.lastPaymentAt =
+    rows.filter((row) => row.kind === 'debt_repaid').at(-1)?.createdAt ?? null
+
+  return rows.reverse()
+})
 
 /**
  * Payroll. A month's salary paid, and for some people a mid-month advance still

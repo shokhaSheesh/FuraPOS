@@ -165,6 +165,12 @@ export default function SupplierDetailPage() {
         wallet={wallet}
         transactions={transactions}
         showCashback={false}
+        // Every charge came from a delivery, so the row opens it.
+        referenceHref={(entry) =>
+          entry.referenceType === 'goods_receipt' && entry.referenceId
+            ? paths.products.goodsReceiptDetail(entry.referenceId)
+            : null
+        }
         labels={{
           balance: 'We owe',
           debt: 'Outstanding',

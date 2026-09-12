@@ -8,6 +8,7 @@ import {
   receiptShortfall,
   retailValue,
   soldThrough,
+  supplierInvoicedTotal,
   supplierTotal,
   type ReceiptLine,
 } from './receipt'
@@ -236,6 +237,95 @@ describe('posting a receipt', () => {
 
     expect(nested?.stock).toBe(flat?.stock)
     expect(nested?.costPrice).toBe(flat?.costPrice)
+  })
+})
+
+describe('what the supplier is owed', () => {
+  const debtOf = (id: string) =>
+    useDataStore.getState().suppliers.find((s) => s.id === id)?.debt ?? 0
+
+  const movementsFor = (id: string) =>
+    useDataStore.getState().walletTransactions.filter((entry) => entry.ownerId === id)
+
+  it('charges what was invoiced, not what turned up', () => {
+    // Ten were billed and six arrived. The four missing are a claim against
+    // the supplier, not a discount — so the invoice still reads ten.
+    const receipt = { lines: [line({ orderedQuantity: 10, receivedQuantity: 6, unitCost: 100 })] }
+    expect(supplierInvoicedTotal(receipt, USD_RATE)).toBe(1000)
+    expect(supplierTotal(receipt, USD_RATE)).toBe(600)
+  })
+
+  it('converts a USD invoice at the rate', () => {
+    const receipt = { lines: [line({ orderedQuantity: 2, unitCost: 100, costCurrency: 'USD' })] }
+    expect(supplierInvoicedTotal(receipt, USD_RATE)).toBe(200 * USD_RATE)
+  })
+
+  it('adds the invoice to the debt when goods are received', () => {
+    const before = debtOf('sup-1')
+    const receipt = useDataStore.getState().createReceipt({
+      supplierId: 'sup-1',
+      invoiceNumber: 'INV-9',
+      locationId: 'loc-1',
+      comment: '',
+      lines: [line({ orderedQuantity: 10, unitCost: 1000, costCurrency: 'UZS' })],
+      // Freight is owed to a broker, not to this supplier, so it must not
+      // appear in what we owe them even though it lands in the cost price.
+      additionalCosts: [{ id: 'c1', label: 'Freight', amount: 2000, currency: 'UZS' }],
+      status: 'received',
+    })
+
+    expect(debtOf('sup-1')).toBe(before + 10_000)
+
+    const movement = movementsFor('sup-1').at(-1)!
+    expect(movement.kind).toBe('debt_charged')
+    expect(movement.amount).toBe(10_000)
+    expect(movement.balanceAfter).toBe(debtOf('sup-1'))
+    // The whole point: the charge says which delivery it came from.
+    expect(movement.referenceType).toBe('goods_receipt')
+    expect(movement.referenceId).toBe(receipt.id)
+  })
+
+  it('takes the debt back off when a posted receipt is cancelled', () => {
+    const before = debtOf('sup-2')
+    const receipt = useDataStore.getState().createReceipt({
+      supplierId: 'sup-2',
+      invoiceNumber: '',
+      locationId: 'loc-1',
+      comment: '',
+      lines: [line({ orderedQuantity: 5, unitCost: 400, costCurrency: 'UZS' })],
+      additionalCosts: [],
+      status: 'received',
+    })
+    expect(debtOf('sup-2')).toBe(before + 2000)
+
+    expect(useDataStore.getState().setReceiptStatus(receipt.id, 'cancelled')).toEqual({ ok: true })
+    expect(debtOf('sup-2')).toBe(before)
+    expect(movementsFor('sup-2').at(-1)?.amount).toBe(-2000)
+  })
+
+  it('charges nobody when the receipt has no supplier', () => {
+    // "Без поставщика" — unattributed stock. It must land without a debt and
+    // without throwing.
+    const before = useDataStore.getState().walletTransactions.length
+    useDataStore.getState().createReceipt({
+      supplierId: null,
+      invoiceNumber: '',
+      locationId: 'loc-1',
+      comment: '',
+      lines: [line({ orderedQuantity: 3 })],
+      additionalCosts: [],
+      status: 'received',
+    })
+    expect(useDataStore.getState().walletTransactions.length).toBe(before)
+  })
+
+  it('leaves every seeded balance equal to the movements behind it', () => {
+    // The reason this feature exists: a debt you cannot trace is a debt you
+    // cannot argue with. Each supplier's figure must be its ledger's sum.
+    for (const supplier of useDataStore.getState().suppliers) {
+      const replayed = movementsFor(supplier.id).reduce((sum, entry) => sum + entry.amount, 0)
+      expect(replayed, supplier.name).toBe(supplier.debt)
+    }
   })
 })
 

@@ -48,6 +48,7 @@ import {
 } from '@/features/repricing/model/repricing'
 import {
   landedUnitCost,
+  supplierInvoicedTotal,
   type AdditionalCost,
   type GoodsReceipt,
   type ReceiptLine,
@@ -1076,6 +1077,50 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       ),
       ...commitDeltas(get(), deltas, receipt.locationId, receipt.locationName),
     })
+
+    /*
+      What we now owe for it, and where that figure came from.
+
+      The debt is the supplier's *invoiced* total, not what was counted: a short
+      delivery is a claim against them, not a discount they agreed to. Freight
+      and duty are deliberately excluded — they land in the cost price but are
+      owed to a broker, not to this supplier.
+
+      The movement points back at this receipt, so a balance on the supplier's
+      page can always be traced to the deliveries that built it. A debt nobody
+      can explain is a debt nobody can argue with.
+    */
+    if (receipt.supplierId) {
+      const invoiced = Math.round(supplierInvoicedTotal({ ...receipt, lines }, USD_RATE))
+      const supplier = get().suppliers.find((s) => s.id === receipt.supplierId)
+      if (supplier && invoiced > 0) {
+        const debt = Math.max(0, supplier.debt + sign * invoiced)
+        set({
+          suppliers: get().suppliers.map((s) =>
+            s.id === supplier.id ? { ...s, debt, updatedAt: now } : s,
+          ),
+          walletTransactions: [
+            ...get().walletTransactions,
+            {
+              id: `wtx-${get().walletTransactions.length + 1}`,
+              ownerId: supplier.id,
+              ownerType: 'supplier' as const,
+              kind: sign === 1 ? ('debt_charged' as const) : ('adjustment' as const),
+              amount: sign * invoiced,
+              balanceAfter: debt,
+              comment:
+                sign === 1
+                  ? `Goods received · ${receipt.number}`
+                  : `Receipt cancelled · ${receipt.number}`,
+              referenceType: 'goods_receipt',
+              referenceId: receipt.id,
+              createdAt: now,
+              createdBy: { id: 'emp-1', name: 'Akhmet Dauletmuratov' },
+            },
+          ],
+        })
+      }
+    }
 
     /*
       Posting is where a cost price is actually discovered. The variation takes

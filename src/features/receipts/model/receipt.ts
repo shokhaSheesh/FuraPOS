@@ -96,6 +96,21 @@ export const lineSupplierValue = (line: ReceiptLine, usdRate: number) =>
 export const supplierTotal = (receipt: Pick<GoodsReceipt, 'lines'>, usdRate: number) =>
   receipt.lines.reduce((sum, line) => sum + lineSupplierValue(line, usdRate), 0)
 
+/**
+ * What the supplier *invoiced*, whatever turned up — the figure a debt is built
+ * from.
+ *
+ * Deliberately not `supplierTotal`, which counts what arrived: a short delivery
+ * is a claim to settle with the supplier, not a discount they have agreed to.
+ * Charging the counted quantity would forgive every shortfall silently, and the
+ * business would never see the gap it is owed.
+ */
+export const supplierInvoicedTotal = (receipt: Pick<GoodsReceipt, 'lines'>, usdRate: number) =>
+  receipt.lines.reduce(
+    (sum, line) => sum + line.orderedQuantity * toUzs(line.unitCost, line.costCurrency, usdRate),
+    0,
+  )
+
 /** Freight, duty and the rest, in UZS. */
 export const extraCostsTotal = (receipt: Pick<GoodsReceipt, 'additionalCosts'>, usdRate: number) =>
   receipt.additionalCosts.reduce((sum, cost) => sum + toUzs(cost.amount, cost.currency, usdRate), 0)

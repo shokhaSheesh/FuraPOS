@@ -14,12 +14,13 @@ import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
 import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
 import { Select } from '@/shared/ui/Select'
+import { SegmentedControl } from '@/shared/ui/SegmentedControl'
 import { toast } from '@/shared/ui/toast'
 import { paths } from '@/shared/config/paths'
 import { formatNumber } from '@/shared/lib/format'
 import { useDataStore } from '@/data/store'
 import { useCreateTransfer } from '../api/transfers'
-import { transferDraftSchema, type TransferDraft } from '../model/transfer'
+import { TRANSFER_KINDS, transferDraftSchema, type TransferDraft } from '../model/transfer'
 import { demandAt, hasStalled } from '../model/demand'
 import type { VariationRow } from '@/features/products/model/product'
 
@@ -44,6 +45,7 @@ export default function NewTransferPage() {
   const form = useForm<TransferDraft>({
     resolver: zodResolver(transferDraftSchema),
     defaultValues: {
+      kind: 'send',
       fromLocationId: locations[0]?.id ?? '',
       toLocationId: '',
       comment: '',
@@ -54,6 +56,8 @@ export default function NewTransferPage() {
   const { fields, append, remove } = useFieldArray({ control: form.control, name: 'lines' })
   const lines = form.watch('lines')
   const fromLocationId = form.watch('fromLocationId')
+  const kind = form.watch('kind')
+  const requesting = kind === 'request'
 
   /** What the chosen source holds of one variation, right now. */
   const availableAt = useMemo(
@@ -176,16 +180,26 @@ export default function NewTransferPage() {
       </Button>
 
       <PageHeader
-        title="New transfer"
-        description="Take stock off one shelf and put it on another."
+        title={requesting ? 'New request' : 'New transfer'}
+        description={
+          requesting
+            ? 'Ask another location to supply this one.'
+            : 'Take stock off one shelf and put it on another.'
+        }
         action={
           <div className="flex items-center gap-2">
             <Button type="button" variant="secondary" onClick={submit('draft')}>
               Save as draft
             </Button>
-            <Button type="button" variant="primary" onClick={submit('in_transit')}>
+            {/* A request cannot dispatch: the goods are on somebody else's
+                shelf and they have not agreed to part with them yet. */}
+            <Button
+              type="button"
+              variant="primary"
+              onClick={submit(requesting ? 'draft' : 'in_transit')}
+            >
               <Truck />
-              Send now
+              {requesting ? 'Send the request' : 'Send now'}
             </Button>
           </div>
         }
@@ -193,11 +207,45 @@ export default function NewTransferPage() {
 
       <div className="mt-4 space-y-3">
         <Card>
-          <CardHeader>
+          <CardHeader className="flex-col items-stretch gap-2">
             <CardTitle>Route</CardTitle>
+            <Controller
+              control={form.control}
+              name="kind"
+              render={({ field }) => (
+                <SegmentedControl
+                  aria-label="Sending or requesting"
+                  value={field.value}
+                  onChange={(next) => {
+                    /*
+                      Only the mode changes. Swapping the two ends automatically
+                      seemed helpful and was not: `Select` passes an empty value
+                      through as `undefined`, which flips Radix from controlled
+                      to uncontrolled, after which it keeps its own idea of what
+                      is chosen. Writing either end during the switch produced a
+                      destination that looked empty, or kept a stale value, or
+                      defaulted to the source. The locations are the user's to
+                      set; the switch says what the document *is*.
+                    */
+                    field.onChange(next)
+                  }}
+                  options={TRANSFER_KINDS.map((entry) => ({
+                    value: entry.value,
+                    label: entry.label,
+                  }))}
+                />
+              )}
+            />
+            <p className="text-fg-subtle text-2xs">
+              {TRANSFER_KINDS.find((entry) => entry.value === kind)?.hint}
+            </p>
           </CardHeader>
           <CardBody className="grid items-start gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
-            <Field label="From" required error={form.formState.errors.fromLocationId?.message}>
+            <Field
+              label={requesting ? 'Ask' : 'From'}
+              required
+              error={form.formState.errors.fromLocationId?.message}
+            >
               {(p) => (
                 <Controller
                   control={form.control}
@@ -225,7 +273,11 @@ export default function NewTransferPage() {
             <div className="text-fg-subtle hidden self-center pt-6 sm:block">
               <ArrowRight className="size-4" />
             </div>
-            <Field label="To" required error={form.formState.errors.toLocationId?.message}>
+            <Field
+              label={requesting ? 'Deliver to' : 'To'}
+              required
+              error={form.formState.errors.toLocationId?.message}
+            >
               {(p) => (
                 <Controller
                   control={form.control}
@@ -273,7 +325,7 @@ export default function NewTransferPage() {
                   onClick={() => setGenerating(true)}
                 >
                   <Wand2 />
-                  Suggest what to send
+                  {requesting ? 'Suggest what to ask for' : 'Suggest what to send'}
                 </Button>
               </div>
             </div>
@@ -284,7 +336,9 @@ export default function NewTransferPage() {
           <CardBody className="space-y-3">
             {!toLocationId ? (
               <p className="text-fg-subtle text-2xs">
-                Pick a destination to have the system suggest what to send.
+                {requesting
+                  ? 'Pick who to ask, and the system can suggest what to ask for.'
+                  : 'Pick a destination to have the system suggest what to send.'}
               </p>
             ) : null}
 

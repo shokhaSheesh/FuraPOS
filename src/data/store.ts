@@ -386,6 +386,8 @@ export interface CreateCorrectionInput {
 }
 
 export interface CreateTransferInput {
+  /** Whether this shelf is pushing stock out or asking another to supply it. */
+  kind: Transfer['kind']
   fromLocationId: string
   toLocationId: string
   comment: string
@@ -779,6 +781,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
     const transfer: Transfer = {
       id: `tr-${sequence}`,
       number: `TR-${String(sequence).padStart(5, '0')}`,
+      kind: input.kind,
       status: 'draft',
       fromLocationId: input.fromLocationId,
       fromLocationName: named(input.fromLocationId),
@@ -796,9 +799,13 @@ export const useDataStore = create<CatalogState>((set, get) => ({
     }
 
     set({ transfers: [...get().transfers, transfer] })
-    // Sending goes through the same path as sending later, so the stock
-    // deduction and its checks exist in exactly one place.
-    if (input.status === 'in_transit') get().setTransferStatus(transfer.id, 'in_transit')
+    /* Sending goes through the same path as sending later, so the stock
+       deduction and its checks exist in exactly one place. A request never
+       takes this branch: the requester does not hold the goods, so it has
+       nothing to dispatch and the source has not agreed yet. */
+    if (input.kind === 'send' && input.status === 'in_transit') {
+      get().setTransferStatus(transfer.id, 'in_transit')
+    }
     return get().transfers.find((t) => t.id === transfer.id) ?? transfer
   },
 

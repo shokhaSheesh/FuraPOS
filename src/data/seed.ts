@@ -936,6 +936,7 @@ export const transfers: Transfer[] = Array.from({ length: 14 }, (_, index) => {
   return {
     id: `tr-${sequence}`,
     number: `TR-${String(sequence).padStart(5, '0')}`,
+    kind: 'send' as const,
     status,
     fromLocationId: from.id,
     fromLocationName: from.name,

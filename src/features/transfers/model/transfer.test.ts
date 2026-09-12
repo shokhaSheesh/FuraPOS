@@ -75,7 +75,13 @@ describe('transfer lifecycle', () => {
 })
 
 describe('transfer validation', () => {
-  const draft = { fromLocationId: 'loc-1', toLocationId: 'loc-2', comment: '', lines: [LINE] }
+  const draft = {
+    kind: 'send' as const,
+    fromLocationId: 'loc-1',
+    toLocationId: 'loc-2',
+    comment: '',
+    lines: [LINE],
+  }
 
   it('accepts a transfer between two different places', () => {
     expect(transferDraftSchema.safeParse(draft).success).toBe(true)
@@ -107,6 +113,7 @@ describe('moving stock', () => {
     const startTotal = total('var-1-1')
 
     const transfer = store.createTransfer({
+      kind: 'send',
       fromLocationId: 'loc-1',
       toLocationId: 'loc-2',
       comment: '',
@@ -127,6 +134,7 @@ describe('moving stock', () => {
     const startTotal = total('var-1-1')
 
     const transfer = store.createTransfer({
+      kind: 'send',
       fromLocationId: 'loc-1',
       toLocationId: 'loc-2',
       comment: '',
@@ -144,6 +152,7 @@ describe('moving stock', () => {
   it('refuses to send more than the source actually holds', () => {
     const store = useDataStore.getState()
     const transfer = store.createTransfer({
+      kind: 'send',
       fromLocationId: 'loc-1',
       toLocationId: 'loc-2',
       comment: '',
@@ -162,6 +171,7 @@ describe('moving stock', () => {
   it('puts the stock back when a sent transfer is cancelled', () => {
     const store = useDataStore.getState()
     const transfer = store.createTransfer({
+      kind: 'send',
       fromLocationId: 'loc-1',
       toLocationId: 'loc-2',
       comment: '',
@@ -178,6 +188,7 @@ describe('moving stock', () => {
     const store = useDataStore.getState()
     const startTotal = total('var-1-1')
     const transfer = store.createTransfer({
+      kind: 'send',
       fromLocationId: 'loc-1',
       toLocationId: 'loc-2',
       comment: '',
@@ -193,6 +204,7 @@ describe('moving stock', () => {
   it('will not receive a transfer that was never sent', () => {
     const store = useDataStore.getState()
     const transfer = store.createTransfer({
+      kind: 'send',
       fromLocationId: 'loc-1',
       toLocationId: 'loc-2',
       comment: '',
@@ -206,6 +218,7 @@ describe('moving stock', () => {
   it('keeps the nested product and the flat catalogue row in step', () => {
     const store = useDataStore.getState()
     store.createTransfer({
+      kind: 'send',
       fromLocationId: 'loc-1',
       toLocationId: 'loc-3',
       comment: '',
@@ -231,6 +244,7 @@ describe('partial fulfilment', () => {
     const store = useDataStore.getState()
     const startAtSource = at('var-1-1', 'loc-1')
     const transfer = store.createTransfer({
+      kind: 'send',
       fromLocationId: 'loc-1',
       toLocationId: 'loc-2',
       comment: '',
@@ -254,6 +268,7 @@ describe('partial fulfilment', () => {
     const startAtDestination = at('var-1-1', 'loc-2')
 
     const transfer = store.createTransfer({
+      kind: 'send',
       fromLocationId: 'loc-1',
       toLocationId: 'loc-2',
       comment: '',
@@ -275,6 +290,7 @@ describe('partial fulfilment', () => {
   it('cannot receive more than was sent', () => {
     const store = useDataStore.getState()
     const transfer = store.createTransfer({
+      kind: 'send',
       fromLocationId: 'loc-1',
       toLocationId: 'loc-2',
       comment: '',
@@ -291,6 +307,7 @@ describe('partial fulfilment', () => {
   it('records who sent and who received', () => {
     const store = useDataStore.getState()
     const transfer = store.createTransfer({
+      kind: 'send',
       fromLocationId: 'loc-1',
       toLocationId: 'loc-2',
       comment: '',

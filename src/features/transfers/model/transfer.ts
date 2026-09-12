@@ -94,9 +94,26 @@ export const lineShortfall = (line: TransferLine) =>
 export const lineUnfulfilled = (line: TransferLine) =>
   line.sentQuantity === null ? 0 : Math.max(0, line.requestedQuantity - line.sentQuantity)
 
+/**
+ * Which way round the transfer was raised.
+ *
+ * The stock moves from source to destination either way; what differs is who
+ * asked. **Sending** is a shelf pushing stock out — the person raising it owns
+ * the goods and can dispatch them. **Requesting** is a shelf asking another to
+ * supply it, and the requester holds nothing, so it cannot send anything: it
+ * records what was asked for and leaves the source to fulfil it.
+ */
+export type TransferKind = 'send' | 'request'
+
+export const TRANSFER_KINDS: { value: TransferKind; label: string; hint: string }[] = [
+  { value: 'send', label: "I'm sending", hint: 'Take stock off this shelf and send it out' },
+  { value: 'request', label: "I'm requesting", hint: 'Ask another location to supply this one' },
+]
+
 export interface Transfer {
   id: Id
   number: string
+  kind: TransferKind
   status: TransferStatus
   fromLocationId: Id
   fromLocationName: string
@@ -195,6 +212,7 @@ export const transferLineSchema = z.object({
 
 export const transferDraftSchema = z
   .object({
+    kind: z.enum(['send', 'request']),
     fromLocationId: z.string().min(1, 'Pick where it leaves from'),
     toLocationId: z.string().min(1, 'Pick where it goes'),
     comment: z.string(),

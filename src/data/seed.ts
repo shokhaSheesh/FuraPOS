@@ -15,6 +15,7 @@ import { supplierInvoicedTotal, type GoodsReceipt } from '@/features/receipts/mo
 import type { Stocktake } from '@/features/stocktaking/model/stocktake'
 import type { Repricing, RuleKind } from '@/features/repricing/model/repricing'
 import type { Supplier } from '@/features/suppliers/model/supplier'
+import type { SupplierProduct } from '@/features/suppliers/model/catalogue'
 import type { ReorderSchedule } from '@/features/schedules/model/schedule'
 import type { Employee } from '@/features/employees/model/employee'
 import type { Role } from '@/features/roles/model/role'
@@ -1141,6 +1142,71 @@ export const receipts: GoodsReceipt[] = Array.from({ length: 46 }, (_, index) =>
     receivedAt,
     updatedAt: receivedAt ?? createdAt.toISOString(),
   } satisfies GoodsReceipt
+})
+
+/**
+ * What each supplier says they sell — their catalogue, not ours.
+ *
+ * In the real product a supplier signs in to their own portal and lists this
+ * themselves, so none of it is typed by us. Until that exists it is mocked, and
+ * mocked deliberately: most of what a supplier lists is something we already
+ * stock, because that link is what lets an order line know our stock and what
+ * it has been selling. A few lines per supplier are **new to us** — things they
+ * carry and we have never bought — since that is how a range actually grows and
+ * the screen has to handle it.
+ *
+ * Their price is near our cost but never exactly it: the price on their
+ * catalogue is theirs to set, and an order is where it gets agreed.
+ */
+export const supplierProducts: SupplierProduct[] = suppliers.flatMap((supplier, supplierIndex) => {
+  /* Each supplier carries a couple of brands, the way an importer actually
+     works, so the brand filter on the order screen has something to do. */
+  const theirBrands = [pick(brands), pick(brands)]
+  const theirs = variations.filter(
+    (variation) => variation.brandId !== null && theirBrands.some((b) => b.id === variation.brandId),
+  )
+
+  const listed = theirs.slice(0, between(24, 40)).map((variation, index) => ({
+    id: `sp-${supplierIndex + 1}-${index + 1}`,
+    supplierId: supplier.id,
+    supplierSku: `${supplier.name.slice(0, 3).toUpperCase()}-${String(index + 1).padStart(4, '0')}`,
+    name: variation.fullName,
+    brandName: variation.brandName,
+    categoryName: variation.categoryName,
+    unit: variation.unit,
+    // Their asking price, a little either side of what we last paid.
+    price:
+      variation.costCurrency === 'USD'
+        ? Math.round(variation.costPrice * (0.9 + random() * 0.25) * 100) / 100
+        : Math.round(variation.costPrice * (0.9 + random() * 0.25)),
+    currency: variation.costCurrency as 'USD' | 'UZS',
+    moq: random() > 0.6 ? between(5, 40) : null,
+    variationId: variation.id,
+    updatedAt: new Date(Date.now() - between(2, 90) * 86_400_000).toISOString(),
+  }))
+
+  // Lines they carry that we have never stocked: orderable, but nothing can be
+  // suggested about them because there is no history behind them.
+  const newToUs = Array.from({ length: between(2, 5) }, (_, index) => {
+    const category = pick(categories)
+    const brand = pick(theirBrands)
+    return {
+      id: `sp-${supplierIndex + 1}-new-${index + 1}`,
+      supplierId: supplier.id,
+      supplierSku: `${supplier.name.slice(0, 3).toUpperCase()}-N${String(index + 1).padStart(3, '0')}`,
+      name: `${brand.name} ${pick(['Gasket set', 'Turbo hose', 'Sensor kit', 'Bearing', 'Seal kit'])} ${between(100, 999)}`,
+      brandName: brand.name,
+      categoryName: category.name,
+      unit: 'pcs',
+      price: Math.round(between(4, 180) * 100) / 100,
+      currency: 'USD' as const,
+      moq: random() > 0.5 ? between(10, 50) : null,
+      variationId: null,
+      updatedAt: new Date(Date.now() - between(2, 60) * 86_400_000).toISOString(),
+    }
+  })
+
+  return [...listed, ...newToUs] satisfies SupplierProduct[]
 })
 
 /**

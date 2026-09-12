@@ -14,6 +14,7 @@ import {
   type SupplierAccess,
 } from '@/features/suppliers/model/supplier'
 import { allocate, settlementsFor } from '@/features/suppliers/model/settlement'
+import type { SupplierProduct } from '@/features/suppliers/model/catalogue'
 // Money in a message still goes through the one formatter — a raw 3528942401
 // in an error is a number nobody can read back to the person who caused it.
 import { formatMoney } from '@/shared/lib/format'
@@ -87,6 +88,7 @@ import {
   employees as seedEmployees,
   roles as seedRoles,
   suppliers as seedSuppliers,
+  supplierProducts as seedSupplierProducts,
   walletTransactions as seedWalletTransactions,
   transfers as seedTransfers,
   variations as seedVariations,
@@ -103,6 +105,8 @@ interface CatalogState {
   stocktakes: Stocktake[]
   repricings: Repricing[]
   suppliers: Supplier[]
+  /** What each supplier lists in their own portal — their catalogue, not ours. */
+  supplierProducts: SupplierProduct[]
   orders: PurchaseOrder[]
   schedules: ReorderSchedule[]
   employees: Employee[]
@@ -643,6 +647,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
   brands,
   locations,
   suppliers: seedSuppliers,
+  supplierProducts: seedSupplierProducts,
   orders: seedOrders,
   schedules: seedSchedules,
   employees: seedEmployees,

@@ -1,6 +1,6 @@
 import type { Sale } from '@/features/sales/model/sale'
 import type { VariationRow } from '@/features/products/model/product'
-import { DAYS_PER_MONTH } from './demand'
+import { DAYS_PER_MONTH } from '@/shared/lib/demand'
 
 /**
  * Proposing a transfer from what actually sold.

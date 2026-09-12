@@ -21,7 +21,7 @@ import { formatNumber } from '@/shared/lib/format'
 import { useDataStore } from '@/data/store'
 import { useCreateTransfer } from '../api/transfers'
 import { TRANSFER_KINDS, transferDraftSchema, type TransferDraft } from '../model/transfer'
-import { demandAt, hasStalled } from '../model/demand'
+import { demandAt, hasStalled } from '@/shared/lib/demand'
 import type { VariationRow } from '@/features/products/model/product'
 
 /**

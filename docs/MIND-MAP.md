@@ -97,7 +97,8 @@ Fura POS  →  Back-office (web)  →  8 modules  →  screens  →  what is on 
 - **Drivers** (who collects parts at the counter)
   - Two sections: **Independent** (owns his truck) and **Autopark** (drives for a company) — a driver who is both appears in each
   - Name, code (what his QR carries), phone, licence, **his own trucks** (several is normal), his autopark and the one truck they assigned him
-  - Each tab shows only that side's trucks — his own under Owner-drivers, the autopark's under Autopark drivers
+  - Every truck carries a **plate, make and model** — in a parts business the make is half of "will it fit"
+  - Each tab shows only that side's trucks with their make and model; the Autopark column appears only in the autopark tab
   - Scanned on New sale; the purchase then reaches his e-commerce app and his autopark owner's app
 - **Promotions**
   - Dates, discount (percent or amount)

@@ -93,8 +93,9 @@ export function DriverPicker({
                   <span className="font-mono">{driver.code}</span>
                   {driver.autoparkName ? <span>· {driver.autoparkName}</span> : null}
                   <Truck className="size-3 shrink-0" />
-                  {[...driver.ownTruckPlates, driver.autoparkTruckPlate]
-                    .filter(Boolean)
+                  {[...driver.ownTrucks, driver.autoparkTruck]
+                    .filter((truck) => truck !== null)
+                    .map((truck) => truck.plate)
                     .join(' · ')}
                 </p>
               </div>

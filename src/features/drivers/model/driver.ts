@@ -25,6 +25,23 @@ export const DRIVER_STATUSES: { value: DriverStatus; label: string }[] = [
 ]
 
 /**
+ * A truck.
+ *
+ * The make and model are not decoration in a parts business: they are what
+ * decides which part fits. A counter hand who can see "MAN TGX" beside the
+ * plate is answering half the question before it is asked.
+ */
+export interface Truck {
+  plate: string
+  make: string | null
+  model: string | null
+}
+
+/** "MAN TGX 18.440", or just the make, or nothing worth printing. */
+export const describeTruck = (truck: Pick<Truck, 'make' | 'model'>) =>
+  [truck.make, truck.model].filter(Boolean).join(' ')
+
+/**
  * Who a purchase is for.
  *
  * A driver can own trucks *and* drive for an autopark, and the two are
@@ -49,10 +66,9 @@ export interface Driver {
 
   /**
    * The trucks he owns. Several is normal — an owner-driver who does well
-   * buys a second lorry and puts a nephew in it — so this is a list rather
-   * than the single plate it started as.
+   * buys a second lorry and puts a nephew in it.
    */
-  ownTruckPlates: string[]
+  ownTrucks: Truck[]
 
   /** The haulage company he drives for — a client. Null for an owner-driver. */
   autoparkId: Id | null
@@ -63,7 +79,7 @@ export interface Driver {
    * autopark: without it the owner's app has no truck to hang the purchase
    * on, which is the whole reason the company signed the contract.
    */
-  autoparkTruckPlate: string | null
+  autoparkTruck: Truck | null
 
   comment: string | null
   status: DriverStatus
@@ -73,15 +89,12 @@ export interface Driver {
 
 /* --- capacities ---------------------------------------------------------- */
 
-export const hasOwnTruck = (driver: Pick<Driver, 'ownTruckPlates'>) =>
-  driver.ownTruckPlates.length > 0
+export const hasOwnTruck = (driver: Pick<Driver, 'ownTrucks'>) => driver.ownTrucks.length > 0
 
 export const drivesForAutopark = (driver: Pick<Driver, 'autoparkId'>) => driver.autoparkId !== null
 
 /** What this driver can buy as. Never empty — the form refuses a driver who is neither. */
-export function capacitiesOf(
-  driver: Pick<Driver, 'ownTruckPlates' | 'autoparkId'>,
-): DriverCapacity[] {
+export function capacitiesOf(driver: Pick<Driver, 'ownTrucks' | 'autoparkId'>): DriverCapacity[] {
   const capacities: DriverCapacity[] = []
   if (hasOwnTruck(driver)) capacities.push('own')
   if (drivesForAutopark(driver)) capacities.push('autopark')
@@ -96,11 +109,11 @@ export function capacitiesOf(
  * wrong side would put a part on a stranger's truck in the owner's app.
  */
 export function trucksFor(
-  driver: Pick<Driver, 'ownTruckPlates' | 'autoparkTruckPlate'>,
+  driver: Pick<Driver, 'ownTrucks' | 'autoparkTruck'>,
   capacity: DriverCapacity,
-): string[] {
-  if (capacity === 'own') return driver.ownTruckPlates
-  return driver.autoparkTruckPlate ? [driver.autoparkTruckPlate] : []
+): Truck[] {
+  if (capacity === 'own') return driver.ownTrucks
+  return driver.autoparkTruck ? [driver.autoparkTruck] : []
 }
 
 /**
@@ -110,9 +123,9 @@ export function trucksFor(
  * An autopark capacity is always one truck, so it never asks.
  */
 export function soleTruckFor(
-  driver: Pick<Driver, 'ownTruckPlates' | 'autoparkTruckPlate'>,
+  driver: Pick<Driver, 'ownTrucks' | 'autoparkTruck'>,
   capacity: DriverCapacity,
-): string | null {
+): Truck | null {
   const trucks = trucksFor(driver, capacity)
   return trucks.length === 1 ? (trucks[0] ?? null) : null
 }
@@ -125,7 +138,7 @@ export function soleTruckFor(
  * is the kind of question that makes people stop reading dialogs.
  */
 export function soleCapacity(
-  driver: Pick<Driver, 'ownTruckPlates' | 'autoparkId'>,
+  driver: Pick<Driver, 'ownTrucks' | 'autoparkId'>,
 ): DriverCapacity | null {
   const capacities = capacitiesOf(driver)
   return capacities.length === 1 ? (capacities[0] ?? null) : null
@@ -133,7 +146,7 @@ export function soleCapacity(
 
 export type DriverKind = 'independent' | 'autopark' | 'both'
 
-export function kindOf(driver: Pick<Driver, 'ownTruckPlates' | 'autoparkId'>): DriverKind {
+export function kindOf(driver: Pick<Driver, 'ownTrucks' | 'autoparkId'>): DriverKind {
   const capacities = capacitiesOf(driver)
   if (capacities.length === 2) return 'both'
   return capacities[0] === 'autopark' ? 'autopark' : 'independent'
@@ -159,7 +172,7 @@ export const DRIVER_SECTIONS: { value: 'independent' | 'autopark'; label: string
  * Each tab then shows only the trucks belonging to that side of him.
  */
 export function inSection(
-  driver: Pick<Driver, 'ownTruckPlates' | 'autoparkId'>,
+  driver: Pick<Driver, 'ownTrucks' | 'autoparkId'>,
   section: 'independent' | 'autopark',
 ): boolean {
   return section === 'independent' ? hasOwnTruck(driver) : drivesForAutopark(driver)
@@ -171,25 +184,31 @@ export const capacityOfSection = (section: 'independent' | 'autopark'): DriverCa
 
 /* --- validation ---------------------------------------------------------- */
 
+export const truckSchema = z.object({
+  plate: z.string().min(1, 'A truck needs a number plate'),
+  make: z.string().nullable(),
+  model: z.string().nullable(),
+})
+
 export const driverSchema = z
   .object({
     fullName: z.string().min(2, 'A driver needs a name'),
     phone: z.string().nullable(),
     licenceNumber: z.string().nullable(),
-    ownTruckPlates: z.array(z.string().min(1)),
+    ownTrucks: z.array(truckSchema),
     autoparkId: z.string().nullable(),
-    autoparkTruckPlate: z.string().nullable(),
+    autoparkTruck: truckSchema.nullable(),
     comment: z.string().nullable(),
     status: z.enum(['active', 'inactive']),
   })
   // A driver with no truck of his own and no company cannot buy as anybody.
-  .refine((draft) => draft.ownTruckPlates.length > 0 || draft.autoparkId !== null, {
+  .refine((draft) => draft.ownTrucks.length > 0 || draft.autoparkId !== null, {
     message: 'Give him a truck of his own, an autopark, or both',
-    path: ['ownTruckPlates'],
+    path: ['ownTrucks'],
   })
-  .refine((draft) => draft.autoparkId === null || draft.autoparkTruckPlate !== null, {
+  .refine((draft) => draft.autoparkId === null || draft.autoparkTruck !== null, {
     message: 'Which of their trucks does he drive?',
-    path: ['autoparkTruckPlate'],
+    path: ['autoparkTruck'],
   })
 
 export type DriverDraft = z.infer<typeof driverSchema>
@@ -204,12 +223,12 @@ export const statusLabel = (status: DriverStatus) =>
  * a separate question and promising one here would be a lie.
  */
 export function describeCapacity(
-  driver: Pick<Driver, 'autoparkName' | 'ownTruckPlates' | 'autoparkTruckPlate'>,
+  driver: Pick<Driver, 'autoparkName' | 'ownTrucks' | 'autoparkTruck'>,
   capacity: DriverCapacity,
 ): string {
   if (capacity === 'own') {
     const only = soleTruckFor(driver, 'own')
-    return only ? `Himself · ${only}` : 'Himself'
+    return only ? `Himself · ${only.plate}` : 'Himself'
   }
-  return [driver.autoparkName, driver.autoparkTruckPlate].filter(Boolean).join(' · ')
+  return [driver.autoparkName, driver.autoparkTruck?.plate].filter(Boolean).join(' · ')
 }

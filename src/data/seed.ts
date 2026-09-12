@@ -1667,40 +1667,81 @@ export const printTemplates: PrintTemplate[] = [
  */
 export const drivers: Driver[] = (
   [
-    // name, phone, autopark index, own truck, autopark truck, status
-    ['Bekzod Normatov', '+998 90 111 22 33', 0, [], '01 A 123 AA', 'active'],
-    ['Sherzod Qodirov', '+998 90 222 33 44', 0, ['01 K 777 AA'], '01 A 456 BB', 'active'],
-    ['Ulugbek Toshev', '+998 90 333 44 55', 1, [], '01 B 789 CC', 'active'],
-    ['Farrux Ismoilov', '+998 91 444 55 66', 1, [], '01 B 234 DD', 'active'],
-    ['Jahongir Aliyev', '+998 93 555 66 77', 2, ['10 M 555 ZZ'], '10 C 567 EE', 'active'],
-    ['Ravshan Sobirov', '+998 94 666 77 88', 2, [], '10 C 890 FF', 'inactive'],
-    ['Otabek Yusupov', '+998 97 777 88 99', 3, [], '01 D 345 GG', 'active'],
-    ['Shuhrat Nazarov', '+998 99 888 99 00', null, ['40 E 678 HH'], null, 'active'],
-    ['Doniyor Rahimov', '+998 90 999 00 11', null, ['25 F 901 II', '25 G 404 KK'], null, 'active'],
-    ['Aziz Karimov', '+998 91 100 20 30', 4, [], '01 G 234 JJ', 'active'],
+    // name, phone, autopark index, own trucks, autopark truck, status
+    ['Bekzod Normatov', '+998 90 111 22 33', 0, [], ['01 A 123 AA', 'MAN', 'TGX 18.440'], 'active'],
+    [
+      'Sherzod Qodirov',
+      '+998 90 222 33 44',
+      0,
+      [['01 K 777 AA', 'Kamaz', '5490']],
+      ['01 A 456 BB', 'MAN', 'TGX 18.440'],
+      'active',
+    ],
+    ['Ulugbek Toshev', '+998 90 333 44 55', 1, [], ['01 B 789 CC', 'DAF', 'XF 105'], 'active'],
+    ['Farrux Ismoilov', '+998 91 444 55 66', 1, [], ['01 B 234 DD', 'DAF', 'XF 105'], 'active'],
+    [
+      'Jahongir Aliyev',
+      '+998 93 555 66 77',
+      2,
+      [['10 M 555 ZZ', 'Kamaz', '65115']],
+      ['10 C 567 EE', 'Howo', 'T7H'],
+      'active',
+    ],
+    ['Ravshan Sobirov', '+998 94 666 77 88', 2, [], ['10 C 890 FF', 'Howo', 'T7H'], 'inactive'],
+    [
+      'Otabek Yusupov',
+      '+998 97 777 88 99',
+      3,
+      [],
+      ['01 D 345 GG', 'Mercedes-Benz', 'Actros 1841'],
+      'active',
+    ],
+    [
+      'Shuhrat Nazarov',
+      '+998 99 888 99 00',
+      null,
+      [['40 E 678 HH', 'Scania', 'R450']],
+      null,
+      'active',
+    ],
+    // Did well and bought a second lorry — the case that makes the till ask
+    // which truck a purchase is for.
+    [
+      'Doniyor Rahimov',
+      '+998 90 999 00 11',
+      null,
+      [
+        ['25 F 901 II', 'Isuzu', 'NPR 75'],
+        ['25 G 404 KK', 'Foton', 'Auman'],
+      ],
+      null,
+      'active',
+    ],
+    ['Aziz Karimov', '+998 91 100 20 30', 4, [], ['01 G 234 JJ', 'Shacman', 'X3000'], 'active'],
   ] as const
-).map(
-  ([fullName, phone, autoparkIndex, ownTruckPlates, autoparkTruckPlate, status], index): Driver => {
-    // Businesses only: a driver drives for a company, never for a walk-in.
-    const companies = clients.filter((client) => client.type === 'business')
-    const autopark = autoparkIndex === null ? null : (companies[autoparkIndex] ?? null)
-    return {
-      id: `driver-${index + 1}`,
-      code: `DRV-${String(index + 1).padStart(5, '0')}`,
-      fullName,
-      phone,
-      licenceNumber: `AB${between(1000000, 9999999)}`,
-      ownTruckPlates: [...ownTruckPlates],
-      autoparkId: autopark?.id ?? null,
-      autoparkName: autopark?.name ?? null,
-      autoparkTruckPlate: autopark ? autoparkTruckPlate : null,
-      comment: null,
-      status,
-      createdAt: new Date(Date.now() - between(30, 900) * 86_400_000).toISOString(),
-      updatedAt: new Date(Date.now() - between(1, 30) * 86_400_000).toISOString(),
-    }
-  },
-)
+).map(([fullName, phone, autoparkIndex, ownTrucks, autoparkTruck, status], index): Driver => {
+  // Businesses only: a driver drives for a company, never for a walk-in.
+  const companies = clients.filter((client) => client.type === 'business')
+  const autopark = autoparkIndex === null ? null : (companies[autoparkIndex] ?? null)
+  return {
+    id: `driver-${index + 1}`,
+    code: `DRV-${String(index + 1).padStart(5, '0')}`,
+    fullName,
+    phone,
+    licenceNumber: `AB${between(1000000, 9999999)}`,
+    ownTrucks: ownTrucks.map(([plate, make, model]) => ({ plate, make, model })),
+    autoparkId: autopark?.id ?? null,
+    autoparkName: autopark?.name ?? null,
+    autoparkTruck:
+      autopark && autoparkTruck
+        ? { plate: autoparkTruck[0], make: autoparkTruck[1], model: autoparkTruck[2] }
+        : null,
+    comment: null,
+    status,
+    createdAt: new Date(Date.now() - between(30, 900) * 86_400_000).toISOString(),
+    updatedAt: new Date(Date.now() - between(1, 30) * 86_400_000).toISOString(),
+  }
+})
 
 /**
  * Who collected each sale.
@@ -1716,7 +1757,7 @@ export const drivers: Driver[] = (
     if (!driver.autoparkId) continue
     byAutopark.set(driver.autoparkId, [...(byAutopark.get(driver.autoparkId) ?? []), driver])
   }
-  const owners = drivers.filter((driver) => driver.ownTruckPlates.length > 0)
+  const owners = drivers.filter((driver) => driver.ownTrucks.length > 0)
 
   for (const sale of sales) {
     if (sale.clientId) {
@@ -1727,7 +1768,7 @@ export const drivers: Driver[] = (
         const driver = pick(fleet)
         sale.driverId = driver.id
         sale.driverName = driver.fullName
-        sale.truckPlate = driver.autoparkTruckPlate
+        sale.truckPlate = driver.autoparkTruck?.plate ?? null
       }
       continue
     }
@@ -1737,7 +1778,7 @@ export const drivers: Driver[] = (
       const driver = pick(owners)
       sale.driverId = driver.id
       sale.driverName = driver.fullName
-      sale.truckPlate = pick(driver.ownTruckPlates)
+      sale.truckPlate = pick(driver.ownTrucks).plate
     }
   }
 }

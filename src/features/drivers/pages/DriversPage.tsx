@@ -37,9 +37,9 @@ const EMPTY: DriverDraft = {
   fullName: '',
   phone: null,
   licenceNumber: null,
-  ownTruckPlates: [],
+  ownTrucks: [],
   autoparkId: null,
-  autoparkTruckPlate: null,
+  autoparkTruck: null,
   comment: null,
   status: 'active',
 }
@@ -80,9 +80,9 @@ export default function DriversPage() {
             fullName: driver.fullName,
             phone: driver.phone,
             licenceNumber: driver.licenceNumber,
-            ownTruckPlates: driver.ownTruckPlates,
+            ownTrucks: driver.ownTrucks,
             autoparkId: driver.autoparkId,
-            autoparkTruckPlate: driver.autoparkTruckPlate,
+            autoparkTruck: driver.autoparkTruck,
             comment: driver.comment,
             status: driver.status,
           }
@@ -92,16 +92,24 @@ export default function DriversPage() {
     setOpen(true)
   }
 
-  const setOwnTruck = (index: number, value: string) =>
+  const setOwnTruck = (index: number, patch: Partial<DriverDraft['ownTrucks'][number]>) =>
     setDraft((c) => ({
       ...c,
-      ownTruckPlates: c.ownTruckPlates.map((plate, i) => (i === index ? value : plate)),
+      ownTrucks: c.ownTrucks.map((truck, i) => (i === index ? { ...truck, ...patch } : truck)),
     }))
 
-  const addOwnTruck = () => setDraft((c) => ({ ...c, ownTruckPlates: [...c.ownTruckPlates, ''] }))
+  const addOwnTruck = () =>
+    setDraft((c) => ({ ...c, ownTrucks: [...c.ownTrucks, { plate: '', make: null, model: null }] }))
 
   const removeOwnTruck = (index: number) =>
-    setDraft((c) => ({ ...c, ownTruckPlates: c.ownTruckPlates.filter((_, i) => i !== index) }))
+    setDraft((c) => ({ ...c, ownTrucks: c.ownTrucks.filter((_, i) => i !== index) }))
+
+  /** The autopark's one truck, patched field by field like his own. */
+  const setAutoparkTruck = (patch: Partial<DriverDraft['ownTrucks'][number]>) =>
+    setDraft((c) => ({
+      ...c,
+      autoparkTruck: { plate: '', make: null, model: null, ...c.autoparkTruck, ...patch },
+    }))
 
   const save = () => {
     setShowErrors(true)
@@ -112,8 +120,9 @@ export default function DriversPage() {
     toast.success(editing ? 'Saved' : `${draft.fullName} added`)
   }
 
-  const columns = useMemo<TableColumn<Driver>[]>(
-    () => [
+  const columns = useMemo<TableColumn<Driver>[]>(() => {
+    const plates = (driver: Driver) => trucksFor(driver, capacityOfSection(section))
+    const all: TableColumn<Driver>[] = [
       {
         accessorKey: 'fullName',
         header: 'Driver',
@@ -155,9 +164,39 @@ export default function DriversPage() {
         // company owning a truck it has never seen.
         cell: ({ row }) => (
           <div className="space-y-0.5">
-            {trucksFor(row.original, capacityOfSection(section)).map((plate) => (
-              <p key={plate} className="font-mono text-xs">
-                {plate}
+            {plates(row.original).map((truck) => (
+              <p key={truck.plate} className="font-mono text-xs">
+                {truck.plate}
+              </p>
+            ))}
+          </div>
+        ),
+      },
+      {
+        id: 'make',
+        header: 'Make',
+        enableHiding: false,
+        // Stacked in the same order as the plates beside them, so a driver
+        // with two lorries reads across rather than down.
+        cell: ({ row }) => (
+          <div className="space-y-0.5">
+            {plates(row.original).map((truck) => (
+              <p key={truck.plate} className="text-xs">
+                {truck.make ?? <span className="text-fg-subtle">—</span>}
+              </p>
+            ))}
+          </div>
+        ),
+      },
+      {
+        id: 'model',
+        header: 'Model',
+        enableHiding: false,
+        cell: ({ row }) => (
+          <div className="space-y-0.5">
+            {plates(row.original).map((truck) => (
+              <p key={truck.plate} className="text-xs">
+                {truck.model ?? <span className="text-fg-subtle">—</span>}
               </p>
             ))}
           </div>
@@ -206,10 +245,13 @@ export default function DriversPage() {
           />
         ),
       },
-    ],
+    ]
+
+    // An owner-driver has no autopark, so the column is nothing but dashes
+    // in that tab.
+    return section === 'independent' ? all.filter((column) => column.id !== 'autopark') : all
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [can, section],
-  )
+  }, [can, section])
 
   const autoparks = clients
     .filter((client) => client.type === 'business' && client.status === 'active')
@@ -332,20 +374,45 @@ export default function DriversPage() {
                 Add truck
               </Button>
             </div>
-            {draft.ownTruckPlates.length === 0 ? (
+            {draft.ownTrucks.length === 0 ? (
               <p className="text-fg-subtle text-2xs">
                 None — leave it so if he only drives for an autopark.
               </p>
             ) : (
               <div className="space-y-2">
-                {draft.ownTruckPlates.map((plate, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <Input
-                      aria-label={`Number plate ${index + 1}`}
-                      placeholder="40 E 678 HH"
-                      value={plate}
-                      onChange={(event) => setOwnTruck(index, event.target.value)}
-                    />
+                {/* Captioned once rather than per row: three labelled inputs
+                    repeated five times is a wall of text. */}
+                <div className="text-fg-subtle text-2xs grid gap-2 pr-10 sm:grid-cols-3">
+                  <span>Number plate</span>
+                  <span>Make</span>
+                  <span>Model</span>
+                </div>
+                {draft.ownTrucks.map((truck, index) => (
+                  <div key={index} className="flex items-start gap-2">
+                    <div className="grid flex-1 gap-2 sm:grid-cols-3">
+                      <Input
+                        aria-label={`Number plate ${index + 1}`}
+                        placeholder="40 E 678 HH"
+                        value={truck.plate}
+                        onChange={(event) => setOwnTruck(index, { plate: event.target.value })}
+                      />
+                      <Input
+                        aria-label={`Make ${index + 1}`}
+                        placeholder="Scania"
+                        value={truck.make ?? ''}
+                        onChange={(event) =>
+                          setOwnTruck(index, { make: event.target.value || null })
+                        }
+                      />
+                      <Input
+                        aria-label={`Model ${index + 1}`}
+                        placeholder="R450"
+                        value={truck.model ?? ''}
+                        onChange={(event) =>
+                          setOwnTruck(index, { model: event.target.value || null })
+                        }
+                      />
+                    </div>
                     <Button
                       type="button"
                       variant="ghost"
@@ -359,52 +426,69 @@ export default function DriversPage() {
                 ))}
               </div>
             )}
-            {errors.ownTruckPlates?.[0] ? (
-              <p className="text-danger text-2xs">{errors.ownTruckPlates[0]}</p>
+            {errors.ownTrucks?.[0] ? (
+              <p className="text-danger text-2xs">{errors.ownTrucks[0]}</p>
             ) : null}
           </div>
 
           <div className="border-border rounded-card space-y-3 border p-3">
             <p className="text-fg text-sm font-medium">Autopark</p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Company" hint="Leave empty for an owner-driver">
-                {(p) => (
-                  <Select
-                    {...p}
-                    className="w-full"
-                    placeholder="None"
-                    value={draft.autoparkId ?? undefined}
-                    onChange={(autoparkId) =>
-                      setDraft((c) => ({
-                        ...c,
-                        autoparkId: autoparkId || null,
-                        // Their truck belongs to them: clearing the company
-                        // has to clear the plate, or it would be attributed to
-                        // a company he no longer drives for.
-                        autoparkTruckPlate: autoparkId ? c.autoparkTruckPlate : null,
-                      }))
-                    }
-                    options={autoparks}
-                  />
-                )}
-              </Field>
+            <Field label="Company" hint="Leave empty for an owner-driver">
+              {(p) => (
+                <Select
+                  {...p}
+                  className="w-full"
+                  placeholder="None"
+                  value={draft.autoparkId ?? undefined}
+                  onChange={(autoparkId) =>
+                    setDraft((c) => ({
+                      ...c,
+                      autoparkId: autoparkId || null,
+                      // Their truck belongs to them: clearing the company has
+                      // to clear the truck, or it would be attributed to a
+                      // company he no longer drives for.
+                      autoparkTruck: autoparkId ? c.autoparkTruck : null,
+                    }))
+                  }
+                  options={autoparks}
+                />
+              )}
+            </Field>
+            <div className="grid gap-3 sm:grid-cols-3">
               <Field
                 label="Their truck"
                 required={draft.autoparkId !== null}
-                error={errors.autoparkTruckPlate?.[0]}
+                error={errors.autoparkTruck?.[0]}
               >
                 {(p) => (
                   <Input
                     {...p}
                     placeholder="01 A 123 AA"
                     disabled={draft.autoparkId === null}
-                    value={draft.autoparkTruckPlate ?? ''}
-                    onChange={(event) =>
-                      setDraft((c) => ({
-                        ...c,
-                        autoparkTruckPlate: event.target.value || null,
-                      }))
-                    }
+                    value={draft.autoparkTruck?.plate ?? ''}
+                    onChange={(event) => setAutoparkTruck({ plate: event.target.value })}
+                  />
+                )}
+              </Field>
+              <Field label="Make">
+                {(p) => (
+                  <Input
+                    {...p}
+                    placeholder="MAN"
+                    disabled={draft.autoparkId === null}
+                    value={draft.autoparkTruck?.make ?? ''}
+                    onChange={(event) => setAutoparkTruck({ make: event.target.value || null })}
+                  />
+                )}
+              </Field>
+              <Field label="Model">
+                {(p) => (
+                  <Input
+                    {...p}
+                    placeholder="TGX 18.440"
+                    disabled={draft.autoparkId === null}
+                    value={draft.autoparkTruck?.model ?? ''}
+                    onChange={(event) => setAutoparkTruck({ model: event.target.value || null })}
                   />
                 )}
               </Field>

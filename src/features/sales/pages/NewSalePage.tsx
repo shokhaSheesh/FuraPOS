@@ -16,6 +16,7 @@ import {
   capacitiesOf,
   describeCapacity,
   soleCapacity,
+  describeTruck,
   soleTruckFor,
   trucksFor,
   type Driver,
@@ -81,7 +82,7 @@ export default function NewSalePage() {
   const applyCapacity = (forDriver: Driver | null, next: DriverCapacity | null) => {
     // An autopark assigns one truck, so that settles itself. A man who owns
     // three lorries has to say which he came in.
-    setTruckPlate(forDriver && next ? soleTruckFor(forDriver, next) : null)
+    setTruckPlate(forDriver && next ? (soleTruckFor(forDriver, next)?.plate ?? null) : null)
     if (!forDriver || !next) return
     setClient(
       next === 'autopark'
@@ -416,15 +417,18 @@ export default function NewSalePage() {
                     Which truck<span className="text-danger ml-0.5">*</span>
                   </p>
                   <div className="grid gap-1.5">
-                    {truckOptions.map((plate) => (
+                    {truckOptions.map((truck) => (
                       <Button
-                        key={plate}
+                        key={truck.plate}
                         type="button"
-                        variant={truckPlate === plate ? 'primary' : 'secondary'}
-                        className="justify-start font-mono font-normal"
-                        onClick={() => setTruckPlate(plate)}
+                        variant={truckPlate === truck.plate ? 'primary' : 'secondary'}
+                        className="justify-start font-normal"
+                        onClick={() => setTruckPlate(truck.plate)}
                       >
-                        {plate}
+                        <span className="font-mono">{truck.plate}</span>
+                        {/* The make answers half of "will this part fit" before
+                            anybody asks it. */}
+                        <span className="text-fg-subtle truncate">{describeTruck(truck)}</span>
                       </Button>
                     ))}
                   </div>

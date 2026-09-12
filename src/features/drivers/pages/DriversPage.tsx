@@ -4,7 +4,7 @@ import { Pencil, Plus, Trash2, Truck } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
 import { SearchInput } from '@/shared/components/SearchInput'
-import { StatusChips } from '@/shared/components/StatusChips'
+import { Tabs } from '@/shared/ui/Tabs'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { RowActions } from '@/shared/components/RowActions'
 import { Field } from '@/shared/components/Field'
@@ -16,12 +16,14 @@ import { Select } from '@/shared/ui/Select'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 import { toast } from '@/shared/ui/toast'
 import { useListQuery } from '@/shared/hooks/useListQuery'
+import { formatNumber } from '@/shared/lib/format'
 import { useSession } from '@/app/providers/SessionProvider'
 import { paths } from '@/shared/config/paths'
 import type { TableColumn } from '@/shared/components/table/features'
 import { useDataStore } from '@/data/store'
 import { useDriverActions, useDriverCounts, useDrivers } from '../api/drivers'
 import {
+  DRIVER_SECTIONS,
   DRIVER_STATUSES,
   KIND_LABEL,
   driverSchema,
@@ -53,11 +55,10 @@ const EMPTY: DriverDraft = {
 export default function DriversPage() {
   const { can } = useSession()
   const { query, setQuery } = useListQuery()
-  const { data } = useDrivers({
-    search: query.search,
-    section: query.section,
-    status: query.status,
-  })
+  // The list is always one section or the other — there is no combined view,
+  // because "all drivers" is not a group anybody sells to.
+  const section = (query.section as 'independent' | 'autopark') ?? 'independent'
+  const { data } = useDrivers({ search: query.search, section, status: query.status })
   const counts = useDriverCounts()
   const actions = useDriverActions()
   const clients = useDataStore((s) => s.clients)
@@ -216,6 +217,25 @@ export default function DriversPage() {
     .filter((client) => client.type === 'business' && client.status === 'active')
     .map((client) => ({ value: client.id, label: client.name }))
 
+  const table = (
+    <DataTable
+      storageKey="drivers"
+      columns={columns}
+      data={data.items}
+      total={data.total}
+      isLoading={false}
+      pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 20) }}
+      onPaginationChange={({ page, pageSize }) => setQuery({ page, pageSize })}
+      emptyState={
+        <EmptyState
+          icon={Truck}
+          title="No drivers here"
+          description="Add the people who collect parts — owner-drivers, and the drivers of the autoparks you have contracts with."
+        />
+      }
+    />
+  )
+
   return (
     <>
       <PageHeader
@@ -237,17 +257,6 @@ export default function DriversPage() {
           onChange={(search) => setQuery({ search })}
           placeholder="Search by name, code, phone or plate…"
         />
-        <StatusChips<'independent' | 'autopark'>
-          ariaLabel="Filter by who they drive for"
-          value={(query.section as 'independent' | 'autopark') ?? null}
-          onChange={(section) => setQuery({ section })}
-          counts={counts}
-          options={[
-            { value: null, label: 'All' },
-            { value: 'independent', label: 'Independent' },
-            { value: 'autopark', label: 'Autopark' },
-          ]}
-        />
         <Select
           className="w-44"
           aria-label="Filter by status"
@@ -258,28 +267,19 @@ export default function DriversPage() {
         />
       </div>
 
-      {/* The counts add up to more than the total, and that is correct — this
-          says why before anybody reports it as a bug. */}
-      <p className="text-fg-subtle text-2xs">
-        A driver who owns a truck and also drives for an autopark appears in both sections, marked{' '}
-        <span className="text-fg-muted">Both</span>.
-      </p>
-
-      <DataTable
-        storageKey="drivers"
-        columns={columns}
-        data={data.items}
-        total={data.total}
-        isLoading={false}
-        pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 20) }}
-        onPaginationChange={({ page, pageSize }) => setQuery({ page, pageSize })}
-        emptyState={
-          <EmptyState
-            icon={Truck}
-            title="No drivers yet"
-            description="Add the people who collect parts — owner-drivers, and the drivers of the autoparks you have contracts with."
-          />
-        }
+      <Tabs
+        value={section}
+        // Switching tab drops the page, so tab two never opens on page 3 of
+        // a list that is only one page long.
+        onValueChange={(next) => setQuery({ section: next })}
+        items={DRIVER_SECTIONS.map((entry) => ({
+          value: entry.value,
+          label: entry.label,
+          badge: formatNumber(counts[entry.value]),
+          // Deliberately the same table in both tabs: the tab chooses the
+          // filter, so building a second one would only let them drift.
+          content: table,
+        }))}
       />
 
       <Modal

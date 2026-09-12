@@ -36,17 +36,17 @@ export function useDrivers(
 }
 
 /**
- * Counts for the section chips.
+ * Counts for the two tabs.
  *
  * These **deliberately overlap**: a driver who owns a truck and also drives
- * for an autopark is counted in both, because he buys in both capacities. The
- * list marks him so the arithmetic is explicable rather than looking broken.
+ * for an autopark is counted in both, because he buys in both capacities.
+ * There is no total, because adding them would produce a number that means
+ * nothing.
  */
-export function useDriverCounts(): Record<string, number> {
+export function useDriverCounts(): Record<'independent' | 'autopark', number> {
   const drivers = useDataStore((s) => s.drivers)
   return useMemo(
     () => ({
-      all: drivers.length,
       independent: drivers.filter((driver) => inSection(driver, 'independent')).length,
       autopark: drivers.filter((driver) => inSection(driver, 'autopark')).length,
     }),

@@ -119,10 +119,16 @@ export function kindOf(driver: Pick<Driver, 'ownTruckPlate' | 'autoparkId'>): Dr
 }
 
 export const KIND_LABEL: Record<DriverKind, string> = {
-  independent: 'Independent',
+  independent: 'Owner-driver',
   autopark: 'Autopark',
   both: 'Both',
 }
+
+/** The two tabs the list is split into. */
+export const DRIVER_SECTIONS: { value: 'independent' | 'autopark'; label: string }[] = [
+  { value: 'independent', label: 'Owner-drivers' },
+  { value: 'autopark', label: 'Autopark drivers' },
+]
 
 /**
  * The two sections the list splits into.

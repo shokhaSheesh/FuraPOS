@@ -10,11 +10,10 @@ import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
 import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
 import { Select } from '@/shared/ui/Select'
-import { SegmentedControl } from '@/shared/ui/SegmentedControl'
 import { toast } from '@/shared/ui/toast'
 import { paths } from '@/shared/config/paths'
 import { useClient, useClientActions } from '../api/clients'
-import { CLIENT_STATUSES, CLIENT_TYPES, clientDraftSchema, type ClientDraft } from '../model/client'
+import { CLIENT_STATUSES, clientDraftSchema, type ClientDraft } from '../model/client'
 
 /**
  * Adding or editing a client.
@@ -59,10 +58,10 @@ export default function ClientFormPage() {
   if (editing && !existing) {
     return (
       <EmptyState
-        title="No such client"
+        title="No such autopark"
         action={
           <Button variant="secondary" asChild>
-            <Link to={paths.marketing.clients}>Back to clients</Link>
+            <Link to={paths.marketing.autoparks}>Back to autoparks</Link>
           </Button>
         }
       />
@@ -81,11 +80,11 @@ export default function ClientFormPage() {
       if (editing && existing) {
         actions.update(existing.id, input)
         toast.success('Saved')
-        navigate(paths.marketing.clientDetail(existing.id))
+        navigate(paths.marketing.autoparkDetail(existing.id))
       } else {
         const created = actions.create(input)
         toast.success(`${created.name} added`)
-        navigate(paths.marketing.clientDetail(created.id))
+        navigate(paths.marketing.autoparkDetail(created.id))
       }
     },
     () => toast.error('Check the highlighted fields'),
@@ -97,22 +96,22 @@ export default function ClientFormPage() {
         <Link
           to={
             editing && existing
-              ? paths.marketing.clientDetail(existing.id)
-              : paths.marketing.clients
+              ? paths.marketing.autoparkDetail(existing.id)
+              : paths.marketing.autoparks
           }
         >
           <ArrowLeft />
-          {editing && existing ? existing.name : 'Clients'}
+          {editing && existing ? existing.name : 'Autoparks'}
         </Link>
       </Button>
 
       <PageHeader
-        title={editing ? 'Edit client' : 'Add client'}
-        description="A client can be given an account, which lets a sale be put on credit instead of paid up front."
+        title={editing ? 'Edit autopark' : 'Add autopark'}
+        description="An autopark is given an account, which lets a sale be put on their credit instead of paid up front."
         action={
           <Button type="submit" variant="primary">
             <Save />
-            {editing ? 'Save changes' : 'Add client'}
+            {editing ? 'Save changes' : 'Add autopark'}
           </Button>
         }
       />
@@ -123,25 +122,6 @@ export default function ClientFormPage() {
             <CardTitle>Who they are</CardTitle>
           </CardHeader>
           <CardBody className="grid gap-3 sm:grid-cols-2">
-            <Field label="Type">
-              {() => (
-                <Controller
-                  control={form.control}
-                  name="type"
-                  render={({ field }) => (
-                    <SegmentedControl
-                      aria-label="Client type"
-                      value={field.value}
-                      onChange={field.onChange}
-                      options={CLIENT_TYPES.map((entry) => ({
-                        value: entry.value,
-                        label: entry.label,
-                      }))}
-                    />
-                  )}
-                />
-              )}
-            </Field>
             <Field label="Status">
               {(p) => (
                 <Controller

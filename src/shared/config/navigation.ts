@@ -120,7 +120,7 @@ export const navigation: NavSection[] = [
     label: 'Marketing',
     icon: Megaphone,
     items: [
-      { label: 'Clients', to: paths.marketing.clients, permission: 'marketing.clients.view' },
+      { label: 'Autoparks', to: paths.marketing.autoparks, permission: 'marketing.clients.view' },
       { label: 'Drivers', to: paths.marketing.drivers, permission: 'marketing.drivers.view' },
       {
         label: 'Promotions',

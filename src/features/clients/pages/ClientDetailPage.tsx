@@ -34,10 +34,10 @@ export default function ClientDetailPage() {
   if (!client) {
     return (
       <EmptyState
-        title="No such client"
+        title="No such autopark"
         action={
           <Button variant="secondary" asChild>
-            <Link to={paths.marketing.clients}>Back to clients</Link>
+            <Link to={paths.marketing.autoparks}>Back to autoparks</Link>
           </Button>
         }
       />
@@ -51,9 +51,9 @@ export default function ClientDetailPage() {
   return (
     <>
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
-        <Link to={paths.marketing.clients}>
+        <Link to={paths.marketing.autoparks}>
           <ArrowLeft />
-          Clients
+          Autoparks
         </Link>
       </Button>
 
@@ -81,7 +81,7 @@ export default function ClientDetailPage() {
                 </Button>
               )}
               <Button variant="primary" asChild>
-                <Link to={paths.marketing.editClient(client.id)}>
+                <Link to={paths.marketing.editAutopark(client.id)}>
                   <Pencil />
                   Edit
                 </Link>

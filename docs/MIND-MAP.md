@@ -93,7 +93,8 @@ Fura POS  →  Back-office (web)  →  8 modules  →  screens  →  what is on 
   - Ticking an action implies view; unticking view drops the actions
 
 ## 6 · Marketing
-- **Clients** (contacts, region, purchase history; wallet: balance, debt, cashback, credit limit, AI insights — the list a seller picks from on New sale)
+- **Autoparks** (the haulage companies under contract — contacts, purchase history; wallet: balance, debt, cashback, credit limit, AI insights)
+  - Companies only: an owner-driver is a **driver**, not an account
 - **Drivers** (who collects parts at the counter)
   - Two sections: **Independent** (owns his truck) and **Autopark** (drives for a company) — a driver who is both appears in each
   - Name, code (what his QR carries), phone, licence, **his own trucks** (several is normal), his autopark and the one truck they assigned him
@@ -167,7 +168,7 @@ mindmap
       Employees
       Access and roles
     Marketing
-      Clients
+      Autoparks
       Promotions
     Analytics
       Report generator

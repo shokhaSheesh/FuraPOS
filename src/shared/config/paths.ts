@@ -82,11 +82,13 @@ export const paths = {
   /** OX nests these under a second in-module menu; we surface them directly. */
   marketing: {
     root: '/marketing',
-    clients: '/marketing/clients', // OX: /app/marketing/customers
-    newClient: '/marketing/clients/new',
-    clientDetail: (id = ':clientId') => `/marketing/clients/${id}`,
-    editClient: (id = ':clientId') => `/marketing/clients/${id}/edit`,
+    /** The haulage companies Fura holds contracts with. OX: /app/marketing/customers */
+    autoparks: '/marketing/autoparks',
+    newAutopark: '/marketing/autoparks/new',
+    autoparkDetail: (id = ':clientId') => `/marketing/autoparks/${id}`,
+    editAutopark: (id = ':clientId') => `/marketing/autoparks/${id}/edit`,
     drivers: '/marketing/drivers',
+    driverDetail: (id = ':driverId') => `/marketing/drivers/${id}`,
     promotions: '/marketing/promotions', // OX: /app/marketing/promotions
     newPromotion: '/marketing/promotions/new',
     editPromotion: (id = ':promotionId') => `/marketing/promotions/${id}`,

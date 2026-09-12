@@ -83,6 +83,28 @@ export function useActiveDrivers(search: string) {
   )
 }
 
+export function useDriver(id: string | undefined) {
+  const drivers = useDataStore((s) => s.drivers)
+  return useMemo(
+    () => ({ data: drivers.find((driver) => driver.id === id), isLoading: false }),
+    [drivers, id],
+  )
+}
+
+/** What he has collected, newest first. */
+export function useDriverSales(id: string | undefined) {
+  const sales = useDataStore((s) => s.sales)
+  return useMemo(
+    () =>
+      id
+        ? sales
+            .filter((sale) => sale.driverId === id && sale.status !== 'deleted')
+            .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+        : [],
+    [sales, id],
+  )
+}
+
 export function useDriverActions() {
   const create = useDataStore((s) => s.createDriver)
   const update = useDataStore((s) => s.updateDriver)

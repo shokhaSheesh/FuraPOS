@@ -325,7 +325,7 @@ export default function CustomerReportPage() {
               }
               pagination={{ page: 1, pageSize: 100 }}
               onPaginationChange={() => {}}
-              onRowClick={(customer) => navigate(paths.marketing.clientDetail(customer.clientId))}
+              onRowClick={(customer) => navigate(paths.marketing.autoparkDetail(customer.clientId))}
               emptyState={
                 <EmptyState
                   icon={Users}
@@ -337,7 +337,7 @@ export default function CustomerReportPage() {
                   }
                   action={
                     <Button variant="secondary" asChild>
-                      <Link to={paths.marketing.clients}>Go to clients</Link>
+                      <Link to={paths.marketing.autoparks}>Go to autoparks</Link>
                     </Button>
                   }
                 />

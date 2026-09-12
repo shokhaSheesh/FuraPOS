@@ -129,7 +129,12 @@ export default function DriversPage() {
         enableHiding: false,
         cell: ({ row }) => (
           <div className="min-w-0">
-            <p className="text-fg truncate font-medium">{row.original.fullName}</p>
+            <Link
+              to={paths.marketing.driverDetail(row.original.id)}
+              className="text-fg truncate font-medium hover:underline"
+            >
+              {row.original.fullName}
+            </Link>
             <p className="text-fg-subtle text-2xs truncate">
               <span className="font-mono">{row.original.code}</span>
               {row.original.phone ? ` · ${row.original.phone}` : ''}
@@ -146,7 +151,7 @@ export default function DriversPage() {
             // From a driver to the company that holds the contract, the debt
             // and the promotion — in one click.
             <Link
-              to={paths.marketing.clientDetail(row.original.autoparkId)}
+              to={paths.marketing.autoparkDetail(row.original.autoparkId)}
               className="text-fg hover:underline"
             >
               {row.original.autoparkName}
@@ -200,15 +205,6 @@ export default function DriversPage() {
               </p>
             ))}
           </div>
-        ),
-      },
-      {
-        accessorKey: 'licenceNumber',
-        header: 'Licence',
-        cell: ({ row }) => (
-          <span className="text-fg-muted font-mono text-xs">
-            {row.original.licenceNumber ?? '—'}
-          </span>
         ),
       },
       {

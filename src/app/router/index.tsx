@@ -9,6 +9,7 @@ import { RouteError } from './RouteError'
 
 const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPage'))
 const DriversPage = lazy(() => import('@/features/drivers/pages/DriversPage'))
+const DriverDetailPage = lazy(() => import('@/features/drivers/pages/DriverDetailPage'))
 const CashShiftsPage = lazy(() => import('@/features/cashShifts/pages/CashShiftsPage'))
 const CashShiftDetailPage = lazy(() => import('@/features/cashShifts/pages/CashShiftDetailPage'))
 const RegistersSettingsPage = lazy(
@@ -182,6 +183,10 @@ const routes: RouteObject[] = [
         element: page(<DriversPage />, 'marketing.drivers.view'),
       },
       {
+        path: paths.marketing.driverDetail(),
+        element: page(<DriverDetailPage />, 'marketing.drivers.view'),
+      },
+      {
         path: paths.sales.shifts,
         element: page(<CashShiftsPage />, 'sales.cashShifts.view'),
       },
@@ -266,18 +271,18 @@ const routes: RouteObject[] = [
       },
 
       // --- Marketing --------------------------------------------------------
-      { path: paths.marketing.root, element: <Navigate to={paths.marketing.clients} replace /> },
-      { path: paths.marketing.clients, element: page(<ClientsPage />, 'marketing.clients.view') },
+      { path: paths.marketing.root, element: <Navigate to={paths.marketing.autoparks} replace /> },
+      { path: paths.marketing.autoparks, element: page(<ClientsPage />, 'marketing.clients.view') },
       {
-        path: paths.marketing.newClient,
+        path: paths.marketing.newAutopark,
         element: page(<ClientFormPage />, 'marketing.clients.create'),
       },
       {
-        path: paths.marketing.editClient(),
+        path: paths.marketing.editAutopark(),
         element: page(<ClientFormPage />, 'marketing.clients.edit'),
       },
       {
-        path: paths.marketing.clientDetail(),
+        path: paths.marketing.autoparkDetail(),
         element: page(<ClientDetailPage />, 'marketing.clients.view'),
       },
       {

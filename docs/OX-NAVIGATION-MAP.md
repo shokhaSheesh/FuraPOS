@@ -752,7 +752,7 @@ Cut to two screens at the client's request. The OX rows are kept so the omission
 
 | OX (ru)           | Ours (en)   | OX route                                |
 | ----------------- | ----------- | --------------------------------------- |
-| Клиенты           | Clients     | `/app/marketing/customers`              |
+| Клиенты           | Autoparks   | `/app/marketing/customers`              |
 | Группы            | — (removed) | `/app/marketing/groups`                 |
 | Кэшбэк            | — (removed) | `/app/marketing/cashbacks`              |
 | Рассылки          | — (removed) | `/app/marketing/newsletters`            |
@@ -763,7 +763,21 @@ Cut to two screens at the client's request. The OX rows are kept so the omission
 Nothing had been built in the five that went, and nothing referenced them. Cashback survives as a
 _field_ on a client and in the shared wallet; what was cut is the screen for configuring earn rules.
 
-### Clients — «Клиенты»
+### Autoparks — «Клиенты»
+
+**Renamed and scoped at the client's request.** Fura's account customers are
+haulage companies, so the screen lists those and nothing else: the type filter
+that offered "People" is gone, and the form no longer asks whether the record
+is a person, because on this list it can only be one thing.
+
+Individuals are not missing — they moved. An owner-driver is a **driver**, and
+his purchases are attributed to him rather than to an account. The entity
+underneath is still `client`, because renaming it would touch sales,
+promotions, the customer report and the report sources for no gain.
+
+**One consequence worth stating:** the seed carries individuals as clients from
+before this split, and they no longer appear in any list. They stay reachable
+from the sales that reference them.
 
 **The framing.** For a parts business the customer list is not a mailing list, it is **a credit
 ledger with names on it**. Half the trade is repeat garages buying on account, and the questions
@@ -1189,7 +1203,7 @@ Rendered in OX as tabs inside one page; we keep them as sidebar children.
 | Локации       | Locations        |
 | Продажи       | Sales            |
 | Продукты      | Products         |
-| Клиенты       | Clients          |
+| Клиенты       | Autoparks        |
 | Биллинг       | Billing          |
 | Личные данные | Personal data    |
 | Webhooks      | _(not in scope)_ |

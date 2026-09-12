@@ -1,12 +1,11 @@
 import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { Plus, Wallet, AlertTriangle, MoonStar, Building2, User } from 'lucide-react'
+import { Plus, Wallet, AlertTriangle, MoonStar, Building2 } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
 import { SearchInput } from '@/shared/components/SearchInput'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
-import { FilterSelect } from '@/shared/components/FilterSelect'
 import { Badge } from '@/shared/ui/Badge'
 import { Card } from '@/shared/ui/Card'
 import { Button } from '@/shared/ui/Button'
@@ -19,18 +18,26 @@ import { useClientCounts, useClients, useClientsSummary, type ClientRow } from '
 import { clientStatusLabel, clientStatusTone, daysSinceLastSale } from '../model/client'
 
 /**
- * Clients.
+ * Autoparks.
  *
- * For a parts business this is a credit ledger with names on it, not a mailing
- * list. Ordered by what they owe, because that is the row somebody has to act
- * on — an alphabetical customer list answers a question nobody asked.
+ * The haulage companies Fura holds contracts with. For a parts business this
+ * is a credit ledger with names on it, not a mailing list — ordered by what
+ * they owe, because that is the row somebody has to act on.
+ *
+ * Individuals are not here. An owner-driver is a **driver**, and his purchases
+ * are attributed to him rather than to an account.
  */
 export default function ClientsPage() {
   const navigate = useNavigate()
   const { can } = useSession()
   const { query, setQuery } = useListQuery()
 
-  const filters = { search: query.search, type: query.type, lens: query.lens }
+  /*
+    Companies only. An autopark is a business by definition, so a person on
+    this list would be somebody who cannot hold a contract — and the type
+    filter that used to sit above the table now has one answer.
+  */
+  const filters = { search: query.search, type: 'business' as const, lens: query.lens }
   const { data, isLoading } = useClients(filters)
   const { data: counts } = useClientCounts(filters)
   const summary = useClientsSummary()
@@ -39,16 +46,12 @@ export default function ClientsPage() {
     () => [
       {
         accessorKey: 'name',
-        header: 'Client',
+        header: 'Autopark',
         enableHiding: false,
         cell: ({ row }) => (
           <div className="flex min-w-0 items-center gap-2.5">
             <span className="bg-surface-inset text-fg-muted flex size-8 shrink-0 items-center justify-center rounded-full">
-              {row.original.type === 'business' ? (
-                <Building2 className="size-4" />
-              ) : (
-                <User className="size-4" />
-              )}
+              <Building2 className="size-4" />
             </span>
             <div className="min-w-0">
               <p className="text-fg truncate font-medium">{row.original.name}</p>
@@ -164,7 +167,7 @@ export default function ClientsPage() {
       icon: Wallet,
       label: 'Owed to us',
       value: formatMoney(Math.round(summary.owed)),
-      meta: `across ${formatNumber(summary.owing)} ${summary.owing === 1 ? 'client' : 'clients'}`,
+      meta: `across ${formatNumber(summary.owing)} ${summary.owing === 1 ? 'autopark' : 'autoparks'}`,
       tone: summary.owed > 0 ? ('danger' as const) : undefined,
     },
     {
@@ -186,14 +189,14 @@ export default function ClientsPage() {
   return (
     <>
       <PageHeader
-        title="Clients"
-        description="Who buys from you, what they still owe, and whether they have stopped coming. For parts, half the trade is garages buying on account — so this is a credit ledger with names on it rather than a contact list."
+        title="Autoparks"
+        description="The haulage companies you hold contracts with — what they owe, how much account they have left, and whether they have stopped coming."
         action={
           can('marketing.clients.create') ? (
             <Button variant="primary" asChild>
-              <Link to={paths.marketing.newClient}>
+              <Link to={paths.marketing.newAutopark}>
                 <Plus />
-                Add client
+                Add autopark
               </Link>
             </Button>
           ) : null
@@ -201,7 +204,7 @@ export default function ClientsPage() {
         below={
           <div className="flex flex-wrap items-center gap-2">
             <StatusChips
-              ariaLabel="Which clients to show"
+              ariaLabel="Which autoparks to show"
               options={[
                 { value: null, label: 'All' },
                 { value: 'owing', label: 'Owe us' },
@@ -211,17 +214,6 @@ export default function ClientsPage() {
               value={(query.lens as string | null) ?? null}
               onChange={(lens) => setQuery({ lens, page: null })}
               counts={counts}
-            />
-            <FilterSelect
-              aria-label="Filter by type"
-              label="Type"
-              allLabel="Anyone"
-              value={(query.type as string | null) ?? null}
-              options={[
-                { value: 'business', label: 'Businesses' },
-                { value: 'person', label: 'People' },
-              ]}
-              onChange={(type) => setQuery({ type, page: null })}
             />
           </div>
         }
@@ -268,7 +260,7 @@ export default function ClientsPage() {
         }
         pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
         onPaginationChange={({ page, pageSize }) => setQuery({ page, pageSize })}
-        onRowClick={(client) => navigate(paths.marketing.clientDetail(client.id))}
+        onRowClick={(client) => navigate(paths.marketing.autoparkDetail(client.id))}
         emptyState={
           query.search || query.lens || query.type ? (
             <EmptyState title="Nobody matches these filters" />
@@ -279,7 +271,7 @@ export default function ClientsPage() {
               action={
                 can('marketing.clients.create') ? (
                   <Button variant="primary" asChild>
-                    <Link to={paths.marketing.newClient}>
+                    <Link to={paths.marketing.newAutopark}>
                       <Plus />
                       Add client
                     </Link>

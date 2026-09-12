@@ -2,11 +2,13 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { useFieldArray, useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, ArrowRight, Trash2, Truck } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Trash2, Truck, Wand2 } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
 import { ProductBrowser } from '../components/ProductBrowser'
+import { GenerateTransferModal } from '../components/GenerateTransferModal'
+import type { TransferSuggestion } from '../model/suggest'
 import { ProductThumb } from '@/shared/components/ProductThumb'
 import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
 import { Button } from '@/shared/ui/Button'
@@ -84,6 +86,38 @@ export default function NewTransferPage() {
   */
   const [categoryId, setCategoryId] = useState('')
   const [brandId, setBrandId] = useState('')
+  const [generating, setGenerating] = useState(false)
+
+  /** Adds what the proposal chose, leaving anything already listed alone. */
+  const addSuggestions = (suggestions: TransferSuggestion[]) => {
+    const current = form.getValues('lines')
+    const existing = new Set(current.map((line) => line.variationId))
+    const added = suggestions
+      .filter((suggestion) => !existing.has(suggestion.variationId))
+      .map((suggestion) => ({
+        id: `line-${suggestion.variationId}-${Date.now()}`,
+        variationId: suggestion.variationId,
+        productId: suggestion.productId,
+        sku: suggestion.sku,
+        name: suggestion.name,
+        imageUrl: suggestion.imageUrl,
+        unit: suggestion.unit,
+        requestedQuantity: suggestion.suggested,
+        sentQuantity: null,
+        receivedQuantity: null,
+        unitCost: suggestion.costPrice,
+        costCurrency: suggestion.costCurrency,
+        unitPrice: suggestion.salePrice,
+      }))
+    if (added.length === 0) {
+      toast.info('Everything suggested is already on this transfer')
+      return
+    }
+    form.setValue('lines', [...current, ...added], { shouldDirty: true })
+    toast.success(
+      `${formatNumber(added.length)} ${added.length === 1 ? 'product' : 'products'} added`,
+    )
+  }
 
   const pickerFilter = useMemo(() => {
     if (!categoryId && !brandId) return undefined
@@ -220,17 +254,40 @@ export default function NewTransferPage() {
           <CardHeader className="flex-col items-stretch gap-1">
             <div className="flex items-center justify-between gap-3">
               <CardTitle>Items</CardTitle>
-              {lines.length ? (
-                <span className="text-fg-muted text-sm tabular-nums">
-                  {formatNumber(lines.length)} items · {formatNumber(totalUnits)} units
-                </span>
-              ) : null}
+              <div className="flex items-center gap-3">
+                {lines.length ? (
+                  <span className="text-fg-muted text-sm tabular-nums">
+                    {formatNumber(lines.length)} items · {formatNumber(totalUnits)} units
+                  </span>
+                ) : null}
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  // Both ends are needed before anything can be worked out:
+                  // the proposal is about one shelf relative to another.
+                  disabled={!fromLocationId || !toLocationId}
+                  title={
+                    !fromLocationId || !toLocationId ? 'Choose both locations first' : undefined
+                  }
+                  onClick={() => setGenerating(true)}
+                >
+                  <Wand2 />
+                  Suggest what to send
+                </Button>
+              </div>
             </div>
             <p className="text-fg-subtle text-2xs">
               Quantities shown are what {from?.name ?? 'the source'} holds, not the company total.
             </p>
           </CardHeader>
           <CardBody className="space-y-3">
+            {!toLocationId ? (
+              <p className="text-fg-subtle text-2xs">
+                Pick a destination to have the system suggest what to send.
+              </p>
+            ) : null}
+
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Category" hint="Narrows the search below">
                 {(p) => (
@@ -425,6 +482,16 @@ export default function NewTransferPage() {
             )}
           </CardBody>
         </Card>
+
+        <GenerateTransferModal
+          open={generating}
+          onOpenChange={setGenerating}
+          fromLocationId={fromLocationId}
+          toLocationId={toLocationId}
+          fromName={from?.name ?? 'the source'}
+          toName={to?.name ?? 'the destination'}
+          onAdd={addSuggestions}
+        />
 
         <Card>
           <CardHeader>

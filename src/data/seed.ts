@@ -1668,19 +1668,19 @@ export const printTemplates: PrintTemplate[] = [
 export const drivers: Driver[] = (
   [
     // name, phone, autopark index, own truck, autopark truck, status
-    ['Bekzod Normatov', '+998 90 111 22 33', 0, null, '01 A 123 AA', 'active'],
-    ['Sherzod Qodirov', '+998 90 222 33 44', 0, '01 K 777 AA', '01 A 456 BB', 'active'],
-    ['Ulugbek Toshev', '+998 90 333 44 55', 1, null, '01 B 789 CC', 'active'],
-    ['Farrux Ismoilov', '+998 91 444 55 66', 1, null, '01 B 234 DD', 'active'],
-    ['Jahongir Aliyev', '+998 93 555 66 77', 2, '10 M 555 ZZ', '10 C 567 EE', 'active'],
-    ['Ravshan Sobirov', '+998 94 666 77 88', 2, null, '10 C 890 FF', 'inactive'],
-    ['Otabek Yusupov', '+998 97 777 88 99', 3, null, '01 D 345 GG', 'active'],
-    ['Shuhrat Nazarov', '+998 99 888 99 00', null, '40 E 678 HH', null, 'active'],
-    ['Doniyor Rahimov', '+998 90 999 00 11', null, '25 F 901 II', null, 'active'],
-    ['Aziz Karimov', '+998 91 100 20 30', 4, null, '01 G 234 JJ', 'active'],
+    ['Bekzod Normatov', '+998 90 111 22 33', 0, [], '01 A 123 AA', 'active'],
+    ['Sherzod Qodirov', '+998 90 222 33 44', 0, ['01 K 777 AA'], '01 A 456 BB', 'active'],
+    ['Ulugbek Toshev', '+998 90 333 44 55', 1, [], '01 B 789 CC', 'active'],
+    ['Farrux Ismoilov', '+998 91 444 55 66', 1, [], '01 B 234 DD', 'active'],
+    ['Jahongir Aliyev', '+998 93 555 66 77', 2, ['10 M 555 ZZ'], '10 C 567 EE', 'active'],
+    ['Ravshan Sobirov', '+998 94 666 77 88', 2, [], '10 C 890 FF', 'inactive'],
+    ['Otabek Yusupov', '+998 97 777 88 99', 3, [], '01 D 345 GG', 'active'],
+    ['Shuhrat Nazarov', '+998 99 888 99 00', null, ['40 E 678 HH'], null, 'active'],
+    ['Doniyor Rahimov', '+998 90 999 00 11', null, ['25 F 901 II', '25 G 404 KK'], null, 'active'],
+    ['Aziz Karimov', '+998 91 100 20 30', 4, [], '01 G 234 JJ', 'active'],
   ] as const
 ).map(
-  ([fullName, phone, autoparkIndex, ownTruckPlate, autoparkTruckPlate, status], index): Driver => {
+  ([fullName, phone, autoparkIndex, ownTruckPlates, autoparkTruckPlate, status], index): Driver => {
     // Businesses only: a driver drives for a company, never for a walk-in.
     const companies = clients.filter((client) => client.type === 'business')
     const autopark = autoparkIndex === null ? null : (companies[autoparkIndex] ?? null)
@@ -1690,7 +1690,7 @@ export const drivers: Driver[] = (
       fullName,
       phone,
       licenceNumber: `AB${between(1000000, 9999999)}`,
-      ownTruckPlate,
+      ownTruckPlates: [...ownTruckPlates],
       autoparkId: autopark?.id ?? null,
       autoparkName: autopark?.name ?? null,
       autoparkTruckPlate: autopark ? autoparkTruckPlate : null,
@@ -1716,7 +1716,7 @@ export const drivers: Driver[] = (
     if (!driver.autoparkId) continue
     byAutopark.set(driver.autoparkId, [...(byAutopark.get(driver.autoparkId) ?? []), driver])
   }
-  const owners = drivers.filter((driver) => driver.ownTruckPlate !== null)
+  const owners = drivers.filter((driver) => driver.ownTruckPlates.length > 0)
 
   for (const sale of sales) {
     if (sale.clientId) {
@@ -1737,7 +1737,7 @@ export const drivers: Driver[] = (
       const driver = pick(owners)
       sale.driverId = driver.id
       sale.driverName = driver.fullName
-      sale.truckPlate = driver.ownTruckPlate
+      sale.truckPlate = pick(driver.ownTruckPlates)
     }
   }
 }

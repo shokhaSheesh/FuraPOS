@@ -25,7 +25,9 @@ import { useDriverActions, useDriverCounts, useDrivers } from '../api/drivers'
 import {
   DRIVER_SECTIONS,
   DRIVER_STATUSES,
+  capacityOfSection,
   driverSchema,
+  trucksFor,
   type Driver,
   type DriverDraft,
   type DriverStatus,
@@ -35,7 +37,7 @@ const EMPTY: DriverDraft = {
   fullName: '',
   phone: null,
   licenceNumber: null,
-  ownTruckPlate: null,
+  ownTruckPlates: [],
   autoparkId: null,
   autoparkTruckPlate: null,
   comment: null,
@@ -78,7 +80,7 @@ export default function DriversPage() {
             fullName: driver.fullName,
             phone: driver.phone,
             licenceNumber: driver.licenceNumber,
-            ownTruckPlate: driver.ownTruckPlate,
+            ownTruckPlates: driver.ownTruckPlates,
             autoparkId: driver.autoparkId,
             autoparkTruckPlate: driver.autoparkTruckPlate,
             comment: driver.comment,
@@ -89,6 +91,17 @@ export default function DriversPage() {
     setShowErrors(false)
     setOpen(true)
   }
+
+  const setOwnTruck = (index: number, value: string) =>
+    setDraft((c) => ({
+      ...c,
+      ownTruckPlates: c.ownTruckPlates.map((plate, i) => (i === index ? value : plate)),
+    }))
+
+  const addOwnTruck = () => setDraft((c) => ({ ...c, ownTruckPlates: [...c.ownTruckPlates, ''] }))
+
+  const removeOwnTruck = (index: number) =>
+    setDraft((c) => ({ ...c, ownTruckPlates: c.ownTruckPlates.filter((_, i) => i !== index) }))
 
   const save = () => {
     setShowErrors(true)
@@ -137,20 +150,16 @@ export default function DriversPage() {
         id: 'trucks',
         header: 'Trucks',
         enableHiding: false,
+        // Only the trucks belonging to this tab. A man's own lorry shown
+        // under his autopark — or theirs shown under him — reads as the
+        // company owning a truck it has never seen.
         cell: ({ row }) => (
           <div className="space-y-0.5">
-            {row.original.ownTruckPlate ? (
-              <p className="font-mono text-xs">
-                {row.original.ownTruckPlate}
-                <span className="text-fg-subtle ml-1.5 font-sans">own</span>
+            {trucksFor(row.original, capacityOfSection(section)).map((plate) => (
+              <p key={plate} className="font-mono text-xs">
+                {plate}
               </p>
-            ) : null}
-            {row.original.autoparkTruckPlate ? (
-              <p className="font-mono text-xs">
-                {row.original.autoparkTruckPlate}
-                <span className="text-fg-subtle ml-1.5 font-sans">autopark</span>
-              </p>
-            ) : null}
+            ))}
           </div>
         ),
       },
@@ -199,7 +208,7 @@ export default function DriversPage() {
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [can],
+    [can, section],
   )
 
   const autoparks = clients
@@ -316,23 +325,43 @@ export default function DriversPage() {
           </div>
 
           <div className="border-border rounded-card space-y-3 border p-3">
-            <p className="text-fg text-sm font-medium">His own truck</p>
-            <Field
-              label="Number plate"
-              hint="Leave empty if he only drives for an autopark"
-              error={errors.ownTruckPlate?.[0]}
-            >
-              {(p) => (
-                <Input
-                  {...p}
-                  placeholder="40 E 678 HH"
-                  value={draft.ownTruckPlate ?? ''}
-                  onChange={(event) =>
-                    setDraft((c) => ({ ...c, ownTruckPlate: event.target.value || null }))
-                  }
-                />
-              )}
-            </Field>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-fg text-sm font-medium">His own trucks</p>
+              <Button type="button" variant="secondary" size="sm" onClick={addOwnTruck}>
+                <Plus />
+                Add truck
+              </Button>
+            </div>
+            {draft.ownTruckPlates.length === 0 ? (
+              <p className="text-fg-subtle text-2xs">
+                None — leave it so if he only drives for an autopark.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {draft.ownTruckPlates.map((plate, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <Input
+                      aria-label={`Number plate ${index + 1}`}
+                      placeholder="40 E 678 HH"
+                      value={plate}
+                      onChange={(event) => setOwnTruck(index, event.target.value)}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label={`Remove truck ${index + 1}`}
+                      onClick={() => removeOwnTruck(index)}
+                    >
+                      <Trash2 />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {errors.ownTruckPlates?.[0] ? (
+              <p className="text-danger text-2xs">{errors.ownTruckPlates[0]}</p>
+            ) : null}
           </div>
 
           <div className="border-border rounded-card space-y-3 border p-3">

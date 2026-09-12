@@ -96,7 +96,8 @@ Fura POS  →  Back-office (web)  →  8 modules  →  screens  →  what is on 
 - **Clients** (contacts, region, purchase history; wallet: balance, debt, cashback, credit limit, AI insights — the list a seller picks from on New sale)
 - **Drivers** (who collects parts at the counter)
   - Two sections: **Independent** (owns his truck) and **Autopark** (drives for a company) — a driver who is both appears in each
-  - Name, code (what his QR carries), phone, licence, his own truck, his autopark and their truck
+  - Name, code (what his QR carries), phone, licence, **his own trucks** (several is normal), his autopark and the one truck they assigned him
+  - Each tab shows only that side's trucks — his own under Owner-drivers, the autopark's under Autopark drivers
   - Scanned on New sale; the purchase then reaches his e-commerce app and his autopark owner's app
 - **Promotions**
   - Dates, discount (percent or amount)

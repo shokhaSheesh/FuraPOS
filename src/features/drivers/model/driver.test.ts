@@ -1,35 +1,41 @@
 import { describe, expect, it } from 'vitest'
 import {
   capacitiesOf,
+  capacityOfSection,
   describeCapacity,
   driverSchema,
   inSection,
   kindOf,
   soleCapacity,
+  soleTruckFor,
   statusLabel,
-  truckFor,
-  type Driver,
+  trucksFor,
 } from './driver'
 
-const independent: Pick<
-  Driver,
-  'ownTruckPlate' | 'autoparkId' | 'autoparkTruckPlate' | 'autoparkName'
-> = {
-  ownTruckPlate: '40 E 678 HH',
+const independent = {
+  ownTruckPlates: ['40 E 678 HH'],
+  autoparkId: null,
+  autoparkName: null,
+  autoparkTruckPlate: null,
+}
+
+/** An owner-driver who did well and bought a second lorry. */
+const fleetOfHisOwn = {
+  ownTruckPlates: ['40 E 678 HH', '25 F 901 II'],
   autoparkId: null,
   autoparkName: null,
   autoparkTruckPlate: null,
 }
 
 const autoparkOnly = {
-  ownTruckPlate: null,
+  ownTruckPlates: [],
   autoparkId: 'cl-1',
   autoparkName: 'Trans Logistik',
   autoparkTruckPlate: '01 A 123 AA',
 }
 
 const both = {
-  ownTruckPlate: '01 K 777 AA',
+  ownTruckPlates: ['01 K 777 AA'],
   autoparkId: 'cl-1',
   autoparkName: 'Trans Logistik',
   autoparkTruckPlate: '01 A 456 BB',
@@ -49,6 +55,41 @@ describe('capacitiesOf', () => {
   })
 })
 
+describe('trucksFor', () => {
+  it('never mixes his own trucks with the autopark΄s', () => {
+    // The correction that mattered: his own truck must not appear under the
+    // autopark, nor theirs under him.
+    expect(trucksFor(both, 'own')).toEqual(['01 K 777 AA'])
+    expect(trucksFor(both, 'autopark')).toEqual(['01 A 456 BB'])
+  })
+
+  it('lists every truck an owner-driver has', () => {
+    expect(trucksFor(fleetOfHisOwn, 'own')).toEqual(['40 E 678 HH', '25 F 901 II'])
+  })
+
+  it('gives a company driver nothing of his own', () => {
+    expect(trucksFor(autoparkOnly, 'own')).toEqual([])
+  })
+
+  it('gives an owner-driver no autopark truck', () => {
+    expect(trucksFor(independent, 'autopark')).toEqual([])
+  })
+})
+
+describe('soleTruckFor', () => {
+  it('settles the truck when he has only one', () => {
+    expect(soleTruckFor(independent, 'own')).toBe('40 E 678 HH')
+  })
+
+  it('is null when he owns several — the counter has to ask which he came in', () => {
+    expect(soleTruckFor(fleetOfHisOwn, 'own')).toBeNull()
+  })
+
+  it('is always settled for an autopark, which assigns exactly one', () => {
+    expect(soleTruckFor(both, 'autopark')).toBe('01 A 456 BB')
+  })
+})
+
 describe('soleCapacity', () => {
   it('resolves without asking when there is only one', () => {
     expect(soleCapacity(independent)).toBe('own')
@@ -57,20 +98,6 @@ describe('soleCapacity', () => {
 
   it('is null for a driver who is both — the one case the counter must ask', () => {
     expect(soleCapacity(both)).toBeNull()
-  })
-})
-
-describe('truckFor', () => {
-  it('picks his own truck when he buys for himself', () => {
-    expect(truckFor(both, 'own')).toBe('01 K 777 AA')
-  })
-
-  it("picks the autopark's truck when he buys on their contract", () => {
-    expect(truckFor(both, 'autopark')).toBe('01 A 456 BB')
-  })
-
-  it('has no autopark truck for an owner-driver', () => {
-    expect(truckFor(independent, 'autopark')).toBeNull()
   })
 })
 
@@ -84,8 +111,6 @@ describe('kindOf', () => {
 
 describe('inSection', () => {
   it('puts a driver who is both in both sections', () => {
-    // The counts overlap on purpose: he is a customer twice over, and
-    // hiding him from either list would hide half his purchases.
     expect(inSection(both, 'independent')).toBe(true)
     expect(inSection(both, 'autopark')).toBe(true)
   })
@@ -99,9 +124,20 @@ describe('inSection', () => {
   })
 })
 
+describe('capacityOfSection', () => {
+  it('maps each tab to the trucks it should show', () => {
+    expect(capacityOfSection('independent')).toBe('own')
+    expect(capacityOfSection('autopark')).toBe('autopark')
+  })
+})
+
 describe('describeCapacity', () => {
-  it('names the truck he buys in for himself', () => {
+  it('names his truck when he has just the one', () => {
     expect(describeCapacity(both, 'own')).toBe('Himself · 01 K 777 AA')
+  })
+
+  it('promises no particular truck when he owns several', () => {
+    expect(describeCapacity(fleetOfHisOwn, 'own')).toBe('Himself')
   })
 
   it('names the company and their truck', () => {
@@ -114,7 +150,7 @@ describe('driverSchema', () => {
     fullName: 'Bekzod Normatov',
     phone: '+998 90 123 45 67',
     licenceNumber: null,
-    ownTruckPlate: '01 A 123 AA',
+    ownTruckPlates: ['01 A 123 AA'],
     autoparkId: null,
     autoparkTruckPlate: null,
     comment: null,
@@ -123,6 +159,14 @@ describe('driverSchema', () => {
 
   it('accepts an owner-driver', () => {
     expect(driverSchema.safeParse(valid).success).toBe(true)
+  })
+
+  it('accepts one with several trucks of his own', () => {
+    const result = driverSchema.safeParse({
+      ...valid,
+      ownTruckPlates: ['01 A 123 AA', '01 B 456 BB'],
+    })
+    expect(result.success).toBe(true)
   })
 
   it('accepts a driver who is both', () => {
@@ -135,18 +179,21 @@ describe('driverSchema', () => {
   })
 
   it('refuses a driver with neither a truck nor an autopark — he could buy as nobody', () => {
-    const result = driverSchema.safeParse({ ...valid, ownTruckPlate: null })
-    expect(result.success).toBe(false)
+    expect(driverSchema.safeParse({ ...valid, ownTruckPlates: [] }).success).toBe(false)
   })
 
   it("refuses an autopark driver with no truck — the owner's app would have nothing to show", () => {
     const result = driverSchema.safeParse({
       ...valid,
-      ownTruckPlate: null,
+      ownTruckPlates: [],
       autoparkId: 'cl-1',
       autoparkTruckPlate: null,
     })
     expect(result.success).toBe(false)
+  })
+
+  it('refuses a blank plate', () => {
+    expect(driverSchema.safeParse({ ...valid, ownTruckPlates: [''] }).success).toBe(false)
   })
 
   it('refuses one with no name', () => {

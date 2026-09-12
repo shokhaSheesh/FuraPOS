@@ -16,7 +16,8 @@ import {
   capacitiesOf,
   describeCapacity,
   soleCapacity,
-  truckFor,
+  soleTruckFor,
+  trucksFor,
   type Driver,
   type DriverCapacity,
 } from '@/features/drivers/model/driver'
@@ -75,8 +76,12 @@ export default function NewSalePage() {
   */
   const [driver, setDriver] = useState<Driver | null>(null)
   const [capacity, setCapacity] = useState<DriverCapacity | null>(null)
+  const [truckPlate, setTruckPlate] = useState<string | null>(null)
 
   const applyCapacity = (forDriver: Driver | null, next: DriverCapacity | null) => {
+    // An autopark assigns one truck, so that settles itself. A man who owns
+    // three lorries has to say which he came in.
+    setTruckPlate(forDriver && next ? soleTruckFor(forDriver, next) : null)
     if (!forDriver || !next) return
     setClient(
       next === 'autopark'
@@ -99,7 +104,9 @@ export default function NewSalePage() {
 
   /** A driver on the sale with no capacity chosen cannot be attributed to anything. */
   const needsCapacity = driver !== null && capacity === null
-  const truckPlate = driver && capacity ? truckFor(driver, capacity) : null
+  const truckOptions = driver && capacity ? trucksFor(driver, capacity) : []
+  /** Several of his own: the purchase would otherwise land on a guess. */
+  const needsTruck = truckOptions.length > 1 && truckPlate === null
   const [locationId, setLocationId] = useState('loc-2')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash')
   /*
@@ -309,7 +316,7 @@ export default function NewSalePage() {
           <div className="flex items-center gap-2">
             <Button
               variant="secondary"
-              disabled={empty || noDrawer || needsCapacity || createSale.isPending}
+              disabled={empty || noDrawer || needsCapacity || needsTruck || createSale.isPending}
               loading={
                 createSale.isPending &&
                 (createSale.variables?.status === 'open' || createSale.variables?.status === 'new')
@@ -320,7 +327,7 @@ export default function NewSalePage() {
             </Button>
             <Button
               variant="secondary"
-              disabled={empty || noDrawer || needsCapacity || createSale.isPending}
+              disabled={empty || noDrawer || needsCapacity || needsTruck || createSale.isPending}
               loading={createSale.isPending && createSale.variables?.status === 'postponed'}
               onClick={() => submit('postponed')}
             >
@@ -330,7 +337,12 @@ export default function NewSalePage() {
             <Button
               variant="primary"
               disabled={
-                empty || noDrawer || needsCapacity || deliveryIncomplete || createSale.isPending
+                empty ||
+                noDrawer ||
+                needsCapacity ||
+                needsTruck ||
+                deliveryIncomplete ||
+                createSale.isPending
               }
               loading={
                 createSale.isPending &&
@@ -396,6 +408,32 @@ export default function NewSalePage() {
                 <p className="text-fg-subtle text-2xs">
                   Buying for {describeCapacity(driver, capacity)}
                 </p>
+              ) : null}
+
+              {truckOptions.length > 1 ? (
+                <div className="space-y-1.5">
+                  <p className="text-fg-muted text-sm">
+                    Which truck<span className="text-danger ml-0.5">*</span>
+                  </p>
+                  <div className="grid gap-1.5">
+                    {truckOptions.map((plate) => (
+                      <Button
+                        key={plate}
+                        type="button"
+                        variant={truckPlate === plate ? 'primary' : 'secondary'}
+                        className="justify-start font-mono font-normal"
+                        onClick={() => setTruckPlate(plate)}
+                      >
+                        {plate}
+                      </Button>
+                    ))}
+                  </div>
+                  {needsTruck ? (
+                    <p className="text-danger text-2xs">
+                      He owns {truckOptions.length} trucks — say which this is for.
+                    </p>
+                  ) : null}
+                </div>
               ) : null}
 
               {client && client.debt > 0 ? (

@@ -794,16 +794,24 @@ limit. A driver is a name, a phone, a truck plate and a licence, linked to that
 company. Deliberately **not** a user, an employee or a second kind of client:
 they buy nothing on their own account, so they have no wallet and no balance.
 
-**A driver buys in one of two capacities, and can have both.** He may own a
-truck *and* drive for an autopark; those are two different customers. So the
+**A driver buys in one of two capacities, and can have both.** He may own
+trucks *and* drive for an autopark; those are two different customers. So the
 capacity is asked at the till rather than stored on him, and it settles three
 things at once: whose account the sale lands in, which truck collects the
 history, and whether the autopark's contracted promotion fires. A driver with
 only one capacity is never asked.
 
-The list splits into **Independent** and **Autopark**, and a driver who is both
-appears in both — the counts deliberately overlap, because he is a customer
-twice over and hiding him from either section would hide half his purchases.
+The list splits into two tabs, **Owner-drivers** and **Autopark drivers**, and a
+driver who is both appears in both — the counts deliberately overlap, because he
+is a customer twice over and hiding him from either would hide half his
+purchases. **Each tab shows only the trucks belonging to that side of him**: his
+own lorries under the first, the autopark's single assigned truck under the
+second. Mixing them would put a purchase on a truck the company has never seen.
+
+An owner-driver may have **several** trucks, and one assigned truck per autopark.
+So the capacity settles the truck only when there is one of it; a man who owns
+three lorries is asked which he came in, and the till refuses the sale until he
+says.
 
 **Why the sale carries a driver and a truck at all:** two customer-facing apps
 read them, neither built here. The e-commerce app shows a driver his offline

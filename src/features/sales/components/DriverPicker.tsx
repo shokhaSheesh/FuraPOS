@@ -93,7 +93,9 @@ export function DriverPicker({
                   <span className="font-mono">{driver.code}</span>
                   {driver.autoparkName ? <span>· {driver.autoparkName}</span> : null}
                   <Truck className="size-3 shrink-0" />
-                  {driver.ownTruckPlate ?? driver.autoparkTruckPlate}
+                  {[...driver.ownTruckPlates, driver.autoparkTruckPlate]
+                    .filter(Boolean)
+                    .join(' · ')}
                 </p>
               </div>
               {value?.id === driver.id ? <Check className="text-fg-subtle mt-0.5 size-4" /> : null}

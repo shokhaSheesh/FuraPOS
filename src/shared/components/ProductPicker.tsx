@@ -23,28 +23,16 @@ export function ProductPicker({
   placeholder = 'Search a product by name, SKU or barcode to add it…',
   stockLabel,
   disabled,
-  filter,
-  filterLabel,
 }: {
   onPick: (variation: VariationRow) => void
   placeholder?: string
   /** Overrides the right-hand quantity shown against each result. */
   stockLabel?: (variation: VariationRow) => { text: string; muted: boolean }
   disabled?: boolean
-  /**
-   * Narrows what can be found — a category or a brand chosen elsewhere on the
-   * screen. When one is active the list opens on its own, because a filter
-   * that shows nothing until you also type is a filter nobody trusts.
-   */
-  filter?: (variation: VariationRow) => boolean
-  /** Said in the empty state, so a filter that hides everything explains itself. */
-  filterLabel?: string
 }) {
   const [term, setTerm] = useState('')
   const [debounced, setDebounced] = useState('')
   const [highlight, setHighlight] = useState(0)
-  /** Set by Escape or a pick — the only two ways a filtered list should close. */
-  const [dismissed, setDismissed] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -56,28 +44,21 @@ export function ProductPicker({
   const isFetching = false
 
   const results = useMemo(() => {
-    // With a filter on, an empty box means "show me what is in it" rather
-    // than "show nothing yet".
-    if (!debounced && !filter) return []
+    if (!debounced) return []
     return variations
       .filter(
         (v) =>
           v.status === 'active' &&
-          (!filter || filter(v)) &&
           matches([v.fullName, v.sku, v.barcode, v.brandName, v.description], debounced),
       )
       .slice(0, 8)
-  }, [variations, debounced, filter])
+  }, [variations, debounced])
   useEffect(() => setHighlight(0), [debounced])
-  useEffect(() => setDismissed(false), [filterLabel])
 
   const add = (product: VariationRow) => {
     onPick(product)
     setTerm('')
     setDebounced('')
-    // Closed after a pick so the row just added is visible rather than buried
-    // under the list it came from.
-    setDismissed(true)
     inputRef.current?.focus()
   }
 
@@ -96,15 +77,10 @@ export function ProductPicker({
     } else if (event.key === 'Escape') {
       setTerm('')
       setDebounced('')
-      setDismissed(true)
     }
   }
 
-  /*
-    A filter is a deliberate act, so its results stay on screen until they are
-    used or dismissed. Typing opens the list as it always did.
-  */
-  const open = (debounced.length > 0 || (Boolean(filter) && !dismissed)) && !disabled
+  const open = debounced.length > 0 && !disabled
 
   return (
     <div className="relative">
@@ -114,7 +90,6 @@ export function ProductPicker({
         value={term}
         onChange={(event) => setTerm(event.target.value)}
         onKeyDown={onKeyDown}
-        onFocus={() => setDismissed(false)}
         placeholder={placeholder}
         aria-label="Add a product"
         disabled={disabled}
@@ -130,9 +105,7 @@ export function ProductPicker({
             </div>
           ) : results.length === 0 ? (
             <p className="text-fg-muted p-3 text-sm">
-              {debounced
-                ? `Nothing matches “${debounced}”${filterLabel ? ` in ${filterLabel}` : ''}.`
-                : `Nothing in ${filterLabel ?? 'this filter'} yet.`}
+              Nothing matches “{debounced}”. Check the spelling, or add the product first.
             </p>
           ) : (
             <ul>

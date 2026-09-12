@@ -6,7 +6,7 @@ import { ArrowLeft, ArrowRight, Trash2, Truck } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
-import { ProductPicker } from '@/shared/components/ProductPicker'
+import { ProductBrowser } from '../components/ProductBrowser'
 import { ProductThumb } from '@/shared/components/ProductThumb'
 import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
 import { Button } from '@/shared/ui/Button'
@@ -91,11 +91,6 @@ export default function NewTransferPage() {
       (!categoryId || variation.categoryId === categoryId) &&
       (!brandId || variation.brandId === brandId)
   }, [categoryId, brandId])
-
-  const filterLabel =
-    [categories.find((c) => c.id === categoryId)?.name, brands.find((b) => b.id === brandId)?.name]
-      .filter(Boolean)
-      .join(' · ') || undefined
 
   const totalUnits = lines.reduce(
     (sum, line) => sum + (Number.isFinite(line.requestedQuantity) ? line.requestedQuantity : 0),
@@ -269,11 +264,15 @@ export default function NewTransferPage() {
               </Field>
             </div>
 
-            <ProductPicker
+            <ProductBrowser
               filter={pickerFilter}
-              filterLabel={filterLabel}
-              placeholder={`Search a product to move out of ${from?.name ?? 'the source'}…`}
+              addedIds={lines.map((line) => line.variationId)}
               disabled={!fromLocationId}
+              emptyLabel={
+                categoryId || brandId
+                  ? 'Nothing in this category or brand.'
+                  : 'Nothing in the catalogue yet.'
+              }
               stockLabel={(variation) => {
                 const here = availableAt(variation.id)
                 return {

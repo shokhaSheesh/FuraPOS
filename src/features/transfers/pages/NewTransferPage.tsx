@@ -213,15 +213,16 @@ export default function NewTransferPage() {
         <Card>
           <CardHeader className="flex-col items-stretch gap-2">
             <CardTitle>Route</CardTitle>
-            <Controller
-              control={form.control}
-              name="kind"
-              render={({ field }) => (
-                <SegmentedControl
-                  aria-label="Sending or requesting"
-                  value={field.value}
-                  onChange={(next) => {
-                    /*
+            <div className="self-start">
+              <Controller
+                control={form.control}
+                name="kind"
+                render={({ field }) => (
+                  <SegmentedControl
+                    aria-label="Sending or requesting"
+                    value={field.value}
+                    onChange={(next) => {
+                      /*
                       Only the mode changes. Swapping the two ends automatically
                       seemed helpful and was not: `Select` passes an empty value
                       through as `undefined`, which flips Radix from controlled
@@ -231,15 +232,16 @@ export default function NewTransferPage() {
                       defaulted to the source. The locations are the user's to
                       set; the switch says what the document *is*.
                     */
-                    field.onChange(next)
-                  }}
-                  options={TRANSFER_KINDS.map((entry) => ({
-                    value: entry.value,
-                    label: entry.label,
-                  }))}
-                />
-              )}
-            />
+                      field.onChange(next)
+                    }}
+                    options={TRANSFER_KINDS.map((entry) => ({
+                      value: entry.value,
+                      label: entry.label,
+                    }))}
+                  />
+                )}
+              />
+            </div>
             <p className="text-fg-subtle text-2xs">
               {TRANSFER_KINDS.find((entry) => entry.value === kind)?.hint}
             </p>
@@ -316,21 +318,23 @@ export default function NewTransferPage() {
                     {formatNumber(lines.length)} items · {formatNumber(totalUnits)} units
                   </span>
                 ) : null}
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  // Both ends are needed before anything can be worked out:
-                  // the proposal is about one shelf relative to another.
-                  disabled={!fromLocationId || !toLocationId}
-                  title={
-                    !fromLocationId || !toLocationId ? 'Choose both locations first' : undefined
-                  }
-                  onClick={() => setGenerating(true)}
-                >
-                  <Wand2 />
-                  {requesting ? 'Suggest what to ask for' : 'Suggest what to send'}
-                </Button>
+                {requesting ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    // Both ends are needed before anything can be worked out:
+                    // the proposal is about one shelf relative to another.
+                    disabled={!fromLocationId || !toLocationId}
+                    title={
+                      !fromLocationId || !toLocationId ? 'Choose both locations first' : undefined
+                    }
+                    onClick={() => setGenerating(true)}
+                  >
+                    <Wand2 />
+                    Suggest what to ask for
+                  </Button>
+                ) : null}
               </div>
             </div>
             <p className="text-fg-subtle text-2xs">
@@ -338,11 +342,9 @@ export default function NewTransferPage() {
             </p>
           </CardHeader>
           <CardBody className="space-y-3">
-            {!toLocationId ? (
+            {requesting && (!fromLocationId || !toLocationId) ? (
               <p className="text-fg-subtle text-2xs">
-                {requesting
-                  ? 'Pick who to ask, and the system can suggest what to ask for.'
-                  : 'Pick a destination to have the system suggest what to send.'}
+                Pick both locations, and the system can suggest what to ask for.
               </p>
             ) : null}
 

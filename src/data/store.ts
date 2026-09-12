@@ -9,7 +9,7 @@ import type {
 } from '@/features/corrections/model/correction'
 import type { Stocktake, StocktakeLine } from '@/features/stocktaking/model/stocktake'
 import {
-  generatePassword,
+  MIN_PASSWORD_LENGTH,
   type Supplier,
   type SupplierAccess,
 } from '@/features/suppliers/model/supplier'
@@ -259,14 +259,8 @@ interface CatalogState {
    * turning access back on does not mean issuing a new identity.
    */
   setSupplierAccess: (id: string, access: SupplierAccess) => void
-  /**
-   * Mints a password, records that one was set, and hands it back — the only
-   * moment it exists anywhere. Nothing stores it, so the caller has one chance
-   * to put it in front of somebody.
-   */
-  issueSupplierPassword: (
-    id: string,
-  ) => { ok: true; password: string } | { ok: false; error: string }
+  /** Sets the portal password and stamps when it changed. */
+  setSupplierPassword: (id: string, password: string) => { ok: true } | { ok: false; error: string }
   /**
    * Records money paid to a supplier: reduces the debt, and writes one movement
    * per delivery it settles.
@@ -381,9 +375,9 @@ export interface ScheduleInput {
 }
 
 /*
- * `passwordSetAt` and `lastSignedInAt` are deliberately not part of the form's
- * payload: one is written only by issuing a password, the other only by the
- * supplier actually signing in. Neither is a field anybody should be able to type.
+ * `passwordSetAt` and `lastSignedInAt` stay out of the form's payload: the
+ * first is stamped whenever the password actually changes, the second is
+ * written only by the supplier signing in. Neither is a field anybody types.
  */
 export type SupplierInput = Omit<
   Supplier,
@@ -1928,9 +1922,9 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       id: `sup-${sequence}`,
       debt: 0,
       lastPaymentAt: null,
-      // A brand-new supplier has no password yet even when access is granted:
-      // the screen issues one straight after, and that is what reveals it.
-      passwordSetAt: null,
+      // The form carries the password, so a supplier created with access has
+      // one from the moment it exists.
+      passwordSetAt: input.password ? now : null,
       lastSignedInAt: null,
       createdAt: now,
       updatedAt: now,
@@ -1942,7 +1936,16 @@ export const useDataStore = create<CatalogState>((set, get) => ({
   updateSupplier: (id, input) => {
     const existing = get().suppliers.find((s) => s.id === id)
     if (!existing) return undefined
-    const supplier: Supplier = { ...existing, ...input, updatedAt: new Date().toISOString() }
+    const now = new Date().toISOString()
+    const supplier: Supplier = {
+      ...existing,
+      ...input,
+      // Only a password that actually changed resets the date — otherwise
+      // saving an address would claim the credentials were rotated.
+      passwordSetAt:
+        input.password && input.password !== existing.password ? now : existing.passwordSetAt,
+      updatedAt: now,
+    }
     set({
       suppliers: get().suppliers.map((s) => (s.id === id ? supplier : s)),
       // The name is snapshotted onto receipts, but the list of them is read
@@ -1962,7 +1965,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
     })
   },
 
-  issueSupplierPassword: (id) => {
+  setSupplierPassword: (id, password) => {
     const supplier = get().suppliers.find((s) => s.id === id)
     if (!supplier) return { ok: false, error: 'That supplier no longer exists' }
     if (!supplier.username) {
@@ -1970,23 +1973,27 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       // would be a credential nobody could use and nobody could revoke.
       return { ok: false, error: `${supplier.name} has no login to set a password for` }
     }
+    if (password.trim().length < MIN_PASSWORD_LENGTH) {
+      return { ok: false, error: `A password needs at least ${MIN_PASSWORD_LENGTH} characters` }
+    }
 
-    const password = generatePassword()
+    const now = new Date().toISOString()
     set({
       suppliers: get().suppliers.map((s) =>
         s.id === id
           ? {
               ...s,
-              // Issuing a password does not grant access on its own, but it is
-              // meaningless while access is off, so `none` becomes granted.
+              password: password.trim(),
+              // A password is meaningless while access is off, so setting one
+              // on an account that has none turns it on.
               access: s.access === 'none' ? 'granted' : s.access,
-              passwordSetAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
+              passwordSetAt: now,
+              updatedAt: now,
             }
           : s,
       ),
     })
-    return { ok: true, password }
+    return { ok: true }
   },
 
   paySupplier: (id, amount, comment, receiptId = null) => {

@@ -261,23 +261,17 @@ export function useSetSupplierAccess(id: string) {
   }
 }
 
-/**
- * Issuing a password. The password comes back through `onSuccess` rather than
- * being readable from the store afterwards, because that one hand-off is the
- * only place it exists.
- */
-export function useIssueSupplierPassword() {
-  const issue = useDataStore((s) => s.issueSupplierPassword)
+/** Changing the portal password, from the supplier's own page. */
+export function useSetSupplierPassword(id: string) {
+  const setPassword = useDataStore((s) => s.setSupplierPassword)
   return {
     isPending: false,
-    // The id is passed at call time rather than bound: the form issues the
-    // first password for a supplier that did not exist when the hook ran.
     mutate: (
-      id: string,
-      opts?: { onSuccess?: (password: string) => void; onError?: (m: string) => void },
+      password: string,
+      opts?: { onSuccess?: () => void; onError?: (m: string) => void },
     ) => {
-      const result = issue(id)
-      if (result.ok) opts?.onSuccess?.(result.password)
+      const result = setPassword(id, password)
+      if (result.ok) opts?.onSuccess?.()
       else opts?.onError?.(result.error)
     },
   }

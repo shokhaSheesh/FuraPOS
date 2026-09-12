@@ -99,6 +99,7 @@ export const suppliers: Supplier[] = [
     // Signs in and uses it: the relationship this feature is built for.
     access: 'granted',
     username: 'akchaev',
+    password: 'Akchaev2026',
     passwordSetAt: new Date(Date.now() - 180 * 86_400_000).toISOString(),
     lastSignedInAt: new Date(Date.now() - 2 * 86_400_000).toISOString(),
     comment: 'Main importer relationship',
@@ -120,6 +121,7 @@ export const suppliers: Supplier[] = [
     // Invited and never signed in — the row somebody should chase.
     access: 'granted',
     username: 'euro-parts',
+    password: 'kTr9mQax4vNp',
     passwordSetAt: new Date(Date.now() - 9 * 86_400_000).toISOString(),
     lastSignedInAt: null,
     comment: null,
@@ -141,6 +143,7 @@ export const suppliers: Supplier[] = [
     // We buy from them; they have no reason to log in to anything.
     access: 'none',
     username: null,
+    password: null,
     passwordSetAt: null,
     lastSignedInAt: null,
     comment: null,
@@ -163,6 +166,7 @@ export const suppliers: Supplier[] = [
     // The trial ended, so the login was switched off rather than deleted.
     access: 'disabled',
     username: 'dinex',
+    password: 'Dinex-trial-25',
     passwordSetAt: new Date(Date.now() - 220 * 86_400_000).toISOString(),
     lastSignedInAt: new Date(Date.now() - 140 * 86_400_000).toISOString(),
     comment: 'Trial supplier — one shipment only',

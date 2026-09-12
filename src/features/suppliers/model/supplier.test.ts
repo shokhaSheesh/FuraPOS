@@ -106,38 +106,51 @@ describe('supplierFormSchema', () => {
     status: 'active' as const,
     access: 'none' as const,
     username: '',
+    password: '',
   }
 
   it('accepts a supplier with no login and no username', () => {
     expect(supplierFormSchema.safeParse(base).success).toBe(true)
   })
 
+  const granted = {
+    ...base,
+    access: 'granted' as const,
+    username: 'akchaev',
+    password: 'sekret123',
+  }
+
   it('will not grant access without a valid username', () => {
-    const result = supplierFormSchema.safeParse({ ...base, access: 'granted' })
+    const result = supplierFormSchema.safeParse({ ...granted, username: '' })
     expect(result.success).toBe(false)
     expect(result.error?.issues.some((issue) => issue.path[0] === 'username')).toBe(true)
   })
 
+  it('will not grant access without a password to sign in with', () => {
+    const result = supplierFormSchema.safeParse({ ...granted, password: '' })
+    expect(result.success).toBe(false)
+    expect(result.error?.issues.some((issue) => issue.path[0] === 'password')).toBe(true)
+  })
+
+  it('rejects a password too short to be worth having', () => {
+    const result = supplierFormSchema.safeParse({ ...granted, password: 'abc123' })
+    expect(result.success).toBe(false)
+  })
+
   it('will not grant access without naming who holds it', () => {
-    const result = supplierFormSchema.safeParse({
-      ...base,
-      access: 'granted',
-      username: 'akchaev',
-      contactName: '  ',
-    })
+    const result = supplierFormSchema.safeParse({ ...granted, contactName: '  ' })
     expect(result.success).toBe(false)
     expect(result.error?.issues.some((issue) => issue.path[0] === 'contactName')).toBe(true)
   })
 
   it('rejects a username with capitals or spaces', () => {
     for (const username of ['Akchaev', 'akchaev inc', '.akchaev', 'ak']) {
-      const result = supplierFormSchema.safeParse({ ...base, access: 'granted', username })
+      const result = supplierFormSchema.safeParse({ ...granted, username })
       expect(result.success, username).toBe(false)
     }
   })
 
   it('accepts a granted login that is fully specified', () => {
-    const result = supplierFormSchema.safeParse({ ...base, access: 'granted', username: 'akchaev' })
-    expect(result.success).toBe(true)
+    expect(supplierFormSchema.safeParse(granted).success).toBe(true)
   })
 })

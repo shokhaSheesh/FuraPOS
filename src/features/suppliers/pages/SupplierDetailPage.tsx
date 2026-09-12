@@ -1,6 +1,15 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
-import { ArrowLeft, Banknote, KeyRound, Pencil, ShieldCheck, ShieldOff } from 'lucide-react'
+import {
+  ArrowLeft,
+  Banknote,
+  Copy,
+  KeyRound,
+  Pencil,
+  ShieldCheck,
+  ShieldOff,
+  Wand2,
+} from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { PageHeader } from '@/shared/components/PageHeader'
@@ -20,16 +29,16 @@ import { paths } from '@/shared/config/paths'
 import { formatDate, formatMoney, formatNumber, formatPercent } from '@/shared/lib/format'
 import { useDataStore } from '@/data/store'
 import {
-  useIssueSupplierPassword,
   usePaySupplier,
   useSetSupplierAccess,
+  useSetSupplierPassword,
   useSupplier,
   useSupplierWallet,
 } from '../api/suppliers'
-import { CredentialsModal } from '../components/CredentialsModal'
 import { OLDEST_FIRST, outstanding, settlementsFor } from '../model/settlement'
 import {
   daysOverdue,
+  generatePassword,
   isDormant,
   paymentSchema,
   portalState,
@@ -45,12 +54,13 @@ export default function SupplierDetailPage() {
   const { data } = useSupplier(supplierId ?? '')
   const { wallet, transactions } = useSupplierWallet(supplierId ?? '')
   const pay = usePaySupplier(supplierId ?? '')
-  const issuePassword = useIssueSupplierPassword()
+  const setPassword = useSetSupplierPassword(supplierId ?? '')
   const setAccess = useSetSupplierAccess(supplierId ?? '')
   const receipts = useDataStore((s) => s.receipts)
   const [paying, setPaying] = useState(false)
-  /** A freshly issued password, held only until the modal closes. */
-  const [issued, setIssued] = useState<string | null>(null)
+  /** The change-password dialog, and what is typed in it. */
+  const [changing, setChanging] = useState(false)
+  const [draftPassword, setDraftPassword] = useState('')
 
   const form = useForm<PaymentValues>({
     resolver: zodResolver(paymentSchema),
@@ -390,8 +400,11 @@ export default function SupplierDetailPage() {
                 ) : (
                   <div className="space-y-2">
                     <Row label="Login" value={supplier.username ?? '—'} mono />
+                    {/* Readable, because the person handing it over has to be
+                        able to read it out when the supplier rings back. */}
+                    <Row label="Password" value={supplier.password ?? '—'} mono />
                     <Row
-                      label="Password set"
+                      label="Changed"
                       value={supplier.passwordSetAt ? formatDate(supplier.passwordSetAt) : 'Never'}
                     />
                     <Row
@@ -400,6 +413,24 @@ export default function SupplierDetailPage() {
                         supplier.lastSignedInAt ? formatDate(supplier.lastSignedInAt) : 'Never'
                       }
                     />
+                    {canManagePortal ? (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="w-full"
+                        onClick={() =>
+                          void navigator.clipboard
+                            ?.writeText(
+                              `Login: ${supplier.username}\nPassword: ${supplier.password}`,
+                            )
+                            .then(() => toast.success('Login and password copied'))
+                            .catch(() => toast.error('Could not copy — select the text instead'))
+                        }
+                      >
+                        <Copy />
+                        Copy both
+                      </Button>
+                    ) : null}
                   </div>
                 )}
 
@@ -408,15 +439,13 @@ export default function SupplierDetailPage() {
                     <Button
                       variant="secondary"
                       size="sm"
-                      onClick={() =>
-                        issuePassword.mutate(supplier.id, {
-                          onSuccess: (password) => setIssued(password),
-                          onError: (message) => toast.error(message),
-                        })
-                      }
+                      onClick={() => {
+                        setDraftPassword(supplier.password ?? '')
+                        setChanging(true)
+                      }}
                     >
                       <KeyRound />
-                      {supplier.passwordSetAt ? 'Reset password' : 'Issue a password'}
+                      {supplier.password ? 'Change password' : 'Set a password'}
                     </Button>
                     <Button
                       variant="secondary"
@@ -516,18 +545,45 @@ export default function SupplierDetailPage() {
         </div>
       </Modal>
 
-      {issued ? (
-        <CredentialsModal
-          open
-          onOpenChange={(open) => {
-            if (!open) setIssued(null)
-          }}
-          companyName={supplier.name}
-          managerName={supplier.contactName}
-          username={supplier.username ?? ''}
-          password={issued}
-        />
-      ) : null}
+      <Modal
+        open={changing}
+        onOpenChange={setChanging}
+        title={`Password for ${supplier.name}`}
+        description={`${supplier.contactName ?? 'Their manager'} signs in as ${supplier.username}. Type one or generate it — either way it stays readable here.`}
+        size="sm"
+        primary={{
+          label: 'Save password',
+          onClick: () =>
+            setPassword.mutate(draftPassword, {
+              onSuccess: () => {
+                toast.success('Password changed')
+                setChanging(false)
+              },
+              onError: (message) => toast.error(message),
+            }),
+        }}
+      >
+        <Field label="Password" required hint="At least 8 characters">
+          {(p) => (
+            <div className="flex gap-2">
+              <Input
+                {...p}
+                className="flex-1 font-mono"
+                value={draftPassword}
+                onChange={(event) => setDraftPassword(event.target.value)}
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setDraftPassword(generatePassword())}
+              >
+                <Wand2 />
+                Generate
+              </Button>
+            </div>
+          )}
+        </Field>
+      </Modal>
     </>
   )
 }

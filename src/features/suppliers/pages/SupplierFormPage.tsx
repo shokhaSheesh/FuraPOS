@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Wand2 } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
@@ -15,14 +15,9 @@ import { toast } from '@/shared/ui/toast'
 import { useSession } from '@/app/providers/SessionProvider'
 import { paths } from '@/shared/config/paths'
 import { useDataStore } from '@/data/store'
+import { useCreateSupplier, useSupplier, useUpdateSupplier } from '../api/suppliers'
 import {
-  useCreateSupplier,
-  useIssueSupplierPassword,
-  useSupplier,
-  useUpdateSupplier,
-} from '../api/suppliers'
-import { CredentialsModal } from '../components/CredentialsModal'
-import {
+  generatePassword,
   isUsernameTaken,
   suggestUsername,
   supplierFormSchema,
@@ -44,15 +39,6 @@ export default function SupplierFormPage() {
   const suppliers = useDataStore((s) => s.suppliers)
   const create = useCreateSupplier()
   const update = useUpdateSupplier(supplierId ?? '')
-  const issuePassword = useIssueSupplierPassword()
-
-  /** The one-time hand-off, held only until the modal closes. */
-  const [issued, setIssued] = useState<{
-    supplierId: string
-    companyName: string
-    username: string
-    password: string
-  } | null>(null)
 
   const defaults = useMemo<SupplierFormValues>(
     () =>
@@ -69,6 +55,7 @@ export default function SupplierFormPage() {
             status: existing.supplier.status,
             access: existing.supplier.access,
             username: existing.supplier.username ?? '',
+            password: existing.supplier.password ?? '',
           }
         : {
             name: '',
@@ -82,6 +69,7 @@ export default function SupplierFormPage() {
             status: 'active',
             access: 'none',
             username: '',
+            password: '',
           },
     [existing],
   )
@@ -110,6 +98,7 @@ export default function SupplierFormPage() {
         status: values.status,
         access: values.access,
         username: values.username.trim() || null,
+        password: values.password.trim() || null,
       }
 
       // Two companies signing in as one name would be two companies in one
@@ -120,40 +109,21 @@ export default function SupplierFormPage() {
         return
       }
 
-      /* A granted login with no password yet cannot be signed in with, so the
-         password is minted straight away and shown once. Navigation waits for
-         that modal to close — leaving the page is what destroys the only copy. */
-      const handOver = (id: string, name: string) => {
-        if (payload.access === 'none' || !payload.username) {
-          navigate(paths.products.supplierDetail(id))
-          return
-        }
-        if (existing?.supplier.passwordSetAt && existing.supplier.username === payload.username) {
-          navigate(paths.products.supplierDetail(id))
-          return
-        }
-        issuePassword.mutate(id, {
-          onSuccess: (password) =>
-            setIssued({ supplierId: id, companyName: name, username: payload.username!, password }),
-          onError: (message) => {
-            toast.error(message)
-            navigate(paths.products.supplierDetail(id))
-          },
-        })
-      }
-
+      /* The password travels with the record and stays readable on the
+         supplier's page, so saving simply saves — there is no one-time reveal
+         left to hold navigation open for. */
       if (editing) {
         update.mutate(payload, {
           onSuccess: () => {
             toast.success(`${payload.name} saved`)
-            handOver(supplierId!, payload.name)
+            navigate(paths.products.supplierDetail(supplierId!))
           },
         })
       } else {
         create.mutate(payload, {
           onSuccess: (supplier) => {
             toast.success(`${supplier.name} added`)
-            handOver(supplier.id, supplier.name)
+            navigate(paths.products.supplierDetail(supplier.id))
           },
         })
       }
@@ -324,6 +294,36 @@ export default function SupplierFormPage() {
               {access !== 'none' ? (
                 <>
                   <Field
+                    label="Password"
+                    required
+                    hint="Shown in plain text on purpose, so you can read it out or paste it to them"
+                    error={form.formState.errors.password?.message}
+                  >
+                    {(p) => (
+                      <div className="flex gap-2">
+                        <Input
+                          {...p}
+                          className="flex-1 font-mono"
+                          placeholder="At least 8 characters"
+                          {...form.register('password')}
+                        />
+                        {/* For when you would rather not invent one. */}
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() =>
+                            form.setValue('password', generatePassword(), {
+                              shouldValidate: true,
+                            })
+                          }
+                        >
+                          <Wand2 />
+                          Generate
+                        </Button>
+                      </div>
+                    )}
+                  </Field>
+                  <Field
                     label="Login"
                     required
                     hint="Lowercase, no spaces — it gets read down a phone line"
@@ -332,9 +332,8 @@ export default function SupplierFormPage() {
                     {(p) => <Input {...p} placeholder="akchaev" {...form.register('username')} />}
                   </Field>
                   <p className="text-fg-subtle text-2xs">
-                    {existing?.supplier.passwordSetAt
-                      ? 'A password is already set. Changing the login here does not change it — reset it from the supplier’s page.'
-                      : 'A password is generated when you save, and shown to you once.'}
+                    Both stay readable on the supplier’s page, so you can look them up when they
+                    ring back.
                   </p>
                   {access === 'disabled' ? (
                     <p className="text-warning text-2xs">
@@ -348,23 +347,6 @@ export default function SupplierFormPage() {
           </Card>
         ) : null}
       </div>
-
-      {issued ? (
-        <CredentialsModal
-          open
-          onOpenChange={(open) => {
-            if (open) return
-            // Only now is it safe to leave: the password is gone after this.
-            const id = issued.supplierId
-            setIssued(null)
-            navigate(paths.products.supplierDetail(id))
-          }}
-          companyName={issued.companyName}
-          managerName={form.getValues('contactName').trim() || null}
-          username={issued.username}
-          password={issued.password}
-        />
-      ) : null}
     </form>
   )
 }

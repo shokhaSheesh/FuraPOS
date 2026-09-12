@@ -47,10 +47,19 @@ export interface Supplier {
   /** What they sign in as. Kept when access is switched off, so turning it back on is the same login. */
   username: string | null
   /**
-   * When a password was last issued. The password itself is deliberately not
-   * here: it is generated, shown once, and never stored — a credential a
-   * back-office user can read forever is a credential nobody can rotate.
+   * What they sign in with, in plain text and readable on their page.
+   *
+   * A once-only reveal was tried and rejected for good reason: whoever hands
+   * the login over needs to be able to look it up when the supplier rings back
+   * a week later saying they cannot get in. Somebody writing it in a notebook
+   * instead is worse than showing it here.
+   *
+   * **This is a design-stage decision, not a licence for the real build.** When
+   * a backend exists it must store a hash and let this be reset, not read —
+   * see docs/OX-NAVIGATION-MAP.md.
    */
+  password: string | null
+  /** When the password was last changed. */
   passwordSetAt: IsoDate | null
   /** Null when they have never signed in — which is what separates invited from active. */
   lastSignedInAt: IsoDate | null
@@ -223,9 +232,10 @@ export const supplierFormSchema = z
     status: z.enum(['active', 'archived']),
     access: z.enum(['none', 'granted', 'disabled']),
     username: z.string(),
+    password: z.string(),
   })
   .superRefine((values, ctx) => {
-    // A username only has to be valid if it is going to be signed in with.
+    // None of this has to be valid if nobody is going to sign in with it.
     if (values.access === 'none') return
     if (!values.contactName.trim()) {
       ctx.addIssue({
@@ -242,7 +252,17 @@ export const supplierFormSchema = z
           'At least 3 characters: lowercase letters, digits, dot, dash or underscore, starting with a letter or digit',
       })
     }
+    if (values.password.trim().length < MIN_PASSWORD_LENGTH) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['password'],
+        message: `At least ${MIN_PASSWORD_LENGTH} characters — use Generate if you would rather not think of one`,
+      })
+    }
   })
+
+/** Short enough to type over the phone, long enough not to be guessed. */
+export const MIN_PASSWORD_LENGTH = 8
 
 export type SupplierFormValues = z.infer<typeof supplierFormSchema>
 

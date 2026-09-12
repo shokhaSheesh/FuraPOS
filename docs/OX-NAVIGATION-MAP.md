@@ -448,9 +448,18 @@ Four decisions worth recording, because each had a worse obvious alternative:
 1. **The manager _is_ the portal user.** OX's `Контакт` becomes **Manager** — one person who is both
    who you ring and who holds the login. A separate `managerName` beside `contactName` would be two
    fields for one human, which is how a record ends up with two spellings of a name.
-2. **The password is never stored.** It is generated, shown once with a copy action, and after that
-   the record knows only `passwordSetAt`. A credential any back-office user can read forever is a
-   credential nobody can rotate. Losing it is recoverable — **Reset password** issues another.
+2. **The password is stored in plain text and shown on the supplier's page.** This was built the
+   other way first — generated, revealed once, never stored — and the client rejected it outright:
+   whoever hands the login over has to be able to look it up when the supplier rings back a week
+   later, and somebody copying it into a notebook instead is worse than showing it here. The form
+   has a visible password field with a **Generate** button beside it, and the supplier's page shows
+   the login and password with a **Copy both** action.
+
+   **This is a design-stage decision and must not survive into the real build.** A backend has to
+   store a hash, and a lost password has to be reset rather than read. The affordance the client
+   actually wants — being able to re-issue and re-send credentials without ceremony — is satisfied
+   by **Change password**, which works the same way against a hash.
+
 3. **`invited` vs `active` is derived, not stored.** `access` records the grant
    (`none` / `granted` / `disabled`); `portalState()` reads `lastSignedInAt` to tell an invitation
    nobody accepted from a login in use. Two stored fields that must agree eventually disagree.

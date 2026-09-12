@@ -6,7 +6,13 @@ import { Button } from '@/shared/ui/Button'
 import { Badge } from '@/shared/ui/Badge'
 import { cn } from '@/shared/lib/cn'
 import { useActiveDrivers } from '@/features/drivers/api/drivers'
-import { KIND_LABEL, kindOf, type Driver } from '@/features/drivers/model/driver'
+import {
+  KIND_LABEL,
+  capacityOfSection,
+  kindOf,
+  trucksFor,
+  type Driver,
+} from '@/features/drivers/model/driver'
 
 /**
  * Who collected the parts.
@@ -21,14 +27,17 @@ import { KIND_LABEL, kindOf, type Driver } from '@/features/drivers/model/driver
 export function DriverPicker({
   value,
   onChange,
+  section,
 }: {
   value: Driver | null
   onChange: (driver: Driver | null) => void
+  /** Which kind of driver the till is buying for — narrows the list. */
+  section?: 'independent' | 'autopark'
 }) {
   const [open, setOpen] = useState(false)
   const [term, setTerm] = useState('')
   const [debounced, setDebounced] = useState('')
-  const drivers = useActiveDrivers(debounced)
+  const drivers = useActiveDrivers(debounced, section)
 
   useEffect(() => {
     const timer = setTimeout(() => setDebounced(term.trim()), 200)
@@ -93,8 +102,10 @@ export function DriverPicker({
                   <span className="font-mono">{driver.code}</span>
                   {driver.autoparkName ? <span>· {driver.autoparkName}</span> : null}
                   <Truck className="size-3 shrink-0" />
-                  {[...driver.ownTrucks, driver.autoparkTruck]
-                    .filter((truck) => truck !== null)
+                  {(section
+                    ? trucksFor(driver, capacityOfSection(section))
+                    : [...driver.ownTrucks, driver.autoparkTruck].filter((t) => t !== null)
+                  )
                     .map((truck) => truck.plate)
                     .join(' · ')}
                 </p>
@@ -104,7 +115,13 @@ export function DriverPicker({
           </li>
         ))}
         {drivers.length === 0 ? (
-          <li className="text-fg-subtle px-2 py-4 text-center text-sm">No driver matches</li>
+          <li className="text-fg-subtle px-2 py-4 text-center text-sm">
+            {section === 'autopark'
+              ? 'No autopark driver matches'
+              : section === 'independent'
+                ? 'No owner-driver matches'
+                : 'No driver matches'}
+          </li>
         ) : null}
       </ul>
     </Popover>

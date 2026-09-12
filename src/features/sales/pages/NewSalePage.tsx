@@ -12,11 +12,13 @@ import { paths } from '@/shared/config/paths'
 import { useSession } from '@/app/providers/SessionProvider'
 import { useOpenShiftAt } from '@/features/cashShifts/api/shifts'
 import { DriverPicker } from '../components/DriverPicker'
+import { SegmentedControl } from '@/shared/ui/SegmentedControl'
 import {
-  capacitiesOf,
+  DRIVER_SECTIONS,
+  capacityOfSection,
   describeCapacity,
-  soleCapacity,
   describeTruck,
+  inSection,
   soleTruckFor,
   trucksFor,
   type Driver,
@@ -76,16 +78,24 @@ export default function NewSalePage() {
     promotion aimed at that client — whether the fleet discount fires.
   */
   const [driver, setDriver] = useState<Driver | null>(null)
-  const [capacity, setCapacity] = useState<DriverCapacity | null>(null)
   const [truckPlate, setTruckPlate] = useState<string | null>(null)
+  /*
+    Which kind of driver is buying, asked before the man himself.
 
-  const applyCapacity = (forDriver: Driver | null, next: DriverCapacity | null) => {
+    This is the question the old "Buying for" toggle asked after the fact. A
+    man who owns a lorry *and* drives for an autopark is two customers, and
+    the list he was picked from already says which of them walked in.
+  */
+  const [section, setSection] = useState<'independent' | 'autopark'>('independent')
+  const capacity = capacityOfSection(section)
+
+  /** Whose account the sale lands in, and which truck collects the history. */
+  const attribute = (forDriver: Driver | null, forCapacity: DriverCapacity) => {
     // An autopark assigns one truck, so that settles itself. A man who owns
     // three lorries has to say which he came in.
-    setTruckPlate(forDriver && next ? (soleTruckFor(forDriver, next)?.plate ?? null) : null)
-    if (!forDriver || !next) return
+    setTruckPlate(forDriver ? (soleTruckFor(forDriver, forCapacity)?.plate ?? null) : null)
     setClient(
-      next === 'autopark'
+      forDriver && forCapacity === 'autopark'
         ? (allClients.find((entry) => entry.id === forDriver.autoparkId) ?? null)
         : // Buying for himself is not a company purchase: the autopark must
           // come off the sale, or its promotion would still apply.
@@ -95,17 +105,20 @@ export default function NewSalePage() {
 
   const pickDriver = (next: Driver | null) => {
     setDriver(next)
-    // Only ask when he genuinely has two capacities. Asking a man with one
-    // which of his one he means is how people learn to ignore dialogs.
-    const only = next ? soleCapacity(next) : null
-    setCapacity(only)
-    applyCapacity(next, only)
-    if (!next) setClient(null)
+    attribute(next, capacity)
   }
 
-  /** A driver on the sale with no capacity chosen cannot be attributed to anything. */
-  const needsCapacity = driver !== null && capacity === null
-  const truckOptions = driver && capacity ? trucksFor(driver, capacity) : []
+  const pickSection = (next: 'independent' | 'autopark') => {
+    setSection(next)
+    // A driver who is both stays selected across the switch — he is in either
+    // list. Anybody else is not, and keeping him would leave a name on the
+    // sale that the picker below cannot offer.
+    const kept = driver && inSection(driver, next) ? driver : null
+    setDriver(kept)
+    attribute(kept, capacityOfSection(next))
+  }
+
+  const truckOptions = driver ? trucksFor(driver, capacity) : []
   /** Several of his own: the purchase would otherwise land on a guess. */
   const needsTruck = truckOptions.length > 1 && truckPlate === null
   const [locationId, setLocationId] = useState('loc-2')
@@ -317,7 +330,7 @@ export default function NewSalePage() {
           <div className="flex items-center gap-2">
             <Button
               variant="secondary"
-              disabled={empty || noDrawer || needsCapacity || needsTruck || createSale.isPending}
+              disabled={empty || noDrawer || needsTruck || createSale.isPending}
               loading={
                 createSale.isPending &&
                 (createSale.variables?.status === 'open' || createSale.variables?.status === 'new')
@@ -328,7 +341,7 @@ export default function NewSalePage() {
             </Button>
             <Button
               variant="secondary"
-              disabled={empty || noDrawer || needsCapacity || needsTruck || createSale.isPending}
+              disabled={empty || noDrawer || needsTruck || createSale.isPending}
               loading={createSale.isPending && createSale.variables?.status === 'postponed'}
               onClick={() => submit('postponed')}
             >
@@ -338,12 +351,7 @@ export default function NewSalePage() {
             <Button
               variant="primary"
               disabled={
-                empty ||
-                noDrawer ||
-                needsCapacity ||
-                needsTruck ||
-                deliveryIncomplete ||
-                createSale.isPending
+                empty || noDrawer || needsTruck || deliveryIncomplete || createSale.isPending
               }
               loading={
                 createSale.isPending &&
@@ -376,36 +384,16 @@ export default function NewSalePage() {
             </CardHeader>
             <CardBody className="space-y-3">
               <ClientPicker value={client} onChange={setClient} />
-              <DriverPicker value={driver} onChange={pickDriver} />
 
-              {driver && capacitiesOf(driver).length > 1 ? (
-                <div className="space-y-1.5">
-                  <p className="text-fg-muted text-sm">
-                    Buying for<span className="text-danger ml-0.5">*</span>
-                  </p>
-                  <div className="grid gap-1.5">
-                    {(['own', 'autopark'] as DriverCapacity[]).map((option) => (
-                      <Button
-                        key={option}
-                        type="button"
-                        variant={capacity === option ? 'primary' : 'secondary'}
-                        className="justify-start font-normal"
-                        onClick={() => {
-                          setCapacity(option)
-                          applyCapacity(driver, option)
-                        }}
-                      >
-                        <span className="truncate">{describeCapacity(driver, option)}</span>
-                      </Button>
-                    ))}
-                  </div>
-                  {needsCapacity ? (
-                    <p className="text-danger text-2xs">
-                      He drives for himself and for {driver.autoparkName} — say which this is.
-                    </p>
-                  ) : null}
-                </div>
-              ) : driver && capacity ? (
+              <SegmentedControl
+                aria-label="Which kind of driver is buying"
+                value={section}
+                onChange={pickSection}
+                options={DRIVER_SECTIONS}
+              />
+              <DriverPicker section={section} value={driver} onChange={pickDriver} />
+
+              {driver ? (
                 <p className="text-fg-subtle text-2xs">
                   Buying for {describeCapacity(driver, capacity)}
                 </p>

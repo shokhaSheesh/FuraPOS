@@ -57,12 +57,17 @@ export function useDriverCounts(): Record<'independent' | 'autopark', number> {
 }
 
 /** Active drivers only — the counter never sells to somebody who has left. */
-export function useActiveDrivers(search: string) {
+export function useActiveDrivers(
+  search: string,
+  /** Narrow to one kind. The till picks the kind first, then the man. */
+  section?: 'independent' | 'autopark',
+) {
   const drivers = useDataStore((s) => s.drivers)
   return useMemo(
     () =>
       drivers
         .filter((driver) => driver.status === 'active')
+        .filter((driver) => (section ? inSection(driver, section) : true))
         .filter((driver) =>
           matches(
             [
@@ -79,7 +84,7 @@ export function useActiveDrivers(search: string) {
           ),
         )
         .slice(0, 50),
-    [drivers, search],
+    [drivers, search, section],
   )
 }
 

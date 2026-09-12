@@ -1,18 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Check, ChevronDown, Plus, ScanLine, Truck } from 'lucide-react'
+import { Check, ChevronDown, Plus, ScanLine } from 'lucide-react'
 import { Popover } from '@/shared/ui/Popover'
 import { Input } from '@/shared/ui/Input'
 import { Button } from '@/shared/ui/Button'
-import { Badge } from '@/shared/ui/Badge'
 import { cn } from '@/shared/lib/cn'
 import { useActiveDrivers } from '@/features/drivers/api/drivers'
-import {
-  KIND_LABEL,
-  capacityOfSection,
-  kindOf,
-  trucksFor,
-  type Driver,
-} from '@/features/drivers/model/driver'
+import { capacityOfSection, trucksFor, type Driver } from '@/features/drivers/model/driver'
 
 /**
  * Who collected the parts.
@@ -28,12 +21,18 @@ export function DriverPicker({
   value,
   onChange,
   section,
+  autoparkId,
+  disabled,
   onAddNew,
 }: {
   value: Driver | null
   onChange: (driver: Driver | null) => void
   /** Which kind of driver the till is buying for — narrows the list. */
   section?: 'independent' | 'autopark'
+  /** Narrows further to one company's drivers. */
+  autoparkId?: string
+  /** Held shut until the autopark above it has been chosen. */
+  disabled?: boolean
   /**
    * Offered for owner-drivers only. A man claiming to drive for an autopark
    * is claiming a discount on that company's contract, which is not something
@@ -44,7 +43,7 @@ export function DriverPicker({
   const [open, setOpen] = useState(false)
   const [term, setTerm] = useState('')
   const [debounced, setDebounced] = useState('')
-  const drivers = useActiveDrivers(debounced, section)
+  const drivers = useActiveDrivers(debounced, section, autoparkId)
 
   useEffect(() => {
     const timer = setTimeout(() => setDebounced(term.trim()), 200)
@@ -57,7 +56,11 @@ export function DriverPicker({
       onOpenChange={setOpen}
       className="w-80"
       trigger={
-        <Button variant="secondary" className="w-full justify-start font-normal">
+        <Button
+          variant="secondary"
+          disabled={disabled}
+          className="w-full justify-start font-normal"
+        >
           <ScanLine />
           <span className={cn('flex-1 truncate text-left', !value && 'text-fg-muted')}>
             {value ? value.fullName : 'No driver'}
@@ -101,19 +104,21 @@ export function DriverPicker({
               className="hover:bg-canvas flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-left text-sm"
             >
               <div className="min-w-0 flex-1">
-                <p className="text-fg flex items-center gap-1.5 truncate">
-                  {driver.fullName}
-                  <Badge tone="neutral">{KIND_LABEL[kindOf(driver)]}</Badge>
-                </p>
-                <p className="text-fg-subtle text-2xs flex items-center gap-1 truncate">
-                  <span className="font-mono">{driver.code}</span>
-                  {driver.autoparkName ? <span>· {driver.autoparkName}</span> : null}
-                  <Truck className="size-3 shrink-0" />
-                  {(section
-                    ? trucksFor(driver, capacityOfSection(section))
-                    : [...driver.ownTrucks, driver.autoparkTruck].filter((t) => t !== null)
-                  )
-                    .map((truck) => truck.plate)
+                <p className="text-fg truncate">{driver.fullName}</p>
+                <p className="text-fg-subtle text-2xs truncate">
+                  {[
+                    driver.phone,
+                    // Only under the autopark tab: on his own side of the
+                    // business the company he also drives for is irrelevant.
+                    section === 'autopark' ? driver.autoparkName : null,
+                    (section
+                      ? trucksFor(driver, capacityOfSection(section))
+                      : [...driver.ownTrucks, driver.autoparkTruck].filter((t) => t !== null)
+                    )
+                      .map((truck) => truck.plate)
+                      .join(' · ') || null,
+                  ]
+                    .filter(Boolean)
                     .join(' · ')}
                 </p>
               </div>

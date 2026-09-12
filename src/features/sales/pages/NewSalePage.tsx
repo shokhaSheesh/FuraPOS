@@ -11,6 +11,7 @@ import { toast } from '@/shared/ui/toast'
 import { paths } from '@/shared/config/paths'
 import { useSession } from '@/app/providers/SessionProvider'
 import { useOpenShiftAt } from '@/features/cashShifts/api/shifts'
+import { useAutoparksWithDrivers } from '@/features/drivers/api/drivers'
 import { DriverPicker } from '../components/DriverPicker'
 import { NewDriverModal } from '../components/NewDriverModal'
 import { SegmentedControl } from '@/shared/ui/SegmentedControl'
@@ -19,7 +20,6 @@ import {
   capacityOfSection,
   describeCapacity,
   describeTruck,
-  inSection,
   soleTruckFor,
   trucksFor,
   type Driver,
@@ -88,6 +88,9 @@ export default function NewSalePage() {
     the list he was picked from already says which of them walked in.
   */
   const [section, setSection] = useState<'independent' | 'autopark'>('independent')
+  /** Chosen before the driver: the company narrows the list of men. */
+  const [autoparkId, setAutoparkId] = useState<string | null>(null)
+  const autoparks = useAutoparksWithDrivers()
   const capacity = capacityOfSection(section)
 
   /** Whose account the sale lands in, and which truck collects the history. */
@@ -111,12 +114,22 @@ export default function NewSalePage() {
 
   const pickSection = (next: 'independent' | 'autopark') => {
     setSection(next)
-    // A driver who is both stays selected across the switch — he is in either
-    // list. Anybody else is not, and keeping him would leave a name on the
-    // sale that the picker below cannot offer.
-    const kept = driver && inSection(driver, next) ? driver : null
-    setDriver(kept)
-    attribute(kept, capacityOfSection(next))
+    // Everything under the switch belongs to the kind above it: the company,
+    // the man and his truck all stop meaning anything when the kind changes,
+    // so none of them survives it.
+    setAutoparkId(null)
+    setDriver(null)
+    setTruckPlate(null)
+    setClient(null)
+  }
+
+  const pickAutopark = (id: string) => {
+    setAutoparkId(id)
+    // The company is the customer whether or not a driver is named — he only
+    // says who collected. So the account is set here, not below.
+    setClient(allClients.find((entry) => entry.id === id) ?? null)
+    setDriver(null)
+    setTruckPlate(null)
   }
 
   const truckOptions = driver ? trucksFor(driver, capacity) : []
@@ -390,8 +403,21 @@ export default function NewSalePage() {
                 onChange={pickSection}
                 options={DRIVER_SECTIONS}
               />
+              {section === 'autopark' ? (
+                <Select
+                  className="w-full"
+                  aria-label="Autopark"
+                  placeholder="Choose an autopark"
+                  value={autoparkId ?? undefined}
+                  onChange={pickAutopark}
+                  options={autoparks}
+                />
+              ) : null}
+
               <DriverPicker
                 section={section}
+                autoparkId={autoparkId ?? undefined}
+                disabled={section === 'autopark' && autoparkId === null}
                 value={driver}
                 onChange={pickDriver}
                 onAddNew={() => setAddingDriver(true)}

@@ -61,6 +61,8 @@ export function useActiveDrivers(
   search: string,
   /** Narrow to one kind. The till picks the kind first, then the man. */
   section?: 'independent' | 'autopark',
+  /** Narrow further to one company's drivers. */
+  autoparkId?: string,
 ) {
   const drivers = useDataStore((s) => s.drivers)
   return useMemo(
@@ -68,6 +70,7 @@ export function useActiveDrivers(
       drivers
         .filter((driver) => driver.status === 'active')
         .filter((driver) => (section ? inSection(driver, section) : true))
+        .filter((driver) => (autoparkId ? driver.autoparkId === autoparkId : true))
         .filter((driver) =>
           matches(
             [
@@ -84,8 +87,30 @@ export function useActiveDrivers(
           ),
         )
         .slice(0, 50),
-    [drivers, search, section],
+    [drivers, search, section, autoparkId],
   )
+}
+
+/**
+ * The autoparks worth offering at the till.
+ *
+ * Only those with an active driver: choosing a company and being handed an
+ * empty driver list is a dead end, and the selector exists precisely to
+ * narrow that list.
+ */
+export function useAutoparksWithDrivers() {
+  const drivers = useDataStore((s) => s.drivers)
+  const clients = useDataStore((s) => s.clients)
+  return useMemo(() => {
+    const withDrivers = new Set(
+      drivers
+        .filter((driver) => driver.status === 'active' && driver.autoparkId)
+        .map((driver) => driver.autoparkId),
+    )
+    return clients
+      .filter((client) => withDrivers.has(client.id))
+      .map((client) => ({ value: client.id, label: client.name }))
+  }, [drivers, clients])
 }
 
 export function useDriver(id: string | undefined) {

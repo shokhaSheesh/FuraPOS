@@ -378,33 +378,6 @@ export default function PromotionFormPage() {
                 )}
               </Field>
             ) : null}
-
-            {values.audience === 'drivers' ? (
-              <Field
-                label="Drivers"
-                required
-                hint="Owner-drivers only — a company's driver is reached through its contract"
-                error={form.formState.errors.driverIds?.message}
-              >
-                {(p) => (
-                  <Controller
-                    control={form.control}
-                    name="driverIds"
-                    render={({ field }) => (
-                      <MultiSelect
-                        {...p}
-                        className="w-full"
-                        value={field.value}
-                        onChange={field.onChange}
-                        options={driverOptions}
-                        placeholder="Pick drivers"
-                        searchPlaceholder="Search by name, phone or plate…"
-                      />
-                    )}
-                  />
-                )}
-              </Field>
-            ) : null}
           </CardBody>
         </Card>
 
@@ -414,9 +387,9 @@ export default function PromotionFormPage() {
             {/* Separate from the scope on purpose: "15% off brakes" and "15%
                 off, but only for these hauliers" are different offers. */}
             <p className="text-fg-subtle text-2xs">
-              What it covers and who it is for are two different questions. A targeted offer only
-              fires when that autopark is on the sale — which happens when one of its drivers is
-              buying on its contract.
+              What it covers and who it is for are two different questions. A targeted offer fires
+              only when that autopark is on the sale — one of its drivers buying on its contract —
+              or, for a driver offer, when that owner-driver is the one collecting.
             </p>
           </CardHeader>
           <CardBody className="grid gap-3 sm:grid-cols-2">
@@ -432,7 +405,11 @@ export default function PromotionFormPage() {
                       value={field.value}
                       onChange={(next) => {
                         field.onChange(next)
+                        // Both sides are cleared: whichever list the old
+                        // audience filled is meaningless under the new one,
+                        // and leaving it would save ids nobody chose.
                         form.setValue('clientIds', [])
+                        form.setValue('driverIds', [])
                       }}
                       options={PROMOTION_AUDIENCES}
                     />
@@ -460,6 +437,33 @@ export default function PromotionFormPage() {
                         options={clientOptions}
                         placeholder="Pick autoparks"
                         searchPlaceholder="Search by name or phone…"
+                      />
+                    )}
+                  />
+                )}
+              </Field>
+            ) : null}
+
+            {values.audience === 'drivers' ? (
+              <Field
+                label="Drivers"
+                required
+                hint="Owner-drivers only — a company's driver is reached through its contract"
+                error={form.formState.errors.driverIds?.message}
+              >
+                {(p) => (
+                  <Controller
+                    control={form.control}
+                    name="driverIds"
+                    render={({ field }) => (
+                      <MultiSelect
+                        {...p}
+                        className="w-full"
+                        value={field.value}
+                        onChange={field.onChange}
+                        options={driverOptions}
+                        placeholder="Pick drivers"
+                        searchPlaceholder="Search by name, phone or plate…"
                       />
                     )}
                   />

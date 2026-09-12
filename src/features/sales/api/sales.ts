@@ -82,15 +82,6 @@ export function useSaleStatusCounts(query: ListQuery) {
   return { data, isLoading: false }
 }
 
-export function useClients(search: string) {
-  const clients = useDataStore((s) => s.clients)
-  const data = useMemo(
-    () => ({ items: clients.filter((c) => matches([c.name, c.phone], search)) }),
-    [clients, search],
-  )
-  return { data, isLoading: false }
-}
-
 /* --- writes -------------------------------------------------------------- */
 
 export function useCreateSale() {

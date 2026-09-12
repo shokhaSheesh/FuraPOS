@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Check, ChevronDown, ScanLine, Truck } from 'lucide-react'
+import { Check, ChevronDown, Plus, ScanLine, Truck } from 'lucide-react'
 import { Popover } from '@/shared/ui/Popover'
 import { Input } from '@/shared/ui/Input'
 import { Button } from '@/shared/ui/Button'
@@ -28,11 +28,18 @@ export function DriverPicker({
   value,
   onChange,
   section,
+  onAddNew,
 }: {
   value: Driver | null
   onChange: (driver: Driver | null) => void
   /** Which kind of driver the till is buying for — narrows the list. */
   section?: 'independent' | 'autopark'
+  /**
+   * Offered for owner-drivers only. A man claiming to drive for an autopark
+   * is claiming a discount on that company's contract, which is not something
+   * to take on trust at a counter.
+   */
+  onAddNew?: () => void
 }) {
   const [open, setOpen] = useState(false)
   const [term, setTerm] = useState('')
@@ -121,6 +128,21 @@ export function DriverPicker({
               : section === 'independent'
                 ? 'No owner-driver matches'
                 : 'No driver matches'}
+          </li>
+        ) : null}
+        {onAddNew && section === 'independent' ? (
+          <li className="border-border mt-1 border-t pt-1">
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false)
+                onAddNew()
+              }}
+              className="hover:bg-canvas text-fg flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm"
+            >
+              <Plus className="size-4" />
+              Add a new owner-driver
+            </button>
           </li>
         ) : null}
       </ul>

@@ -12,6 +12,7 @@ import { paths } from '@/shared/config/paths'
 import { useSession } from '@/app/providers/SessionProvider'
 import { useOpenShiftAt } from '@/features/cashShifts/api/shifts'
 import { DriverPicker } from '../components/DriverPicker'
+import { NewDriverModal } from '../components/NewDriverModal'
 import { SegmentedControl } from '@/shared/ui/SegmentedControl'
 import {
   DRIVER_SECTIONS,
@@ -31,7 +32,6 @@ import { useCreateSale } from '../api/sales'
 import type { Client } from '../api/sales'
 import { ProductPicker } from '@/shared/components/ProductPicker'
 import { SaleLinesTable } from '../components/SaleLinesTable'
-import { ClientPicker } from '../components/ClientPicker'
 import {
   computeTotals,
   PAYMENT_METHODS,
@@ -79,6 +79,7 @@ export default function NewSalePage() {
   */
   const [driver, setDriver] = useState<Driver | null>(null)
   const [truckPlate, setTruckPlate] = useState<string | null>(null)
+  const [addingDriver, setAddingDriver] = useState(false)
   /*
     Which kind of driver is buying, asked before the man himself.
 
@@ -383,15 +384,18 @@ export default function NewSalePage() {
               <CardTitle>Customer</CardTitle>
             </CardHeader>
             <CardBody className="space-y-3">
-              <ClientPicker value={client} onChange={setClient} />
-
               <SegmentedControl
                 aria-label="Which kind of driver is buying"
                 value={section}
                 onChange={pickSection}
                 options={DRIVER_SECTIONS}
               />
-              <DriverPicker section={section} value={driver} onChange={pickDriver} />
+              <DriverPicker
+                section={section}
+                value={driver}
+                onChange={pickDriver}
+                onAddNew={() => setAddingDriver(true)}
+              />
 
               {driver ? (
                 <p className="text-fg-subtle text-2xs">
@@ -430,9 +434,17 @@ export default function NewSalePage() {
 
               {client && client.debt > 0 ? (
                 <p className="text-warning text-2xs">
-                  This client already owes {formatMoney(client.debt)}.
+                  {client.name} already owes {formatMoney(client.debt)}.
                 </p>
               ) : null}
+
+              <NewDriverModal
+                open={addingDriver}
+                onOpenChange={setAddingDriver}
+                // Straight onto the sale: the point of adding him here is not
+                // to fill in a record, it is to serve the man at the counter.
+                onCreated={pickDriver}
+              />
             </CardBody>
           </Card>
 

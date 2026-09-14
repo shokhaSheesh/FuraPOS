@@ -120,6 +120,34 @@ export default function ProductFormPage() {
   const navigate = useNavigate()
   const { productId } = useParams()
   const editing = Boolean(productId && productId !== 'new')
+  return (
+    <ProductForm
+      productId={productId}
+      onSaved={(id) => navigate(paths.products.detail(id))}
+      onCancel={() => navigate(editing ? paths.products.detail(productId!) : paths.products.list)}
+    />
+  )
+}
+
+/**
+ * The product form itself, so it can be opened from somewhere other than its
+ * own page — the order screen's "New item" opens exactly this, full screen,
+ * rather than a cut-down copy that would drift from it.
+ */
+export function ProductForm({
+  productId,
+  onSaved,
+  onCancel,
+  embedded = false,
+}: {
+  productId?: string
+  /** Called with the product's id once it is created or saved. */
+  onSaved: (productId: string) => void
+  onCancel: () => void
+  /** Opened over another screen: no "back to products" link. */
+  embedded?: boolean
+}) {
+  const editing = Boolean(productId && productId !== 'new')
 
   const { data: existing } = useProduct(editing ? productId! : '')
   const { data: categories } = useCategories()
@@ -330,14 +358,14 @@ export default function ProductFormPage() {
         update.mutate(payload, {
           onSuccess: () => {
             toast.success(`${values.name} saved`)
-            navigate(paths.products.detail(productId!))
+            onSaved(productId!)
           },
         })
       } else {
         create.mutate(payload, {
           onSuccess: (product) => {
             toast.success(`${product.name} created`)
-            navigate(paths.products.detail(product.id))
+            onSaved(product.id)
           },
         })
       }
@@ -351,12 +379,14 @@ export default function ProductFormPage() {
 
   return (
     <form onSubmit={onSubmit}>
-      <Button variant="link" size="sm" className="h-auto px-0" asChild>
-        <Link to={editing ? paths.products.detail(productId!) : paths.products.list}>
-          <ArrowLeft />
-          {editing ? 'Back to product' : 'Products'}
-        </Link>
-      </Button>
+      {embedded ? null : (
+        <Button variant="link" size="sm" className="h-auto px-0" asChild>
+          <Link to={editing ? paths.products.detail(productId!) : paths.products.list}>
+            <ArrowLeft />
+            {editing ? 'Back to product' : 'Products'}
+          </Link>
+        </Button>
+      )}
 
       <PageHeader
         title={editing ? `Edit ${existing?.name ?? ''}` : 'New product'}
@@ -367,13 +397,7 @@ export default function ProductFormPage() {
         }
         action={
           <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() =>
-                navigate(editing ? paths.products.detail(productId!) : paths.products.list)
-              }
-            >
+            <Button type="button" variant="secondary" onClick={onCancel}>
               Cancel
             </Button>
             <Button type="submit" variant="primary">

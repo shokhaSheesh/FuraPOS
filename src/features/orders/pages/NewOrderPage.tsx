@@ -27,7 +27,8 @@ import { unitsSoldAt } from '@/shared/lib/demand'
 import { catalogueFor, type CatalogueEntry } from '@/features/suppliers/model/catalogue'
 import { useCreateOrder } from '../api/orders'
 import { GenerateOrderModal } from '../components/GenerateOrderModal'
-import { NewItemModal } from '../components/NewItemModal'
+import { FullScreenDialog } from '@/shared/ui/FullScreenDialog'
+import { ProductForm } from '@/features/products/pages/ProductFormPage'
 import { ownCatalogue } from '../model/ownCatalogue'
 import {
   ORDER_KINDS,
@@ -671,15 +672,30 @@ export default function NewOrderPage() {
         />
       ) : null}
 
-      <NewItemModal
-        open={addingItem}
-        onOpenChange={setAddingItem}
-        // Straight onto the order: the reason it was added at all.
-        onCreated={(variation) => {
-          const [entry] = ownCatalogue([variation])
-          if (entry) addEntry(entry)
-        }}
-      />
+      {/* The Product list's own form, full screen over the order, so the order
+          being built is still here when it closes. */}
+      <FullScreenDialog open={addingItem} onOpenChange={setAddingItem} title="New product">
+        <ProductForm
+          embedded
+          onCancel={() => setAddingItem(false)}
+          onSaved={(productId) => {
+            // Straight onto the order — the reason it was created at all. A
+            // product with several variations puts each of them on.
+            const created = useDataStore
+              .getState()
+              .variations.filter((variation) => variation.productId === productId)
+            for (const entry of ownCatalogue(created)) addEntry(entry)
+            setAddingItem(false)
+            if (created.length) {
+              toast.success(
+                created.length === 1
+                  ? 'Added to the order'
+                  : `${created.length} variations added to the order`,
+              )
+            }
+          }}
+        />
+      </FullScreenDialog>
     </form>
   )
 }

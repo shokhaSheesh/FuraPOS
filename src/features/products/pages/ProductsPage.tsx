@@ -23,6 +23,7 @@ import {
   useCatalogSummary,
   useDeleteVariation,
   useLocations,
+  useProductFields,
   useVariations,
 } from '../api/products'
 import { SegmentedControl } from '@/shared/ui/SegmentedControl'
@@ -63,6 +64,7 @@ export default function ProductsPage() {
   const locationId = (query.location as string | null) ?? null
   const location = locationData.items.find((item) => item.id === locationId)
   const deleteVariation = useDeleteVariation()
+  const { all: customFields } = useProductFields()
 
   const [pendingDelete, setPendingDelete] = useState<VariationRow | null>(null)
   const [importing, setImporting] = useState(false)
@@ -80,8 +82,9 @@ export default function ProductsPage() {
         // A column per location, off until picked from Columns. Pointless once
         // the list is split or filtered by location: Quantity already is that.
         stockColumnsFor: view === 'variations' && !locationId ? locationData.items : [],
+        customFields,
       }),
-    [can, navigate, view, locationId, locationData.items],
+    [can, navigate, view, locationId, locationData.items, customFields],
   )
 
   /*

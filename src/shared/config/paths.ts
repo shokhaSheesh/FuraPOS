@@ -116,6 +116,7 @@ export const paths = {
     registers: '/settings/registers',
     locations: '/settings/locations',
     categories: '/settings/categories', // OX: /app/settings/products
+    productColumns: '/settings/product-columns', // OX: «Настройка полей» on the product form
     urgency: '/settings/urgency', // no OX equivalent — «Zarurlik darajasi», client request
     billing: '/settings/billing',
     personal: '/settings/personal', // OX: Личные данные

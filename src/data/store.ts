@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { combinationName, productAttributes } from '@/features/products/model/product'
 import type { Product, ProductFlag, VariationRow } from '@/features/products/model/product'
+import type { ProductField, ProductFieldInput } from '@/shared/types/productFields'
 import type { Transfer, TransferLine, TransferStatus } from '@/features/transfers/model/transfer'
 import type {
   Correction,
@@ -93,6 +94,7 @@ import {
   companySettings as seedCompany,
   brandSettings as seedBrandSettings,
   urgencyLevels as seedUrgencyLevels,
+  productFields as seedProductFields,
   vehicleMakeSettings as seedVehicleMakes,
   locationSettings as seedLocationSettings,
   categorySettings as seedCategorySettings,
@@ -138,6 +140,8 @@ interface CatalogState {
   brandSettings: Brand[]
   /** «Zarurlik darajasi» — the levels a China order line can carry. */
   urgencyLevels: UrgencyLevel[]
+  /** The business's own product columns — Settings → Product columns. */
+  productFields: ProductField[]
   /** Truck brands and their models — what products fit and what trucks are. */
   vehicleMakes: VehicleMake[]
   locationSettings: LocationSettings[]
@@ -226,6 +230,11 @@ interface CatalogState {
     makeId: string,
     modelId: string,
   ) => { ok: true } | { ok: false; error: string }
+  createProductField: (input: ProductFieldInput) => ProductField
+  /** The type and level are fixed once created: answers already typed would not fit. */
+  updateProductField: (id: string, input: Pick<ProductFieldInput, 'name' | 'options'>) => void
+  /** Removes the column and every answer given to it. */
+  deleteProductField: (id: string) => void
   createUrgencyLevel: (input: Omit<UrgencyLevel, 'id'>) => UrgencyLevel
   updateUrgencyLevel: (id: string, input: Omit<UrgencyLevel, 'id'>) => void
   /** Refused while an order line still carries the level. */
@@ -557,6 +566,7 @@ function flatten(product: Product): VariationRow[] {
     isShippable: product.isShippable,
     showOnline: product.showOnline,
     ...productAttributes(product),
+    customFields: { ...product.customFields, ...variation.customFields },
   }))
 }
 
@@ -698,6 +708,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
   company: seedCompany,
   brandSettings: seedBrandSettings,
   urgencyLevels: seedUrgencyLevels,
+  productFields: seedProductFields,
   vehicleMakes: seedVehicleMakes,
   locationSettings: seedLocationSettings,
   categorySettings: seedCategorySettings,
@@ -1637,6 +1648,54 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       ),
     })
     return { ok: true }
+  },
+
+  createProductField: (input) => {
+    const field: ProductField = {
+      ...input,
+      name: input.name.trim(),
+      options: input.type === 'select' ? input.options : [],
+      id: `pf-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+    }
+    set({ productFields: [...get().productFields, field] })
+    return field
+  },
+  updateProductField: (id, input) =>
+    set({
+      productFields: get().productFields.map((field) =>
+        field.id === id
+          ? {
+              ...field,
+              name: input.name.trim(),
+              options: field.type === 'select' ? input.options : [],
+            }
+          : field,
+      ),
+    }),
+  deleteProductField: (id) => {
+    const strip = (values: Record<string, unknown>) => {
+      if (!(id in values)) return values
+      const next = { ...values }
+      delete next[id]
+      return next
+    }
+    const products = get().products.map((product) => ({
+      ...product,
+      customFields: strip(product.customFields) as Product['customFields'],
+      variations: product.variations.map((variation) => ({
+        ...variation,
+        customFields: strip(variation.customFields) as Product['customFields'],
+      })),
+    }))
+    set({
+      productFields: get().productFields.filter((field) => field.id !== id),
+      products,
+      variations: get().variations.map((row) => ({
+        ...row,
+        customFields: strip(row.customFields) as Product['customFields'],
+      })),
+    })
   },
 
   createUrgencyLevel: (input) => {

@@ -46,9 +46,11 @@ Do not rename a nav item or invent a screen without updating that map first.
    repricing, print templates, and **suppliers** (which OX keeps here, not under Procurement).
    **The sellable unit is a variation, not a product.** A product says what a part is; a variation
    carries the SKU, barcode, cost, price, stock and shelf. The catalogue lists variations, with a
-   by-product view that aggregates. Sale lines point at a variation. There is deliberately **no
-   custom-field builder** — attributes that matter (vehicle make, models, part side) are real,
-   typed fields.
+   by-product view that aggregates. Sale lines point at a variation. Attributes that matter
+   (vehicle make, models, part side) are real, typed fields; on top of those the business can add
+   **its own product columns** in Settings → Product columns (client request, like OX's
+   «Настройка полей») — text, number, list or yes/no, per product or per variation. They show on
+   the product list and the product form, and nowhere else.
 4. **Procurement** `New` — product selection (AI-driven reorder), orders, selection schedule.
 5. **Personnel management** — employees, seller motivation, planning, access & roles (granular
    per-module tree, supports partial/indeterminate access, not just on/off).
@@ -81,7 +83,7 @@ do not.
 These are the structural ideas worth carrying into a fresh build, not just cosmetic choices:
 
 - **Wallet-as-a-shared-component.** Clients, Employees, and Suppliers are different entity types but
-  should all get the *same* reusable "wallet" sub-view: balance, cashback, debt — plus an
+  should all get the _same_ reusable "wallet" sub-view: balance, cashback, debt — plus an
   AI-insights tab. Build this once as a shared component, not three bespoke screens.
   Types live in `src/shared/types/wallet.ts`.
 - **One list-page skeleton, reused everywhere.** Title → search/filter bar → one primary "+Add"
@@ -97,7 +99,7 @@ These are the structural ideas worth carrying into a fresh build, not just cosme
 - **Badges communicate lifecycle, used sparingly.** "New" for recently shipped modules, "Beta" for
   modules still stabilizing — never decorative.
 - **AI/MCP connector as a first-class settings page.** A standout feature worth prioritizing: let
-  the business connect Claude/ChatGPT/etc. directly and *read-only* to their own data (sales, stock,
+  the business connect Claude/ChatGPT/etc. directly and _read-only_ to their own data (sales, stock,
   clients) via a copyable server URL + regenerable token, scoped to the connecting user's own
   permissions, with per-provider setup instructions. Treat it as a real feature, not an afterthought.
 - **Primary action buttons are always the same shape.** Blue, top-right, "+ [Verb]" — consistent
@@ -106,7 +108,7 @@ These are the structural ideas worth carrying into a fresh build, not just cosme
 
 ## Explicit non-goals for this build (yet)
 
-- No real payment processing — a sale records *how* it was paid, it does not charge anything.
+- No real payment processing — a sale records _how_ it was paid, it does not charge anything.
 - **No cashier POS, at all.** Not a separate app, not an embedded one. Sales are typed in by hand.
 - **No Integrations, Partner program, Support, Webhooks or AI / MCP screens.** All five exist in
   OX and are cut from this build. The AI/MCP connector in particular is worth revisiting later —

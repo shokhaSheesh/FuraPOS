@@ -1,10 +1,11 @@
-import { Pencil, PlayCircle, Trash2 } from 'lucide-react'
+import { Pencil, Trash2 } from 'lucide-react'
 import { Badge } from '@/shared/ui/Badge'
 import { RowActions } from '@/shared/components/RowActions'
 import { Switch } from '@/shared/ui/Switch'
 import { useDataStore } from '@/data/store'
 import { ProductThumb } from '@/shared/components/ProductThumb'
 import type { TableColumn } from '@/shared/components/table/features'
+import { displayFieldValue, type ProductField } from '@/shared/types/productFields'
 import { formatMoney, formatNumber, formatPercent } from '@/shared/lib/format'
 import {
   costInUzs,
@@ -43,7 +44,10 @@ export function buildProductColumns({
   canDelete,
   canSeeCost,
   stockColumnsFor = [],
+  customFields = [],
 }: {
+  /** The business's own columns, from Settings → Product columns, after OX's last one. */
+  customFields?: ProductField[]
   /** One quantity column per location, placed right after Quantity. Empty for none. */
   stockColumnsFor?: readonly { id: string; name: string }[]
   usdRate: number
@@ -143,25 +147,6 @@ export function buildProductColumns({
       header: flag.label,
       cell: ({ row }) => <FlagToggle row={row.original} flag={flag.key} label={flag.label} />,
     })),
-    // Видео
-    {
-      accessorKey: 'videoUrl',
-      header: 'Video',
-      cell: ({ row }) =>
-        row.original.videoUrl ? (
-          <a
-            href={row.original.videoUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="text-primary inline-flex items-center gap-1 hover:underline"
-          >
-            <PlayCircle className="size-4" />
-            Watch
-          </a>
-        ) : (
-          <Empty />
-        ),
-    },
     // Зона
     {
       accessorKey: 'zone',
@@ -356,18 +341,6 @@ export function buildProductColumns({
       header: 'Type',
       cell: ({ row }) => text(row.original.partType),
     },
-    // Пол
-    {
-      accessorKey: 'gender',
-      header: 'Gender',
-      cell: ({ row }) => text(row.original.gender),
-    },
-    // Сезон
-    {
-      accessorKey: 'season',
-      header: 'Season',
-      cell: ({ row }) => text(row.original.season),
-    },
     // Модель
     {
       id: 'vehicleModels',
@@ -381,6 +354,14 @@ export function buildProductColumns({
       header: 'Product address',
       cell: ({ row }) => text(row.original.shelfAddress),
     },
+    // Added by the business itself
+    ...customFields.map((field): TableColumn<VariationRow> => ({
+      id: `custom:${field.id}`,
+      header: field.name,
+      enableSorting: false,
+      meta: field.type === 'number' ? { align: 'right' } : undefined,
+      cell: ({ row }) => text(displayFieldValue(field, row.original.customFields[field.id])),
+    })),
     // Ours, not OX's
     ...costOnly([
       {
@@ -435,7 +416,6 @@ export const PRODUCT_COLUMNS_HIDDEN_BY_DEFAULT = [
   'boughtTogetherIds',
   'analogueIds',
   ...PRODUCT_FLAGS.map((flag) => flag.key),
-  'videoUrl',
   'zone',
   'location',
   'saleValue',
@@ -452,8 +432,6 @@ export const PRODUCT_COLUMNS_HIDDEN_BY_DEFAULT = [
   'partSide',
   'oem',
   'partType',
-  'gender',
-  'season',
   'vehicleModels',
   'shelfAddress',
 ]

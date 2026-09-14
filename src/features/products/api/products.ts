@@ -188,6 +188,19 @@ export function useVariationChoices(exceptProductId?: string) {
   )
 }
 
+/** The business's own product columns, split by where they are answered. */
+export function useProductFields() {
+  const items = useDataStore((s) => s.productFields)
+  return useMemo(
+    () => ({
+      all: items,
+      product: items.filter((field) => field.level === 'product'),
+      variation: items.filter((field) => field.level === 'variation'),
+    }),
+    [items],
+  )
+}
+
 /** Warehouses and shops a product can be stocked at. */
 export function useLocations() {
   const items = useDataStore((s) => s.locations)

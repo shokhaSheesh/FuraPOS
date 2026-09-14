@@ -23,9 +23,11 @@ import {
   useCreateProduct,
   useLocations,
   useProduct,
+  useProductFields,
   useUpdateProduct,
   useVariationChoices,
 } from '../api/products'
+import { CustomFieldInput } from '../components/CustomFieldInput'
 import { SegmentedControl } from '@/shared/ui/SegmentedControl'
 import { ProductStockSection } from '../components/ProductStockSection'
 import { ProductOptionsEditor } from '../components/ProductOptionsEditor'
@@ -106,6 +108,7 @@ const emptyVariation = (
   boughtTogetherIds: [],
   mobileSku: null,
   mobileName: null,
+  customFields: {},
   status: 'active' as const,
   stockByLocation: stockRows(locations),
 })
@@ -165,6 +168,7 @@ export function ProductForm({
   const { data: brands } = useBrands()
   const { data: locationData } = useLocations()
   const variationChoices = useVariationChoices(editing ? productId : undefined)
+  const customFields = useProductFields()
   const locations = locationData.items
   const create = useCreateProduct()
   const update = useUpdateProduct(productId ?? '')
@@ -190,6 +194,7 @@ export function ProductForm({
             isShippable: existing.isShippable,
             showOnline: existing.showOnline,
             ...productAttributes(existing),
+            customFields: existing.customFields,
             status: existing.status,
             variationMode: existing.options.length ? 'multiple' : 'single',
             options: existing.options.map((option) => ({ ...option, values: [...option.values] })),
@@ -228,6 +233,7 @@ export function ProductForm({
                 boughtTogetherIds: v.boughtTogetherIds,
                 mobileSku: v.mobileSku,
                 mobileName: v.mobileName,
+                customFields: v.customFields,
                 status: v.status,
                 stockByLocation: stockRows(locations, v.stockByLocation),
               })),
@@ -250,6 +256,7 @@ export function ProductForm({
             isShippable: true,
             showOnline: false,
             ...NEW_PRODUCT_ATTRIBUTES,
+            customFields: {},
             status: 'active',
             variationMode: 'single',
             options: [],
@@ -531,17 +538,20 @@ export function ProductForm({
                 <Input {...p} placeholder="Original, aftermarket…" {...form.register('partType')} />
               )}
             </Field>
-            <Field label="Gender">{(p) => <Input {...p} {...form.register('gender')} />}</Field>
-            <Field label="Season">
-              {(p) => (
-                <Input {...p} placeholder="All-season, winter…" {...form.register('season')} />
-              )}
-            </Field>
-            <Field label="Video" hint="A link to it">
-              {(p) => (
-                <Input {...p} placeholder="https://youtu.be/…" {...form.register('videoUrl')} />
-              )}
-            </Field>
+            {/* The business's own product-level columns, after the built-in ones. */}
+            {customFields.product.map((field) => (
+              <Field key={field.id} label={field.name}>
+                {(p) => (
+                  <CustomFieldInput
+                    form={form}
+                    field={field}
+                    name={`customFields.${field.id}`}
+                    id={p.id}
+                    className="w-full"
+                  />
+                )}
+              </Field>
+            ))}
             <Field label="Description" className="sm:col-span-2 lg:col-span-3">
               {(p) => <Input {...p} {...form.register('description')} />}
             </Field>
@@ -648,24 +658,6 @@ export function ProductForm({
                 <Field label="Barcode">
                   {(p) => <Input {...p} {...form.register('variations.0.barcode')} />}
                 </Field>
-                <Field label="Side">
-                  {(p) => (
-                    <Controller
-                      control={form.control}
-                      name="variations.0.partSide"
-                      render={({ field: f }) => (
-                        <Select
-                          {...p}
-                          className="w-full"
-                          value={f.value ?? undefined}
-                          onChange={f.onChange}
-                          options={PART_SIDES}
-                          placeholder="Not sided"
-                        />
-                      )}
-                    />
-                  )}
-                </Field>
                 <Field
                   label="Cost"
                   hint="What the supplier invoices"
@@ -721,38 +713,6 @@ export function ProductForm({
                           nullable={false}
                           value={f.value}
                           onChange={(v) => f.onChange(v ?? 0)}
-                          onBlur={f.onBlur}
-                        />
-                      )}
-                    />
-                  )}
-                </Field>
-                <Field label="Discounted price" hint="Leave empty for none">
-                  {(p) => (
-                    <Controller
-                      control={form.control}
-                      name="variations.0.discountPrice"
-                      render={({ field: f }) => (
-                        <NumberField
-                          {...p}
-                          value={f.value}
-                          onChange={f.onChange}
-                          onBlur={f.onBlur}
-                        />
-                      )}
-                    />
-                  )}
-                </Field>
-                <Field label="Reorder point" hint="Warn below this">
-                  {(p) => (
-                    <Controller
-                      control={form.control}
-                      name="variations.0.lowStockThreshold"
-                      render={({ field: f }) => (
-                        <NumberField
-                          {...p}
-                          value={f.value}
-                          onChange={f.onChange}
                           onBlur={f.onBlur}
                         />
                       )}
@@ -850,6 +810,19 @@ export function ProductForm({
                     />
                   )}
                 </Field>
+                {customFields.variation.map((field) => (
+                  <Field key={field.id} label={field.name}>
+                    {(p) => (
+                      <CustomFieldInput
+                        form={form}
+                        field={field}
+                        name={`variations.0.customFields.${field.id}`}
+                        id={p.id}
+                        className="w-full"
+                      />
+                    )}
+                  </Field>
+                ))}
               </div>
             ) : (
               <>
@@ -859,6 +832,7 @@ export function ProductForm({
                     form={form}
                     productName={productName.trim()}
                     variationChoices={variationChoices}
+                    customFields={customFields.variation}
                   />
                 ) : (
                   <p className="text-fg-subtle text-sm">

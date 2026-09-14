@@ -7,7 +7,9 @@ import { Input } from '@/shared/ui/Input'
 import { MultiSelect, type MultiSelectOption } from '@/shared/ui/MultiSelect'
 import { Select } from '@/shared/ui/Select'
 import { cn } from '@/shared/lib/cn'
-import { PART_SIDES, combinationName, isSideOption, type ProductFormValues } from '../model/product'
+import type { ProductField } from '@/shared/types/productFields'
+import { combinationName, type ProductFormValues } from '../model/product'
+import { CustomFieldInput } from './CustomFieldInput'
 
 const CURRENCIES = [
   { value: 'USD', label: 'USD' },
@@ -31,18 +33,17 @@ export function ProductVariationsTable({
   form,
   productName,
   variationChoices,
+  customFields,
 }: {
   form: UseFormReturn<ProductFormValues>
   productName: string
   /** What analogues and bought-together can point at. */
   variationChoices: MultiSelectOption<string>[]
+  /** The business's own variation-level columns, one table column each. */
+  customFields: ProductField[]
 }) {
   const variations = form.watch('variations')
-  const options = form.watch('options')
   const errors = form.formState.errors.variations
-
-  /** Side is driven by its option when there is one, so we never ask twice. */
-  const sideFromOption = options.some(isSideOption)
 
   const soldCount = variations.filter((v) => v.enabled).length
   const allSold = soldCount === variations.length
@@ -96,7 +97,6 @@ export function ProductVariationsTable({
                 SKU<span className="text-danger ml-0.5">*</span>
               </th>
               <th className={th}>Barcode</th>
-              {sideFromOption ? null : <th className={th}>Side</th>}
               <FillableHeader
                 label="Cost"
                 onFill={() => fillDown('costPrice')}
@@ -108,15 +108,18 @@ export function ProductVariationsTable({
                 onFill={() => fillDown('salePrice')}
                 many={variations.length > 1}
               />
-              <th className={th}>Discounted</th>
               <th className={th}>Landed cost</th>
-              <th className={th}>Reorder point</th>
               <th className={th}>Shelf</th>
               <th className={th}>Zone</th>
               <th className={th}>Mobile SKU</th>
               <th className={th}>Mobile product name</th>
               <th className={th}>Analogues</th>
               <th className={th}>Frequently bought together</th>
+              {customFields.map((field) => (
+                <th key={field.id} className={th}>
+                  {field.name}
+                </th>
+              ))}
               <th className={th}>Status</th>
             </tr>
           </thead>
@@ -174,25 +177,6 @@ export function ProductVariationsTable({
                       {...form.register(`variations.${index}.barcode`)}
                     />
                   </td>
-                  {sideFromOption ? null : (
-                    <td className={cell}>
-                      <Controller
-                        control={form.control}
-                        name={`variations.${index}.partSide`}
-                        render={({ field }) => (
-                          <Select
-                            className="w-32"
-                            aria-label={`Side — ${name}`}
-                            disabled={!sold}
-                            value={field.value ?? undefined}
-                            onChange={field.onChange}
-                            options={PART_SIDES}
-                            placeholder="Not sided"
-                          />
-                        )}
-                      />
-                    </td>
-                  )}
                   <td className={cell}>
                     <div className="flex gap-1.5">
                       <Controller
@@ -249,21 +233,6 @@ export function ProductVariationsTable({
                   <td className={cell}>
                     <Controller
                       control={form.control}
-                      name={`variations.${index}.discountPrice`}
-                      render={({ field }) => (
-                        <NumberField
-                          className="w-32"
-                          disabled={!sold}
-                          aria-label={`Discounted price — ${name}`}
-                          {...fieldProps(field)}
-                        />
-                      )}
-                    />
-                    {errorText(rowError?.discountPrice?.message)}
-                  </td>
-                  <td className={cell}>
-                    <Controller
-                      control={form.control}
                       name={`variations.${index}.landedCost`}
                       render={({ field }) => (
                         <NumberField
@@ -275,21 +244,6 @@ export function ProductVariationsTable({
                       )}
                     />
                     {errorText(rowError?.landedCost?.message)}
-                  </td>
-                  <td className={cell}>
-                    <Controller
-                      control={form.control}
-                      name={`variations.${index}.lowStockThreshold`}
-                      render={({ field }) => (
-                        <NumberField
-                          className="w-24"
-                          disabled={!sold}
-                          aria-label={`Reorder point — ${name}`}
-                          {...fieldProps(field)}
-                        />
-                      )}
-                    />
-                    {errorText(rowError?.lowStockThreshold?.message)}
                   </td>
                   <td className={cell}>
                     <Input
@@ -359,6 +313,18 @@ export function ProductVariationsTable({
                       )}
                     />
                   </td>
+                  {customFields.map((field) => (
+                    <td key={field.id} className={cell}>
+                      <CustomFieldInput
+                        form={form}
+                        field={field}
+                        name={`variations.${index}.customFields.${field.id}`}
+                        className="w-36"
+                        disabled={!sold}
+                        label={`${field.name} — ${name}`}
+                      />
+                    </td>
+                  ))}
                   <td className={cell}>
                     <Controller
                       control={form.control}

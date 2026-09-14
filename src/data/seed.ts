@@ -9,6 +9,7 @@ import type {
   VariationRow,
 } from '@/features/products/model/product'
 import { productAttributes } from '@/features/products/model/product'
+import type { CustomFieldValues, ProductField } from '@/shared/types/productFields'
 import type { Sale } from '@/features/sales/model/sale'
 import type { Transfer } from '@/features/transfers/model/transfer'
 import type { Correction, CorrectionReason } from '@/features/corrections/model/correction'
@@ -284,6 +285,9 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
       // Linked once every product exists — see below.
       analogueIds: [] as string[],
       boughtTogetherIds: [] as string[],
+      customFields: (index % 4 === 0
+        ? { 'pf-warranty': 6 + (vIndex % 2) * 6 }
+        : {}) as CustomFieldValues,
       mobileSku:
         index % 2 === 0
           ? `M-${String(index + 1).padStart(5, '0')}${sided ? `-${spec.side === 'left' ? 'L' : 'R'}` : ''}`
@@ -318,7 +322,6 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
         ? null
         : `${category.name} for ${vehicle.make}, ${attrPick(['original', 'aftermarket', 'OEM-equivalent'])} quality`,
     oem,
-    videoUrl: index % 9 === 0 ? `https://youtu.be/fura-${index + 1}` : null,
     // Linked after every product exists — see below.
     isTracked: (index + 1) % 17 !== 0,
     isSellable: (index + 1) % 23 !== 0,
@@ -327,8 +330,6 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
     isManufactured: (index + 1) % 29 === 0,
     isWeighted: unit === 'kg',
     partType: attrPick(['Original', 'Aftermarket', 'Aftermarket', null]),
-    gender: null,
-    season: attrPick(['All-season', 'All-season', 'Winter', 'Summer', null]),
     categoryId: category.id,
     categoryName: category.name,
     categoryPath: category.path,
@@ -345,6 +346,9 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
     showOnline: random() > 0.35,
     options,
     variations,
+    customFields: (index % 3 === 0
+      ? { 'pf-material': index % 2 === 0 ? 'Aluminium' : 'Steel' }
+      : {}) as CustomFieldValues,
     status: random() > 0.92 ? 'archived' : 'active',
     createdAt,
     updatedAt: createdAt,
@@ -401,6 +405,7 @@ export const variations: VariationRow[] = products.flatMap((product) =>
     isShippable: product.isShippable,
     showOnline: product.showOnline,
     ...productAttributes(product),
+    customFields: { ...product.customFields, ...variation.customFields },
     options: product.options,
   })),
 )
@@ -2400,6 +2405,29 @@ export const brandSettings: Brand[] = brands.map((brand, index) => ({
   zone: ['Germany', 'Japan', 'Germany', 'United Kingdom'][index] ?? null,
   active: true,
 }))
+
+/**
+ * Two example columns the business added itself, so the directory and the
+ * list show what one looks like. Editable in Settings → Product columns.
+ */
+export const productFields: ProductField[] = [
+  {
+    id: 'pf-material',
+    name: 'Material',
+    type: 'select',
+    options: ['Steel', 'Aluminium', 'Rubber', 'Plastic'],
+    level: 'product',
+    createdAt: '2026-06-02T09:00:00.000Z',
+  },
+  {
+    id: 'pf-warranty',
+    name: 'Warranty (months)',
+    type: 'number',
+    options: [],
+    level: 'variation',
+    createdAt: '2026-06-02T09:05:00.000Z',
+  },
+]
 
 /** The levels a China order line can carry. Editable in Settings. */
 export const urgencyLevels: UrgencyLevel[] = [

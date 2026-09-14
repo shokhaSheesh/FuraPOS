@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { Id, IsoDate } from '@/shared/types'
+import { customFieldValuesSchema, type CustomFieldValues } from '@/shared/types/productFields'
 
 export type ProductStatus = 'active' | 'archived' | 'draft'
 export type UnitOfMeasure = 'pcs' | 'kg' | 'l' | 'm' | 'pack'
@@ -110,6 +111,8 @@ export interface ProductVariation {
   /** The SKU and name the mobile app shows — Артикул моб, Название продукта моб. */
   mobileSku: string | null
   mobileName: string | null
+  /** Answers to the business's own variation-level columns — Settings → Product columns. */
+  customFields: CustomFieldValues
 
   imageUrl: string | null
   status: ProductStatus
@@ -123,7 +126,6 @@ export interface ProductVariation {
 export interface ProductAttributes {
   /** OX keeps OEM as its own column, beside the free-text description. */
   oem: string | null
-  videoUrl: string | null
   /** Stock is counted for it (Отслеживание). */
   isTracked: boolean
   /** Can go on a sale (Продаваемый). */
@@ -138,15 +140,10 @@ export interface ProductAttributes {
   isWeighted: boolean
   /** Тип. */
   partType: string | null
-  /** Пол. */
-  gender: string | null
-  /** Сезон. */
-  season: string | null
 }
 
 export const productAttributes = (p: ProductAttributes): ProductAttributes => ({
   oem: p.oem,
-  videoUrl: p.videoUrl,
   isTracked: p.isTracked,
   isSellable: p.isSellable,
   isCountable: p.isCountable,
@@ -154,14 +151,11 @@ export const productAttributes = (p: ProductAttributes): ProductAttributes => ({
   isManufactured: p.isManufactured,
   isWeighted: p.isWeighted,
   partType: p.partType,
-  gender: p.gender,
-  season: p.season,
 })
 
 /** What a new product starts with. Tracked, sellable, counted and taxed: the ordinary part. */
 export const NEW_PRODUCT_ATTRIBUTES: ProductAttributes = {
   oem: null,
-  videoUrl: null,
   isTracked: true,
   isSellable: true,
   isCountable: true,
@@ -169,8 +163,6 @@ export const NEW_PRODUCT_ATTRIBUTES: ProductAttributes = {
   isManufactured: false,
   isWeighted: false,
   partType: null,
-  gender: null,
-  season: null,
 }
 
 /** Every yes/no a product carries, in OX's column order. All are switched in place on the list. */
@@ -219,6 +211,9 @@ export interface Product extends ProductAttributes {
   isShippable: boolean
   showOnline: boolean
 
+  /** Answers to the business's own product-level columns — Settings → Product columns. */
+  customFields: CustomFieldValues
+
   /** The axes this product varies along. Empty when it is sold one way. */
   options: ProductOption[]
   variations: ProductVariation[]
@@ -232,6 +227,11 @@ export interface Product extends ProductAttributes {
  * This is what the catalogue lists and what a sale line points at.
  */
 export interface VariationRow extends ProductVariation, ProductAttributes {
+  /**
+   * The product's and the variation's own custom answers together — each
+   * field has one level, so the two never share a key.
+   */
+  customFields: CustomFieldValues
   productName: string
   /** Product name and variation together, e.g. "Brake disc — Left". */
   fullName: string
@@ -475,6 +475,7 @@ export const variationFormSchema = z.object({
   boughtTogetherIds: z.array(z.string()),
   mobileSku: z.string().nullable(),
   mobileName: z.string().nullable(),
+  customFields: customFieldValuesSchema,
   status: z.enum(['active', 'archived', 'draft']),
   stockByLocation: z.array(stockAtLocationFormSchema),
   optionValues: z.array(z.object({ optionId: z.string(), value: z.string() })),
@@ -496,7 +497,6 @@ export const productFormSchema = z
     isShippable: z.boolean(),
     showOnline: z.boolean(),
     oem: z.string().nullable(),
-    videoUrl: z.string().nullable(),
     isTracked: z.boolean(),
     isSellable: z.boolean(),
     isCountable: z.boolean(),
@@ -504,8 +504,7 @@ export const productFormSchema = z
     isManufactured: z.boolean(),
     isWeighted: z.boolean(),
     partType: z.string().nullable(),
-    gender: z.string().nullable(),
-    season: z.string().nullable(),
+    customFields: customFieldValuesSchema,
     status: z.enum(['active', 'archived', 'draft']),
     variationMode: z.enum(['single', 'multiple']),
     options: z.array(optionFormSchema).max(MAX_OPTIONS),

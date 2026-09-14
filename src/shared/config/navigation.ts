@@ -167,6 +167,11 @@ export const navigation: NavSection[] = [
       { label: 'Locations', to: paths.settings.locations, permission: 'settings.locations.view' },
       { label: 'Categories', to: paths.settings.categories, permission: 'settings.products.view' },
       {
+        label: 'Product columns',
+        to: paths.settings.productColumns,
+        permission: 'settings.products.view',
+      },
+      {
         label: 'Urgency levels',
         to: paths.settings.urgency,
         permission: 'settings.products.view',

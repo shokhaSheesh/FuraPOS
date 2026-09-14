@@ -124,6 +124,7 @@ describe('data store', () => {
       isShippable: true,
       showOnline: false,
       ...NEW_PRODUCT_ATTRIBUTES,
+      customFields: {},
       status: 'active',
       options: [{ id: 'opt-side', name: 'Side', values: ['Left', 'Right'] }],
       variations: [
@@ -144,6 +145,7 @@ describe('data store', () => {
           boughtTogetherIds: [],
           mobileSku: null,
           mobileName: null,
+          customFields: {},
           stockByLocation: [{ locationId: 'loc-1', quantity: 4 }],
           status: 'active',
         },
@@ -164,6 +166,7 @@ describe('data store', () => {
           boughtTogetherIds: [],
           mobileSku: null,
           mobileName: null,
+          customFields: {},
           stockByLocation: [
             { locationId: 'loc-1', quantity: 4 },
             { locationId: 'loc-3', quantity: 6 },
@@ -285,5 +288,33 @@ describe('booking a delivery against an order', () => {
     const receipt = useDataStore.getState().receipts.at(-1)!
     const received = receipt.lines.find((l) => l.variationId === line.variationId)!
     expect(received.receivedQuantity).toBe(outstanding)
+  })
+})
+
+describe('product columns', () => {
+  beforeEach(() => {
+    useDataStore.setState(useDataStore.getInitialState(), true)
+  })
+
+  it('adds a column the list can read, and deleting it removes every answer', () => {
+    const field = useDataStore.getState().createProductField({
+      name: '  Country of origin ',
+      type: 'text',
+      options: ['ignored for text'],
+      level: 'variation',
+    })
+    expect(field.name).toBe('Country of origin')
+    expect(field.options).toEqual([])
+
+    // The seeded Material column has answers on products and on their rows.
+    const material = 'pf-material'
+    const answered = () =>
+      useDataStore.getState().products.filter((p) => material in p.customFields).length +
+      useDataStore.getState().variations.filter((v) => material in v.customFields).length
+    expect(answered()).toBeGreaterThan(0)
+
+    useDataStore.getState().deleteProductField(material)
+    expect(useDataStore.getState().productFields.map((f) => f.id)).not.toContain(material)
+    expect(answered()).toBe(0)
   })
 })

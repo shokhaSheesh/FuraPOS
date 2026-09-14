@@ -1620,6 +1620,16 @@ where it belongs — so reorder schedules no longer round to it), **Модифи
 Аналоги, С этим вместе покупают, Артикул моб and Название продукта моб sit on the **variation**, as
 in OX's own form — the left step's analogue is another left step.
 
+Also removed at the client's request: **Видео**, **Пол**, **Сезон** (fields and columns), and from the
+form only the Side input, Reorder point and Discounted price — the data behind the last two stays,
+since the low-stock filter and promotions still read it.
+
+**Own columns — Settings → Product columns** (OX: «Настройка полей» on the product form, and
+«+ Пользовательскую колонку»). A directory of every column: the built-in ones read-only, plus the
+business's own — text, number, list or yes/no, answered per product or per variation. An added column
+appears on the product list (after the last built-in one) and on the create/edit form; its type and
+level are fixed once created, and deleting it deletes its answers.
+
 The list has two views: **By variation** and **By location** (a variation once per location it is
 stocked at). A quantity column per location is available on By variation from Columns, off by
 default. Every column is resizable by dragging the edge of its heading; double-click fits it again.

@@ -11,7 +11,8 @@ import { paths } from '@/shared/config/paths'
 import { cn } from '@/shared/lib/cn'
 import { formatDate, formatMoney, formatNumber, formatPercent } from '@/shared/lib/format'
 import { USD_RATE } from '@/data/seed'
-import { useProduct } from '../api/products'
+import { useProduct, useProductFields } from '../api/products'
+import { displayFieldValue } from '@/shared/types/productFields'
 import {
   PRODUCT_FLAGS,
   costInUzs,
@@ -197,6 +198,7 @@ function VariationsTable({ product }: { product: Product }) {
 }
 
 function Details({ product }: { product: Product }) {
+  const { product: productFields } = useProductFields()
   const rows: [string, React.ReactNode][] = [
     ['Category', product.categoryPath],
     ['Supplier brand', product.brandName ?? <Empty />],
@@ -204,8 +206,6 @@ function Details({ product }: { product: Product }) {
     ['OEM', product.oem ?? <Empty />],
     ['Description', product.description ?? <Empty />],
     ['Type', product.partType ?? <Empty />],
-    ['Gender', product.gender ?? <Empty />],
-    ['Season', product.season ?? <Empty />],
     ['Unit', product.unit],
     ['Vehicle make', product.vehicleMake ?? <Empty />],
     ['Vehicle models', product.vehicleModels.join(', ') || <Empty />],
@@ -215,16 +215,10 @@ function Details({ product }: { product: Product }) {
     ...PRODUCT_FLAGS.filter((flag) => flag.key !== 'isShippable').map(
       (flag): [string, React.ReactNode] => [flag.label, product[flag.key] ? 'Yes' : 'No'],
     ),
-    [
-      'Video',
-      product.videoUrl ? (
-        <a href={product.videoUrl} target="_blank" rel="noreferrer" className="text-primary">
-          Watch
-        </a>
-      ) : (
-        <Empty />
-      ),
-    ],
+    ...productFields.map((field): [string, React.ReactNode] => [
+      field.name,
+      displayFieldValue(field, product.customFields[field.id]) ?? <Empty />,
+    ]),
     ['Created', formatDate(product.createdAt)],
     ['Updated', formatDate(product.updatedAt)],
   ]

@@ -2,15 +2,17 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { useFieldArray, useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, ArrowRight, Pencil, Trash2, Truck, Wand2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, PackagePlus, Pencil, Truck, Wand2 } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { Steps } from '@/shared/components/Steps'
 import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
-import { ProductBrowser } from '../components/ProductBrowser'
+import { ProductBrowser } from '@/shared/components/ProductBrowser'
+import { AddProductsModal } from '@/shared/components/AddProductsModal'
+import { LineItemsTable, type LineRow } from '@/shared/components/LineItemsTable'
+import type { TableColumn } from '@/shared/components/table/features'
 import { GenerateTransferModal } from '../components/GenerateTransferModal'
 import type { TransferSuggestion } from '../model/suggest'
-import { ProductThumb } from '@/shared/components/ProductThumb'
 import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
 import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
@@ -37,6 +39,9 @@ import type { VariationRow } from '@/features/products/model/product'
  * are written and dispatched in one go; saving as a draft is for the case where
  * someone else does the picking.
  */
+/** "Any" in the catalogue filters — Radix reads an empty value as cleared. */
+const ANY = '__any__'
+
 export default function NewTransferPage() {
   const navigate = useNavigate()
   const locations = useDataStore((s) => s.locations)
@@ -92,6 +97,7 @@ export default function NewTransferPage() {
   const [categoryId, setCategoryId] = useState('')
   const [brandId, setBrandId] = useState('')
   const [generating, setGenerating] = useState(false)
+  const [picking, setPicking] = useState(false)
   /** Route and note first, products second — the reference product's two-page create. */
   const [step, setStep] = useState<1 | 2>(1)
 
@@ -133,10 +139,7 @@ export default function NewTransferPage() {
       (!brandId || variation.brandId === brandId)
   }, [categoryId, brandId])
 
-  const totalUnits = lines.reduce(
-    (sum, line) => sum + (Number.isFinite(line.requestedQuantity) ? line.requestedQuantity : 0),
-    0,
-  )
+
 
   /** Products depend on the route, so it has to be complete before step 2. */
   const goToProducts = async () => {
@@ -187,6 +190,128 @@ export default function NewTransferPage() {
   /** Whose sales are worth showing against each line. */
   const demandLocationId = requesting ? toLocationId : fromLocationId
   const demandLocation = requesting ? to : from
+
+  /** Put a catalogue row on the transfer, or one more of a line already there. */
+  const addVariation = (variation: VariationRow) => {
+    const current = form.getValues('lines')
+    const existing = current.findIndex((line) => line.variationId === variation.id)
+    if (existing > -1) {
+      // Adding the same part twice means "one more", not a second row.
+      form.setValue(
+        `lines.${existing}.requestedQuantity`,
+        (current[existing]?.requestedQuantity ?? 0) + 1,
+        { shouldDirty: true },
+      )
+      return
+    }
+    append({
+      id: `line-${Date.now()}`,
+      variationId: variation.id,
+      productId: variation.productId,
+      sku: variation.sku,
+      name: variation.fullName,
+      imageUrl: variation.imageUrl,
+      unit: variation.unit,
+      requestedQuantity: 1,
+      // Filled in at dispatch and at receipt, when reality is known.
+      sentQuantity: null,
+      receivedQuantity: null,
+      // Snapshotted now, so the document keeps its value later.
+      unitCost: variation.costPrice,
+      costCurrency: variation.costCurrency,
+      unitPrice: variation.salePrice,
+    })
+  }
+
+  const lineRows: LineRow[] = fields.map((field, index) => ({
+    key: field.id,
+    index,
+    variationId: lines[index]?.variationId ?? '',
+    quantity: Number.isFinite(lines[index]?.requestedQuantity)
+      ? (lines[index]?.requestedQuantity ?? 0)
+      : 0,
+  }))
+
+  /*
+   * The transfer's own columns, after the product name. Both ends are named
+   * rather than "source" and "destination" — nobody should have to remember
+   * which is which — and the sales column follows whoever receives the goods.
+   */
+  const lineColumns: TableColumn<LineRow>[] = [
+    {
+      id: 'atFrom',
+      header: `At ${from?.name ?? 'source'}`,
+      meta: { align: 'right' },
+      cell: ({ row }) => (
+        <span className="text-fg-muted tabular-nums">
+          {formatNumber(availableAt(row.original.variationId))}
+        </span>
+      ),
+    },
+    {
+      id: 'atTo',
+      header: `At ${to?.name ?? 'destination'}`,
+      meta: { align: 'right' },
+      cell: ({ row }) =>
+        toLocationId ? (
+          <span className="text-fg-muted tabular-nums">
+            {formatNumber(stockAt(row.original.variationId, toLocationId))}
+          </span>
+        ) : (
+          <span className="text-fg-subtle">—</span>
+        ),
+    },
+    {
+      id: 'sold',
+      header: `Sold at ${demandLocation?.name ?? (requesting ? 'here' : 'source')}`,
+      meta: { align: 'right' },
+      cell: ({ row }) => {
+        if (!demandLocationId) return <span className="text-fg-subtle">—</span>
+        const demand = demandAt(sales, row.original.variationId, demandLocationId)
+        return (
+          <div className="leading-tight">
+            <p className="text-fg tabular-nums">{formatNumber(demand[3])} in 3 months</p>
+            <p className="text-fg-subtle text-2xs tabular-nums">
+              {formatNumber(demand[6])} in 6 months
+            </p>
+            {hasStalled(demand) ? (
+              <p className="text-warning text-2xs">not selling lately</p>
+            ) : null}
+          </div>
+        )
+      },
+    },
+    {
+      id: 'move',
+      header: 'Move',
+      enableHiding: false,
+      meta: { align: 'right' },
+      cell: ({ row }) => {
+        const error = form.formState.errors.lines?.[row.original.index]?.requestedQuantity?.message
+        return (
+          <div className="flex flex-col items-end">
+            <Controller
+              control={form.control}
+              name={`lines.${row.original.index}.requestedQuantity`}
+              render={({ field: f }) => (
+                <NumberField
+                  className="w-24"
+                  nullable={false}
+                  min={1}
+                  aria-invalid={error ? true : undefined}
+                  aria-label="Quantity to move"
+                  value={f.value}
+                  onChange={(v) => f.onChange(v ?? 0)}
+                  onBlur={f.onBlur}
+                />
+              )}
+            />
+            {error ? <p className="text-danger text-2xs mt-0.5">{error}</p> : null}
+          </div>
+        )
+      },
+    },
+  ]
 
   return (
     <form>
@@ -380,86 +505,77 @@ export default function NewTransferPage() {
                 Edit details
               </Button>
             </Card>
-            <Card>
-              <CardHeader className="flex-col items-stretch gap-1">
-                <div className="flex items-center justify-between gap-3">
-                  <CardTitle>Items</CardTitle>
-                  <div className="flex items-center gap-3">
-                    {lines.length ? (
-                      <span className="text-fg-muted text-sm tabular-nums">
-                        {formatNumber(lines.length)} items · {formatNumber(totalUnits)} units
-                      </span>
-                    ) : null}
-                    {requesting ? (
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        // Both ends are needed before anything can be worked out:
-                        // the proposal is about one shelf relative to another.
-                        disabled={!fromLocationId || !toLocationId}
-                        title={
-                          !fromLocationId || !toLocationId
-                            ? 'Choose both locations first'
-                            : undefined
-                        }
-                        onClick={() => setGenerating(true)}
-                      >
-                        <Wand2 />
-                        Suggest what to ask for
-                      </Button>
-                    ) : null}
-                  </div>
-                </div>
-                <p className="text-fg-subtle text-2xs">
-                  Quantities shown are what {from?.name ?? 'the source'} holds, not the company
-                  total.
-                </p>
-              </CardHeader>
-              <CardBody className="space-y-3">
-                {requesting && (!fromLocationId || !toLocationId) ? (
-                  <p className="text-fg-subtle text-2xs">
-                    Pick both locations, and the system can suggest what to ask for.
-                  </p>
-                ) : null}
+            <LineItemsTable
+              storageKey="transfer-lines"
+              rows={lineRows}
+              columns={lineColumns}
+              error={form.formState.errors.lines?.root?.message}
+              emptyDescription={
+                requesting
+                  ? 'Use “Add products” to pick what to ask for, or let the system suggest it.'
+                  : 'Use “Add products” to pick what to send.'
+              }
+              onRemove={(row) => remove(row.index)}
+              addActions={[
+                {
+                  label: 'From the catalogue',
+                  hint: 'Browse by category or brand, add several at once',
+                  icon: PackagePlus,
+                  onSelect: () => setPicking(true),
+                },
+                ...(requesting
+                  ? [
+                      {
+                        label: 'Suggest what to ask for',
+                        hint: 'From what sold here and what the other side can spare',
+                        icon: Wand2,
+                        onSelect: () => setGenerating(true),
+                      },
+                    ]
+                  : []),
+              ]}
+            />
 
+            <AddProductsModal
+              open={picking}
+              onOpenChange={setPicking}
+              description={`Stock shown is what ${from?.name ?? 'the source'} holds, not the company total.`}
+              lineCount={lines.length}
+            >
+              <div className="space-y-3">
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <Field label="Category" hint="Narrows the search below">
+                  <Field label="Category">
                     {(p) => (
                       <Select
                         {...p}
                         className="w-full"
-                        value={categoryId || undefined}
-                        onChange={setCategoryId}
-                        placeholder="Any category"
+                        value={categoryId || ANY}
+                        onChange={(next) => setCategoryId(next === ANY ? '' : next)}
                         options={[
-                          { value: '', label: 'Any category' },
+                          { value: ANY, label: 'Any category' },
                           ...categories.map((c) => ({ value: c.id, label: c.name })),
                         ]}
                       />
                     )}
                   </Field>
-                  <Field label="Brand" hint="Narrows the search below">
+                  <Field label="Brand">
                     {(p) => (
                       <Select
                         {...p}
                         className="w-full"
-                        value={brandId || undefined}
-                        onChange={setBrandId}
-                        placeholder="Any brand"
+                        value={brandId || ANY}
+                        onChange={(next) => setBrandId(next === ANY ? '' : next)}
                         options={[
-                          { value: '', label: 'Any brand' },
+                          { value: ANY, label: 'Any brand' },
                           ...brands.map((b) => ({ value: b.id, label: b.name })),
                         ]}
                       />
                     )}
                   </Field>
                 </div>
-
                 <ProductBrowser
                   filter={pickerFilter}
                   addedIds={lines.map((line) => line.variationId)}
-                  disabled={!fromLocationId}
                   emptyLabel={
                     categoryId || brandId
                       ? 'Nothing in this category or brand.'
@@ -472,166 +588,10 @@ export default function NewTransferPage() {
                       muted: here > 0,
                     }
                   }}
-                  onPick={(variation) => {
-                    const existing = lines.findIndex((line) => line.variationId === variation.id)
-                    if (existing > -1) {
-                      // Adding the same part twice means "one more", not a second row.
-                      form.setValue(
-                        `lines.${existing}.requestedQuantity`,
-                        (lines[existing]?.requestedQuantity ?? 0) + 1,
-                        { shouldDirty: true },
-                      )
-                      return
-                    }
-                    append({
-                      id: `line-${Date.now()}`,
-                      variationId: variation.id,
-                      productId: variation.productId,
-                      sku: variation.sku,
-                      name: variation.fullName,
-                      imageUrl: variation.imageUrl,
-                      unit: variation.unit,
-                      requestedQuantity: 1,
-                      // Filled in at dispatch and at receipt, when reality is known.
-                      sentQuantity: null,
-                      receivedQuantity: null,
-                      // Snapshotted now, so the document keeps its value later.
-                      unitCost: variation.costPrice,
-                      costCurrency: variation.costCurrency,
-                      unitPrice: variation.salePrice,
-                    })
-                  }}
+                  onPick={addVariation}
                 />
-
-                {form.formState.errors.lines?.root ? (
-                  <p className="text-danger text-2xs">{form.formState.errors.lines.root.message}</p>
-                ) : null}
-
-                {fields.length === 0 ? (
-                  <p className="text-fg-subtle text-sm">
-                    Nothing added yet. Search above to put a product on this transfer.
-                  </p>
-                ) : (
-                  <div className="border-border rounded-card overflow-x-auto border">
-                    <table className="w-full text-sm">
-                      <thead className="bg-canvas">
-                        <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-                          <th className="px-3 py-2 text-left font-semibold">Product</th>
-                          <th className="px-3 py-2 text-left font-semibold">SKU</th>
-                          {/* Named rather than "source" and "destination": nobody
-                            should have to remember which end is which. */}
-                          <th className="px-3 py-2 text-right font-semibold">
-                            At {from?.name ?? 'source'}
-                          </th>
-                          <th className="px-3 py-2 text-right font-semibold">
-                            At {to?.name ?? 'destination'}
-                          </th>
-                          <th className="px-3 py-2 text-right font-semibold">
-                            Sold at {demandLocation?.name ?? (requesting ? 'here' : 'source')}
-                          </th>
-                          <th className="px-3 py-2 text-right font-semibold">Move</th>
-                          <th className="w-10" />
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {fields.map((field, index) => {
-                          const line = lines[index]
-                          const here = line ? availableAt(line.variationId) : 0
-                          const there =
-                            line && toLocationId ? stockAt(line.variationId, toLocationId) : null
-                          // Without a location there is nothing to count, and a
-                          // bare zero would read as "never sells" rather than
-                          // "not chosen yet".
-                          const demand =
-                            line && demandLocationId
-                              ? demandAt(sales, line.variationId, demandLocationId)
-                              : null
-                          const error =
-                            form.formState.errors.lines?.[index]?.requestedQuantity?.message
-                          return (
-                            <tr key={field.id} className="border-border border-t">
-                              <td className="px-3 py-2">
-                                <div className="flex items-center gap-2.5">
-                                  <ProductThumb src={line?.imageUrl ?? null} size="sm" />
-                                  <span className="font-medium">{line?.name}</span>
-                                </div>
-                              </td>
-                              <td className="text-fg-muted text-2xs px-3 py-2 font-mono">
-                                {line?.sku}
-                              </td>
-                              <td className="text-fg-muted px-3 py-2 text-right tabular-nums">
-                                {formatNumber(here)} {line?.unit}
-                              </td>
-                              <td className="text-fg-muted px-3 py-2 text-right tabular-nums">
-                                {there === null ? (
-                                  <span className="text-fg-subtle">pick a destination</span>
-                                ) : (
-                                  `${formatNumber(there)} ${line?.unit ?? ''}`
-                                )}
-                              </td>
-                              <td className="px-3 py-2 text-right">
-                                {/* Spelled out in words rather than "3m / 6m", and
-                                  the two together say what one cannot: sales six
-                                  months ago with none since is a part that has
-                                  stopped moving. */}
-                                {demand ? (
-                                  <>
-                                    <p className="text-fg tabular-nums">
-                                      {formatNumber(demand[3])} in 3 months
-                                    </p>
-                                    <p className="text-fg-subtle text-2xs tabular-nums">
-                                      {formatNumber(demand[6])} in 6 months
-                                    </p>
-                                  </>
-                                ) : (
-                                  <span className="text-fg-subtle">pick a destination</span>
-                                )}
-                                {demand && hasStalled(demand) ? (
-                                  <p className="text-warning text-2xs">not selling lately</p>
-                                ) : null}
-                              </td>
-                              <td className="px-2 py-1.5 text-right">
-                                <Controller
-                                  control={form.control}
-                                  name={`lines.${index}.requestedQuantity`}
-                                  render={({ field: f }) => (
-                                    <NumberField
-                                      className="w-24"
-                                      nullable={false}
-                                      min={1}
-                                      aria-invalid={error ? true : undefined}
-                                      aria-label={`Quantity of ${line?.name}`}
-                                      value={f.value}
-                                      onChange={(v) => f.onChange(v ?? 0)}
-                                      onBlur={f.onBlur}
-                                    />
-                                  )}
-                                />
-                                {error ? (
-                                  <p className="text-danger text-2xs mt-0.5">{error}</p>
-                                ) : null}
-                              </td>
-                              <td className="px-2">
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  aria-label={`Remove ${line?.name}`}
-                                  className="hover:text-danger"
-                                  onClick={() => remove(index)}
-                                >
-                                  <Trash2 />
-                                </Button>
-                              </td>
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </CardBody>
-            </Card>
+              </div>
+            </AddProductsModal>
           </>
         )}
 

@@ -1,12 +1,25 @@
 import { Link, useNavigate } from 'react-router'
 import { useFieldArray, useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, PackageCheck, Plus, Trash2 } from 'lucide-react'
+import { useState } from 'react'
+import {
+  ArrowLeft,
+  ArrowRight,
+  PackageCheck,
+  PackagePlus,
+  Pencil,
+  Plus,
+  Trash2,
+} from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
-import { ProductPicker } from '@/shared/components/ProductPicker'
-import { ProductThumb } from '@/shared/components/ProductThumb'
+import { ProductBrowser } from '@/shared/components/ProductBrowser'
+import { AddProductsModal } from '@/shared/components/AddProductsModal'
+import { LineItemsTable, type LineRow } from '@/shared/components/LineItemsTable'
+import { Steps } from '@/shared/components/Steps'
+import type { TableColumn } from '@/shared/components/table/features'
+import type { VariationRow } from '@/features/products/model/product'
 import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
 import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
@@ -73,6 +86,149 @@ export default function NewGoodsReceiptPage() {
   const goods = supplierTotal(draft, USD_RATE)
   const extras = extraCostsTotal(draft, USD_RATE)
 
+  /** Details, freight and duty first; the lines second — OX's split. */
+  const [step, setStep] = useState<1 | 2>(1)
+  const [picking, setPicking] = useState(false)
+
+  const goToProducts = async () => {
+    const ok = await form.trigger(['locationId', 'additionalCosts'])
+    if (!ok) {
+      toast.error('Check the highlighted fields first')
+      return
+    }
+    setStep(2)
+    window.scrollTo({ top: 0 })
+  }
+
+  /** Put a catalogue row on the receipt, or one more of a line already there. */
+  const addVariation = (variation: VariationRow) => {
+    const current = form.getValues('lines')
+    const existing = current.findIndex((line) => line.variationId === variation.id)
+    if (existing > -1) {
+      form.setValue(
+        `lines.${existing}.orderedQuantity`,
+        (current[existing]?.orderedQuantity ?? 0) + 1,
+        { shouldDirty: true },
+      )
+      return
+    }
+    lineArray.append({
+      id: `line-${variation.id}`,
+      variationId: variation.id,
+      productId: variation.productId,
+      sku: variation.sku,
+      name: variation.fullName,
+      imageUrl: variation.imageUrl,
+      unit: variation.unit,
+      orderedQuantity: 1,
+      receivedQuantity: null,
+      // Last known cost, as a starting point the buyer corrects.
+      unitCost: variation.costPrice,
+      costCurrency: variation.costCurrency,
+    })
+  }
+
+  type ReceiptRow = LineRow
+
+  const lineRows: ReceiptRow[] = lineArray.fields.map((field, index) => ({
+    key: field.id,
+    index,
+    variationId: lines[index]?.variationId ?? '',
+    quantity: lines[index]?.orderedQuantity ?? 0,
+  }))
+
+  /*
+   * The receipt's own columns, slotted after the product name. "Invoiced" is
+   * the supplier's paperwork, not the count off the lorry — that is counted
+   * when the receipt is posted, and the difference is the shortage.
+   */
+  const lineColumns: TableColumn<ReceiptRow>[] = [
+    {
+      id: 'invoiced',
+      header: 'Invoiced',
+      enableHiding: false,
+      meta: { align: 'right' },
+      cell: ({ row }) => (
+        <div className="flex justify-end">
+        <Controller
+          control={form.control}
+          name={`lines.${row.original.index}.orderedQuantity`}
+          render={({ field: f }) => (
+            <NumberField
+              className="w-20"
+              nullable={false}
+              min={1}
+              aria-label="Invoiced quantity"
+              value={f.value}
+              onChange={(v) => f.onChange(v ?? 0)}
+              onBlur={f.onBlur}
+            />
+        </div>
+          )}
+        />
+      ),
+    },
+    {
+      id: 'unitPrice',
+      header: 'Unit price',
+      enableHiding: false,
+      meta: { align: 'right' },
+      cell: ({ row }) => (
+        <div className="flex justify-end gap-1.5">
+          <Controller
+            control={form.control}
+            name={`lines.${row.original.index}.unitCost`}
+            render={({ field: f }) => (
+              <NumberField
+                className="w-28"
+                nullable={false}
+                step="any"
+                aria-label="Unit price"
+                value={f.value}
+                onChange={(v) => f.onChange(v ?? 0)}
+                onBlur={f.onBlur}
+              />
+            )}
+          />
+          <Controller
+            control={form.control}
+            name={`lines.${row.original.index}.costCurrency`}
+            render={({ field: f }) => (
+              <Select
+                value={f.value}
+                onChange={f.onChange}
+                options={CURRENCIES}
+                aria-label="Currency"
+                className="w-20"
+              />
+            )}
+          />
+        </div>
+      ),
+    },
+    {
+      id: 'landed',
+      header: 'Landed cost',
+      meta: { align: 'right' },
+      cell: ({ row }) => {
+        const line = lines[row.original.index]
+        if (!line) return null
+        const landed = landedUnitCost({ ...line, receivedQuantity: null }, draft, USD_RATE)
+        const supplierUnit = toUzs(line.unitCost, line.costCurrency, USD_RATE)
+        return (
+          <span className="text-fg font-medium tabular-nums">
+            {formatMoney(Math.round(landed))}
+            {landed > supplierUnit ? (
+              <span className="text-fg-subtle text-2xs ml-1">
+                +{formatPercent((landed - supplierUnit) / supplierUnit)}
+              </span>
+            ) : null}
+          </span>
+        )
+      },
+    },
+  ]
+
   const submit = (status: 'draft' | 'received') =>
     form.handleSubmit(
       (values) => {
@@ -105,349 +261,274 @@ export default function NewGoodsReceiptPage() {
       <PageHeader
         title="New receipt"
         description="What a supplier delivered, and everything that made it cost more than the invoice."
+        below={
+          <Steps
+            steps={['Details', 'Products']}
+            current={step}
+            onSelect={(n) => setStep(n as 1 | 2)}
+          />
+        }
         action={
-          <div className="flex items-center gap-2">
-            <Button type="button" variant="secondary" onClick={submit('draft')}>
-              Save as draft
-            </Button>
-            <Button type="button" variant="primary" onClick={submit('received')}>
-              <PackageCheck />
-              Post receipt
-            </Button>
-          </div>
+          step === 1 ? (
+            <div className="flex items-center gap-2">
+              <Button type="button" variant="secondary" asChild>
+                <Link to={paths.products.goodsReceipt}>Cancel</Link>
+              </Button>
+              <Button type="button" variant="primary" onClick={goToProducts}>
+                Continue
+                <ArrowRight />
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Button type="button" variant="secondary" onClick={() => setStep(1)}>
+                <ArrowLeft />
+                Back
+              </Button>
+              <Button type="button" variant="secondary" onClick={submit('draft')}>
+                Save as draft
+              </Button>
+              <Button type="button" variant="primary" onClick={submit('received')}>
+                <PackageCheck />
+                Post receipt
+              </Button>
+            </div>
+          )
         }
       />
 
       <div className="mt-4 space-y-3">
-        <Card>
-          <CardHeader>
-            <CardTitle>Delivery</CardTitle>
-          </CardHeader>
-          <CardBody className="grid gap-3 sm:grid-cols-3">
-            <Field label="Supplier">
-              {(p) => (
-                <Controller
-                  control={form.control}
-                  name="supplierId"
-                  render={({ field }) => (
-                    <Select
-                      {...p}
-                      className="w-full"
-                      value={field.value ?? undefined}
-                      onChange={field.onChange}
-                      placeholder="Not recorded"
-                      options={suppliers.items.map((s) => ({ value: s.id, label: s.name }))}
-                    />
-                  )}
-                />
-              )}
-            </Field>
-            <Field label="Invoice number" hint="Theirs, for matching against their paperwork">
-              {(p) => <Input {...p} placeholder="INV-40218" {...form.register('invoiceNumber')} />}
-            </Field>
-            <Field label="Lands at" required error={form.formState.errors.locationId?.message}>
-              {(p) => (
-                <Controller
-                  control={form.control}
-                  name="locationId"
-                  render={({ field }) => (
-                    <Select
-                      {...p}
-                      className="w-full"
-                      value={field.value || undefined}
-                      onChange={field.onChange}
-                      options={locations.map((l) => ({ value: l.id, label: l.name }))}
-                    />
-                  )}
-                />
-              )}
-            </Field>
-          </CardBody>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex-col items-stretch gap-1">
-            <div className="flex items-center justify-between gap-3">
-              <CardTitle>Items</CardTitle>
-              {lines.length ? (
-                <span className="text-fg-muted text-sm tabular-nums">
-                  {formatNumber(lines.length)} items · {formatMoney(goods)} from the supplier
-                </span>
-              ) : null}
-            </div>
-            {/* The label people got wrong: this column is the supplier's
-                paperwork, not the count off the lorry. Saying so here is what
-                makes a short delivery visible later. */}
-            <p className="text-fg-subtle text-2xs">
-              <strong className="text-fg-muted font-medium">Invoiced</strong> is what their
-              paperwork says, priced in the currency they billed. You count what actually arrived
-              when you post the receipt, and the difference is the shortage. Landed cost is worked
-              out below.
-            </p>
-          </CardHeader>
-          <CardBody className="space-y-3">
-            <ProductPicker
-              placeholder="Search a product to add to this delivery…"
-              disabled={!locationId}
-              onPick={(variation) => {
-                const existing = lines.findIndex((line) => line.variationId === variation.id)
-                if (existing > -1) {
-                  form.setValue(
-                    `lines.${existing}.orderedQuantity`,
-                    (lines[existing]?.orderedQuantity ?? 0) + 1,
-                    { shouldDirty: true },
-                  )
-                  return
-                }
-                lineArray.append({
-                  id: `line-${Date.now()}`,
-                  variationId: variation.id,
-                  productId: variation.productId,
-                  sku: variation.sku,
-                  name: variation.fullName,
-                  imageUrl: variation.imageUrl,
-                  unit: variation.unit,
-                  orderedQuantity: 1,
-                  receivedQuantity: null,
-                  // Last known cost, as a starting point the buyer corrects.
-                  unitCost: variation.costPrice,
-                  costCurrency: variation.costCurrency,
-                })
-              }}
-            />
-
-            {form.formState.errors.lines?.root ? (
-              <p className="text-danger text-2xs">{form.formState.errors.lines.root.message}</p>
-            ) : null}
-
-            {lineArray.fields.length === 0 ? (
-              <p className="text-fg-subtle text-sm">
-                Nothing added yet. Search above to put a product on this delivery.
-              </p>
-            ) : (
-              <div className="border-border rounded-card overflow-x-auto border">
-                <table className="w-full text-sm">
-                  <thead className="bg-canvas">
-                    <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-                      <th className="px-3 py-2 text-left font-semibold">Product</th>
-                      <th className="px-3 py-2 text-right font-semibold">Invoiced</th>
-                      <th className="px-3 py-2 text-right font-semibold">Unit price</th>
-                      <th className="px-3 py-2 text-right font-semibold">Landed</th>
-                      <th className="w-10" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {lineArray.fields.map((field, index) => {
-                      const line = lines[index]
-                      const landed = line
-                        ? landedUnitCost({ ...line, receivedQuantity: null }, draft, USD_RATE)
-                        : 0
-                      const supplierUnit = line
-                        ? toUzs(line.unitCost, line.costCurrency, USD_RATE)
-                        : 0
-                      return (
-                        <tr key={field.id} className="border-border border-t">
-                          <td className="px-3 py-2">
-                            <div className="flex items-center gap-2.5">
-                              <ProductThumb src={line?.imageUrl ?? null} size="sm" />
-                              <div className="min-w-0">
-                                <p className="font-medium">{line?.name}</p>
-                                <p className="text-fg-subtle text-2xs font-mono">{line?.sku}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-2 py-1.5 text-right">
-                            <Controller
-                              control={form.control}
-                              name={`lines.${index}.orderedQuantity`}
-                              render={({ field: f }) => (
-                                <NumberField
-                                  className="w-20"
-                                  nullable={false}
-                                  min={1}
-                                  aria-label={`Invoiced quantity of ${line?.name}`}
-                                  value={f.value}
-                                  onChange={(v) => f.onChange(v ?? 0)}
-                                  onBlur={f.onBlur}
-                                />
-                              )}
-                            />
-                          </td>
-                          <td className="px-2 py-1.5">
-                            <div className="flex justify-end gap-1.5">
-                              <Controller
-                                control={form.control}
-                                name={`lines.${index}.unitCost`}
-                                render={({ field: f }) => (
-                                  <NumberField
-                                    className="w-28"
-                                    nullable={false}
-                                    step="any"
-                                    aria-label={`Unit price of ${line?.name}`}
-                                    value={f.value}
-                                    onChange={(v) => f.onChange(v ?? 0)}
-                                    onBlur={f.onBlur}
-                                  />
-                                )}
-                              />
-                              <Controller
-                                control={form.control}
-                                name={`lines.${index}.costCurrency`}
-                                render={({ field: f }) => (
-                                  <Select
-                                    value={f.value}
-                                    onChange={f.onChange}
-                                    options={CURRENCIES}
-                                    aria-label="Currency"
-                                    className="w-20"
-                                  />
-                                )}
-                              />
-                            </div>
-                          </td>
-                          <td className="text-fg px-3 py-2 text-right font-medium tabular-nums">
-                            {formatMoney(Math.round(landed))}
-                            {landed > supplierUnit ? (
-                              <span className="text-fg-subtle text-2xs ml-1">
-                                +{formatPercent((landed - supplierUnit) / supplierUnit)}
-                              </span>
-                            ) : null}
-                          </td>
-                          <td className="px-2">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              aria-label={`Remove ${line?.name}`}
-                              className="hover:text-danger"
-                              onClick={() => lineArray.remove(index)}
-                            >
-                              <Trash2 />
-                            </Button>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardBody>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex-col items-stretch gap-1">
-            <div className="flex items-center justify-between gap-3">
-              <CardTitle>Freight, duty and the rest</CardTitle>
-              {extras > 0 && goods > 0 ? (
-                <span className="text-fg-muted text-sm tabular-nums">
-                  {formatMoney(extras)} · {formatPercent(extras / goods)} on top
-                </span>
-              ) : null}
-            </div>
-            <p className="text-fg-subtle text-2xs">
-              Spread across the items above in proportion to their value. Leave empty and landed
-              cost is simply the supplier&rsquo;s price.
-            </p>
-          </CardHeader>
-          <CardBody className="space-y-3">
-            {costArray.fields.map((field, index) => (
-              <div key={field.id} className="flex items-end gap-2">
-                <Field
-                  label="Cost"
-                  className="flex-1"
-                  error={form.formState.errors.additionalCosts?.[index]?.label?.message}
-                >
-                  {(p) => (
-                    <Input
-                      {...p}
-                      placeholder="Freight"
-                      list="common-costs"
-                      {...form.register(`additionalCosts.${index}.label`)}
-                    />
-                  )}
-                </Field>
-                <Field label="Amount">
+        {step === 1 ? (
+          <>
+            <Card>
+              <CardHeader>
+                <CardTitle>Delivery</CardTitle>
+              </CardHeader>
+              <CardBody className="grid gap-3 sm:grid-cols-3">
+                <Field label="Supplier">
                   {(p) => (
                     <Controller
                       control={form.control}
-                      name={`additionalCosts.${index}.amount`}
-                      render={({ field: f }) => (
-                        <NumberField
+                      name="supplierId"
+                      render={({ field }) => (
+                        <Select
                           {...p}
-                          className="w-32"
-                          nullable={false}
-                          step="any"
-                          value={f.value}
-                          onChange={(v) => f.onChange(v ?? 0)}
-                          onBlur={f.onBlur}
+                          className="w-full"
+                          value={field.value ?? undefined}
+                          onChange={field.onChange}
+                          placeholder="Not recorded"
+                          options={suppliers.items.map((s) => ({ value: s.id, label: s.name }))}
                         />
                       )}
                     />
                   )}
                 </Field>
-                <Controller
-                  control={form.control}
-                  name={`additionalCosts.${index}.currency`}
-                  render={({ field: f }) => (
-                    <Select
-                      value={f.value}
-                      onChange={f.onChange}
-                      options={CURRENCIES}
-                      aria-label="Currency"
-                      className="w-24"
+                <Field label="Invoice number" hint="Theirs, for matching against their paperwork">
+                  {(p) => (
+                    <Input {...p} placeholder="INV-40218" {...form.register('invoiceNumber')} />
+                  )}
+                </Field>
+                <Field label="Lands at" required error={form.formState.errors.locationId?.message}>
+                  {(p) => (
+                    <Controller
+                      control={form.control}
+                      name="locationId"
+                      render={({ field }) => (
+                        <Select
+                          {...p}
+                          className="w-full"
+                          value={field.value || undefined}
+                          onChange={field.onChange}
+                          options={locations.map((l) => ({ value: l.id, label: l.name }))}
+                        />
+                      )}
                     />
                   )}
-                />
+                </Field>
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex-col items-stretch gap-1">
+                <div className="flex items-center justify-between gap-3">
+                  <CardTitle>Freight, duty and the rest</CardTitle>
+                  {extras > 0 && goods > 0 ? (
+                    <span className="text-fg-muted text-sm tabular-nums">
+                      {formatMoney(extras)} · {formatPercent(extras / goods)} on top
+                    </span>
+                  ) : null}
+                </div>
+                <p className="text-fg-subtle text-2xs">
+                  Spread across the items above in proportion to their value. Leave empty and landed
+                  cost is simply the supplier&rsquo;s price.
+                </p>
+              </CardHeader>
+              <CardBody className="space-y-3">
+                {costArray.fields.map((field, index) => (
+                  <div key={field.id} className="flex items-end gap-2">
+                    <Field
+                      label="Cost"
+                      className="flex-1"
+                      error={form.formState.errors.additionalCosts?.[index]?.label?.message}
+                    >
+                      {(p) => (
+                        <Input
+                          {...p}
+                          placeholder="Freight"
+                          list="common-costs"
+                          {...form.register(`additionalCosts.${index}.label`)}
+                        />
+                      )}
+                    </Field>
+                    <Field label="Amount">
+                      {(p) => (
+                        <Controller
+                          control={form.control}
+                          name={`additionalCosts.${index}.amount`}
+                          render={({ field: f }) => (
+                            <NumberField
+                              {...p}
+                              className="w-32"
+                              nullable={false}
+                              step="any"
+                              value={f.value}
+                              onChange={(v) => f.onChange(v ?? 0)}
+                              onBlur={f.onBlur}
+                            />
+                          )}
+                        />
+                      )}
+                    </Field>
+                    <Controller
+                      control={form.control}
+                      name={`additionalCosts.${index}.currency`}
+                      render={({ field: f }) => (
+                        <Select
+                          value={f.value}
+                          onChange={f.onChange}
+                          options={CURRENCIES}
+                          aria-label="Currency"
+                          className="w-24"
+                        />
+                      )}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Remove this cost"
+                      className="hover:text-danger"
+                      onClick={() => costArray.remove(index)}
+                    >
+                      <Trash2 />
+                    </Button>
+                  </div>
+                ))}
+                <datalist id="common-costs">
+                  {COMMON_COSTS.map((label) => (
+                    <option key={label} value={label} />
+                  ))}
+                </datalist>
+
                 <Button
                   type="button"
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Remove this cost"
-                  className="hover:text-danger"
-                  onClick={() => costArray.remove(index)}
+                  variant="secondary"
+                  size="sm"
+                  onClick={() =>
+                    costArray.append({
+                      id: `cost-${Date.now()}`,
+                      label: '',
+                      amount: 0,
+                      currency: 'USD',
+                    })
+                  }
                 >
-                  <Trash2 />
+                  <Plus />
+                  Add a cost
                 </Button>
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Note</CardTitle>
+              </CardHeader>
+              <CardBody>
+                <Field label="Comment" hint="Anything worth knowing when this is queried later">
+                  {(p) => (
+                    <Input {...p} placeholder="Part of container 3" {...form.register('comment')} />
+                  )}
+                </Field>
+              </CardBody>
+            </Card>
+          </>
+        ) : (
+          <>
+            {/* What was decided on step 1, so the lines are entered with it in view. */}
+            <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
+              <div className="min-w-0">
+                <p className="text-fg-subtle text-2xs">Goods receipt</p>
+                <p className="text-fg text-sm font-medium">
+                  {suppliers.items.find((s) => s.id === form.watch('supplierId'))?.name ??
+                    'Supplier not recorded'}
+                  <span className="text-fg-subtle font-normal">
+                    {' '}
+                    · into {locations.find((l) => l.id === locationId)?.name ?? '—'}
+                    {form.watch('invoiceNumber') ? ` · invoice ${form.watch('invoiceNumber')}` : ''}
+                    {additionalCosts.length ? ` · ${formatMoney(extras)} in extra costs` : ''}
+                  </span>
+                </p>
               </div>
-            ))}
-            <datalist id="common-costs">
-              {COMMON_COSTS.map((label) => (
-                <option key={label} value={label} />
-              ))}
-            </datalist>
+              <Button type="button" variant="secondary" size="sm" onClick={() => setStep(1)}>
+                <Pencil />
+                Edit details
+              </Button>
+            </Card>
 
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={() =>
-                costArray.append({
-                  id: `cost-${Date.now()}`,
-                  label: '',
-                  amount: 0,
-                  currency: 'USD',
-                })
+            <LineItemsTable
+              storageKey="receipt-lines"
+              rows={lineRows}
+              error={form.formState.errors.lines?.root?.message}
+              totals={
+                lines.length
+                  ? [
+                      { label: 'From the supplier', value: formatMoney(Math.round(goods)) },
+                      { label: 'Landed', value: formatMoney(Math.round(goods + extras)) },
+                    ]
+                  : []
               }
-            >
-              <Plus />
-              Add a cost
-            </Button>
-          </CardBody>
-        </Card>
+              emptyDescription="Use “Add products” to put what was delivered on this receipt."
+              onRemove={(row) => lineArray.remove(row.index)}
+              addActions={[
+                {
+                  label: 'From the catalogue',
+                  hint: 'Browse by category or brand, add several at once',
+                  icon: PackagePlus,
+                  onSelect: () => setPicking(true),
+                },
+              ]}
+              columns={lineColumns}
+            />
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Note</CardTitle>
-          </CardHeader>
-          <CardBody>
-            <Field label="Comment" hint="Anything worth knowing when this is queried later">
-              {(p) => (
-                <Input {...p} placeholder="Part of container 3" {...form.register('comment')} />
-              )}
-            </Field>
-          </CardBody>
-        </Card>
+            <AddProductsModal
+              open={picking}
+              onOpenChange={setPicking}
+              description="Pick what arrived. Each click adds a line, or one more to a line already on."
+              lineCount={lines.length}
+            >
+              <ProductBrowser
+                addedIds={lines.map((line) => line.variationId)}
+                onPick={addVariation}
+                stockLabel={(variation) => {
+                  const here =
+                    variation.stockByLocation.find((row) => row.locationId === locationId)
+                      ?.quantity ?? 0
+                  return { text: `${formatNumber(here)} here`, muted: true }
+                }}
+              />
+            </AddProductsModal>
+          </>
+        )}
       </div>
     </form>
   )

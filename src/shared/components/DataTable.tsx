@@ -19,8 +19,13 @@ export interface DataTableProps<T extends RowData> {
   data: T[]
   /** Total across all pages — from the API envelope, never data.length. */
   total: number
-  pagination: PaginationState
-  onPaginationChange: (next: PaginationState) => void
+  /** Omit both for a table that shows every row, such as the lines of a document. */
+  pagination?: PaginationState
+  onPaginationChange?: (next: PaginationState) => void
+  /** Rendered in place of pagination — totals under a document's lines. */
+  footer?: ReactNode
+  /** A stable id per row, so inputs inside cells keep focus when rows change. */
+  getRowId?: (row: T, index: number) => string
   sorting?: SortingState
   onSortingChange?: (next: SortingState) => void
   isLoading?: boolean
@@ -77,6 +82,8 @@ export function DataTable<T extends RowData>({
   storageKey,
   initialHidden,
   toolbar,
+  footer,
+  getRowId,
 }: DataTableProps<T>) {
   const [columnVisibility, setColumnVisibility] = useState<ColumnVisibilityState>(() =>
     readStoredVisibility(storageKey, initialHidden),
@@ -86,6 +93,7 @@ export function DataTable<T extends RowData>({
     features: tableFeatureSet,
     data,
     columns,
+    getRowId,
     manualSorting: true,
     state: { sorting, columnVisibility },
     onSortingChange: (updater) => {
@@ -244,7 +252,10 @@ export function DataTable<T extends RowData>({
         </table>
       </div>
 
-      <TablePagination total={total} pagination={pagination} onChange={onPaginationChange} />
+      {footer ??
+        (pagination && onPaginationChange ? (
+          <TablePagination total={total} pagination={pagination} onChange={onPaginationChange} />
+        ) : null)}
     </div>
   )
 }

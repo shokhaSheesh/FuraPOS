@@ -2,12 +2,14 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { useFieldArray, useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, ArrowRight, Check, Pencil, Plus, Send, Trash2, Wand2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, PackagePlus, Pencil, Plus, Send, Wand2 } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
+import { AddProductsModal } from '@/shared/components/AddProductsModal'
+import { LineItemsTable, type LineRow } from '@/shared/components/LineItemsTable'
+import type { TableColumn } from '@/shared/components/table/features'
 import { Steps } from '@/shared/components/Steps'
 import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
-import { ProductThumb } from '@/shared/components/ProductThumb'
 import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
 import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
@@ -63,6 +65,7 @@ export default function NewOrderPage() {
   const variations = useDataStore((s) => s.variations)
   const sales = useDataStore((s) => s.sales)
   const [generating, setGenerating] = useState(false)
+  const [picking, setPicking] = useState(false)
   /** Details first, products second — the reference product's two-page create. */
   const [step, setStep] = useState<1 | 2>(1)
   const [addingItem, setAddingItem] = useState(false)
@@ -162,7 +165,6 @@ export default function NewOrderPage() {
     (sum, line) => sum + line.orderedQuantity * toUzs(line.unitCost, line.costCurrency, USD_RATE),
     0,
   )
-  const units = lines.reduce((sum, line) => sum + line.orderedQuantity, 0)
 
   /** The catalogue depends on the details, so they have to be complete before step 2. */
   const goToProducts = async () => {
@@ -200,6 +202,145 @@ export default function NewOrderPage() {
       },
       () => toast.error('Check the highlighted fields'),
     )
+
+  const lineRows: LineRow[] = fields.map((field, index) => ({
+    key: field.id,
+    index,
+    variationId: lines[index]?.variationId ?? '',
+    quantity: lines[index]?.orderedQuantity ?? 0,
+  }))
+
+  /*
+   * The order's own columns, after the product name: quantity, the agreed
+   * price and what the line comes to — and, on a China order, sales in both
+   * windows and how urgently each line is needed.
+   */
+  const lineColumns: TableColumn<LineRow>[] = [
+    ...(china
+      ? ([
+          {
+            id: 'sold',
+            header: 'Sold',
+            meta: { align: 'right' },
+            cell: ({ row }) => (
+              <div className="leading-tight tabular-nums">
+                <p className="text-fg">
+                  {formatNumber(unitsSoldAt(sales, row.original.variationId, null, 3))} in 3m
+                </p>
+                <p className="text-fg-subtle text-2xs">
+                  {formatNumber(unitsSoldAt(sales, row.original.variationId, null, 6))} in 6m
+                </p>
+              </div>
+            ),
+          },
+          {
+            id: 'urgency',
+            header: 'Urgency',
+            enableHiding: false,
+            cell: ({ row }) => (
+              <Controller
+                control={form.control}
+                name={`lines.${row.original.index}.urgencyId`}
+                render={({ field: f }) => (
+                  <Select
+                    aria-label="Urgency"
+                    className="w-32"
+                    value={f.value || NO_URGENCY}
+                    onChange={(next) => f.onChange(next === NO_URGENCY ? null : next)}
+                    options={[
+                      { value: NO_URGENCY, label: 'Not set' },
+                      ...levels.map((level) => ({ value: level.id, label: level.name })),
+                    ]}
+                  />
+                )}
+              />
+            ),
+          },
+        ] satisfies TableColumn<LineRow>[])
+      : []),
+    {
+      id: 'quantity',
+      header: 'Quantity',
+      enableHiding: false,
+      meta: { align: 'right' },
+      cell: ({ row }) => (
+        <div className="flex justify-end">
+        <Controller
+          control={form.control}
+          name={`lines.${row.original.index}.orderedQuantity`}
+          render={({ field: f }) => (
+            <NumberField
+              className="w-24"
+              nullable={false}
+              min={1}
+              aria-label="Quantity"
+              value={f.value}
+              onChange={(next) => f.onChange(Math.max(1, next ?? 1))}
+              onBlur={f.onBlur}
+            />
+        </div>
+          )}
+        />
+      ),
+    },
+    {
+      id: 'agreedPrice',
+      header: 'Agreed price',
+      enableHiding: false,
+      meta: { align: 'right' },
+      cell: ({ row }) => (
+        <div className="flex justify-end gap-1.5">
+          <Controller
+            control={form.control}
+            name={`lines.${row.original.index}.unitCost`}
+            render={({ field: f }) => (
+              <NumberField
+                className="w-28"
+                nullable={false}
+                step="any"
+                aria-label="Agreed price"
+                value={f.value}
+                onChange={(next) => f.onChange(next ?? 0)}
+                onBlur={f.onBlur}
+              />
+            )}
+          />
+          <Controller
+            control={form.control}
+            name={`lines.${row.original.index}.costCurrency`}
+            render={({ field: f }) => (
+              <Select
+                value={f.value}
+                onChange={f.onChange}
+                options={CURRENCIES}
+                aria-label="Currency"
+                className="w-20"
+              />
+            )}
+          />
+        </div>
+      ),
+    },
+    {
+      id: 'lineTotal',
+      header: 'Line total',
+      meta: { align: 'right' },
+      cell: ({ row }) => {
+        const line = lines[row.original.index]
+        return (
+          <span className="text-fg font-medium tabular-nums">
+            {line
+              ? formatMoney(
+                  Math.round(
+                    line.orderedQuantity * toUzs(line.unitCost, line.costCurrency, USD_RATE),
+                  ),
+                )
+              : '—'}
+          </span>
+        )
+      },
+    },
+  ]
 
   return (
     <form>
@@ -424,226 +565,78 @@ export default function NewOrderPage() {
                 Edit details
               </Button>
             </Card>
-            <Card>
-              <CardHeader className="flex-col items-stretch gap-1">
-                <div className="flex items-center justify-between gap-3">
-                  <CardTitle>Items</CardTitle>
-                  <div className="flex items-center gap-3">
-                    {lines.length ? (
-                      <span className="text-fg-muted text-sm tabular-nums">
-                        {formatNumber(units)} {units === 1 ? 'unit' : 'units'} ·{' '}
-                        {formatMoney(Math.round(total))}
-                      </span>
-                    ) : null}
-                    {fromOurs && can('products.list.create') ? (
-                      <Button type="button" variant="secondary" onClick={() => setAddingItem(true)}>
-                        <Plus />
-                        Add item
-                      </Button>
-                    ) : null}
-                    {ready ? (
-                      <Button type="button" variant="secondary" onClick={() => setGenerating(true)}>
-                        <Wand2 />
-                        Suggest what to order
-                      </Button>
-                    ) : null}
-                  </div>
-                </div>
-                <p className="text-fg-subtle text-2xs">
-                  {china
-                    ? `Our catalogue — ${formatNumber(summary.products)} products. Mark how urgent each line is; the factory sees them in that order on the PDF.`
-                    : market
-                      ? `Our catalogue — ${formatNumber(summary.products)} products. Not here? Add it as a new item. The price starts at what it last cost; change it to what you paid.`
-                      : supplier
-                        ? `${supplier.name}'s catalogue — ${formatNumber(summary.products)} products across ${formatNumber(summary.categories.length)} categories and ${formatNumber(summary.brands.length)} brands. The price starts at what they ask; change it to what was agreed.`
-                        : 'Pick a supplier and their catalogue appears here.'}
-                </p>
-              </CardHeader>
-              <CardBody className="space-y-3">
-                {ready ? (
-                  <SupplierCatalogue
-                    searchPlaceholder={
-                      fromOurs ? 'Search our catalogue by name or SKU…' : undefined
-                    }
-                    emptyLabel={
-                      fromOurs
-                        ? 'Nothing in our catalogue matches — add it as a new item'
-                        : undefined
-                    }
-                    entries={entries}
-                    addedIds={addedIds}
-                    onPick={(entry) => addEntry(entry)}
-                    soldFor={(entry) =>
-                      entry.variation ? unitsSoldAt(sales, entry.variation.id, null, 3) : 0
-                    }
-                  />
-                ) : (
-                  <div className="border-border rounded-card text-fg-muted border border-dashed p-6 text-center text-sm">
-                    Choose a supplier above to see what they sell.
-                  </div>
-                )}
+            <LineItemsTable
+              storageKey={`order-lines-${kind}`}
+              rows={lineRows}
+              columns={lineColumns}
+              error={form.formState.errors.lines?.root?.message}
+              totals={
+                lines.length
+                  ? [{ label: 'Order total', value: formatMoney(Math.round(total)) }]
+                  : []
+              }
+              emptyDescription={
+                fromOurs
+                  ? 'Use “Add products” to pick from our catalogue, add a new item, or let the system suggest.'
+                  : `Use “Add products” to pick from ${supplier?.name ?? 'the supplier'}’s catalogue, or let the system suggest.`
+              }
+              onRemove={(row) => remove(row.index)}
+              addActions={[
+                {
+                  label: fromOurs
+                    ? 'From our catalogue'
+                    : `From ${supplier?.name ?? 'their'} catalogue`,
+                  hint: fromOurs
+                    ? `${formatNumber(summary.products)} products`
+                    : `${formatNumber(summary.products)} products across ${formatNumber(summary.categories.length)} categories`,
+                  icon: PackagePlus,
+                  onSelect: () => setPicking(true),
+                },
+                {
+                  label: 'Suggest what to order',
+                  hint: 'Sold in 3 or 6 months, less what is in stock',
+                  icon: Wand2,
+                  onSelect: () => setGenerating(true),
+                },
+                ...(fromOurs && can('products.list.create')
+                  ? [
+                      {
+                        label: 'New item',
+                        hint: 'Something we do not carry yet',
+                        icon: Plus,
+                        onSelect: () => setAddingItem(true),
+                      },
+                    ]
+                  : []),
+              ]}
+            />
 
-                {form.formState.errors.lines?.root ? (
-                  <p className="text-danger text-2xs">{form.formState.errors.lines.root.message}</p>
-                ) : null}
-
-                {fields.length === 0 ? (
-                  ready ? (
-                    <p className="text-fg-subtle text-sm">
-                      Nothing added yet. Pick from their catalogue, or let the system suggest.
-                    </p>
-                  ) : null
-                ) : (
-                  <div className="border-border rounded-card overflow-x-auto border">
-                    <table className="w-full text-sm">
-                      <thead className="bg-canvas">
-                        <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-                          <th className="px-3 py-2 text-left font-semibold">Product</th>
-                          {china ? (
-                            <>
-                              <th className="px-3 py-2 text-right font-semibold">Sold</th>
-                              <th className="px-3 py-2 text-left font-semibold">Urgency</th>
-                            </>
-                          ) : null}
-                          <th className="px-3 py-2 text-right font-semibold">Quantity</th>
-                          <th className="px-3 py-2 text-right font-semibold">Agreed price</th>
-                          <th className="px-3 py-2 text-right font-semibold">Line total</th>
-                          <th className="w-10" />
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {fields.map((field, index) => {
-                          const line = lines[index]
-                          return (
-                            <tr key={field.id} className="border-border border-t">
-                              <td className="px-3 py-2">
-                                <div className="flex items-center gap-2.5">
-                                  <ProductThumb src={line?.imageUrl ?? null} size="sm" />
-                                  <div className="min-w-0">
-                                    <p className="text-fg font-medium">{line?.name}</p>
-                                    <p className="text-fg-subtle text-2xs font-mono">{line?.sku}</p>
-                                  </div>
-                                </div>
-                              </td>
-                              {china && line ? (
-                                <>
-                                  {/* Both windows, as on Transfers: the pair says whether
-                                    a part is still moving or has gone quiet. */}
-                                  <td className="px-3 py-2 text-right whitespace-nowrap tabular-nums">
-                                    <p className="text-fg">
-                                      {formatNumber(unitsSoldAt(sales, line.variationId, null, 3))}{' '}
-                                      in 3m
-                                    </p>
-                                    <p className="text-fg-subtle text-2xs">
-                                      {formatNumber(unitsSoldAt(sales, line.variationId, null, 6))}{' '}
-                                      in 6m
-                                    </p>
-                                  </td>
-                                  <td className="px-2 py-1.5">
-                                    <Controller
-                                      control={form.control}
-                                      name={`lines.${index}.urgencyId`}
-                                      render={({ field: f }) => (
-                                        <Select
-                                          aria-label={`Urgency of ${line.name}`}
-                                          className="w-32"
-                                          value={f.value || NO_URGENCY}
-                                          onChange={(next) =>
-                                            f.onChange(next === NO_URGENCY ? null : next)
-                                          }
-                                          options={[
-                                            { value: NO_URGENCY, label: 'Not set' },
-                                            ...levels.map((level) => ({
-                                              value: level.id,
-                                              label: level.name,
-                                            })),
-                                          ]}
-                                        />
-                                      )}
-                                    />
-                                  </td>
-                                </>
-                              ) : null}
-                              <td className="px-2 py-1.5 text-right">
-                                <Controller
-                                  control={form.control}
-                                  name={`lines.${index}.orderedQuantity`}
-                                  render={({ field: f }) => (
-                                    <NumberField
-                                      className="w-24"
-                                      nullable={false}
-                                      min={1}
-                                      aria-label={`Quantity of ${line?.name}`}
-                                      value={f.value}
-                                      onChange={(next) => f.onChange(Math.max(1, next ?? 1))}
-                                      onBlur={f.onBlur}
-                                    />
-                                  )}
-                                />
-                              </td>
-                              <td className="px-2 py-1.5">
-                                <div className="flex justify-end gap-1.5">
-                                  <Controller
-                                    control={form.control}
-                                    name={`lines.${index}.unitCost`}
-                                    render={({ field: f }) => (
-                                      <NumberField
-                                        className="w-28"
-                                        nullable={false}
-                                        step="any"
-                                        aria-label={`Price of ${line?.name}`}
-                                        value={f.value}
-                                        onChange={(next) => f.onChange(next ?? 0)}
-                                        onBlur={f.onBlur}
-                                      />
-                                    )}
-                                  />
-                                  <Controller
-                                    control={form.control}
-                                    name={`lines.${index}.costCurrency`}
-                                    render={({ field: f }) => (
-                                      <Select
-                                        value={f.value}
-                                        onChange={f.onChange}
-                                        options={CURRENCIES}
-                                        aria-label="Currency"
-                                        className="w-20"
-                                      />
-                                    )}
-                                  />
-                                </div>
-                              </td>
-                              <td className="text-fg px-3 py-2 text-right font-medium tabular-nums">
-                                {line
-                                  ? formatMoney(
-                                      Math.round(
-                                        line.orderedQuantity *
-                                          toUzs(line.unitCost, line.costCurrency, USD_RATE),
-                                      ),
-                                    )
-                                  : '—'}
-                              </td>
-                              <td className="px-2">
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  aria-label={`Remove ${line?.name}`}
-                                  className="hover:text-danger"
-                                  onClick={() => remove(index)}
-                                >
-                                  <Trash2 />
-                                </Button>
-                              </td>
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </CardBody>
-            </Card>
+            <AddProductsModal
+              open={picking}
+              onOpenChange={setPicking}
+              title={
+                fromOurs ? 'Add from our catalogue' : `Add from ${supplier?.name ?? 'the supplier'}`
+              }
+              description={
+                fromOurs
+                  ? 'The price starts at what it last cost; change it on the line to what you paid.'
+                  : 'The price starts at what they ask; change it on the line to what was agreed.'
+              }
+              lineCount={lines.length}
+            >
+              <SupplierCatalogue
+                searchPlaceholder={fromOurs ? 'Search our catalogue by name or SKU…' : undefined}
+                emptyLabel={
+                  fromOurs ? 'Nothing in our catalogue matches — add it as a new item' : undefined
+                }
+                entries={entries}
+                addedIds={addedIds}
+                onPick={(entry) => addEntry(entry)}
+                soldFor={(entry) =>
+                  entry.variation ? unitsSoldAt(sales, entry.variation.id, null, 3) : 0
+                }
+              />
+            </AddProductsModal>
           </>
         )}
       </div>

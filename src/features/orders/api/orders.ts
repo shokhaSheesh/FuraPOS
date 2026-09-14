@@ -24,6 +24,7 @@ function filterOrders(all: PurchaseOrder[], query: ListQuery) {
       [
         order.number,
         order.supplierName,
+        order.boughtFrom,
         order.locationName,
         order.comment,
         order.createdBy,

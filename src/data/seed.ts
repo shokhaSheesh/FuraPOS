@@ -1163,7 +1163,8 @@ export const supplierProducts: SupplierProduct[] = suppliers.flatMap((supplier, 
      works, so the brand filter on the order screen has something to do. */
   const theirBrands = [pick(brands), pick(brands)]
   const theirs = variations.filter(
-    (variation) => variation.brandId !== null && theirBrands.some((b) => b.id === variation.brandId),
+    (variation) =>
+      variation.brandId !== null && theirBrands.some((b) => b.id === variation.brandId),
   )
 
   const listed = theirs.slice(0, between(24, 40)).map((variation, index) => ({
@@ -1540,6 +1541,9 @@ export const orders: PurchaseOrder[] = Array.from({ length: 11 }, (_, index) => 
   const sequence = index + 1
   const status = pick(['draft', 'sent', 'sent', 'confirmed', 'partial', 'received'] as const)
   const supplier = pick(suppliers)
+  // Decided by position rather than the random stream, so adding market orders
+  // does not shift every seeded value that comes after them.
+  const market = sequence % 4 === 0
   const location = random() > 0.25 ? locations[0]! : pick(locations)
   const createdAt = new Date(Date.now() - between(3, 70) * 86_400_000)
 
@@ -1584,8 +1588,13 @@ export const orders: PurchaseOrder[] = Array.from({ length: 11 }, (_, index) => 
     id: `po-${sequence}`,
     number: `PO-${String(sequence).padStart(5, '0')}`,
     status,
-    supplierId: supplier.id,
-    supplierName: supplier.name,
+    // Every fourth one was a bazaar run, so the list shows both kinds.
+    kind: market ? ('market' as const) : ('supplier' as const),
+    supplierId: market ? null : supplier.id,
+    supplierName: market ? null : supplier.name,
+    boughtFrom: market
+      ? (['Jomiy bozori', 'Chilonzor avto bozori', 'Sergeli market'][sequence % 3] ?? null)
+      : null,
     locationId: location.id,
     locationName: location.name,
     expectedAt,

@@ -24,12 +24,16 @@ export function GenerateOrderModal({
   onOpenChange,
   entries,
   supplierName,
+  scope,
   onAdd,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   entries: CatalogueEntry[]
+  /** Who the order is with, for the title — a supplier's name, or "the market". */
   supplierName: string
+  /** How the empty state names what was searched, e.g. "Everything in our catalogue". */
+  scope?: string
   onAdd: (suggestions: OrderSuggestion[]) => void
 }) {
   const sales = useDataStore((s) => s.sales)
@@ -104,8 +108,8 @@ export function GenerateOrderModal({
             <Wand2 className="text-fg-subtle mx-auto mb-2 size-5" />
             <p className="text-fg font-medium">Nothing needs ordering</p>
             <p className="text-2xs mt-1">
-              Everything {supplierName} carries is either stocked deep enough for another {months}{' '}
-              months, or has not sold in that time.
+              {scope ?? `Everything ${supplierName} carries`} is either stocked deep enough for
+              another {months} months, or has not sold in that time.
             </p>
           </div>
         ) : (

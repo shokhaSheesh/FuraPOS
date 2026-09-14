@@ -30,6 +30,8 @@ export function SupplierCatalogue({
   onPick,
   addedIds,
   soldFor,
+  searchPlaceholder = 'Search their catalogue by name or their code…',
+  emptyLabel = 'Nothing in their catalogue matches',
 }: {
   entries: CatalogueEntry[]
   onPick: (entry: CatalogueEntry) => void
@@ -37,6 +39,8 @@ export function SupplierCatalogue({
   addedIds: string[]
   /** Units sold across the business in the last three months. */
   soldFor: (entry: CatalogueEntry) => number
+  searchPlaceholder?: string
+  emptyLabel?: string
 }) {
   const [term, setTerm] = useState('')
   const [debounced, setDebounced] = useState('')
@@ -127,7 +131,7 @@ export function SupplierCatalogue({
         <Input
           value={term}
           onChange={(event) => setTerm(event.target.value)}
-          placeholder="Search their catalogue by name or their code…"
+          placeholder={searchPlaceholder}
           aria-label="Search this supplier's catalogue"
           className="pl-8"
         />
@@ -139,9 +143,7 @@ export function SupplierCatalogue({
         className="border-border rounded-card max-h-80 overflow-y-auto border"
       >
         {shown.length === 0 ? (
-          <p className="text-fg-muted p-4 text-center text-sm">
-            Nothing in their catalogue matches
-          </p>
+          <p className="text-fg-muted p-4 text-center text-sm">{emptyLabel}</p>
         ) : (
           <ul className="divide-border divide-y">
             {shown.map((entry) => {

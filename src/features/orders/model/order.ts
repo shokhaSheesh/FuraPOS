@@ -12,6 +12,31 @@ import type { Id, IsoDate } from '@/shared/types'
  */
 export type OrderStatus = 'draft' | 'sent' | 'confirmed' | 'partial' | 'received' | 'cancelled'
 
+/**
+ * Where the goods come from, which decides how the order is put together.
+ *
+ *   - **supplier** — a company we trade with. The order is built from *their*
+ *     catalogue and sent to them.
+ *   - **market** — bought off the bazaar, from nobody we have an account with.
+ *     There is no supplier to send it to and no catalogue of theirs, so it is
+ *     built from ours, and it works as the shopping list for the market run.
+ *     It is still received like any other order when the goods come back.
+ */
+export type OrderKind = 'supplier' | 'market'
+
+export const ORDER_KINDS: { value: OrderKind; label: string; hint: string }[] = [
+  {
+    value: 'supplier',
+    label: 'From a supplier',
+    hint: 'Pick from their catalogue and send it to them',
+  },
+  {
+    value: 'market',
+    label: 'From the market',
+    hint: 'Bought at the bazaar — pick from our catalogue, or add what we do not carry yet',
+  },
+]
+
 export const ORDER_STATUSES: {
   value: OrderStatus
   label: string
@@ -56,8 +81,11 @@ export interface PurchaseOrder {
   id: Id
   number: string
   status: OrderStatus
+  kind: OrderKind
   supplierId: Id | null
   supplierName: string | null
+  /** Who or where a market purchase was made — "Jomiy bozori, row 4". Null for a supplier order. */
+  boughtFrom: string | null
   /** Where the goods are expected to land. */
   locationId: Id
   locationName: string
@@ -73,6 +101,14 @@ export interface PurchaseOrder {
   closedAt: IsoDate | null
   updatedAt: IsoDate
 }
+
+/** Who the order is with, in one phrase, whichever kind it is. */
+export const orderSource = (order: Pick<PurchaseOrder, 'kind' | 'supplierName' | 'boughtFrom'>) =>
+  order.kind === 'market'
+    ? order.boughtFrom
+      ? `Market · ${order.boughtFrom}`
+      : 'Market'
+    : (order.supplierName ?? '—')
 
 /* --- what is still coming ------------------------------------------------ */
 
@@ -135,10 +171,16 @@ export const isOpen = (status: OrderStatus) =>
  * here: it is not a status change but a delivery, and it happens as many times
  * as the supplier ships.
  */
-export function nextStep(status: OrderStatus): { to: OrderStatus; label: string } | null {
+export function nextStep(
+  status: OrderStatus,
+  kind: OrderKind = 'supplier',
+): { to: OrderStatus; label: string } | null {
   switch (status) {
     case 'draft':
-      return { to: 'sent', label: 'Send to supplier' }
+      // Nobody to send a market list to — it is simply agreed and goes out.
+      return kind === 'market'
+        ? { to: 'confirmed', label: 'Confirm purchase' }
+        : { to: 'sent', label: 'Send to supplier' }
     case 'sent':
       return { to: 'confirmed', label: 'Mark as confirmed' }
     default:
@@ -167,12 +209,21 @@ export const orderLineSchema = z.object({
   costCurrency: z.enum(['USD', 'UZS']),
 })
 
-export const orderDraftSchema = z.object({
-  supplierId: z.string().min(1, 'Pick who this order goes to'),
-  locationId: z.string().min(1, 'Pick where it should land'),
-  expectedAt: z.string().nullable(),
-  comment: z.string(),
-  lines: z.array(orderLineSchema).min(1, 'Add at least one product'),
-})
+export const orderDraftSchema = z
+  .object({
+    kind: z.enum(['supplier', 'market']),
+    supplierId: z.string(),
+    boughtFrom: z.string(),
+    locationId: z.string().min(1, 'Pick where it should land'),
+    expectedAt: z.string().nullable(),
+    comment: z.string(),
+    lines: z.array(orderLineSchema).min(1, 'Add at least one product'),
+  })
+  .superRefine((values, ctx) => {
+    // Only a supplier order has somebody to send it to.
+    if (values.kind === 'supplier' && !values.supplierId) {
+      ctx.addIssue({ code: 'custom', path: ['supplierId'], message: 'Pick who this order goes to' })
+    }
+  })
 
 export type OrderDraft = z.infer<typeof orderDraftSchema>

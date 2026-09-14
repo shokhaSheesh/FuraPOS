@@ -25,6 +25,7 @@ import {
   deliveredRatio,
   lineOutstanding,
   nextStep,
+  orderSource,
   orderStatusLabel,
   orderStatusTone,
   orderValue,
@@ -60,7 +61,7 @@ export default function OrderDetailPage() {
     return <EmptyState title="Order not found" description="It may have been deleted." />
   }
 
-  const step = nextStep(order.status)
+  const step = nextStep(order.status, order.kind)
   const late = daysLate(order)
   const canSeeCost = can('products.cost.view')
   const arriving = Object.values(quantities).reduce((sum, value) => sum + value, 0)
@@ -76,9 +77,7 @@ export default function OrderDetailPage() {
 
       <PageHeader
         title={order.number}
-        description={`${formatNumber(order.lines.length)} products from ${
-          order.supplierName ?? 'an unnamed supplier'
-        }`}
+        description={`${formatNumber(order.lines.length)} products from ${orderSource(order)}`}
         action={
           <div className="flex items-center gap-2">
             {canCancel(order.status) && can('procurement.orders.delete') ? (

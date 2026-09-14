@@ -18,7 +18,12 @@ import type { SupplierProduct } from '@/features/suppliers/model/catalogue'
 // Money in a message still goes through the one formatter — a raw 3528942401
 // in an error is a number nobody can read back to the person who caused it.
 import { formatMoney } from '@/shared/lib/format'
-import type { OrderLine, OrderStatus, PurchaseOrder } from '@/features/orders/model/order'
+import type {
+  OrderKind,
+  OrderLine,
+  OrderStatus,
+  PurchaseOrder,
+} from '@/features/orders/model/order'
 import { outstandingUnits } from '@/features/orders/model/order'
 import type { ReorderSchedule } from '@/features/schedules/model/schedule'
 import type { Employee, EmployeeStatus } from '@/features/employees/model/employee'
@@ -315,12 +320,14 @@ export interface CreateReceiptInput {
 }
 
 export interface CreateOrderInput {
+  kind?: OrderKind
   supplierId: string
+  boughtFrom?: string
   locationId: string
   expectedAt: string | null
   comment: string
   lines: OrderLine[]
-  status: Extract<OrderStatus, 'draft' | 'sent'>
+  status: Extract<OrderStatus, 'draft' | 'sent' | 'confirmed'>
 }
 
 export type ReportInput = Omit<ReportDefinition, 'id' | 'createdBy' | 'createdAt' | 'updatedAt'>
@@ -1187,8 +1194,11 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       id: `po-${sequence}`,
       number: `PO-${String(sequence).padStart(5, '0')}`,
       status: input.status,
-      supplierId: input.supplierId || null,
-      supplierName: supplier?.name ?? null,
+      kind: input.kind ?? 'supplier',
+      // A market purchase has no supplier, whatever the form happened to hold.
+      supplierId: input.kind === 'market' ? null : input.supplierId || null,
+      supplierName: input.kind === 'market' ? null : (supplier?.name ?? null),
+      boughtFrom: input.kind === 'market' ? input.boughtFrom?.trim() || null : null,
       locationId: input.locationId,
       locationName: get().locations.find((l) => l.id === input.locationId)?.name ?? '—',
       expectedAt: input.expectedAt,

@@ -21,6 +21,7 @@ import { useOrderStatusCounts, useOrders, useOrdersSummary } from '../api/orders
 import {
   daysLate,
   deliveredRatio,
+  orderSource,
   orderStatusLabel,
   orderStatusTone,
   orderValue,
@@ -66,9 +67,10 @@ export default function OrdersListPage() {
       },
       {
         accessorKey: 'supplierName',
-        header: 'Supplier',
+        header: 'From',
         enableHiding: false,
-        cell: ({ row }) => row.original.supplierName ?? <span className="text-fg-subtle">—</span>,
+        // A market run has no supplier; it says where it was bought instead.
+        cell: ({ row }) => orderSource(row.original),
       },
       {
         accessorKey: 'locationName',

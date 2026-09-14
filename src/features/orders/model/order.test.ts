@@ -7,6 +7,8 @@ import {
   deliveredRatio,
   lineOutstanding,
   nextStep,
+  orderDraftSchema,
+  orderSource,
   outstandingUnits,
   type OrderLine,
 } from './order'
@@ -197,5 +199,54 @@ describe('booking a delivery against an order', () => {
     const order = raise()
     expect(useDataStore.getState().setOrderStatus(order.id, 'cancelled')).toEqual({ ok: true })
     expect(get(order.id).status).toBe('cancelled')
+  })
+})
+
+describe('a market purchase', () => {
+  const marketDraft = {
+    kind: 'market' as const,
+    supplierId: '',
+    boughtFrom: 'Jomiy bozori',
+    locationId: 'loc-1',
+    expectedAt: null,
+    comment: '',
+    lines: [line({ orderedQuantity: 3 })],
+  }
+
+  it('needs no supplier', () => {
+    expect(orderDraftSchema.safeParse(marketDraft).success).toBe(true)
+  })
+
+  it('still insists on a supplier for a supplier order', () => {
+    const result = orderDraftSchema.safeParse({ ...marketDraft, kind: 'supplier' })
+    expect(result.success).toBe(false)
+    expect(result.error?.issues.some((issue) => issue.path[0] === 'supplierId')).toBe(true)
+  })
+
+  it('is confirmed rather than sent, because there is nobody to send it to', () => {
+    expect(nextStep('draft', 'market')).toEqual({ to: 'confirmed', label: 'Confirm purchase' })
+    expect(nextStep('draft', 'supplier')?.to).toBe('sent')
+  })
+
+  it('records where it was bought, and never a supplier even if one was left in the form', () => {
+    const order = useDataStore.getState().createOrder({
+      ...marketDraft,
+      supplierId: 'sup-1',
+      status: 'confirmed',
+    })
+    expect(order.kind).toBe('market')
+    expect(order.supplierId).toBeNull()
+    expect(order.boughtFrom).toBe('Jomiy bozori')
+    expect(orderSource(order)).toBe('Market · Jomiy bozori')
+  })
+
+  it('charges nobody when it is received, because it was paid for in cash', () => {
+    const order = useDataStore.getState().createOrder({ ...marketDraft, status: 'confirmed' })
+    const before = useDataStore.getState().walletTransactions.length
+    const result = useDataStore
+      .getState()
+      .receiveAgainstOrder(order.id, { [order.lines[0]!.id]: 3 }, '')
+    expect(result.ok).toBe(true)
+    expect(useDataStore.getState().walletTransactions.length).toBe(before)
   })
 })

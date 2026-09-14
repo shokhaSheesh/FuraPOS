@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { useFieldArray, useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, Send, Trash2, Wand2 } from 'lucide-react'
+import { ArrowLeft, Check, Plus, Send, Trash2, Wand2 } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
@@ -12,6 +12,8 @@ import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
 import { Select } from '@/shared/ui/Select'
 import { DatePicker } from '@/shared/ui/DatePicker'
+import { SegmentedControl } from '@/shared/ui/SegmentedControl'
+import { useSession } from '@/app/providers/SessionProvider'
 import { toast } from '@/shared/ui/toast'
 import { paths } from '@/shared/config/paths'
 import { formatMoney, formatNumber } from '@/shared/lib/format'
@@ -26,7 +28,15 @@ import {
 import { useCreateOrder } from '../api/orders'
 import { SupplierCatalogue } from '../components/SupplierCatalogue'
 import { GenerateOrderModal } from '../components/GenerateOrderModal'
-import { orderDraftSchema, toUzs, type OrderDraft } from '../model/order'
+import { NewItemModal } from '../components/NewItemModal'
+import { ownCatalogue } from '../model/ownCatalogue'
+import {
+  ORDER_KINDS,
+  orderDraftSchema,
+  toUzs,
+  type OrderDraft,
+  type OrderKind,
+} from '../model/order'
 
 const CURRENCIES = [
   { value: 'USD', label: 'USD' },
@@ -49,12 +59,16 @@ export default function NewOrderPage() {
   const variations = useDataStore((s) => s.variations)
   const sales = useDataStore((s) => s.sales)
   const [generating, setGenerating] = useState(false)
+  const [addingItem, setAddingItem] = useState(false)
+  const { can } = useSession()
   const create = useCreateOrder()
 
   const form = useForm<OrderDraft>({
     resolver: zodResolver(orderDraftSchema),
     defaultValues: {
+      kind: 'supplier',
       supplierId: '',
+      boughtFrom: '',
       locationId: locations[0]?.id ?? '',
       expectedAt: null,
       comment: '',
@@ -64,14 +78,23 @@ export default function NewOrderPage() {
 
   const { fields, append, remove } = useFieldArray({ control: form.control, name: 'lines' })
   const lines = form.watch('lines')
+  const kind = form.watch('kind')
+  const market = kind === 'market'
   const supplierId = form.watch('supplierId')
-  const supplier = suppliers.find((s) => s.id === supplierId)
+  const supplier = market ? undefined : suppliers.find((s) => s.id === supplierId)
+  /** Whether there is a catalogue to show yet: always at the market, once chosen otherwise. */
+  const ready = market || Boolean(supplier)
 
-  /* Their catalogue, with our stock beside each line. Everything on this
-     screen starts from it once a supplier is chosen. */
+  /* The catalogue this order is picked from: a supplier's own, or ours for a
+     market run. Everything below works the same either way. */
   const entries = useMemo(
-    () => (supplierId ? catalogueFor(supplierProducts, variations, supplierId) : []),
-    [supplierProducts, variations, supplierId],
+    () =>
+      market
+        ? ownCatalogue(variations)
+        : supplierId
+          ? catalogueFor(supplierProducts, variations, supplierId)
+          : [],
+    [market, supplierProducts, variations, supplierId],
   )
   const summary = summariseCatalogue(entries)
   const addedIds = entries
@@ -108,13 +131,27 @@ export default function NewOrderPage() {
     })
   }
 
+  /** Switching between a supplier and the market starts the items again. */
+  const switchKind = (next: OrderKind) => {
+    if (next === kind) return
+    // Supplier lines carry their prices; market lines carry ours. Keeping them
+    // across the switch would leave an order priced from two places.
+    if (form.getValues('lines').length) {
+      form.setValue('lines', [])
+      toast.info('Items cleared — they were priced for the other kind of order')
+    }
+    form.setValue('kind', next)
+    form.setValue('supplierId', '')
+    form.clearErrors()
+  }
+
   const total = lines.reduce(
     (sum, line) => sum + line.orderedQuantity * toUzs(line.unitCost, line.costCurrency, USD_RATE),
     0,
   )
   const units = lines.reduce((sum, line) => sum + line.orderedQuantity, 0)
 
-  const submit = (status: 'draft' | 'sent') =>
+  const submit = (status: 'draft' | 'sent' | 'confirmed') =>
     form.handleSubmit(
       (values) => {
         create.mutate(
@@ -124,7 +161,9 @@ export default function NewOrderPage() {
               toast.success(
                 status === 'draft'
                   ? `${order.number} saved as a draft`
-                  : `${order.number} sent to ${order.supplierName}`,
+                  : market
+                    ? `${order.number} confirmed — receive it when the goods are back`
+                    : `${order.number} sent to ${order.supplierName}`,
               )
               navigate(paths.procurement.orderDetail(order.id))
             },
@@ -145,52 +184,90 @@ export default function NewOrderPage() {
 
       <PageHeader
         title="New order"
-        description="What to ask a supplier for, and at what price. The delivery gets checked against it."
+        description={
+          market
+            ? 'A market run: what to buy at the bazaar, and what it cost. It is received like any order when the goods are back.'
+            : 'What to ask a supplier for, and at what price. The delivery gets checked against it.'
+        }
         action={
           <div className="flex items-center gap-2">
             <Button type="button" variant="secondary" onClick={submit('draft')}>
               Save as draft
             </Button>
-            <Button type="button" variant="primary" onClick={submit('sent')}>
-              <Send />
-              Send to supplier
-            </Button>
+            {market ? (
+              // Nobody to send a market list to, so it is confirmed instead.
+              <Button type="button" variant="primary" onClick={submit('confirmed')}>
+                <Check />
+                Confirm purchase
+              </Button>
+            ) : (
+              <Button type="button" variant="primary" onClick={submit('sent')}>
+                <Send />
+                Send to supplier
+              </Button>
+            )}
           </div>
         }
       />
 
       <div className="mt-4 space-y-3">
         <Card>
-          <CardHeader>
+          <CardHeader className="flex-col items-stretch gap-2">
             <CardTitle>Order</CardTitle>
+            <div className="self-start">
+              <SegmentedControl
+                aria-label="Where the goods come from"
+                value={kind}
+                onChange={switchKind}
+                options={ORDER_KINDS.map((k) => ({ value: k.value, label: k.label }))}
+              />
+            </div>
+            <p className="text-fg-subtle text-2xs">
+              {ORDER_KINDS.find((k) => k.value === kind)?.hint}
+            </p>
           </CardHeader>
           <CardBody className="grid gap-3 sm:grid-cols-3">
-            <Field label="Supplier" required error={form.formState.errors.supplierId?.message}>
-              {(p) => (
-                <Controller
-                  control={form.control}
-                  name="supplierId"
-                  render={({ field }) => (
-                    <Select
-                      {...p}
-                      className="w-full"
-                      value={field.value || undefined}
-                      onChange={(next) => {
-                        // Lines priced from one supplier's catalogue mean nothing
-                        // on an order to another, so switching starts again.
-                        if (next !== field.value && form.getValues('lines').length) {
-                          form.setValue('lines', [])
-                          toast.info('Items cleared — they came from the other supplier')
-                        }
-                        field.onChange(next)
-                      }}
-                      placeholder="Pick a supplier"
-                      options={suppliers.map((s) => ({ value: s.id, label: s.name }))}
-                    />
-                  )}
-                />
-              )}
-            </Field>
+            {market ? (
+              <Field
+                label="Bought from"
+                hint="The market, the stall or the seller — for when this is asked about later"
+              >
+                {(p) => (
+                  <Input
+                    {...p}
+                    placeholder="Jomiy bozori, row 4"
+                    {...form.register('boughtFrom')}
+                  />
+                )}
+              </Field>
+            ) : (
+              <Field label="Supplier" required error={form.formState.errors.supplierId?.message}>
+                {(p) => (
+                  <Controller
+                    control={form.control}
+                    name="supplierId"
+                    render={({ field }) => (
+                      <Select
+                        {...p}
+                        className="w-full"
+                        value={field.value || undefined}
+                        onChange={(next) => {
+                          // Lines priced from one supplier's catalogue mean nothing
+                          // on an order to another, so switching starts again.
+                          if (next !== field.value && form.getValues('lines').length) {
+                            form.setValue('lines', [])
+                            toast.info('Items cleared — they came from the other supplier')
+                          }
+                          field.onChange(next)
+                        }}
+                        placeholder="Pick a supplier"
+                        options={suppliers.map((s) => ({ value: s.id, label: s.name }))}
+                      />
+                    )}
+                  />
+                )}
+              </Field>
+            )}
             <Field label="Landing at" required error={form.formState.errors.locationId?.message}>
               {(p) => (
                 <Controller
@@ -210,7 +287,11 @@ export default function NewOrderPage() {
             </Field>
             <Field
               label="Expected"
-              hint="When they promised it. Without a date nothing can be late."
+              hint={
+                market
+                  ? 'When the goods should be back at the warehouse.'
+                  : 'When they promised it. Without a date nothing can be late.'
+              }
             >
               {() => (
                 <Controller
@@ -239,10 +320,17 @@ export default function NewOrderPage() {
               <div className="flex items-center gap-3">
                 {lines.length ? (
                   <span className="text-fg-muted text-sm tabular-nums">
-                    {formatNumber(units)} units · {formatMoney(Math.round(total))}
+                    {formatNumber(units)} {units === 1 ? 'unit' : 'units'} ·{' '}
+                    {formatMoney(Math.round(total))}
                   </span>
                 ) : null}
-                {supplier ? (
+                {market && can('products.list.create') ? (
+                  <Button type="button" variant="secondary" onClick={() => setAddingItem(true)}>
+                    <Plus />
+                    Add item
+                  </Button>
+                ) : null}
+                {ready ? (
                   <Button type="button" variant="secondary" onClick={() => setGenerating(true)}>
                     <Wand2 />
                     Suggest what to order
@@ -251,14 +339,20 @@ export default function NewOrderPage() {
               </div>
             </div>
             <p className="text-fg-subtle text-2xs">
-              {supplier
-                ? `${supplier.name}'s catalogue — ${formatNumber(summary.products)} products across ${formatNumber(summary.categories.length)} categories and ${formatNumber(summary.brands.length)} brands. The price starts at what they ask; change it to what was agreed.`
-                : 'Pick a supplier and their catalogue appears here.'}
+              {market
+                ? `Our catalogue — ${formatNumber(summary.products)} products. Not here? Add it as a new item. The price starts at what it last cost; change it to what you paid.`
+                : supplier
+                  ? `${supplier.name}'s catalogue — ${formatNumber(summary.products)} products across ${formatNumber(summary.categories.length)} categories and ${formatNumber(summary.brands.length)} brands. The price starts at what they ask; change it to what was agreed.`
+                  : 'Pick a supplier and their catalogue appears here.'}
             </p>
           </CardHeader>
           <CardBody className="space-y-3">
-            {supplier ? (
+            {ready ? (
               <SupplierCatalogue
+                searchPlaceholder={market ? 'Search our catalogue by name or SKU…' : undefined}
+                emptyLabel={
+                  market ? 'Nothing in our catalogue matches — add it as a new item' : undefined
+                }
                 entries={entries}
                 addedIds={addedIds}
                 onPick={(entry) => addEntry(entry)}
@@ -277,7 +371,7 @@ export default function NewOrderPage() {
             ) : null}
 
             {fields.length === 0 ? (
-              supplier ? (
+              ready ? (
                 <p className="text-fg-subtle text-sm">
                   Nothing added yet. Pick from their catalogue, or let the system suggest.
                 </p>
@@ -401,12 +495,13 @@ export default function NewOrderPage() {
         </Card>
       </div>
 
-      {supplier ? (
+      {ready ? (
         <GenerateOrderModal
           open={generating}
           onOpenChange={setGenerating}
           entries={entries}
-          supplierName={supplier.name}
+          supplierName={market ? 'the market' : (supplier?.name ?? '')}
+          scope={market ? 'Everything in our catalogue' : undefined}
           onAdd={(suggestions) => {
             for (const suggestion of suggestions) {
               const entry = entries.find((e) => e.product.id === suggestion.supplierProductId)
@@ -416,6 +511,16 @@ export default function NewOrderPage() {
           }}
         />
       ) : null}
+
+      <NewItemModal
+        open={addingItem}
+        onOpenChange={setAddingItem}
+        // Straight onto the order: the reason it was added at all.
+        onCreated={(variation) => {
+          const [entry] = ownCatalogue([variation])
+          if (entry) addEntry(entry)
+        }}
+      />
     </form>
   )
 }

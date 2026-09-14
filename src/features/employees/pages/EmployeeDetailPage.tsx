@@ -232,6 +232,12 @@ export default function EmployeeDetailPage() {
           <CardBody className="space-y-2 text-sm">
             <Row label="Role" value={employee.roleName} />
             <Row label="Works at" value={employee.locationName ?? 'All locations'} />
+            {canEdit ? (
+              <>
+                <Row label="Login" value={employee.login} />
+                <Row label="Password" value={employee.password} />
+              </>
+            ) : null}
             <Row label="Hired" value={formatDate(employee.hiredAt)} />
             <Row
               label="Last signed in"

@@ -17,6 +17,14 @@ describe('authenticate', () => {
     expect(run('AKHMET@fura.uz').ok).toBe(true)
   })
 
+  it("checks the employee's own password, so changing it changes how they sign in", () => {
+    const store = useDataStore.getState()
+    const nodira = store.employees.find((e) => e.login === 'nodira')!
+    store.updateEmployee(nodira.id, { ...nodira, password: 'new-secret-9' })
+    expect(run('nodira').ok).toBe(false)
+    expect(run('nodira', 'new-secret-9').ok).toBe(true)
+  })
+
   it('gives the same message for a wrong login and a wrong password', () => {
     const wrongLogin = run('nobody')
     const wrongPassword = run('akhmet', 'nope')

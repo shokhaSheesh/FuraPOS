@@ -70,8 +70,8 @@ OX also has Integrations, Partner program, Support, and Settings entries for Web
 omission reads as a decision rather than an oversight.
 
 Persistent top bar on every screen: sidebar collapse toggle, then — right-aligned — theme toggle,
-notifications bell (dropdown, not a page), and a user avatar menu with Sign out. (The wallet/credit
-balance OX shows there was removed at the client's request.)
+and a user avatar menu with Sign out. (The wallet/credit balance and the notifications bell OX
+shows there were removed at the client's request.)
 It carries **account and app-level chrome only**: no create action and no search field, because both
 belong to the screen (DESIGN_RULES § 3.2). OX does put a global `⌘K` search there; we deliberately
 do not.

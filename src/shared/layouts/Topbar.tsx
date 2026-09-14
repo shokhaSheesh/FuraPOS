@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router'
-import { Bell, LogOut, Moon, PanelLeft, Sun } from 'lucide-react'
+import { LogOut, Moon, PanelLeft, Sun } from 'lucide-react'
 import { DropdownMenu } from 'radix-ui'
 import { Button } from '@/shared/ui/Button'
 import { Badge } from '@/shared/ui/Badge'
@@ -34,34 +34,9 @@ export function Topbar() {
           {resolved === 'dark' ? <Sun /> : <Moon />}
         </Button>
 
-        <NotificationsMenu />
         <UserMenu name={user?.name ?? '—'} role={user?.role.name ?? ''} email={user?.email ?? ''} />
       </div>
     </header>
-  )
-}
-
-/** A dropdown, never a page — see CLAUDE.md. */
-function NotificationsMenu() {
-  return (
-    <DropdownMenu.Root>
-      <DropdownMenu.Trigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Notifications" className="relative">
-          <Bell />
-          <span className="bg-danger absolute top-2 right-2 size-1.5 rounded-full" />
-        </Button>
-      </DropdownMenu.Trigger>
-      <DropdownMenu.Portal>
-        <DropdownMenu.Content align="end" sideOffset={6} className={`${menuContentClass} w-80`}>
-          <p className="px-2 py-1.5 text-sm font-semibold">Notifications</p>
-          <p className="text-fg-muted px-2 py-6 text-center text-sm">You're all caught up.</p>
-          <DropdownMenu.Separator className="bg-border my-1 h-px" />
-          <DropdownMenu.Item asChild className={menuItemClass}>
-            <Link to={paths.settings.general}>Notification preferences</Link>
-          </DropdownMenu.Item>
-        </DropdownMenu.Content>
-      </DropdownMenu.Portal>
-    </DropdownMenu.Root>
   )
 }
 

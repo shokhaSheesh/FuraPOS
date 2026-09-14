@@ -400,6 +400,8 @@ export interface RoleInput {
 
 export interface EmployeeInput {
   fullName: string
+  login: string
+  password: string
   phone: string | null
   email: string | null
   roleId: string

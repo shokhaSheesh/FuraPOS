@@ -69,7 +69,9 @@ export interface CatalogueSummary {
 export function summariseCatalogue(entries: CatalogueEntry[]): CatalogueSummary {
   return {
     products: entries.length,
-    categories: [...new Set(entries.map((e) => e.product.categoryName).filter(Boolean))] as string[],
+    categories: [
+      ...new Set(entries.map((e) => e.product.categoryName).filter(Boolean)),
+    ] as string[],
     brands: [...new Set(entries.map((e) => e.product.brandName).filter(Boolean))] as string[],
     newToUs: entries.filter((e) => e.variation === null).length,
   }

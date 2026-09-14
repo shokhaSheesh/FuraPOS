@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { LOGIN_PATTERN, MIN_PASSWORD_LENGTH } from '@/shared/lib/password'
 import type { Id, IsoDate } from '@/shared/types'
 
 /**
@@ -59,6 +60,13 @@ export interface Employee {
   hiredAt: IsoDate
   /** Last time they signed in. Null when they never have. */
   lastActiveAt: IsoDate | null
+  /**
+   * What they sign in to this platform with. Kept readable, as supplier
+   * passwords are, because whoever set the account up is the one asked for it
+   * again — a design-stage decision; a real backend stores a hash.
+   */
+  login: string
+  password: string
   /** Monthly base pay. */
   salary: number | null
   comment: string | null
@@ -130,6 +138,17 @@ export const initials = (fullName: string) =>
 
 export const employeeDraftSchema = z.object({
   fullName: z.string().min(2, 'Give them a name'),
+  login: z
+    .string()
+    .trim()
+    .regex(
+      LOGIN_PATTERN,
+      'At least 3 characters: lowercase letters, digits, dot, dash or underscore',
+    ),
+  password: z
+    .string()
+    .trim()
+    .min(MIN_PASSWORD_LENGTH, `At least ${MIN_PASSWORD_LENGTH} characters — or press Generate`),
   phone: z.string().nullable(),
   email: z.string().email('That is not an email address').or(z.literal('')).nullable(),
   roleId: z.string().min(1, 'Every account needs a role'),
@@ -141,3 +160,22 @@ export const employeeDraftSchema = z.object({
 })
 
 export type EmployeeDraft = z.infer<typeof employeeDraftSchema>
+
+/** A login proposed from the first name, so nobody has to invent one. */
+export const suggestLogin = (fullName: string) =>
+  (fullName.trim().split(/\s+/)[0] ?? '')
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[^a-z0-9]/g, '')
+
+/** Two people signing in as one name would be one account for two people. */
+export const isLoginTaken = (
+  employees: Pick<Employee, 'id' | 'login'>[],
+  login: string,
+  exceptId?: string,
+) => {
+  const wanted = login.trim().toLowerCase()
+  return (
+    Boolean(wanted) && employees.some((e) => e.id !== exceptId && e.login.toLowerCase() === wanted)
+  )
+}

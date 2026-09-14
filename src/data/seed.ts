@@ -18,6 +18,7 @@ import type { Supplier } from '@/features/suppliers/model/supplier'
 import type { SupplierProduct } from '@/features/suppliers/model/catalogue'
 import type { ReorderSchedule } from '@/features/schedules/model/schedule'
 import type { Employee } from '@/features/employees/model/employee'
+import { DEMO_PASSWORD } from '@/features/auth/model/auth'
 import type { Role } from '@/features/roles/model/role'
 import type { Client, ClientType } from '@/features/clients/model/client'
 import type { Promotion } from '@/features/promotions/model/promotion'
@@ -574,6 +575,9 @@ export const employees: Employee[] = (
     fullName,
     phone: `+998 9${between(0, 9)} ${between(100, 999)}-${between(10, 99)}-${between(10, 99)}`,
     email: `${fullName.split(' ')[0]!.toLowerCase()}@fura.uz`,
+    // The demo accounts all share one password, shown on the sign-in page.
+    login: fullName.split(' ')[0]!.toLowerCase(),
+    password: DEMO_PASSWORD,
     avatarUrl: null,
     roleId,
     roleName: roles.find((r) => r.id === roleId)!.name,

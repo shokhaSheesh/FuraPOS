@@ -21,6 +21,12 @@ interface SessionContextValue {
   can: (permission: string) => boolean
   signIn: (login: string, password: string) => { ok: true } | { ok: false; error: string }
   signOut: () => void
+  /**
+   * True when the last sign-out was the user's own. The sign-in redirect uses it
+   * to forget the page they were on, so whoever signs in next is not dropped
+   * onto somebody else's screen.
+   */
+  signedOutByUser: boolean
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null)
@@ -57,6 +63,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const roles = useDataStore((s) => s.roles)
   const company = useDataStore((s) => s.company)
   const [employeeId, setEmployeeId] = useState<string | null>(readStored)
+  const [signedOutByUser, setSignedOutByUser] = useState(false)
 
   const user = useMemo<CurrentUser | null>(() => {
     const employee = employees.find((e) => e.id === employeeId)
@@ -81,6 +88,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       const result = authenticate(employees, roles, login, password)
       if (!result.ok) return result
       setEmployeeId(result.employee.id)
+      setSignedOutByUser(false)
       writeStored(result.employee.id)
       return { ok: true }
     },
@@ -89,6 +97,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(() => {
     setEmployeeId(null)
+    setSignedOutByUser(true)
     writeStored(null)
   }, [])
 
@@ -100,8 +109,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       can: (permission) => granted.has('*') || granted.has(permission),
       signIn,
       signOut,
+      signedOutByUser,
     }
-  }, [user, signIn, signOut])
+  }, [user, signIn, signOut, signedOutByUser])
 
   return <SessionContext value={value}>{children}</SessionContext>
 }

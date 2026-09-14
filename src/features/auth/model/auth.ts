@@ -4,16 +4,17 @@ import type { Role } from '@/features/roles/model/role'
 /**
  * Signing in.
  *
- * You sign in **as an employee**, and your role's permissions come with you —
- * so a Seller who signs in sees a Seller's sidebar, and the permission tree in
- * Access & roles is something you can actually feel rather than only edit.
+ * You sign in **as an employee**, with the login and password set on their
+ * record, and your role's permissions come with you — so a Seller who signs in
+ * sees a Seller's sidebar, and Access & roles is something you can feel rather
+ * than only edit.
  *
- * There is no backend, so there are no real credentials: the login is the
- * part of an employee's work email before the @ (or the whole email), and
- * every demo account shares one password. A real build checks a hash on the
- * server and never ships a password in the client — this is the shape of the
- * screen and the rules around it, not an authentication system.
+ * There is no backend: the check runs in the browser against the record. A
+ * real build checks a hash on the server and never ships a password to the
+ * client — this is the shape of the screen and the rules around it.
  */
+
+/** The seeded demo accounts' shared password, shown on the sign-in page. */
 export const DEMO_PASSWORD = 'fura2026'
 
 export type SignInResult = { ok: true; employee: Employee } | { ok: false; error: string }
@@ -27,14 +28,14 @@ export function authenticate(
   const wanted = login.trim().toLowerCase()
   if (!wanted || !password) return { ok: false, error: 'Enter your login and password' }
 
-  const employee = employees.find((e) => {
-    const email = (e.email ?? '').toLowerCase()
-    return email === wanted || email.split('@')[0] === wanted
-  })
+  // Their login, or their work email as a fallback people naturally try.
+  const employee = employees.find(
+    (e) => e.login.toLowerCase() === wanted || (e.email ?? '').toLowerCase() === wanted,
+  )
 
   // One message for a wrong login and a wrong password: saying which one was
   // wrong tells a stranger which logins exist.
-  if (!employee || password !== DEMO_PASSWORD) {
+  if (!employee || password.trim() !== employee.password) {
     return { ok: false, error: 'That login and password do not match' }
   }
   if (employee.status === 'suspended') {

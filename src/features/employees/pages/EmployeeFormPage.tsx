@@ -1,7 +1,7 @@
 import { Link, useNavigate, useParams } from 'react-router'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, Save } from 'lucide-react'
+import { ArrowLeft, Save, Wand2 } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
@@ -15,7 +15,14 @@ import { toast } from '@/shared/ui/toast'
 import { paths } from '@/shared/config/paths'
 import { useDataStore } from '@/data/store'
 import { useEmployee, useEmployeeActions } from '../api/employees'
-import { EMPLOYEE_STATUSES, employeeDraftSchema, type EmployeeDraft } from '../model/employee'
+import { generatePassword } from '@/shared/lib/password'
+import {
+  EMPLOYEE_STATUSES,
+  employeeDraftSchema,
+  isLoginTaken,
+  suggestLogin,
+  type EmployeeDraft,
+} from '../model/employee'
 
 /**
  * Adding or editing a person.
@@ -29,6 +36,7 @@ export default function EmployeeFormPage() {
   const navigate = useNavigate()
   const roles = useDataStore((s) => s.roles)
   const locations = useDataStore((s) => s.locations)
+  const employees = useDataStore((s) => s.employees)
   const { data: existing } = useEmployee(employeeId)
   const actions = useEmployeeActions()
   const editing = Boolean(employeeId)
@@ -38,6 +46,8 @@ export default function EmployeeFormPage() {
     defaultValues: existing
       ? {
           fullName: existing.fullName,
+          login: existing.login,
+          password: existing.password,
           phone: existing.phone,
           email: existing.email,
           roleId: existing.roleId,
@@ -49,6 +59,10 @@ export default function EmployeeFormPage() {
         }
       : {
           fullName: '',
+          login: '',
+          // A password is there from the start, so adding someone is never
+          // blocked on inventing one.
+          password: generatePassword(),
           phone: '',
           email: '',
           roleId: '',
@@ -75,8 +89,17 @@ export default function EmployeeFormPage() {
 
   const submit = form.handleSubmit(
     (values) => {
+      // Two people signing in as one name would be one account for two people,
+      // and the schema cannot see the other employees to catch it.
+      if (isLoginTaken(employees, values.login, existing?.id)) {
+        form.setError('login', { message: 'Someone else already signs in with this login' })
+        toast.error('That login is already taken')
+        return
+      }
       const input = {
         ...values,
+        login: values.login.trim().toLowerCase(),
+        password: values.password.trim(),
         phone: values.phone || null,
         email: values.email || null,
         comment: values.comment || null,
@@ -189,13 +212,70 @@ export default function EmployeeFormPage() {
           </CardBody>
         </Card>
 
+        {/* How they get into the platform. Right after Access, because a role
+            is only useful to someone who can sign in to use it. */}
+        <Card>
+          <CardHeader className="flex-col items-stretch gap-1">
+            <CardTitle>Sign-in</CardTitle>
+            <p className="text-fg-subtle text-2xs">
+              What they type on the sign-in page. The password is shown so you can pass it on;
+              change it here whenever it needs resetting.
+            </p>
+          </CardHeader>
+          <CardBody className="grid gap-3 sm:grid-cols-2">
+            <Field
+              label="Login"
+              required
+              hint="Lowercase, no spaces"
+              error={form.formState.errors.login?.message}
+            >
+              {(p) => <Input {...p} placeholder="nodira" {...form.register('login')} />}
+            </Field>
+            <Field label="Password" required error={form.formState.errors.password?.message}>
+              {(p) => (
+                <div className="flex gap-2">
+                  <Input {...p} className="flex-1 font-mono" {...form.register('password')} />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() =>
+                      form.setValue('password', generatePassword(), { shouldValidate: true })
+                    }
+                  >
+                    <Wand2 />
+                    Generate
+                  </Button>
+                </div>
+              )}
+            </Field>
+            {existing?.status && existing.status !== 'active' ? (
+              <p className="text-warning text-2xs sm:col-span-2">
+                This account is {existing.status}, so it cannot sign in whatever the password is.
+              </p>
+            ) : null}
+          </CardBody>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Person</CardTitle>
           </CardHeader>
           <CardBody className="grid gap-3 sm:grid-cols-2">
             <Field label="Full name" required error={form.formState.errors.fullName?.message}>
-              {(p) => <Input {...p} placeholder="Nodira Rasulova" {...form.register('fullName')} />}
+              {(p) => (
+                <Input
+                  {...p}
+                  placeholder="Nodira Rasulova"
+                  {...form.register('fullName', {
+                    // Propose a login from the first name the first time one is typed.
+                    onBlur: (event) => {
+                      if (!form.getValues('login')) {
+                        form.setValue('login', suggestLogin(event.target.value))
+                      }
+                    },
+                  })}
+                />
+              )}
             </Field>
             <Field label="Phone">
               {(p) => <Input {...p} placeholder="+998 90 123-45-67" {...form.register('phone')} />}
@@ -226,11 +306,7 @@ export default function EmployeeFormPage() {
             <CardTitle>Pay</CardTitle>
           </CardHeader>
           <CardBody className="grid gap-3 sm:grid-cols-2">
-            <Field
-              label="Base pay"
-              hint="Per month"
-              error={form.formState.errors.salary?.message}
-            >
+            <Field label="Base pay" hint="Per month" error={form.formState.errors.salary?.message}>
               {(p) => (
                 <Controller
                   control={form.control}

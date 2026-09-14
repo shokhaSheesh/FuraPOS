@@ -43,14 +43,14 @@ export function RequirePermission({
  * signing in puts them there rather than on the dashboard.
  */
 export function RequireAuth({ children }: { children: ReactNode }) {
-  const { user } = useSession()
+  const { user, signedOutByUser } = useSession()
   const location = useLocation()
   if (!user) {
     return (
       <Navigate
         to={paths.auth.login}
         replace
-        state={{ from: `${location.pathname}${location.search}` }}
+        state={signedOutByUser ? undefined : { from: `${location.pathname}${location.search}` }}
       />
     )
   }

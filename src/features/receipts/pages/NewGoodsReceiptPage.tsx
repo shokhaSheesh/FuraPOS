@@ -150,22 +150,22 @@ export default function NewGoodsReceiptPage() {
       meta: { align: 'right' },
       cell: ({ row }) => (
         <div className="flex justify-end">
-        <Controller
-          control={form.control}
-          name={`lines.${row.original.index}.orderedQuantity`}
-          render={({ field: f }) => (
-            <NumberField
-              className="w-20"
-              nullable={false}
-              min={1}
-              aria-label="Invoiced quantity"
-              value={f.value}
-              onChange={(v) => f.onChange(v ?? 0)}
-              onBlur={f.onBlur}
-            />
+          <Controller
+            control={form.control}
+            name={`lines.${row.original.index}.orderedQuantity`}
+            render={({ field: f }) => (
+              <NumberField
+                className="w-20"
+                nullable={false}
+                min={1}
+                aria-label="Invoiced quantity"
+                value={f.value}
+                onChange={(v) => f.onChange(v ?? 0)}
+                onBlur={f.onBlur}
+              />
+            )}
+          />
         </div>
-          )}
-        />
       ),
     },
     {

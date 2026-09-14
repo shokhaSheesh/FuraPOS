@@ -265,22 +265,22 @@ export default function NewOrderPage() {
       meta: { align: 'right' },
       cell: ({ row }) => (
         <div className="flex justify-end">
-        <Controller
-          control={form.control}
-          name={`lines.${row.original.index}.orderedQuantity`}
-          render={({ field: f }) => (
-            <NumberField
-              className="w-24"
-              nullable={false}
-              min={1}
-              aria-label="Quantity"
-              value={f.value}
-              onChange={(next) => f.onChange(Math.max(1, next ?? 1))}
-              onBlur={f.onBlur}
-            />
+          <Controller
+            control={form.control}
+            name={`lines.${row.original.index}.orderedQuantity`}
+            render={({ field: f }) => (
+              <NumberField
+                className="w-24"
+                nullable={false}
+                min={1}
+                aria-label="Quantity"
+                value={f.value}
+                onChange={(next) => f.onChange(Math.max(1, next ?? 1))}
+                onBlur={f.onBlur}
+              />
+            )}
+          />
         </div>
-          )}
-        />
       ),
     },
     {

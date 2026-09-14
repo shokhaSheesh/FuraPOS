@@ -91,8 +91,9 @@ export default function OnlineSaleDetailPage() {
             </p>
           ) : (
             <p className="text-fg">
-              Cancelled — the <span className="font-semibold">{formatNumber(units)} pcs</span> it
-              held went back to {sale.locationName}.
+              {sale.status === 'returned' ? 'Returned' : 'Cancelled'} — the{' '}
+              <span className="font-semibold">{formatNumber(units)} pcs</span> went back to{' '}
+              {sale.locationName}.
             </p>
           )}
           <p className="text-fg-subtle text-2xs">
@@ -153,7 +154,7 @@ export default function OnlineSaleDetailPage() {
               muted={!sale.estimatedDeliveryAt}
             />
             <Info
-              label="Delivered"
+              label={sale.deliveryMethod === 'pickup' ? 'Collected' : 'Delivered'}
               value={sale.deliveredAt ? formatDateTime(sale.deliveredAt) : 'Not yet'}
               muted={!sale.deliveredAt}
             />
@@ -243,7 +244,7 @@ export default function OnlineSaleDetailPage() {
             <Money label="To pay in money" value={formatMoney(payable(sale))} />
             <div className="border-border border-t pt-2">
               <Money label="Paid" value={formatMoney(paid)} strong />
-              {payable(sale) - paid > 0 && sale.status !== 'cancelled' ? (
+              {payable(sale) - paid > 0 && takesStock(sale) ? (
                 <p className="text-warning text-2xs mt-1 text-right">
                   {formatMoney(payable(sale) - paid)} still to be collected
                 </p>

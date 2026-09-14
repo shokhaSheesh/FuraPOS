@@ -49,6 +49,7 @@ describe('online sale money', () => {
   it('holds stock unless cancelled', () => {
     expect(takesStock({ status: 'preparing' })).toBe(true)
     expect(takesStock({ status: 'cancelled' })).toBe(false)
+    expect(takesStock({ status: 'returned' })).toBe(false)
   })
 })
 

@@ -1953,14 +1953,15 @@ export const onlineSales: OnlineSale[] = (() => {
     'new',
     'preparing',
     'preparing',
-    'ready',
-    'delivering',
-    'delivering',
-    'delivered',
-    'delivered',
-    'delivered',
-    'delivered',
+    'ready_to_ship',
+    'out_for_delivery',
+    'out_for_delivery',
+    'completed',
+    'completed',
+    'completed',
+    'completed',
     'cancelled',
+    'returned',
   ]
   const providers: PaymentProvider[] = ['payme', 'payme', 'click', 'uzum', 'cash']
 
@@ -1973,8 +1974,12 @@ export const onlineSales: OnlineSale[] = (() => {
     const driver = rng() > 0.35 ? oPick(drivers) : null
     const stranger = oPick(strangers)
     const method: DeliveryMethod = rng() > 0.3 ? 'emu' : rng() > 0.5 ? 'pickup' : 'courier'
-    // Nobody delivers a pickup: it waits at the shop until it is collected.
-    const status: OnlineSaleStatus = method === 'pickup' && drawn === 'delivering' ? 'ready' : drawn
+    // A pickup is never shipped — it waits at the shop — and a delivery is
+    // never "ready for pickup", so the two paths do not cross.
+    const status: OnlineSaleStatus =
+      method === 'pickup' && (drawn === 'ready_to_ship' || drawn === 'out_for_delivery')
+        ? 'ready_for_pickup'
+        : drawn
     // A pickup is collected from one of our shops, never from the warehouse.
     const location =
       method === 'pickup'
@@ -2004,8 +2009,11 @@ export const onlineSales: OnlineSale[] = (() => {
     const toPay = Math.max(0, total - cashbackUsed)
 
     // Cash on delivery is only collected once it has been delivered.
-    const paid = provider === 'cash' ? status === 'delivered' : status !== 'new' || rng() > 0.5
-    const refunded = status === 'cancelled' && paid && provider !== 'cash'
+    // A return was completed first, so it was paid before the money went back.
+    const handedOver = status === 'completed' || status === 'returned'
+    const paid = provider === 'cash' ? handedOver : status !== 'new' || rng() > 0.5
+    const refunded =
+      (status === 'returned' && paid) || (status === 'cancelled' && paid && provider !== 'cash')
     const estimated = new Date(createdAt.getTime() + oBetween(1, 5) * 86_400_000).toISOString()
     // Online payments clear straight away; cash is collected on the doorstep.
     const paidAt =
@@ -2059,20 +2067,22 @@ export const onlineSales: OnlineSale[] = (() => {
       pickupPoint: method === 'emu' ? oPick(pickupPoints) : null,
       courierStatus:
         method === 'emu'
-          ? status === 'delivered'
+          ? status === 'completed'
             ? 'DELIVERED'
-            : status === 'delivering'
-              ? 'IN_TRANSIT'
-              : status === 'cancelled'
-                ? 'CANCELLED'
-                : 'NEW'
+            : status === 'returned'
+              ? 'RETURNED'
+              : status === 'out_for_delivery'
+                ? 'IN_TRANSIT'
+                : status === 'cancelled'
+                  ? 'CANCELLED'
+                  : 'NEW'
           : null,
       courierOrderId:
         method === 'emu'
           ? `74b3${(index * 99_991).toString(16).padStart(4, '0')}-3910-4a43-8727-beca5fe1${String(index).padStart(4, '0')}`
           : null,
       estimatedDeliveryAt: method === 'pickup' ? null : estimated,
-      deliveredAt: status === 'delivered' ? estimated : null,
+      deliveredAt: handedOver ? estimated : null,
       lines,
       deliveryFee,
       discount,

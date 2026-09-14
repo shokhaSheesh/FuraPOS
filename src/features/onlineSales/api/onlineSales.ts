@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { useDataStore } from '@/data/store'
 import { matches, paginate } from '@/data/query'
 import type { ListQuery } from '@/shared/types'
-import { amountPaid, takesStock, unitsOf, type OnlineSale } from '../model/onlineSale'
+import { amountPaid, isOpenOnline, takesStock, unitsOf, type OnlineSale } from '../model/onlineSale'
 
 /** Everything but the status chip, so the chip counts describe the rest of the filters. */
 function scope(all: OnlineSale[], query: ListQuery) {
@@ -57,9 +57,8 @@ export function useOnlineSalesSummary(query: ListQuery) {
     return {
       orders: rows.length,
       received: rows.reduce((sum, sale) => sum + amountPaid(sale), 0),
-      open: rows.filter((s) => ['new', 'preparing', 'ready', 'delivering'].includes(s.status))
-        .length,
-      unpaid: rows.filter((s) => s.paymentStatus === 'unpaid' && s.status !== 'cancelled').length,
+      open: rows.filter((s) => isOpenOnline(s.status)).length,
+      unpaid: rows.filter((s) => s.paymentStatus === 'unpaid' && isOpenOnline(s.status)).length,
       units: live.reduce((sum, sale) => sum + unitsOf(sale), 0),
     }
   }, [all, query])

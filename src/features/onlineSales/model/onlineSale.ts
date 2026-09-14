@@ -14,8 +14,20 @@ import type { Id, IsoDate } from '@/shared/types'
  * courier, a pickup point, cashback and payment transactions, and a sale typed
  * in at the counter has none of those.
  */
+/**
+ * The e-commerce app's statuses, as the client uses them. A delivered order
+ * goes Ready for shipment → Out for delivery; a pickup goes to Ready for
+ * pickup instead. Both end in Completed, or leave by Cancelled or Returned.
+ */
 export type OnlineSaleStatus =
-  'new' | 'preparing' | 'ready' | 'delivering' | 'delivered' | 'cancelled'
+  | 'new'
+  | 'preparing'
+  | 'ready_to_ship'
+  | 'out_for_delivery'
+  | 'ready_for_pickup'
+  | 'completed'
+  | 'cancelled'
+  | 'returned'
 
 export const ONLINE_SALE_STATUSES: {
   value: OnlineSaleStatus
@@ -24,11 +36,17 @@ export const ONLINE_SALE_STATUSES: {
 }[] = [
   { value: 'new', label: 'New', tone: 'info' },
   { value: 'preparing', label: 'Being prepared', tone: 'warning' },
-  { value: 'ready', label: 'Ready for pickup', tone: 'info' },
-  { value: 'delivering', label: 'In delivery', tone: 'info' },
-  { value: 'delivered', label: 'Delivered', tone: 'success' },
+  { value: 'ready_to_ship', label: 'Ready for shipment', tone: 'info' },
+  { value: 'out_for_delivery', label: 'Out for delivery', tone: 'info' },
+  { value: 'ready_for_pickup', label: 'Ready for pickup', tone: 'info' },
+  { value: 'completed', label: 'Completed', tone: 'success' },
   { value: 'cancelled', label: 'Cancelled', tone: 'danger' },
+  { value: 'returned', label: 'Returned', tone: 'neutral' },
 ]
+
+/** Still in motion — not yet completed, cancelled or returned. */
+export const isOpenOnline = (status: OnlineSaleStatus) =>
+  !['completed', 'cancelled', 'returned'].includes(status)
 
 export const onlineStatusMeta = (status: OnlineSaleStatus) =>
   ONLINE_SALE_STATUSES.find((entry) => entry.value === status)!
@@ -149,8 +167,9 @@ export const unitsOf = (sale: Pick<OnlineSale, 'lines'>) =>
   sale.lines.reduce((sum, line) => sum + line.quantity, 0)
 
 /**
- * Whether the order holds stock. Everything but a cancellation does: parts
- * are set aside the moment an order is placed, and a cancelled one gives them
- * back. This is the rule the product log and stock both follow.
+ * Whether the order holds stock. Parts are set aside the moment an order is
+ * placed; a cancelled order gives them back, and so does a returned one once
+ * the parts are back on the shelf. This is the rule the product log follows.
  */
-export const takesStock = (sale: Pick<OnlineSale, 'status'>) => sale.status !== 'cancelled'
+export const takesStock = (sale: Pick<OnlineSale, 'status'>) =>
+  sale.status !== 'cancelled' && sale.status !== 'returned'

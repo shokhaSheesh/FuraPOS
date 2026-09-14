@@ -515,7 +515,12 @@ status and employee controls, Cancel, Add item, the empty Seller and Scheduled-a
 gateway metadata — all of which exist to run the app, not to read an order. **Added:** which of our
 locations it was picked from, since that is where stock comes off.
 
-Every order except a cancelled one takes its parts off that location from the moment it is placed,
+Statuses are the client's, verbatim: **New → Being prepared → Ready for shipment → Out for
+delivery**, or **Ready for pickup** for a pickup, ending in **Completed**, **Cancelled** or
+**Returned**.
+
+Every order except a cancelled or returned one takes its parts off that location from the moment it
+is placed,
 and shows in **Product logs** as an "Online sale" beside counter sales and transfers.
 
 ### Cash shifts — «Кассовые смены», built at the client's request

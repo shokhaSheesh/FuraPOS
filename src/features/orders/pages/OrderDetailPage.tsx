@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import { ArrowLeft, Ban, Check, PackageCheck, Send } from 'lucide-react'
+import { FileText, ArrowLeft, Ban, Check, PackageCheck, Send } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { ProductThumb } from '@/shared/components/ProductThumb'
@@ -80,6 +80,15 @@ export default function OrderDetailPage() {
         description={`${formatNumber(order.lines.length)} products from ${orderSource(order)}`}
         action={
           <div className="flex items-center gap-2">
+            {order.kind === 'china' ? (
+              // The document the factory works from.
+              <Button variant="secondary" asChild>
+                <Link to={paths.procurement.orderDocument(order.id)}>
+                  <FileText />
+                  Download PDF
+                </Link>
+              </Button>
+            ) : null}
             {canCancel(order.status) && can('procurement.orders.delete') ? (
               <Button variant="secondary" onClick={() => setConfirmCancel(true)}>
                 <Ban />

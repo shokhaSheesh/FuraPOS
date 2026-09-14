@@ -21,8 +21,11 @@ export type OrderStatus = 'draft' | 'sent' | 'confirmed' | 'partial' | 'received
  *     There is no supplier to send it to and no catalogue of theirs, so it is
  *     built from ours, and it works as the shopping list for the market run.
  *     It is still received like any other order when the goods come back.
+ *   - **china** — made to order by a factory in China. Also built from our
+ *     catalogue, but each line carries how urgently it is needed, and the whole
+ *     order is handed over as a PDF the factory can work from.
  */
-export type OrderKind = 'supplier' | 'market'
+export type OrderKind = 'supplier' | 'market' | 'china'
 
 export const ORDER_KINDS: { value: OrderKind; label: string; hint: string }[] = [
   {
@@ -34,6 +37,11 @@ export const ORDER_KINDS: { value: OrderKind; label: string; hint: string }[] = 
     value: 'market',
     label: 'From the market',
     hint: 'Bought at the bazaar — pick from our catalogue, or add what we do not carry yet',
+  },
+  {
+    value: 'china',
+    label: 'To China',
+    hint: 'Pick from our catalogue, mark how urgent each line is, and hand the factory a PDF',
   },
 ]
 
@@ -75,6 +83,11 @@ export interface OrderLine {
   /** The agreed price, which is the point of having an order at all. */
   unitCost: number
   costCurrency: 'USD' | 'UZS'
+  /**
+   * How badly this line is needed, from the Settings list. Set on China orders,
+   * where a factory works down a long list; absent or null elsewhere.
+   */
+  urgencyId?: Id | null
 }
 
 export interface PurchaseOrder {
@@ -108,7 +121,11 @@ export const orderSource = (order: Pick<PurchaseOrder, 'kind' | 'supplierName' |
     ? order.boughtFrom
       ? `Market · ${order.boughtFrom}`
       : 'Market'
-    : (order.supplierName ?? '—')
+    : order.kind === 'china'
+      ? order.boughtFrom
+        ? `China · ${order.boughtFrom}`
+        : 'China'
+      : (order.supplierName ?? '—')
 
 /* --- what is still coming ------------------------------------------------ */
 
@@ -180,7 +197,9 @@ export function nextStep(
       // Nobody to send a market list to — it is simply agreed and goes out.
       return kind === 'market'
         ? { to: 'confirmed', label: 'Confirm purchase' }
-        : { to: 'sent', label: 'Send to supplier' }
+        : kind === 'china'
+          ? { to: 'sent', label: 'Send to factory' }
+          : { to: 'sent', label: 'Send to supplier' }
     case 'sent':
       return { to: 'confirmed', label: 'Mark as confirmed' }
     default:
@@ -207,11 +226,12 @@ export const orderLineSchema = z.object({
   receivedQuantity: z.number().nonnegative(),
   unitCost: z.number().nonnegative(),
   costCurrency: z.enum(['USD', 'UZS']),
+  urgencyId: z.string().nullable().optional(),
 })
 
 export const orderDraftSchema = z
   .object({
-    kind: z.enum(['supplier', 'market']),
+    kind: z.enum(['supplier', 'market', 'china']),
     supplierId: z.string(),
     boughtFrom: z.string(),
     locationId: z.string().min(1, 'Pick where it should land'),

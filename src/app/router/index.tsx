@@ -48,6 +48,8 @@ const LocationsSettingsPage = lazy(() => import('@/features/settings/pages/Locat
 const CategoriesSettingsPage = lazy(
   () => import('@/features/settings/pages/CategoriesSettingsPage'),
 )
+const OrderDocumentPage = lazy(() => import('@/features/orders/pages/OrderDocumentPage'))
+const UrgencySettingsPage = lazy(() => import('@/features/settings/pages/UrgencySettingsPage'))
 const BillingSettingsPage = lazy(() => import('@/features/settings/pages/BillingSettingsPage'))
 const PersonalSettingsPage = lazy(() => import('@/features/settings/pages/PersonalSettingsPage'))
 const ReportsPage = lazy(() => import('@/features/reports/pages/ReportsPage'))
@@ -99,6 +101,13 @@ function todo(title: string, permission?: string, description?: string): ReactNo
 }
 
 const routes: RouteObject[] = [
+  /* The printable order sits outside the shell: a sheet of A4 with no sidebar
+     or top bar, so what is on screen is exactly what saves to PDF. */
+  {
+    path: paths.procurement.orderDocument(),
+    errorElement: <RouteError />,
+    element: page(<OrderDocumentPage />, 'procurement.orders.view'),
+  },
   {
     path: '/',
     element: <AppShell />,
@@ -348,6 +357,10 @@ const routes: RouteObject[] = [
       {
         path: paths.settings.categories,
         element: page(<CategoriesSettingsPage />, 'settings.products.view'),
+      },
+      {
+        path: paths.settings.urgency,
+        element: page(<UrgencySettingsPage />, 'settings.products.view'),
       },
       {
         path: paths.settings.billing,

@@ -38,6 +38,9 @@ import {
   type OrderKind,
 } from '../model/order'
 
+/** "Not set" in the urgency picker — Radix reads an empty value as cleared. */
+const NO_URGENCY = '__none__'
+
 const CURRENCIES = [
   { value: 'USD', label: 'USD' },
   { value: 'UZS', label: 'UZS' },
@@ -80,21 +83,26 @@ export default function NewOrderPage() {
   const lines = form.watch('lines')
   const kind = form.watch('kind')
   const market = kind === 'market'
+  const china = kind === 'china'
+  /** Market and China both pick from our catalogue; only a supplier order has its own. */
+  const fromOurs = market || china
+  const urgencyLevels = useDataStore((s) => s.urgencyLevels)
+  const levels = useMemo(() => [...urgencyLevels].sort((a, b) => a.rank - b.rank), [urgencyLevels])
   const supplierId = form.watch('supplierId')
-  const supplier = market ? undefined : suppliers.find((s) => s.id === supplierId)
+  const supplier = fromOurs ? undefined : suppliers.find((s) => s.id === supplierId)
   /** Whether there is a catalogue to show yet: always at the market, once chosen otherwise. */
-  const ready = market || Boolean(supplier)
+  const ready = fromOurs || Boolean(supplier)
 
   /* The catalogue this order is picked from: a supplier's own, or ours for a
      market run. Everything below works the same either way. */
   const entries = useMemo(
     () =>
-      market
+      fromOurs
         ? ownCatalogue(variations)
         : supplierId
           ? catalogueFor(supplierProducts, variations, supplierId)
           : [],
-    [market, supplierProducts, variations, supplierId],
+    [fromOurs, supplierProducts, variations, supplierId],
   )
   const summary = summariseCatalogue(entries)
   const addedIds = entries
@@ -128,6 +136,8 @@ export default function NewOrderPage() {
       // Their catalogue price is where the agreement starts, not our last cost.
       unitCost: entry.product.price,
       costCurrency: entry.product.currency,
+      // Left unset rather than guessed: how urgent a line is, is the buyer's call.
+      urgencyId: null,
     })
   }
 
@@ -163,7 +173,9 @@ export default function NewOrderPage() {
                   ? `${order.number} saved as a draft`
                   : market
                     ? `${order.number} confirmed — receive it when the goods are back`
-                    : `${order.number} sent to ${order.supplierName}`,
+                    : china
+                      ? `${order.number} sent — download the PDF for the factory from the order`
+                      : `${order.number} sent to ${order.supplierName}`,
               )
               navigate(paths.procurement.orderDetail(order.id))
             },
@@ -187,7 +199,9 @@ export default function NewOrderPage() {
         description={
           market
             ? 'A market run: what to buy at the bazaar, and what it cost. It is received like any order when the goods are back.'
-            : 'What to ask a supplier for, and at what price. The delivery gets checked against it.'
+            : china
+              ? 'An order for a factory in China: what to make, how urgently, and a PDF to hand them.'
+              : 'What to ask a supplier for, and at what price. The delivery gets checked against it.'
         }
         action={
           <div className="flex items-center gap-2">
@@ -203,7 +217,7 @@ export default function NewOrderPage() {
             ) : (
               <Button type="button" variant="primary" onClick={submit('sent')}>
                 <Send />
-                Send to supplier
+                {china ? 'Send to factory' : 'Send to supplier'}
               </Button>
             )}
           </div>
@@ -227,15 +241,21 @@ export default function NewOrderPage() {
             </p>
           </CardHeader>
           <CardBody className="grid gap-3 sm:grid-cols-3">
-            {market ? (
+            {fromOurs ? (
               <Field
-                label="Bought from"
-                hint="The market, the stall or the seller — for when this is asked about later"
+                label={china ? 'Factory or agent' : 'Bought from'}
+                hint={
+                  china
+                    ? 'Who is making it — the factory, or the agent placing it for us'
+                    : 'The market, the stall or the seller — for when this is asked about later'
+                }
               >
                 {(p) => (
                   <Input
                     {...p}
-                    placeholder="Jomiy bozori, row 4"
+                    placeholder={
+                      china ? 'Guangzhou Auto Parts Co. — Mr Chen' : 'Jomiy bozori, row 4'
+                    }
                     {...form.register('boughtFrom')}
                   />
                 )}
@@ -288,9 +308,11 @@ export default function NewOrderPage() {
             <Field
               label="Expected"
               hint={
-                market
-                  ? 'When the goods should be back at the warehouse.'
-                  : 'When they promised it. Without a date nothing can be late.'
+                china
+                  ? 'When the factory said it will ship.'
+                  : market
+                    ? 'When the goods should be back at the warehouse.'
+                    : 'When they promised it. Without a date nothing can be late.'
               }
             >
               {() => (
@@ -324,7 +346,7 @@ export default function NewOrderPage() {
                     {formatMoney(Math.round(total))}
                   </span>
                 ) : null}
-                {market && can('products.list.create') ? (
+                {fromOurs && can('products.list.create') ? (
                   <Button type="button" variant="secondary" onClick={() => setAddingItem(true)}>
                     <Plus />
                     Add item
@@ -339,19 +361,21 @@ export default function NewOrderPage() {
               </div>
             </div>
             <p className="text-fg-subtle text-2xs">
-              {market
-                ? `Our catalogue — ${formatNumber(summary.products)} products. Not here? Add it as a new item. The price starts at what it last cost; change it to what you paid.`
-                : supplier
-                  ? `${supplier.name}'s catalogue — ${formatNumber(summary.products)} products across ${formatNumber(summary.categories.length)} categories and ${formatNumber(summary.brands.length)} brands. The price starts at what they ask; change it to what was agreed.`
-                  : 'Pick a supplier and their catalogue appears here.'}
+              {china
+                ? `Our catalogue — ${formatNumber(summary.products)} products. Mark how urgent each line is; the factory sees them in that order on the PDF.`
+                : market
+                  ? `Our catalogue — ${formatNumber(summary.products)} products. Not here? Add it as a new item. The price starts at what it last cost; change it to what you paid.`
+                  : supplier
+                    ? `${supplier.name}'s catalogue — ${formatNumber(summary.products)} products across ${formatNumber(summary.categories.length)} categories and ${formatNumber(summary.brands.length)} brands. The price starts at what they ask; change it to what was agreed.`
+                    : 'Pick a supplier and their catalogue appears here.'}
             </p>
           </CardHeader>
           <CardBody className="space-y-3">
             {ready ? (
               <SupplierCatalogue
-                searchPlaceholder={market ? 'Search our catalogue by name or SKU…' : undefined}
+                searchPlaceholder={fromOurs ? 'Search our catalogue by name or SKU…' : undefined}
                 emptyLabel={
-                  market ? 'Nothing in our catalogue matches — add it as a new item' : undefined
+                  fromOurs ? 'Nothing in our catalogue matches — add it as a new item' : undefined
                 }
                 entries={entries}
                 addedIds={addedIds}
@@ -382,6 +406,12 @@ export default function NewOrderPage() {
                   <thead className="bg-canvas">
                     <tr className="text-fg-muted text-2xs tracking-wide uppercase">
                       <th className="px-3 py-2 text-left font-semibold">Product</th>
+                      {china ? (
+                        <>
+                          <th className="px-3 py-2 text-right font-semibold">Sold</th>
+                          <th className="px-3 py-2 text-left font-semibold">Urgency</th>
+                        </>
+                      ) : null}
                       <th className="px-3 py-2 text-right font-semibold">Quantity</th>
                       <th className="px-3 py-2 text-right font-semibold">Agreed price</th>
                       <th className="px-3 py-2 text-right font-semibold">Line total</th>
@@ -402,6 +432,45 @@ export default function NewOrderPage() {
                               </div>
                             </div>
                           </td>
+                          {china && line ? (
+                            <>
+                              {/* Both windows, as on Transfers: the pair says whether
+                                  a part is still moving or has gone quiet. */}
+                              <td className="px-3 py-2 text-right whitespace-nowrap tabular-nums">
+                                <p className="text-fg">
+                                  {formatNumber(unitsSoldAt(sales, line.variationId, null, 3))} in
+                                  3m
+                                </p>
+                                <p className="text-fg-subtle text-2xs">
+                                  {formatNumber(unitsSoldAt(sales, line.variationId, null, 6))} in
+                                  6m
+                                </p>
+                              </td>
+                              <td className="px-2 py-1.5">
+                                <Controller
+                                  control={form.control}
+                                  name={`lines.${index}.urgencyId`}
+                                  render={({ field: f }) => (
+                                    <Select
+                                      aria-label={`Urgency of ${line.name}`}
+                                      className="w-32"
+                                      value={f.value || NO_URGENCY}
+                                      onChange={(next) =>
+                                        f.onChange(next === NO_URGENCY ? null : next)
+                                      }
+                                      options={[
+                                        { value: NO_URGENCY, label: 'Not set' },
+                                        ...levels.map((level) => ({
+                                          value: level.id,
+                                          label: level.name,
+                                        })),
+                                      ]}
+                                    />
+                                  )}
+                                />
+                              </td>
+                            </>
+                          ) : null}
                           <td className="px-2 py-1.5 text-right">
                             <Controller
                               control={form.control}
@@ -500,8 +569,8 @@ export default function NewOrderPage() {
           open={generating}
           onOpenChange={setGenerating}
           entries={entries}
-          supplierName={market ? 'the market' : (supplier?.name ?? '')}
-          scope={market ? 'Everything in our catalogue' : undefined}
+          supplierName={market ? 'the market' : china ? 'China' : (supplier?.name ?? '')}
+          scope={fromOurs ? 'Everything in our catalogue' : undefined}
           onAdd={(suggestions) => {
             for (const suggestion of suggestions) {
               const entry = entries.find((e) => e.product.id === suggestion.supplierProductId)

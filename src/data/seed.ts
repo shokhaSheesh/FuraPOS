@@ -31,6 +31,7 @@ import type {
   CompanySettings,
   LocationSettings,
   NotificationPreferences,
+  UrgencyLevel,
 } from '@/features/settings/model/settings'
 
 /** `expand('sales.orders', ['view','create'])` → `sales.orders.view`, … */
@@ -1544,6 +1545,8 @@ export const orders: PurchaseOrder[] = Array.from({ length: 11 }, (_, index) => 
   // Decided by position rather than the random stream, so adding market orders
   // does not shift every seeded value that comes after them.
   const market = sequence % 4 === 0
+  // And two were made to order in China, which is where urgency levels show up.
+  const china = sequence % 4 === 2 && sequence < 10
   const location = random() > 0.25 ? locations[0]! : pick(locations)
   const createdAt = new Date(Date.now() - between(3, 70) * 86_400_000)
 
@@ -1573,6 +1576,10 @@ export const orders: PurchaseOrder[] = Array.from({ length: 11 }, (_, index) => 
       receivedQuantity,
       unitCost: variation.costPrice,
       costCurrency: variation.costCurrency,
+      // Positional, like the kind above, so no random draw is added.
+      urgencyId: china
+        ? (['urg-1', 'urg-3', 'urg-2', 'urg-3', 'urg-4'][lineIndex % 5] ?? null)
+        : null,
     }
   })
 
@@ -1589,12 +1596,14 @@ export const orders: PurchaseOrder[] = Array.from({ length: 11 }, (_, index) => 
     number: `PO-${String(sequence).padStart(5, '0')}`,
     status,
     // Every fourth one was a bazaar run, so the list shows both kinds.
-    kind: market ? ('market' as const) : ('supplier' as const),
-    supplierId: market ? null : supplier.id,
-    supplierName: market ? null : supplier.name,
+    kind: market ? ('market' as const) : china ? ('china' as const) : ('supplier' as const),
+    supplierId: market || china ? null : supplier.id,
+    supplierName: market || china ? null : supplier.name,
     boughtFrom: market
       ? (['Jomiy bozori', 'Chilonzor avto bozori', 'Sergeli market'][sequence % 3] ?? null)
-      : null,
+      : china
+        ? (['Guangzhou Hengli Auto Parts Co.', 'Ruian Kaida Machinery'][sequence % 2] ?? null)
+        : null,
     locationId: location.id,
     locationName: location.name,
     expectedAt,
@@ -2102,6 +2111,14 @@ export const brandSettings: Brand[] = brands.map((brand, index) => ({
   zone: ['Germany', 'Japan', 'Germany', 'United Kingdom'][index] ?? null,
   active: true,
 }))
+
+/** The levels a China order line can carry. Editable in Settings. */
+export const urgencyLevels: UrgencyLevel[] = [
+  { id: 'urg-1', name: 'Critical', tone: 'danger', rank: 1 },
+  { id: 'urg-2', name: 'High', tone: 'warning', rank: 2 },
+  { id: 'urg-3', name: 'Normal', tone: 'info', rank: 3 },
+  { id: 'urg-4', name: 'Low', tone: 'neutral', rank: 4 },
+]
 
 export const locationSettings: LocationSettings[] = [
   {

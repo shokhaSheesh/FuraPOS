@@ -556,6 +556,33 @@ which is where the answer actually is.
 **Knock-on, now resolved: «Расписание подбора» had nothing left to schedule.** The answer was not to
 delete it but to give the run somewhere to land — see below.
 
+### Orders — three kinds, at the client's request
+
+«Закуп 3 ta type bo'ladi». One order screen with a switch at the top, rather than three screens,
+because all three end the same way — an order that is received against when the goods arrive.
+
+| Kind            | Picks from                    | Instead of a supplier | Goes out as                   |
+| --------------- | ----------------------------- | --------------------- | ----------------------------- |
+| From a supplier | **Their** catalogue           | —                     | Sent to the supplier          |
+| From the market | Our catalogue, + **Add item** | "Bought from"         | Confirmed (nobody to send to) |
+| To China        | Our catalogue, + **Add item** | "Factory or agent"    | Sent, with a **PDF**          |
+
+- **A supplier's catalogue is theirs.** In the real product a supplier lists it in their own
+  portal; it is mocked in `supplierProducts` until then. Lines they list that we have never stocked
+  show as "New to us" and cannot be ordered yet — an order line needs one of our products to land
+  stock on.
+- **"Suggest what to order"** on all three: sold over 3 or 6 months, minus what we hold across every
+  location, raised to the supplier's minimum. The client's example — sold 20, 2 left, order 18 — is
+  a test. It exists because ten thousand parts cannot be checked by hand.
+- **Add item** creates a real product, not a one-off line: once it lands it is stock that has to be
+  found, counted and sold.
+- A market or China order has no supplier, so receiving it charges **no debt**.
+- **China lines carry an urgency level** — «Zarurlik darajasi», an editable reference list under
+  Settings → Urgency levels (no OX equivalent). The items table shows sold in 3 and 6 months, as on
+  Transfers. The **PDF** is a print-styled A4 page at `/procurement/orders/:id/document`, saved by
+  the browser's own print dialog like Print templates — no PDF library. It is in English with
+  unambiguous dates, since a factory reads it, and lists lines most urgent first.
+
 ### Orders — built without an OX reference
 
 Built like Transfers, Corrections, Goods receipt, Stocktaking and Repricing: **no OX screenshot was

@@ -250,3 +250,56 @@ describe('a market purchase', () => {
     expect(useDataStore.getState().walletTransactions.length).toBe(before)
   })
 })
+
+describe('a China order', () => {
+  const chinaDraft = {
+    kind: 'china' as const,
+    supplierId: '',
+    boughtFrom: 'Guangzhou Hengli Auto Parts Co.',
+    locationId: 'loc-1',
+    expectedAt: null,
+    comment: '',
+    lines: [line({ orderedQuantity: 50, urgencyId: 'urg-1' })],
+  }
+
+  it('needs no supplier, only who is making it', () => {
+    expect(orderDraftSchema.safeParse(chinaDraft).success).toBe(true)
+  })
+
+  it('is sent to the factory', () => {
+    expect(nextStep('draft', 'china')).toEqual({ to: 'sent', label: 'Send to factory' })
+  })
+
+  it('keeps the urgency of every line', () => {
+    const order = useDataStore.getState().createOrder({ ...chinaDraft, status: 'sent' })
+    expect(order.kind).toBe('china')
+    expect(order.supplierId).toBeNull()
+    expect(order.lines[0]?.urgencyId).toBe('urg-1')
+    expect(orderSource(order)).toBe('China · Guangzhou Hengli Auto Parts Co.')
+  })
+})
+
+describe('urgency levels', () => {
+  it('will not delete a level an order line still carries', () => {
+    useDataStore.getState().createOrder({
+      kind: 'china',
+      supplierId: '',
+      boughtFrom: 'Factory',
+      locationId: 'loc-1',
+      expectedAt: null,
+      comment: '',
+      lines: [line({ urgencyId: 'urg-2' })],
+      status: 'draft',
+    })
+    const result = useDataStore.getState().deleteUrgencyLevel('urg-2')
+    expect(result.ok).toBe(false)
+    expect(useDataStore.getState().urgencyLevels.some((l) => l.id === 'urg-2')).toBe(true)
+  })
+
+  it('deletes one nothing uses', () => {
+    const level = useDataStore
+      .getState()
+      .createUrgencyLevel({ name: 'Someday', tone: 'neutral', rank: 9 })
+    expect(useDataStore.getState().deleteUrgencyLevel(level.id)).toEqual({ ok: true })
+  })
+})

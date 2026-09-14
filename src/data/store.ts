@@ -46,6 +46,7 @@ import type {
   LocationSettings,
   NotificationChannel,
   NotificationPreferences,
+  UrgencyLevel,
 } from '@/features/settings/model/settings'
 export type { Client }
 import type { ReorderSettings } from '@/features/schedules/model/reorder'
@@ -87,6 +88,7 @@ import {
   cashShifts as seedCashShifts,
   companySettings as seedCompany,
   brandSettings as seedBrandSettings,
+  urgencyLevels as seedUrgencyLevels,
   locationSettings as seedLocationSettings,
   categorySettings as seedCategorySettings,
   notificationPreferences as seedNotifications,
@@ -127,6 +129,8 @@ interface CatalogState {
   cashShifts: CashShift[]
   company: CompanySettings
   brandSettings: Brand[]
+  /** «Zarurlik darajasi» — the levels a China order line can carry. */
+  urgencyLevels: UrgencyLevel[]
   locationSettings: LocationSettings[]
   categorySettings: CategorySettings[]
   notifications: NotificationPreferences
@@ -196,6 +200,10 @@ interface CatalogState {
   createBrand: (input: Omit<Brand, 'id'>) => Brand
   updateBrand: (id: string, input: Omit<Brand, 'id'>) => void
   deleteBrand: (id: string) => { ok: true } | { ok: false; error: string }
+  createUrgencyLevel: (input: Omit<UrgencyLevel, 'id'>) => UrgencyLevel
+  updateUrgencyLevel: (id: string, input: Omit<UrgencyLevel, 'id'>) => void
+  /** Refused while an order line still carries the level. */
+  deleteUrgencyLevel: (id: string) => { ok: true } | { ok: false; error: string }
 
   createLocation: (input: Omit<LocationSettings, 'id'>) => LocationSettings
   updateLocation: (id: string, input: Omit<LocationSettings, 'id'>) => void
@@ -647,6 +655,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
   cashShifts: seedCashShifts,
   company: seedCompany,
   brandSettings: seedBrandSettings,
+  urgencyLevels: seedUrgencyLevels,
   locationSettings: seedLocationSettings,
   categorySettings: seedCategorySettings,
   notifications: seedNotifications,
@@ -1189,16 +1198,18 @@ export const useDataStore = create<CatalogState>((set, get) => ({
     const sequence = get().orders.length + 1
     const now = new Date().toISOString()
     const supplier = get().suppliers.find((s) => s.id === input.supplierId)
+    const withSupplier = (input.kind ?? 'supplier') === 'supplier'
 
     const order: PurchaseOrder = {
       id: `po-${sequence}`,
       number: `PO-${String(sequence).padStart(5, '0')}`,
       status: input.status,
       kind: input.kind ?? 'supplier',
-      // A market purchase has no supplier, whatever the form happened to hold.
-      supplierId: input.kind === 'market' ? null : input.supplierId || null,
-      supplierName: input.kind === 'market' ? null : (supplier?.name ?? null),
-      boughtFrom: input.kind === 'market' ? input.boughtFrom?.trim() || null : null,
+      // Only a supplier order has a supplier, whatever the form happened to hold;
+      // the other two say where the goods come from in words instead.
+      supplierId: withSupplier ? input.supplierId || null : null,
+      supplierName: withSupplier ? (supplier?.name ?? null) : null,
+      boughtFrom: withSupplier ? null : input.boughtFrom?.trim() || null,
       locationId: input.locationId,
       locationName: get().locations.find((l) => l.id === input.locationId)?.name ?? '—',
       expectedAt: input.expectedAt,
@@ -1457,6 +1468,31 @@ export const useDataStore = create<CatalogState>((set, get) => ({
 
   updateCompany: (input) =>
     set({ company: { ...get().company, ...input, updatedAt: new Date().toISOString() } }),
+
+  createUrgencyLevel: (input) => {
+    const level: UrgencyLevel = { ...input, id: `urg-${Date.now()}` }
+    set({ urgencyLevels: [...get().urgencyLevels, level] })
+    return level
+  },
+  updateUrgencyLevel: (id, input) =>
+    set({
+      urgencyLevels: get().urgencyLevels.map((level) =>
+        level.id === id ? { ...level, ...input } : level,
+      ),
+    }),
+  deleteUrgencyLevel: (id) => {
+    // An order a factory already has in hand says "Critical" on it; deleting
+    // the level would leave that line saying nothing.
+    const used = get().orders.reduce(
+      (sum, order) => sum + order.lines.filter((line) => line.urgencyId === id).length,
+      0,
+    )
+    if (used > 0) {
+      return { ok: false, error: `${used} order lines use this level — change them first` }
+    }
+    set({ urgencyLevels: get().urgencyLevels.filter((level) => level.id !== id) })
+    return { ok: true }
+  },
 
   createBrand: (input) => {
     const brand: Brand = { ...input, id: `brand-${Date.now()}` }

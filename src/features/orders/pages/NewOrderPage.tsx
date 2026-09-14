@@ -2,9 +2,10 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { useFieldArray, useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, ArrowRight, Check, PackagePlus, Pencil, Plus, Send, Wand2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, Pencil, Plus, Send, Wand2 } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
-import { AddProductsModal } from '@/shared/components/AddProductsModal'
+import { variationDetails } from '@/shared/lib/catalogueSearch'
+import { matches } from '@/data/query'
 import { LineItemsTable, type LineRow } from '@/shared/components/LineItemsTable'
 import type { TableColumn } from '@/shared/components/table/features'
 import { Steps } from '@/shared/components/Steps'
@@ -19,17 +20,12 @@ import { SegmentedControl } from '@/shared/ui/SegmentedControl'
 import { useSession } from '@/app/providers/SessionProvider'
 import { toast } from '@/shared/ui/toast'
 import { paths } from '@/shared/config/paths'
-import { formatDate, formatMoney, formatNumber } from '@/shared/lib/format'
+import { formatDate, formatMoney, formatMoneyIn, formatNumber } from '@/shared/lib/format'
 import { useDataStore } from '@/data/store'
 import { USD_RATE } from '@/data/seed'
 import { unitsSoldAt } from '@/shared/lib/demand'
-import {
-  catalogueFor,
-  summariseCatalogue,
-  type CatalogueEntry,
-} from '@/features/suppliers/model/catalogue'
+import { catalogueFor, type CatalogueEntry } from '@/features/suppliers/model/catalogue'
 import { useCreateOrder } from '../api/orders'
-import { SupplierCatalogue } from '../components/SupplierCatalogue'
 import { GenerateOrderModal } from '../components/GenerateOrderModal'
 import { NewItemModal } from '../components/NewItemModal'
 import { ownCatalogue } from '../model/ownCatalogue'
@@ -65,7 +61,6 @@ export default function NewOrderPage() {
   const variations = useDataStore((s) => s.variations)
   const sales = useDataStore((s) => s.sales)
   const [generating, setGenerating] = useState(false)
-  const [picking, setPicking] = useState(false)
   /** Details first, products second — the reference product's two-page create. */
   const [step, setStep] = useState<1 | 2>(1)
   const [addingItem, setAddingItem] = useState(false)
@@ -110,11 +105,6 @@ export default function NewOrderPage() {
           : [],
     [fromOurs, supplierProducts, variations, supplierId],
   )
-  const summary = summariseCatalogue(entries)
-  const addedIds = entries
-    .filter((entry) => entry.variation && lines.some((l) => l.variationId === entry.variation!.id))
-    .map((entry) => entry.product.id)
-
   /** Put a catalogue line on the order, or top up the one already there. */
   const addEntry = (entry: CatalogueEntry, quantity?: number) => {
     const variation = entry.variation
@@ -581,17 +571,67 @@ export default function NewOrderPage() {
                   : `Use “Add products” to pick from ${supplier?.name ?? 'the supplier'}’s catalogue, or let the system suggest.`
               }
               onRemove={(row) => remove(row.index)}
-              addActions={[
-                {
-                  label: fromOurs
-                    ? 'From our catalogue'
-                    : `From ${supplier?.name ?? 'their'} catalogue`,
-                  hint: fromOurs
-                    ? `${formatNumber(summary.products)} products`
-                    : `${formatNumber(summary.products)} products across ${formatNumber(summary.categories.length)} categories`,
-                  icon: PackagePlus,
-                  onSelect: () => setPicking(true),
+              catalogue={{
+                label: fromOurs
+                  ? 'our catalogue'
+                  : `${supplier?.name ?? 'the supplier'}’s catalogue`,
+                search: (term) => {
+                  const wanted = term.trim()
+                  if (!wanted) return []
+                  return entries
+                    .filter((entry) =>
+                      matches(
+                        [
+                          entry.product.name,
+                          entry.product.supplierSku,
+                          entry.product.brandName,
+                          entry.variation?.barcode,
+                          entry.variation?.sku,
+                          entry.variation?.description,
+                          entry.variation?.vehicleMake,
+                        ],
+                        wanted,
+                      ),
+                    )
+                    .slice(0, 30)
+                    .map((entry) => ({
+                      id: entry.product.id,
+                      name: entry.product.name,
+                      imageUrl: entry.variation?.imageUrl ?? null,
+                      codes: [
+                        entry.variation?.barcode,
+                        fromOurs ? entry.variation?.sku : entry.product.supplierSku,
+                      ].filter(Boolean) as string[],
+                      details: entry.variation
+                        ? variationDetails(entry.variation)
+                        : ([entry.product.categoryName, entry.product.brandName].filter(
+                            Boolean,
+                          ) as string[]),
+                      // Their price on a supplier order; what it last cost on ours.
+                      price: formatMoneyIn(entry.product.price, entry.product.currency),
+                      note: entry.variation
+                        ? {
+                            text: `${formatNumber(entry.stock)} in stock · sold ${formatNumber(
+                              unitsSoldAt(sales, entry.variation.id, null, 3),
+                            )} in 3m`,
+                            tone: entry.stock === 0 ? ('danger' as const) : ('muted' as const),
+                          }
+                        : {
+                            text: 'New to us — add it to the catalogue first',
+                            tone: 'info' as const,
+                          },
+                      // A line needs one of our products to land stock on.
+                      disabled: !entry.variation,
+                    }))
                 },
+                onPick: (id) => {
+                  const entry = entries.find((e) => e.product.id === id)
+                  if (!entry?.variation) return null
+                  addEntry(entry)
+                  return entry.variation.id
+                },
+              }}
+              addActions={[
                 {
                   label: 'Suggest what to order',
                   hint: 'Sold in 3 or 6 months, less what is in stock',
@@ -610,33 +650,6 @@ export default function NewOrderPage() {
                   : []),
               ]}
             />
-
-            <AddProductsModal
-              open={picking}
-              onOpenChange={setPicking}
-              title={
-                fromOurs ? 'Add from our catalogue' : `Add from ${supplier?.name ?? 'the supplier'}`
-              }
-              description={
-                fromOurs
-                  ? 'The price starts at what it last cost; change it on the line to what you paid.'
-                  : 'The price starts at what they ask; change it on the line to what was agreed.'
-              }
-              lineCount={lines.length}
-            >
-              <SupplierCatalogue
-                searchPlaceholder={fromOurs ? 'Search our catalogue by name or SKU…' : undefined}
-                emptyLabel={
-                  fromOurs ? 'Nothing in our catalogue matches — add it as a new item' : undefined
-                }
-                entries={entries}
-                addedIds={addedIds}
-                onPick={(entry) => addEntry(entry)}
-                soldFor={(entry) =>
-                  entry.variation ? unitsSoldAt(sales, entry.variation.id, null, 3) : 0
-                }
-              />
-            </AddProductsModal>
           </>
         )}
       </div>

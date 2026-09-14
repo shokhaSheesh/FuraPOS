@@ -26,6 +26,8 @@ export interface DataTableProps<T extends RowData> {
   footer?: ReactNode
   /** A stable id per row, so inputs inside cells keep focus when rows change. */
   getRowId?: (row: T, index: number) => string
+  /** Extra classes for a row — e.g. the line that was just added. */
+  rowClassName?: (row: T) => string | undefined
   sorting?: SortingState
   onSortingChange?: (next: SortingState) => void
   isLoading?: boolean
@@ -84,6 +86,7 @@ export function DataTable<T extends RowData>({
   toolbar,
   footer,
   getRowId,
+  rowClassName,
 }: DataTableProps<T>) {
   const [columnVisibility, setColumnVisibility] = useState<ColumnVisibilityState>(() =>
     readStoredVisibility(storageKey, initialHidden),
@@ -232,6 +235,7 @@ export function DataTable<T extends RowData>({
                   className={cn(
                     'border-border border-t',
                     onRowClick && 'hover:bg-surface-muted cursor-pointer',
+                    rowClassName?.(row.original),
                   )}
                 >
                   {row.getVisibleCells().map((cell) => (

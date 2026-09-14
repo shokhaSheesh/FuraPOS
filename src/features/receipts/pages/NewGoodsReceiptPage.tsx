@@ -2,20 +2,11 @@ import { Link, useNavigate } from 'react-router'
 import { useFieldArray, useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
-import {
-  ArrowLeft,
-  ArrowRight,
-  PackageCheck,
-  PackagePlus,
-  Pencil,
-  Plus,
-  Trash2,
-} from 'lucide-react'
+import { ArrowLeft, ArrowRight, PackageCheck, Pencil, Plus, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
-import { ProductBrowser } from '@/shared/components/ProductBrowser'
-import { AddProductsModal } from '@/shared/components/AddProductsModal'
+import { searchVariations, variationDetails } from '@/shared/lib/catalogueSearch'
 import { LineItemsTable, type LineRow } from '@/shared/components/LineItemsTable'
 import { Steps } from '@/shared/components/Steps'
 import type { TableColumn } from '@/shared/components/table/features'
@@ -59,6 +50,7 @@ const COMMON_COSTS = ['Freight', 'Customs duty', 'Broker fee', 'Insurance']
 export default function NewGoodsReceiptPage() {
   const navigate = useNavigate()
   const locations = useDataStore((s) => s.locations)
+  const variations = useDataStore((s) => s.variations)
   const { data: suppliers } = useSuppliers()
   const create = useCreateReceipt()
 
@@ -88,7 +80,6 @@ export default function NewGoodsReceiptPage() {
 
   /** Details, freight and duty first; the lines second — OX's split. */
   const [step, setStep] = useState<1 | 2>(1)
-  const [picking, setPicking] = useState(false)
 
   const goToProducts = async () => {
     const ok = await form.trigger(['locationId', 'additionalCosts'])
@@ -499,34 +490,33 @@ export default function NewGoodsReceiptPage() {
               }
               emptyDescription="Use “Add products” to put what was delivered on this receipt."
               onRemove={(row) => lineArray.remove(row.index)}
-              addActions={[
-                {
-                  label: 'From the catalogue',
-                  hint: 'Browse by category or brand, add several at once',
-                  icon: PackagePlus,
-                  onSelect: () => setPicking(true),
-                },
-              ]}
               columns={lineColumns}
+              catalogue={{
+                label: 'the catalogue',
+                search: (term) =>
+                  searchVariations(variations, term).map((v) => ({
+                    id: v.id,
+                    name: v.fullName,
+                    imageUrl: v.imageUrl,
+                    codes: [v.barcode, v.sku].filter(Boolean) as string[],
+                    details: variationDetails(v),
+                    price: formatMoney(v.salePrice),
+                    note: {
+                      text: `${formatNumber(
+                        v.stockByLocation.find((row) => row.locationId === locationId)?.quantity ??
+                          0,
+                      )} here`,
+                      tone: 'muted' as const,
+                    },
+                  })),
+                onPick: (id) => {
+                  const variation = variations.find((v) => v.id === id)
+                  if (!variation) return null
+                  addVariation(variation)
+                  return variation.id
+                },
+              }}
             />
-
-            <AddProductsModal
-              open={picking}
-              onOpenChange={setPicking}
-              description="Pick what arrived. Each click adds a line, or one more to a line already on."
-              lineCount={lines.length}
-            >
-              <ProductBrowser
-                addedIds={lines.map((line) => line.variationId)}
-                onPick={addVariation}
-                stockLabel={(variation) => {
-                  const here =
-                    variation.stockByLocation.find((row) => row.locationId === locationId)
-                      ?.quantity ?? 0
-                  return { text: `${formatNumber(here)} here`, muted: true }
-                }}
-              />
-            </AddProductsModal>
           </>
         )}
       </div>

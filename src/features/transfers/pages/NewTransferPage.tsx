@@ -2,13 +2,12 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { useFieldArray, useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, ArrowRight, PackagePlus, Pencil, Truck, Wand2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Pencil, Truck, Wand2 } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { Steps } from '@/shared/components/Steps'
 import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
-import { ProductBrowser } from '@/shared/components/ProductBrowser'
-import { AddProductsModal } from '@/shared/components/AddProductsModal'
+import { searchVariations, variationDetails } from '@/shared/lib/catalogueSearch'
 import { LineItemsTable, type LineRow } from '@/shared/components/LineItemsTable'
 import type { TableColumn } from '@/shared/components/table/features'
 import { GenerateTransferModal } from '../components/GenerateTransferModal'
@@ -20,7 +19,7 @@ import { Select } from '@/shared/ui/Select'
 import { SegmentedControl } from '@/shared/ui/SegmentedControl'
 import { toast } from '@/shared/ui/toast'
 import { paths } from '@/shared/config/paths'
-import { formatNumber } from '@/shared/lib/format'
+import { formatMoney, formatNumber } from '@/shared/lib/format'
 import { useDataStore } from '@/data/store'
 import { useCreateTransfer } from '../api/transfers'
 import { TRANSFER_KINDS, transferDraftSchema, type TransferDraft } from '../model/transfer'
@@ -39,9 +38,6 @@ import type { VariationRow } from '@/features/products/model/product'
  * are written and dispatched in one go; saving as a draft is for the case where
  * someone else does the picking.
  */
-/** "Any" in the catalogue filters — Radix reads an empty value as cleared. */
-const ANY = '__any__'
-
 export default function NewTransferPage() {
   const navigate = useNavigate()
   const locations = useDataStore((s) => s.locations)
@@ -76,8 +72,6 @@ export default function NewTransferPage() {
 
   const toLocationId = form.watch('toLocationId')
   const sales = useDataStore((s) => s.sales)
-  const categories = useDataStore((s) => s.categories)
-  const brands = useDataStore((s) => s.brands)
 
   /** What any shelf holds of one variation. */
   const stockAt = useMemo(
@@ -88,16 +82,7 @@ export default function NewTransferPage() {
     [variations],
   )
 
-  /*
-    Narrowing the catalogue before searching it. Somebody topping up a shop
-    thinks in "brakes" or "Bosch" long before they think of a part number, and
-    with a filter on, the picker opens on its own rather than waiting to be
-    typed into.
-  */
-  const [categoryId, setCategoryId] = useState('')
-  const [brandId, setBrandId] = useState('')
   const [generating, setGenerating] = useState(false)
-  const [picking, setPicking] = useState(false)
   /** Route and note first, products second — the reference product's two-page create. */
   const [step, setStep] = useState<1 | 2>(1)
 
@@ -131,15 +116,6 @@ export default function NewTransferPage() {
       `${formatNumber(added.length)} ${added.length === 1 ? 'product' : 'products'} added`,
     )
   }
-
-  const pickerFilter = useMemo(() => {
-    if (!categoryId && !brandId) return undefined
-    return (variation: VariationRow) =>
-      (!categoryId || variation.categoryId === categoryId) &&
-      (!brandId || variation.brandId === brandId)
-  }, [categoryId, brandId])
-
-
 
   /** Products depend on the route, so it has to be complete before step 2. */
   const goToProducts = async () => {
@@ -516,13 +492,33 @@ export default function NewTransferPage() {
                   : 'Use “Add products” to pick what to send.'
               }
               onRemove={(row) => remove(row.index)}
-              addActions={[
-                {
-                  label: 'From the catalogue',
-                  hint: 'Browse by category or brand, add several at once',
-                  icon: PackagePlus,
-                  onSelect: () => setPicking(true),
+              catalogue={{
+                label: 'the catalogue',
+                search: (term) =>
+                  searchVariations(variations, term).map((v) => {
+                    const here = availableAt(v.id)
+                    return {
+                      id: v.id,
+                      name: v.fullName,
+                      imageUrl: v.imageUrl,
+                      codes: [v.barcode, v.sku].filter(Boolean) as string[],
+                      details: variationDetails(v),
+                      price: formatMoney(v.salePrice),
+                      // What the sending side holds, since that caps the move.
+                      note: {
+                        text: `${formatNumber(here)} at ${from?.name ?? 'source'}`,
+                        tone: here > 0 ? ('muted' as const) : ('danger' as const),
+                      },
+                    }
+                  }),
+                onPick: (id) => {
+                  const variation = variations.find((v) => v.id === id)
+                  if (!variation) return null
+                  addVariation(variation)
+                  return variation.id
                 },
+              }}
+              addActions={[
                 ...(requesting
                   ? [
                       {
@@ -535,63 +531,6 @@ export default function NewTransferPage() {
                   : []),
               ]}
             />
-
-            <AddProductsModal
-              open={picking}
-              onOpenChange={setPicking}
-              description={`Stock shown is what ${from?.name ?? 'the source'} holds, not the company total.`}
-              lineCount={lines.length}
-            >
-              <div className="space-y-3">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Field label="Category">
-                    {(p) => (
-                      <Select
-                        {...p}
-                        className="w-full"
-                        value={categoryId || ANY}
-                        onChange={(next) => setCategoryId(next === ANY ? '' : next)}
-                        options={[
-                          { value: ANY, label: 'Any category' },
-                          ...categories.map((c) => ({ value: c.id, label: c.name })),
-                        ]}
-                      />
-                    )}
-                  </Field>
-                  <Field label="Brand">
-                    {(p) => (
-                      <Select
-                        {...p}
-                        className="w-full"
-                        value={brandId || ANY}
-                        onChange={(next) => setBrandId(next === ANY ? '' : next)}
-                        options={[
-                          { value: ANY, label: 'Any brand' },
-                          ...brands.map((b) => ({ value: b.id, label: b.name })),
-                        ]}
-                      />
-                    )}
-                  </Field>
-                </div>
-                <ProductBrowser
-                  filter={pickerFilter}
-                  addedIds={lines.map((line) => line.variationId)}
-                  emptyLabel={
-                    categoryId || brandId
-                      ? 'Nothing in this category or brand.'
-                      : 'Nothing in the catalogue yet.'
-                  }
-                  stockLabel={(variation) => {
-                    const here = availableAt(variation.id)
-                    return {
-                      text: `${formatNumber(here)} ${variation.unit} here`,
-                      muted: here > 0,
-                    }
-                  }}
-                  onPick={addVariation}
-                />
-              </div>
-            </AddProductsModal>
           </>
         )}
 

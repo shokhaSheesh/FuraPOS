@@ -1,5 +1,15 @@
-import { useMemo, useState, type ReactNode } from 'react'
-import { ChevronDown, Plus, Trash2, type LucideIcon } from 'lucide-react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
+import {
+  Barcode,
+  ChevronDown,
+  PackagePlus,
+  Plus,
+  ScanLine,
+  Trash2,
+  X,
+  type LucideIcon,
+} from 'lucide-react'
 import { DropdownMenu } from 'radix-ui'
 import { DataTable } from '@/shared/components/DataTable'
 import { SearchInput } from '@/shared/components/SearchInput'
@@ -7,24 +17,28 @@ import { EmptyState } from '@/shared/components/EmptyState'
 import { ProductThumb } from '@/shared/components/ProductThumb'
 import type { TableColumn } from '@/shared/components/table/features'
 import { Button } from '@/shared/ui/Button'
+import { Input } from '@/shared/ui/Input'
+import { cn } from '@/shared/lib/cn'
 import { matches } from '@/data/query'
 import { useDataStore } from '@/data/store'
 import { formatMoney, formatNumber } from '@/shared/lib/format'
+import type { CatalogueHit } from '@/shared/lib/catalogueSearch'
 import type { VariationRow } from '@/features/products/model/product'
 
 /**
  * The lines of a document — a transfer, an order, a goods receipt — laid out
  * like the reference product's own screen.
  *
- * The lines are the page: a full-width table carrying the same columns the
- * product list does (ID, variation, barcode, SKU, product name, stock, price),
- * so a part reads the same everywhere it appears, with the document's own
- * editable columns slotted in after the name. Adding happens from one button
- * top-right rather than a search box above the table, and the totals sit
- * underneath where OX keeps them.
+ * The lines are the page: a full-width table carrying the product list's
+ * columns, with the document's own editable columns after the name, and the
+ * totals underneath.
  *
- * The page supplies only what is specific to it: its editable columns, what
- * "Add products" offers, and how to remove a line.
+ * **Adding works the way OX does it.** "Add products → From the catalogue"
+ * does not open a picker; it switches the toolbar into *add mode*: one search
+ * box ("search or scan barcode") and a "Close mode" button. Typing drops down
+ * the matching products; picking one puts it at the top of the table,
+ * highlighted, and clears the box for the next — which is also exactly what
+ * a barcode scanner needs, since it types a code and presses Enter.
  */
 
 export interface LineRow {
@@ -44,12 +58,21 @@ export interface AddAction {
   hint?: string
 }
 
+export interface CatalogueSource {
+  /** What "From …" says in the menu, e.g. "our catalogue" or "AKCHAEV INC's catalogue". */
+  label: string
+  search: (term: string) => CatalogueHit[]
+  /** Adds the line, or one more of it. Returns the variation id it landed on. */
+  onPick: (hitId: string) => string | null
+}
+
 const Empty = () => <span className="text-fg-subtle">—</span>
 
 export function LineItemsTable<T extends LineRow>({
   rows,
   columns,
-  addActions,
+  catalogue,
+  addActions = [],
   onRemove,
   storageKey,
   emptyTitle = 'No products yet',
@@ -60,7 +83,10 @@ export function LineItemsTable<T extends LineRow>({
   rows: T[]
   /** The document's own columns, placed after the product name. */
   columns: TableColumn<T>[]
-  addActions: AddAction[]
+  /** Where "From the catalogue" searches. */
+  catalogue: CatalogueSource
+  /** Anything else "Add products" offers — Suggest, New item. */
+  addActions?: AddAction[]
   onRemove: (row: T) => void
   storageKey: string
   emptyTitle?: string
@@ -73,16 +99,20 @@ export function LineItemsTable<T extends LineRow>({
   const variations = useDataStore((s) => s.variations)
   const byId = useMemo(() => new Map(variations.map((v) => [v.id, v])), [variations])
   const [search, setSearch] = useState('')
+  const [adding, setAdding] = useState(false)
+  const [lastAdded, setLastAdded] = useState<string | null>(null)
 
   const variationOf = (row: T): VariationRow | undefined => byId.get(row.variationId)
 
+  // Newest first, as OX shows them: what was just added is where the eye is.
   const shown = useMemo(
     () =>
-      rows.filter((row) => {
+      [...rows].reverse().filter((row) => {
+        if (adding) return true
         const v = byId.get(row.variationId)
         return matches([v?.fullName, v?.productName, v?.sku, v?.barcode, v?.description], search)
       }),
-    [rows, byId, search],
+    [rows, byId, search, adding],
   )
 
   const allColumns = useMemo<TableColumn<T>[]>(
@@ -189,85 +219,272 @@ export function LineItemsTable<T extends LineRow>({
 
   const totalQuantity = rows.reduce((sum, row) => sum + row.quantity, 0)
 
-  return (
-    <div className="space-y-2">
-      <DataTable
-        storageKey={storageKey}
-        columns={allColumns}
-        data={shown}
-        total={shown.length}
-        getRowId={(row) => row.key}
-        initialHidden={['brand', 'category']}
-        toolbar={
-          <>
-            <SearchInput
-              value={search}
-              onChange={setSearch}
-              placeholder="Search by barcode, SKU or name…"
-            />
-            <DropdownMenu.Root>
-              <DropdownMenu.Trigger asChild>
-                <Button type="button" variant="primary" size="sm" className="order-last">
-                  <Plus />
-                  Add products
-                  <ChevronDown />
-                </Button>
-              </DropdownMenu.Trigger>
-              <DropdownMenu.Portal>
-                <DropdownMenu.Content
-                  align="end"
-                  sideOffset={4}
-                  className="rounded-control border-border bg-surface shadow-popover z-50 min-w-60 border p-1"
-                >
-                  {addActions.map((action) => (
-                    <DropdownMenu.Item
-                      key={action.label}
-                      disabled={action.disabled}
-                      onSelect={action.onSelect}
-                      className="data-[highlighted]:bg-surface-muted flex cursor-pointer items-start gap-2 rounded px-2 py-1.5 text-sm outline-none data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50"
-                    >
-                      <action.icon className="text-fg-muted mt-0.5 size-4 shrink-0" />
-                      <span>
-                        <span className="text-fg block">{action.label}</span>
-                        {action.hint ? (
-                          <span className="text-fg-subtle text-2xs block">{action.hint}</span>
-                        ) : null}
-                      </span>
-                    </DropdownMenu.Item>
-                  ))}
-                </DropdownMenu.Content>
-              </DropdownMenu.Portal>
-            </DropdownMenu.Root>
-          </>
-        }
-        emptyState={
-          search ? (
-            <EmptyState title="No line matches that search" />
-          ) : (
-            <EmptyState title={emptyTitle} description={emptyDescription} />
-          )
-        }
-        footer={
-          // The totals OX keeps under its lines.
-          <div className="border-border text-fg-muted flex flex-wrap items-center gap-5 border-t px-4 py-3 text-sm">
-            <span className="flex items-center gap-2">
-              Total quantity
-              <Count value={totalQuantity} />
-            </span>
-            <span className="flex items-center gap-2">
-              Product variations
-              <Count value={rows.length} />
-            </span>
-            {totals?.map((total) => (
-              <span key={total.label} className="flex items-center gap-2">
-                {total.label}
-                <span className="text-fg font-semibold tabular-nums">{total.value}</span>
-              </span>
-            ))}
-            {error ? <span className="text-danger ml-auto text-sm">{error}</span> : null}
-          </div>
-        }
+  const toolbar = adding ? (
+    <>
+      <CatalogueSearch catalogue={catalogue} onAdded={(variationId) => setLastAdded(variationId)} />
+      {/* OX's "Закрыть режим": back to the lines, with their own search. */}
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        className="border-danger/40 text-danger hover:bg-danger-soft order-last"
+        onClick={() => {
+          setAdding(false)
+          setLastAdded(null)
+        }}
+      >
+        <X />
+        Close mode
+      </Button>
+    </>
+  ) : (
+    <>
+      <SearchInput
+        value={search}
+        onChange={setSearch}
+        placeholder="Search by barcode, SKU or name…"
       />
+      <DropdownMenu.Root>
+        <DropdownMenu.Trigger asChild>
+          <Button type="button" variant="primary" size="sm" className="order-last">
+            <Plus />
+            Add products
+            <ChevronDown />
+          </Button>
+        </DropdownMenu.Trigger>
+        <DropdownMenu.Portal>
+          <DropdownMenu.Content
+            align="end"
+            sideOffset={4}
+            className="rounded-control border-border bg-surface shadow-popover z-50 min-w-64 border p-1"
+          >
+            {[
+              {
+                label: `From ${catalogue.label}`,
+                hint: 'Search or scan, and add straight to the list',
+                icon: PackagePlus,
+                onSelect: () => {
+                  setSearch('')
+                  setAdding(true)
+                },
+              } satisfies AddAction,
+              ...addActions,
+            ].map((action) => (
+              <DropdownMenu.Item
+                key={action.label}
+                disabled={action.disabled}
+                onSelect={action.onSelect}
+                className="data-[highlighted]:bg-surface-muted flex cursor-pointer items-start gap-2 rounded px-2 py-1.5 text-sm outline-none data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50"
+              >
+                <action.icon className="text-fg-muted mt-0.5 size-4 shrink-0" />
+                <span>
+                  <span className="text-fg block">{action.label}</span>
+                  {action.hint ? (
+                    <span className="text-fg-subtle text-2xs block">{action.hint}</span>
+                  ) : null}
+                </span>
+              </DropdownMenu.Item>
+            ))}
+          </DropdownMenu.Content>
+        </DropdownMenu.Portal>
+      </DropdownMenu.Root>
+    </>
+  )
+
+  return (
+    <DataTable
+      storageKey={storageKey}
+      columns={allColumns}
+      data={shown}
+      total={shown.length}
+      getRowId={(row) => row.key}
+      rowClassName={(row) => (row.variationId === lastAdded ? 'bg-success-soft' : undefined)}
+      initialHidden={['brand', 'category']}
+      toolbar={toolbar}
+      emptyState={
+        search && !adding ? (
+          <EmptyState title="No line matches that search" />
+        ) : (
+          <EmptyState
+            title={emptyTitle}
+            description={
+              adding ? 'Search or scan above — each product you pick lands here.' : emptyDescription
+            }
+          />
+        )
+      }
+      footer={
+        // The totals OX keeps under its lines.
+        <div className="border-border text-fg-muted flex flex-wrap items-center gap-5 border-t px-4 py-3 text-sm">
+          <span className="flex items-center gap-2">
+            Total quantity
+            <Count value={totalQuantity} />
+          </span>
+          <span className="flex items-center gap-2">
+            Product variations
+            <Count value={rows.length} />
+          </span>
+          {totals?.map((total) => (
+            <span key={total.label} className="flex items-center gap-2">
+              {total.label}
+              <span className="text-fg font-semibold tabular-nums">{total.value}</span>
+            </span>
+          ))}
+          {error ? <span className="text-danger ml-auto text-sm">{error}</span> : null}
+        </div>
+      }
+    />
+  )
+}
+
+/**
+ * The add-mode search box and its dropdown.
+ *
+ * Focus lands here on entering the mode and comes back after every pick, and
+ * Enter adds the highlighted result — so a scanner, which types a barcode and
+ * presses Enter, adds a line per scan without anyone touching the mouse.
+ */
+function CatalogueSearch({
+  catalogue,
+  onAdded,
+}: {
+  catalogue: CatalogueSource
+  onAdded: (variationId: string) => void
+}) {
+  const [term, setTerm] = useState('')
+  const [active, setActive] = useState(0)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => inputRef.current?.focus(), [])
+
+  const hits = useMemo(() => catalogue.search(term), [catalogue, term])
+  useEffect(() => setActive(0), [term])
+
+  /*
+   * The dropdown is portalled and placed under the box by hand: the table it
+   * sits in clips its overflow (rounded corners), which would cut the list off.
+   */
+  const [anchor, setAnchor] = useState<{ left: number; top: number } | null>(null)
+  const open = Boolean(term.trim())
+  useLayoutEffect(() => {
+    if (!open) return
+    const place = () => {
+      const r = inputRef.current?.getBoundingClientRect()
+      if (r) setAnchor({ left: r.left, top: r.bottom + 4 })
+    }
+    place()
+    window.addEventListener('scroll', place, true)
+    window.addEventListener('resize', place)
+    return () => {
+      window.removeEventListener('scroll', place, true)
+      window.removeEventListener('resize', place)
+    }
+  }, [open])
+
+  const pick = (hit: CatalogueHit | undefined) => {
+    if (!hit || hit.disabled) return
+    const landed = catalogue.onPick(hit.id)
+    if (landed) onAdded(landed)
+    setTerm('')
+    inputRef.current?.focus()
+  }
+
+  return (
+    <div className="relative w-full max-w-xl">
+      <ScanLine className="text-fg-subtle pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
+      <Input
+        ref={inputRef}
+        value={term}
+        onChange={(event) => setTerm(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === 'ArrowDown') {
+            event.preventDefault()
+            setActive((i) => Math.min(i + 1, hits.length - 1))
+          } else if (event.key === 'ArrowUp') {
+            event.preventDefault()
+            setActive((i) => Math.max(i - 1, 0))
+          } else if (event.key === 'Enter') {
+            event.preventDefault()
+            pick(hits[active])
+          } else if (event.key === 'Escape') {
+            setTerm('')
+          }
+        }}
+        placeholder="Search or scan barcode…"
+        aria-label="Search or scan a product to add"
+        className="pl-8"
+      />
+
+      {open && anchor
+        ? createPortal(
+            <div
+              style={{ left: anchor.left, top: anchor.top }}
+              className="rounded-card border-border bg-surface shadow-popover fixed z-50 max-h-[28rem] w-[min(40rem,calc(100vw-2rem))] overflow-y-auto border"
+            >
+              {hits.length === 0 ? (
+                <p className="text-fg-muted p-4 text-center text-sm">
+                  Nothing matches “{term.trim()}”
+                </p>
+              ) : (
+                <ul className="divide-border divide-y">
+                  {hits.map((hit, index) => (
+                    <li key={hit.id}>
+                      <button
+                        type="button"
+                        disabled={hit.disabled}
+                        onMouseEnter={() => setActive(index)}
+                        // mousedown, so the input keeps focus and the dropdown does
+                        // not close before the click lands.
+                        onMouseDown={(event) => {
+                          event.preventDefault()
+                          pick(hit)
+                        }}
+                        className={cn(
+                          'flex w-full items-start gap-3 px-3 py-2.5 text-left disabled:cursor-not-allowed disabled:opacity-60',
+                          index === active && !hit.disabled && 'bg-surface-muted',
+                        )}
+                      >
+                        <ProductThumb src={hit.imageUrl} size="md" />
+                        <span className="min-w-0 flex-1">
+                          <span className="text-fg block text-sm font-semibold">{hit.name}</span>
+                          {hit.codes.length ? (
+                            <span className="text-fg-muted text-2xs flex items-center gap-1 font-mono">
+                              <Barcode className="size-3" />
+                              {hit.codes.join(' · ')}
+                            </span>
+                          ) : null}
+                          {hit.details.length ? (
+                            <span className="text-fg-subtle text-2xs block">
+                              {hit.details.join(' · ')}
+                            </span>
+                          ) : null}
+                        </span>
+                        <span className="shrink-0 text-right">
+                          <span className="text-fg-muted block text-sm font-medium tabular-nums">
+                            {hit.price}
+                          </span>
+                          {hit.note ? (
+                            <span
+                              className={cn(
+                                'text-2xs block',
+                                hit.note.tone === 'danger' && 'text-danger',
+                                hit.note.tone === 'info' && 'text-info',
+                                hit.note.tone === 'muted' && 'text-fg-subtle',
+                              )}
+                            >
+                              {hit.note.text}
+                            </span>
+                          ) : null}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   )
 }

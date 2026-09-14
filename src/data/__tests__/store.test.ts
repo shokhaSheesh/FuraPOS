@@ -138,7 +138,6 @@ describe('data store', () => {
           discountPrice: null,
           lowStockThreshold: null,
           shelfAddress: null,
-          moq: null,
           zone: null,
           landedCost: null,
           stockByLocation: [{ locationId: 'loc-1', quantity: 4 }],
@@ -155,7 +154,6 @@ describe('data store', () => {
           discountPrice: null,
           lowStockThreshold: null,
           shelfAddress: null,
-          moq: null,
           zone: null,
           landedCost: null,
           stockByLocation: [

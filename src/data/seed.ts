@@ -261,7 +261,7 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
         quantity: between(0, 90),
       }))
 
-    return {
+    const variation = {
       id: `var-${index + 1}-${vIndex + 1}`,
       productId,
       name: spec.name,
@@ -278,13 +278,16 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
       lowStockThreshold: random() > 0.5 ? between(5, 30) : null,
       shelfAddress:
         random() > 0.4 ? `${pick(['A', 'B', 'C'])}-${between(1, 20)}-${between(1, 9)}` : null,
-      moq: random() > 0.7 ? between(2, 12) : null,
       zone: null as string | null,
       // Freight and duty on top of what the supplier invoiced.
       landedCost: Math.round(costUzs * (costCurrency === 'USD' ? 1.12 : 1.03)) as number | null,
       imageUrl: null,
       status: 'active' as const,
     }
+    // MOQ used to be drawn last, after the shelf. It has left the product, but
+    // the draw stays so the rest of the dataset does not shift.
+    if (random() > 0.7) between(2, 12)
+    return variation
   })
 
   const oem = random() > 0.4 ? String(between(1_000_000, 9_999_999)) : null
@@ -305,7 +308,6 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
         : `${category.name} for ${vehicle.make}, ${attrPick(['original', 'aftermarket', 'OEM-equivalent'])} quality`,
     oem,
     videoUrl: index % 9 === 0 ? `https://youtu.be/fura-${index + 1}` : null,
-    modifiers: index % 5 === 0 ? [attrPick(['Fitting', 'Bolt kit', 'Gasket'])] : [],
     // Linked after every product exists — see below.
     analogueIds: [],
     boughtTogetherIds: [],
@@ -320,8 +322,6 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
     partType: attrPick(['Original', 'Aftermarket', 'Aftermarket', null]),
     gender: null,
     season: attrPick(['All-season', 'All-season', 'Winter', 'Summer', null]),
-    analogueCodes:
-      attrRandom() > 0.6 ? String(Math.floor(attrRandom() * 9_000_000) + 1_000_000) : null,
     boughtTogetherNote: null,
     categoryId: category.id,
     categoryName: category.name,

@@ -90,8 +90,6 @@ export interface ProductVariation {
   lowStockThreshold: number | null
   /** Shelf or bin reference, for picking. */
   shelfAddress: string | null
-  /** Minimum quantity a supplier will accept. */
-  moq: number | null
   /** The warehouse zone the shelf sits in — OX's Зона. */
   zone: string | null
   /**
@@ -114,8 +112,6 @@ export interface ProductAttributes {
   /** OX keeps OEM as its own column, beside the free-text description. */
   oem: string | null
   videoUrl: string | null
-  /** Extras offered with it at the counter — OX's Модификаторы. */
-  modifiers: string[]
   /** Parts that can stand in for this one — OX's Аналоги. */
   analogueIds: Id[]
   /** Parts usually bought with it — OX's С этим вместе покупают. */
@@ -141,8 +137,6 @@ export interface ProductAttributes {
   gender: string | null
   /** Сезон. */
   season: string | null
-  /** Аналог — cross-reference codes as typed, beside the linked Аналоги. */
-  analogueCodes: string | null
   /** Вместе покупает — a typed note, beside the linked list. */
   boughtTogetherNote: string | null
 }
@@ -150,7 +144,6 @@ export interface ProductAttributes {
 export const productAttributes = (p: ProductAttributes): ProductAttributes => ({
   oem: p.oem,
   videoUrl: p.videoUrl,
-  modifiers: p.modifiers,
   analogueIds: p.analogueIds,
   boughtTogetherIds: p.boughtTogetherIds,
   isTracked: p.isTracked,
@@ -164,7 +157,6 @@ export const productAttributes = (p: ProductAttributes): ProductAttributes => ({
   partType: p.partType,
   gender: p.gender,
   season: p.season,
-  analogueCodes: p.analogueCodes,
   boughtTogetherNote: p.boughtTogetherNote,
 })
 
@@ -172,7 +164,6 @@ export const productAttributes = (p: ProductAttributes): ProductAttributes => ({
 export const NEW_PRODUCT_ATTRIBUTES: ProductAttributes = {
   oem: null,
   videoUrl: null,
-  modifiers: [],
   analogueIds: [],
   boughtTogetherIds: [],
   isTracked: true,
@@ -186,7 +177,6 @@ export const NEW_PRODUCT_ATTRIBUTES: ProductAttributes = {
   partType: null,
   gender: null,
   season: null,
-  analogueCodes: null,
   boughtTogetherNote: null,
 }
 
@@ -484,7 +474,6 @@ export const variationFormSchema = z.object({
   discountPrice: z.number().nonnegative().nullable(),
   lowStockThreshold: z.number().int().nonnegative().nullable(),
   shelfAddress: z.string().nullable(),
-  moq: z.number().int().positive().nullable(),
   zone: z.string().nullable(),
   landedCost: z.number().nonnegative().nullable(),
   status: z.enum(['active', 'archived', 'draft']),
@@ -509,7 +498,6 @@ export const productFormSchema = z
     showOnline: z.boolean(),
     oem: z.string().nullable(),
     videoUrl: z.string().nullable(),
-    modifiers: z.array(z.string()),
     analogueIds: z.array(z.string()),
     boughtTogetherIds: z.array(z.string()),
     isTracked: z.boolean(),
@@ -523,7 +511,6 @@ export const productFormSchema = z
     partType: z.string().nullable(),
     gender: z.string().nullable(),
     season: z.string().nullable(),
-    analogueCodes: z.string().nullable(),
     boughtTogetherNote: z.string().nullable(),
     status: z.enum(['active', 'archived', 'draft']),
     variationMode: z.enum(['single', 'multiple']),

@@ -1570,13 +1570,13 @@ to drop is the client's call once they have seen them all. Most start hidden in 
 | 3   | Названия вариации          | Variation name             | `fullName`                              |
 | 4   | Штрих-код                  | Barcode                    | `barcode`                               |
 | 5   | Артикул                    | SKU                        | `sku`                                   |
-| 6   | MOQ                        | MOQ                        | `moq`                                   |
+| 6   | MOQ                        | MOQ                        | **Removed** at the client's request     |
 | 7   | Категории                  | Categories                 | `categoryPath`                          |
 | 8   | Бренд                      | Brand                      | `brandName`                             |
 | 9   | Описание                   | Description                | `description`                           |
 | 10  | Теги                       | Tags                       | `tags`                                  |
 | 11  | С этим вместе покупают     | Frequently bought together | `boughtTogetherIds` (linked products)   |
-| 12  | Модификаторы               | Modifiers                  | `modifiers`                             |
+| 12  | Модификаторы               | Modifiers                  | **Removed** at the client's request     |
 | 13  | Аналоги                    | Analogues                  | `analogueIds` (linked products)         |
 | 14  | Отгружаемый                | Shippable                  | `isShippable`                           |
 | 15  | Показать в онлайн-магазине | Show online                | `showOnline`                            |
@@ -1611,8 +1611,12 @@ to drop is the client's call once they have seen them all. Most start hidden in 
 | 44  | Сезон                      | Season                     | `season`                                |
 | 45  | Модель                     | Model                      | `vehicleModels`                         |
 | 46  | Адрес товара               | Product address            | `shelfAddress`                          |
-| 47  | Аналог                     | Analogue                   | `analogueCodes` (typed text)            |
+| 47  | Аналог                     | Analogue                   | **Removed** at the client's request     |
 | 48  | Вместе покупает            | Buys together              | `boughtTogetherNote` (typed text)       |
+
+Removed after review (client's call): **MOQ** (the minimum lives on the supplier's catalogue line,
+where it belongs — so reorder schedules no longer round to it), **Модификаторы**, and the typed
+**Аналог** codes, keeping the linked **Аналоги** as the one analogue field.
 
 After OX's last column come two of ours: **Margin** and **Status**. OX's first menu entry, Добавить,
 is the row-expand control rather than a column. The three cost columns (30–32) still need

@@ -21,7 +21,6 @@ const variation = (over: Partial<ProductFormValues['variations'][number]> = {}) 
   discountPrice: null,
   lowStockThreshold: null,
   shelfAddress: null,
-  moq: null,
   zone: null,
   landedCost: null,
   status: 'active' as const,

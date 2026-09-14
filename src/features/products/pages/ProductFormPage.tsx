@@ -100,7 +100,6 @@ const emptyVariation = (
   discountPrice: null,
   lowStockThreshold: null,
   shelfAddress: null,
-  moq: null,
   zone: null,
   landedCost: null,
   status: 'active' as const,
@@ -219,7 +218,6 @@ export function ProductForm({
                 discountPrice: v.discountPrice,
                 lowStockThreshold: v.lowStockThreshold,
                 shelfAddress: v.shelfAddress,
-                moq: v.moq,
                 zone: v.zone,
                 landedCost: v.landedCost,
                 status: v.status,
@@ -675,22 +673,8 @@ export function ProductForm({
                 />
               )}
             </Field>
-            <Field label="Analogue" hint="Cross-reference codes, as typed">
-              {(p) => <Input {...p} {...form.register('analogueCodes')} />}
-            </Field>
             <Field label="Buys together" hint="A note, as typed">
               {(p) => <Input {...p} {...form.register('boughtTogetherNote')} />}
-            </Field>
-            <Field label="Modifiers" hint="Extras offered with it" className="sm:col-span-2">
-              {(p) => (
-                <Controller
-                  control={form.control}
-                  name="modifiers"
-                  render={({ field: f }) => (
-                    <TagsInput id={p.id} value={f.value} onChange={f.onChange} />
-                  )}
-                />
-              )}
             </Field>
           </CardBody>
         </Card>
@@ -850,27 +834,6 @@ export function ProductForm({
                       {...p}
                       placeholder="A-12-3"
                       {...form.register('variations.0.shelfAddress')}
-                    />
-                  )}
-                </Field>
-                <Field
-                  label="MOQ"
-                  hint="Supplier minimum"
-                  error={form.formState.errors.variations?.[0]?.moq?.message}
-                >
-                  {(p) => (
-                    <Controller
-                      control={form.control}
-                      name="variations.0.moq"
-                      render={({ field: f }) => (
-                        <NumberField
-                          {...p}
-                          min={1}
-                          value={f.value}
-                          onChange={f.onChange}
-                          onBlur={f.onBlur}
-                        />
-                      )}
                     />
                   )}
                 </Field>

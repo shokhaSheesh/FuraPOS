@@ -272,17 +272,6 @@ export function ProductVariationsTable({
                               />
                             )}
                           </Field>
-                          <Field label="MOQ" hint="Supplier minimum" error={rowError?.moq?.message}>
-                            {(p) => (
-                              <Controller
-                                control={form.control}
-                                name={`variations.${index}.moq`}
-                                render={({ field }) => (
-                                  <NumberField {...p} min={1} {...fieldProps(field)} />
-                                )}
-                              />
-                            )}
-                          </Field>
                           <Field label="Zone" hint="Warehouse zone">
                             {(p) => (
                               <Input

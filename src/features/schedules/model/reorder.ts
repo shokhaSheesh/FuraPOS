@@ -103,9 +103,8 @@ export interface ReorderLine {
   reorderPoint: number
   /** The raw shortfall, before the supplier's minimum is applied. */
   shortfall: number
-  /** What to actually order: the shortfall rounded up to a whole MOQ. */
+  /** What to actually order. */
   suggested: number
-  moq: number | null
   unitCost: number
   costCurrency: 'USD' | 'UZS'
   urgency: Urgency
@@ -273,7 +272,7 @@ export function buildReorderLines(
         const unitsSold = sold.get(variation.id) ?? 0
         const rate = dailyRate(unitsSold, settings.salesWindowDays)
         const cover = daysOfCover(onHand, rate)
-        const { shortfall, suggested } = suggestedQuantity(onHand, rate, variation.moq, settings)
+        const { shortfall, suggested } = suggestedQuantity(onHand, rate, null, settings)
         const from = source.get(variation.id)
 
         return {
@@ -293,7 +292,6 @@ export function buildReorderLines(
           reorderPoint: reorderPoint(rate, settings),
           shortfall,
           suggested,
-          moq: variation.moq,
           unitCost: variation.costPrice,
           costCurrency: variation.costCurrency,
           urgency: urgencyOf(onHand, rate, cover, settings),

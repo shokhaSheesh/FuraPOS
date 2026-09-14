@@ -98,13 +98,6 @@ export function buildProductColumns({
       header: 'SKU',
       cell: ({ row }) => <span className="text-2xs font-mono">{row.original.sku}</span>,
     },
-    // MOQ
-    {
-      accessorKey: 'moq',
-      header: 'MOQ',
-      meta: { align: 'right' },
-      cell: ({ row }) => (row.original.moq ? formatNumber(row.original.moq) : <Empty />),
-    },
     // Категории
     {
       accessorKey: 'categoryPath',
@@ -134,12 +127,6 @@ export function buildProductColumns({
       id: 'boughtTogetherIds',
       header: 'Frequently bought together',
       cell: ({ row }) => <LinkedProducts ids={row.original.boughtTogetherIds} />,
-    },
-    // Модификаторы
-    {
-      id: 'modifiers',
-      header: 'Modifiers',
-      cell: ({ row }) => <Chips values={row.original.modifiers} />,
     },
     // Аналоги
     {
@@ -376,12 +363,6 @@ export function buildProductColumns({
       header: 'Product address',
       cell: ({ row }) => text(row.original.shelfAddress),
     },
-    // Аналог
-    {
-      accessorKey: 'analogueCodes',
-      header: 'Analogue',
-      cell: ({ row }) => text(row.original.analogueCodes),
-    },
     // Вместе покупает
     {
       accessorKey: 'boughtTogetherNote',
@@ -437,11 +418,9 @@ export function buildProductColumns({
 /** Hidden on first open; the list starts with what it always showed, now in OX's order. */
 export const PRODUCT_COLUMNS_HIDDEN_BY_DEFAULT = [
   'id',
-  'moq',
   'description',
   'tags',
   'boughtTogetherIds',
-  'modifiers',
   'analogueIds',
   ...PRODUCT_FLAGS.map((flag) => flag.key),
   'videoUrl',
@@ -465,7 +444,6 @@ export const PRODUCT_COLUMNS_HIDDEN_BY_DEFAULT = [
   'season',
   'vehicleModels',
   'shelfAddress',
-  'analogueCodes',
   'boughtTogetherNote',
 ]
 

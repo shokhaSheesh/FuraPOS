@@ -165,7 +165,6 @@ function VariationsTable({ product }: { product: Product }) {
                   {PART_SIDES.find((s) => s.value === v.partSide)?.label ?? <Empty />}
                 </td>
                 <td className="px-3 py-2">{v.shelfAddress ?? <Empty />}</td>
-                <td className="px-3 py-2">{v.moq ? formatNumber(v.moq) : <Empty />}</td>
                 <td className="px-3 py-2 text-right tabular-nums">
                   {v.costCurrency === 'USD'
                     ? `${formatNumber(v.costPrice)} USD`
@@ -230,9 +229,7 @@ function Details({ product }: { product: Product }) {
         <Empty />
       ),
     ],
-    ['Modifiers', product.modifiers.join(', ') || <Empty />],
     ['Analogues', linked(product.analogueIds) || <Empty />],
-    ['Analogue', product.analogueCodes ?? <Empty />],
     ['Frequently bought together', linked(product.boughtTogetherIds) || <Empty />],
     ['Buys together', product.boughtTogetherNote ?? <Empty />],
     ['Mobile SKU', product.mobileSku ?? <Empty />],

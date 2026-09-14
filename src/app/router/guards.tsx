@@ -1,4 +1,7 @@
 import type { ReactNode } from 'react'
+import { Navigate, useLocation } from 'react-router'
+import { paths } from '@/shared/config/paths'
+import { navigation } from '@/shared/config/navigation'
 import { Lock } from 'lucide-react'
 import { useSession } from '@/app/providers/SessionProvider'
 import { Card } from '@/shared/ui/Card'
@@ -33,4 +36,38 @@ export function RequirePermission({
   }
 
   return <>{children}</>
+}
+
+/**
+ * Keeps everything behind sign-in. Remembers where somebody was heading, so
+ * signing in puts them there rather than on the dashboard.
+ */
+export function RequireAuth({ children }: { children: ReactNode }) {
+  const { user } = useSession()
+  const location = useLocation()
+  if (!user) {
+    return (
+      <Navigate
+        to={paths.auth.login}
+        replace
+        state={{ from: `${location.pathname}${location.search}` }}
+      />
+    )
+  }
+  return <>{children}</>
+}
+
+/**
+ * The home page for whoever is signed in. Someone who can see the dashboard
+ * gets it; a role that cannot (a Seller, a Storekeeper) is sent to the first
+ * screen in the sidebar it *can* open, rather than landing on "no access"
+ * straight after signing in.
+ */
+export function HomeRoute({ children }: { children: ReactNode }) {
+  const { can } = useSession()
+  if (can('dashboard.view')) return <>{children}</>
+  const first = navigation
+    .flatMap((section) => section.items ?? [])
+    .find((item) => item.to !== paths.dashboard && (!item.permission || can(item.permission)))
+  return first ? <Navigate to={first.to} replace /> : <>{children}</>
 }

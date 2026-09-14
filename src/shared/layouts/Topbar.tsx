@@ -1,5 +1,5 @@
-import { Link } from 'react-router'
-import { Bell, Moon, PanelLeft, Sun, Wallet } from 'lucide-react'
+import { Link, useNavigate } from 'react-router'
+import { Bell, LogOut, Moon, PanelLeft, Sun } from 'lucide-react'
 import { DropdownMenu } from 'radix-ui'
 import { Button } from '@/shared/ui/Button'
 import { Badge } from '@/shared/ui/Badge'
@@ -7,7 +7,6 @@ import { useUiStore } from '@/shared/hooks/useUiStore'
 import { useSession } from '@/app/providers/SessionProvider'
 import { useTheme } from '@/app/providers/ThemeProvider'
 import { paths } from '@/shared/config/paths'
-import { formatMoney } from '@/shared/lib/format'
 
 const menuContentClass =
   'z-50 min-w-52 rounded-control border border-border bg-surface p-1 shadow-popover'
@@ -16,7 +15,7 @@ const menuItemClass =
 
 export function Topbar() {
   const toggleSidebar = useUiStore((state) => state.toggleSidebar)
-  const { user, can } = useSession()
+  const { user } = useSession()
   const { resolved, setTheme } = useTheme()
 
   return (
@@ -26,15 +25,6 @@ export function Topbar() {
       </Button>
 
       <div className="ml-auto flex items-center gap-1">
-        {can('settings.billing.view') ? (
-          <Button variant="ghost" size="sm" asChild>
-            <Link to={paths.settings.billing}>
-              <Wallet />
-              {formatMoney(1_250_000)}
-            </Link>
-          </Button>
-        ) : null}
-
         <Button
           variant="ghost"
           size="icon"
@@ -45,7 +35,7 @@ export function Topbar() {
         </Button>
 
         <NotificationsMenu />
-        <UserMenu name={user?.name ?? '—'} plan={user?.company.plan ?? 'free'} />
+        <UserMenu name={user?.name ?? '—'} role={user?.role.name ?? ''} email={user?.email ?? ''} />
       </div>
     </header>
   )
@@ -75,7 +65,9 @@ function NotificationsMenu() {
   )
 }
 
-function UserMenu({ name, plan }: { name: string; plan: string }) {
+function UserMenu({ name, role, email }: { name: string; role: string; email: string }) {
+  const { signOut } = useSession()
+  const navigate = useNavigate()
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
@@ -88,9 +80,12 @@ function UserMenu({ name, plan }: { name: string; plan: string }) {
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
         <DropdownMenu.Content align="end" sideOffset={6} className={menuContentClass}>
-          <div className="flex items-center justify-between gap-3 px-2 py-1.5">
-            <span className="text-sm font-medium">{name}</span>
-            <Badge tone="primary">{plan}</Badge>
+          <div className="px-2 py-1.5">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm font-medium">{name}</span>
+              {role ? <Badge tone="info">{role}</Badge> : null}
+            </div>
+            <p className="text-fg-subtle text-2xs">{email}</p>
           </div>
           <DropdownMenu.Separator className="bg-border my-1 h-px" />
           <DropdownMenu.Item asChild className={menuItemClass}>
@@ -103,7 +98,16 @@ function UserMenu({ name, plan }: { name: string; plan: string }) {
             <Link to={paths.activityLog}>Activity log</Link>
           </DropdownMenu.Item>
           <DropdownMenu.Separator className="bg-border my-1 h-px" />
-          <DropdownMenu.Item className={menuItemClass}>Sign out</DropdownMenu.Item>
+          <DropdownMenu.Item
+            className={menuItemClass}
+            onSelect={() => {
+              signOut()
+              navigate(paths.auth.login, { replace: true })
+            }}
+          >
+            <LogOut className="size-4" />
+            Sign out
+          </DropdownMenu.Item>
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>

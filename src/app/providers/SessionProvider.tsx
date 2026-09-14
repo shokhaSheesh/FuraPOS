@@ -1,5 +1,7 @@
-import { createContext, use, useMemo, type ReactNode } from 'react'
+import { createContext, use, useCallback, useMemo, useState, type ReactNode } from 'react'
 import type { Id } from '@/shared/types'
+import { useDataStore } from '@/data/store'
+import { authenticate } from '@/features/auth/model/auth'
 
 export interface CurrentUser {
   id: Id
@@ -17,37 +19,89 @@ interface SessionContextValue {
   isLoading: boolean
   /** `can('catalog.products.edit')` — the only way to check access. */
   can: (permission: string) => boolean
+  signIn: (login: string, password: string) => { ok: true } | { ok: false; error: string }
+  signOut: () => void
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null)
 
-const CURRENT_USER: CurrentUser = {
-  // The signed-in user *is* an employee record — that is the point of the
-  // Employees screen, so the id is theirs rather than a parallel one.
-  id: 'emp-1',
-  name: 'Akhmet Dauletmuratov',
-  email: 'akhmet@fura.uz',
-  avatarUrl: null,
-  role: { id: 'role-1', name: 'Owner' },
-  company: { id: 'cmp-1', name: 'Fura Retail', plan: 'pro' },
-  locationIds: ['loc-1', 'loc-2', 'loc-3'],
-  // '*' = everything. Swap for a narrow list to exercise the permission guards.
-  permissions: ['*'],
+/*
+ * Which employee is signed in, remembered across reloads. Only the id is kept,
+ * and the rest is looked up fresh each time, so a role changed in Access &
+ * roles applies on the next render rather than on the next sign-in.
+ *
+ * Wrapped in try/catch because storage can be unavailable (private windows,
+ * blocked site data), and a screen that crashes on that is worse than one that
+ * simply asks you to sign in again.
+ */
+const STORAGE_KEY = 'fura.session.employeeId'
+
+const readStored = () => {
+  try {
+    return localStorage.getItem(STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+const writeStored = (id: string | null) => {
+  try {
+    if (id) localStorage.setItem(STORAGE_KEY, id)
+    else localStorage.removeItem(STORAGE_KEY)
+  } catch {
+    // Signed in for this tab only.
+  }
 }
 
 export function SessionProvider({ children }: { children: ReactNode }) {
-  /** No auth yet: a fixed user with every permission. */
-  const data = CURRENT_USER
-  const isLoading = false
+  const employees = useDataStore((s) => s.employees)
+  const roles = useDataStore((s) => s.roles)
+  const company = useDataStore((s) => s.company)
+  const [employeeId, setEmployeeId] = useState<string | null>(readStored)
+
+  const user = useMemo<CurrentUser | null>(() => {
+    const employee = employees.find((e) => e.id === employeeId)
+    // An account suspended while signed in stops working straight away.
+    if (!employee || employee.status !== 'active') return null
+    const role = roles.find((r) => r.id === employee.roleId)
+    if (!role) return null
+    return {
+      id: employee.id,
+      name: employee.fullName,
+      email: employee.email ?? '',
+      avatarUrl: employee.avatarUrl,
+      role: { id: role.id, name: role.name },
+      company: { id: 'cmp-1', name: company.name, plan: 'pro' },
+      locationIds: employee.locationId ? [employee.locationId] : [],
+      permissions: role.permissions,
+    }
+  }, [employees, roles, company.name, employeeId])
+
+  const signIn = useCallback<SessionContextValue['signIn']>(
+    (login, password) => {
+      const result = authenticate(employees, roles, login, password)
+      if (!result.ok) return result
+      setEmployeeId(result.employee.id)
+      writeStored(result.employee.id)
+      return { ok: true }
+    },
+    [employees, roles],
+  )
+
+  const signOut = useCallback(() => {
+    setEmployeeId(null)
+    writeStored(null)
+  }, [])
 
   const value = useMemo<SessionContextValue>(() => {
-    const granted = new Set(data?.permissions ?? [])
+    const granted = new Set(user?.permissions ?? [])
     return {
-      user: data ?? null,
-      isLoading,
+      user,
+      isLoading: false,
       can: (permission) => granted.has('*') || granted.has(permission),
+      signIn,
+      signOut,
     }
-  }, [data, isLoading])
+  }, [user, signIn, signOut])
 
   return <SessionContext value={value}>{children}</SessionContext>
 }

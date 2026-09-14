@@ -1,10 +1,11 @@
 import { lazy, Suspense, type ReactNode } from 'react'
 import { createBrowserRouter, Navigate, type RouteObject } from 'react-router'
 import { AppShell } from '@/shared/layouts/AppShell'
+import { AuthLayout } from '@/shared/layouts/AuthLayout'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
 import { Skeleton } from '@/shared/ui/Skeleton'
 import { paths } from '@/shared/config/paths'
-import { RequirePermission } from './guards'
+import { HomeRoute, RequireAuth, RequirePermission } from './guards'
 import { RouteError } from './RouteError'
 
 const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPage'))
@@ -51,6 +52,7 @@ const CategoriesSettingsPage = lazy(
 const OrderDocumentPage = lazy(() => import('@/features/orders/pages/OrderDocumentPage'))
 const OnlineSalesListPage = lazy(() => import('@/features/onlineSales/pages/OnlineSalesListPage'))
 const OnlineSaleDetailPage = lazy(() => import('@/features/onlineSales/pages/OnlineSaleDetailPage'))
+const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage'))
 const UrgencySettingsPage = lazy(() => import('@/features/settings/pages/UrgencySettingsPage'))
 const BillingSettingsPage = lazy(() => import('@/features/settings/pages/BillingSettingsPage'))
 const PersonalSettingsPage = lazy(() => import('@/features/settings/pages/PersonalSettingsPage'))
@@ -108,14 +110,27 @@ const routes: RouteObject[] = [
   {
     path: paths.procurement.orderDocument(),
     errorElement: <RouteError />,
-    element: page(<OrderDocumentPage />, 'procurement.orders.view'),
+    element: <RequireAuth>{page(<OrderDocumentPage />, 'procurement.orders.view')}</RequireAuth>,
+  },
+  {
+    element: <AuthLayout />,
+    errorElement: <RouteError />,
+    children: [{ path: paths.auth.login, element: page(<LoginPage />) }],
   },
   {
     path: '/',
-    element: <AppShell />,
+    // Everything in the app sits behind sign-in.
+    element: (
+      <RequireAuth>
+        <AppShell />
+      </RequireAuth>
+    ),
     errorElement: <RouteError />,
     children: [
-      { index: true, element: page(<DashboardPage />, 'dashboard.view') },
+      {
+        index: true,
+        element: <HomeRoute>{page(<DashboardPage />, 'dashboard.view')}</HomeRoute>,
+      },
 
       // --- Sales ---------------------------------------------------------
       { path: paths.sales.root, element: <Navigate to={paths.sales.orders} replace /> },

@@ -27,8 +27,46 @@ function scopeToLocation(all: VariationRow[], locationId: string) {
   })
 }
 
+/**
+ * How the list is laid out. Every view lists the same variations — one product
+ * never becomes three — they differ only in how stock at several locations is
+ * shown:
+ *
+ * - `variations`: one row per variation, stock summed across locations;
+ * - `location`: one row per variation *per location it is stocked at*, so a
+ *   part kept in three places reads as three rows, each with its own quantity;
+ * - `matrix`: one row per variation, with a quantity column per location.
+ */
+export type ProductListView = 'variations' | 'location' | 'matrix'
+
+export const PRODUCT_LIST_VIEWS: { value: ProductListView; label: string }[] = [
+  { value: 'variations', label: 'By variation' },
+  { value: 'location', label: 'By location' },
+  { value: 'matrix', label: 'Stock per location' },
+]
+
+export const productListView = (value: unknown): ProductListView =>
+  PRODUCT_LIST_VIEWS.some((view) => view.value === value)
+    ? (value as ProductListView)
+    : 'variations'
+
+/** A variation at one location — the same record, its stock narrowed to that shelf. */
+const splitByLocation = (all: VariationRow[]) =>
+  all.flatMap((v) =>
+    v.stockByLocation.map((row) => ({ ...v, stock: row.quantity, stockByLocation: [row] })),
+  )
+
+/** Unique per row in every view: in `location` a variation appears once per location. */
+export const productRowId = (row: VariationRow) =>
+  row.stockByLocation.length === 1 ? `${row.id}@${row.stockByLocation[0]!.locationId}` : row.id
+
 function filterVariations(all: VariationRow[], query: ListQuery) {
-  const scoped = query.location ? scopeToLocation(all, String(query.location)) : all
+  const view = productListView(query.view)
+  const scoped = query.location
+    ? scopeToLocation(all, String(query.location))
+    : view === 'location'
+      ? splitByLocation(all)
+      : all
   return scoped.filter((v) => {
     if (query.status && v.status !== query.status) return false
     if (query.stock === 'zero' && v.stock !== 0) return false

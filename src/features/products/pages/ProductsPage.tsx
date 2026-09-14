@@ -16,7 +16,16 @@ import { useSession } from '@/app/providers/SessionProvider'
 import { paths } from '@/shared/config/paths'
 import { downloadCsv } from '@/shared/lib/csv'
 import { USD_RATE } from '@/data/seed'
-import { useCatalogSummary, useDeleteVariation, useLocations, useVariations } from '../api/products'
+import {
+  PRODUCT_LIST_VIEWS,
+  productListView,
+  productRowId,
+  useCatalogSummary,
+  useDeleteVariation,
+  useLocations,
+  useVariations,
+} from '../api/products'
+import { SegmentedControl } from '@/shared/ui/SegmentedControl'
 import {
   buildProductColumns,
   PRODUCT_COLUMNS_HIDDEN_BY_DEFAULT,
@@ -40,6 +49,7 @@ export default function ProductsPage() {
 
   // The catalogue lists variations, full stop: a variation is what carries a
   // price, a barcode and stock, so it is what can be sold, counted or picked.
+  const view = productListView(query.view)
   const { data, isLoading } = useVariations(query)
   /*
     The tiles count the three states, so they must be blind to the state
@@ -67,8 +77,23 @@ export default function ProductsPage() {
         canDelete: can('products.list.delete'),
         onEdit: (variation) => navigate(paths.products.detail(variation.productId)),
         onDelete: setPendingDelete,
+        // Filtered to one location there is only one column to show, and it is Quantity.
+        stockColumnsFor: view === 'matrix' && !locationId ? locationData.items : [],
       }),
-    [can, navigate],
+    [can, navigate, view, locationId, locationData.items],
+  )
+
+  /*
+    Each view remembers its own columns. By location has to show Location —
+    it is the whole point of the view — and the per-location view has no use
+    for a Location count beside a column per location.
+  */
+  const hidden = useMemo(
+    () =>
+      view === 'location'
+        ? PRODUCT_COLUMNS_HIDDEN_BY_DEFAULT.filter((id) => id !== 'location')
+        : PRODUCT_COLUMNS_HIDDEN_BY_DEFAULT,
+    [view],
   )
 
   const isFiltered = Boolean(query.search || query.status || query.stock || query.location)
@@ -96,6 +121,7 @@ export default function ProductsPage() {
         'Category',
         'Make',
         'Model',
+        'Location',
         'Stock',
         'Cost',
         'Currency',
@@ -110,6 +136,7 @@ export default function ProductsPage() {
         p.categoryPath,
         p.vehicleMake,
         p.vehicleModels.join(' / '),
+        p.stockByLocation.map((at) => at.locationName).join(' / '),
         p.stock,
         p.costPrice,
         p.costCurrency,
@@ -201,6 +228,14 @@ export default function ProductsPage() {
         }
         below={
           <div className="flex flex-wrap items-center gap-2">
+            <SegmentedControl
+              aria-label="How to list products"
+              value={view}
+              onChange={(next) =>
+                setQuery({ view: next === 'variations' ? null : next, page: null, sort: null })
+              }
+              options={PRODUCT_LIST_VIEWS}
+            />
             <StatusChips
               options={[
                 { value: null, label: 'All' },
@@ -238,9 +273,11 @@ export default function ProductsPage() {
       <ProductsSummaryStrip summary={summary} loading={summaryLoading} />
 
       <DataTable
-        storageKey="products"
+        key={view}
+        storageKey={view === 'variations' ? 'products' : `products-${view}`}
         columns={columns}
-        initialHidden={PRODUCT_COLUMNS_HIDDEN_BY_DEFAULT}
+        initialHidden={hidden}
+        getRowId={productRowId}
         data={data?.items ?? []}
         total={data?.total ?? 0}
         isLoading={isLoading}

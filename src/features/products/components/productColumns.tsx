@@ -42,7 +42,10 @@ export function buildProductColumns({
   canEdit,
   canDelete,
   canSeeCost,
+  stockColumnsFor = [],
 }: {
+  /** One quantity column per location, placed right after Quantity. Empty for none. */
+  stockColumnsFor?: readonly { id: string; name: string }[]
   usdRate: number
   onEdit: (row: VariationRow) => void
   onDelete: (row: VariationRow) => void
@@ -205,6 +208,21 @@ export function buildProductColumns({
         )
       },
     },
+    ...stockColumnsFor.map((location): TableColumn<VariationRow> => ({
+      id: `stockAt:${location.id}`,
+      header: location.name,
+      enableSorting: false,
+      meta: { align: 'right' },
+      cell: ({ row }) => {
+        const at = row.original.stockByLocation.find((s) => s.locationId === location.id)
+        if (!at) return <Empty />
+        return (
+          <span className={at.quantity === 0 ? 'text-danger font-medium' : undefined}>
+            {formatNumber(at.quantity)}
+          </span>
+        )
+      },
+    })),
     // Цена продажи за ед.
     {
       accessorKey: 'salePrice',

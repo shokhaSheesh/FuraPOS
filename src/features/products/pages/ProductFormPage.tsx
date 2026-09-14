@@ -624,75 +624,6 @@ export function ProductForm({
           </CardBody>
         </Card>
 
-        {/*
-          These belong to the variation, as in OX: the left step's analogue is
-          another left step. Sold one way, there is one variation, so they read
-          as the product's own; with several, each row carries its own.
-        */}
-        {single ? (
-          <>
-            <Card>
-              <CardHeader>
-                <CardTitle>Related products</CardTitle>
-              </CardHeader>
-              <CardBody className="grid gap-3 sm:grid-cols-2">
-                <Field label="Analogues" hint="Parts that can stand in for this one">
-                  {() => (
-                    <Controller
-                      control={form.control}
-                      name="variations.0.analogueIds"
-                      render={({ field: f }) => (
-                        <MultiSelect
-                          aria-label="Analogues"
-                          className="w-full"
-                          value={f.value}
-                          onChange={f.onChange}
-                          options={variationChoices}
-                          placeholder="None"
-                          searchPlaceholder="Search by name or OEM…"
-                        />
-                      )}
-                    />
-                  )}
-                </Field>
-                <Field label="Frequently bought together" hint="Offered beside it on a sale">
-                  {() => (
-                    <Controller
-                      control={form.control}
-                      name="variations.0.boughtTogetherIds"
-                      render={({ field: f }) => (
-                        <MultiSelect
-                          aria-label="Frequently bought together"
-                          className="w-full"
-                          value={f.value}
-                          onChange={f.onChange}
-                          options={variationChoices}
-                          placeholder="None"
-                          searchPlaceholder="Search by name or OEM…"
-                        />
-                      )}
-                    />
-                  )}
-                </Field>
-              </CardBody>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Mobile app</CardTitle>
-              </CardHeader>
-              <CardBody className="grid gap-3 sm:grid-cols-2">
-                <Field label="Mobile SKU">
-                  {(p) => <Input {...p} {...form.register('variations.0.mobileSku')} />}
-                </Field>
-                <Field label="Mobile product name">
-                  {(p) => <Input {...p} {...form.register('variations.0.mobileName')} />}
-                </Field>
-              </CardBody>
-            </Card>
-          </>
-        ) : null}
-
         <Card>
           <CardHeader className="flex-col items-stretch gap-2 sm:flex-row sm:items-center">
             <div>
@@ -857,6 +788,63 @@ export function ProductForm({
                           value={f.value}
                           onChange={f.onChange}
                           onBlur={f.onBlur}
+                        />
+                      )}
+                    />
+                  )}
+                </Field>
+                {/*
+                  These belong to the variation, as in OX — the left step's
+                  analogue is another left step — so they sit with the rest of
+                  what the one variation carries. With several, each row has them.
+                */}
+                <Field label="Mobile SKU">
+                  {(p) => <Input {...p} {...form.register('variations.0.mobileSku')} />}
+                </Field>
+                <Field label="Mobile product name">
+                  {(p) => <Input {...p} {...form.register('variations.0.mobileName')} />}
+                </Field>
+                <Field
+                  label="Analogues"
+                  hint="Parts that can stand in for this one"
+                  className="sm:col-span-2"
+                >
+                  {() => (
+                    <Controller
+                      control={form.control}
+                      name="variations.0.analogueIds"
+                      render={({ field: f }) => (
+                        <MultiSelect
+                          aria-label="Analogues"
+                          className="w-full"
+                          value={f.value}
+                          onChange={f.onChange}
+                          options={variationChoices}
+                          placeholder="None"
+                          searchPlaceholder="Search by name or OEM…"
+                        />
+                      )}
+                    />
+                  )}
+                </Field>
+                <Field
+                  label="Frequently bought together"
+                  hint="Offered beside it on a sale"
+                  className="sm:col-span-2"
+                >
+                  {() => (
+                    <Controller
+                      control={form.control}
+                      name="variations.0.boughtTogetherIds"
+                      render={({ field: f }) => (
+                        <MultiSelect
+                          aria-label="Frequently bought together"
+                          className="w-full"
+                          value={f.value}
+                          onChange={f.onChange}
+                          options={variationChoices}
+                          placeholder="None"
+                          searchPlaceholder="Search by name or OEM…"
                         />
                       )}
                     />

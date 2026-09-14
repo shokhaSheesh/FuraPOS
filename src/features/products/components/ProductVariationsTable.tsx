@@ -1,7 +1,5 @@
-import { Fragment, useState } from 'react'
-import { ChevronRight, ArrowDownToLine } from 'lucide-react'
+import { ArrowDownToLine } from 'lucide-react'
 import { Controller, type UseFormReturn } from 'react-hook-form'
-import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
 import { Button } from '@/shared/ui/Button'
 import { Checkbox } from '@/shared/ui/Checkbox'
@@ -19,11 +17,11 @@ const CURRENCIES = [
 /**
  * The generated variations, as a table rather than a stack of cards.
  *
- * Two options of three values each is nine variations; nine cards of eleven
- * fields is a page nobody scrolls. So the columns are the four things that
- * differ on every row — name, SKU, barcode and the two prices — and the rest
- * open per row. The name is not a column you can type in: it is generated from
- * the option values, which is the whole point of options.
+ * As OX lays it out: one row per variation with every field it carries in a
+ * column of its own, scrolling sideways, so a row is filled left to right
+ * without opening anything. The name and the "sold" tick stay pinned on the
+ * left. The name is not a column you can type in: it is generated from the
+ * option values, which is the whole point of options.
  *
  * "Fill down" on cost and price matters more than it looks: variations of one
  * part are usually priced identically, and typing the same number nine times is
@@ -39,21 +37,12 @@ export function ProductVariationsTable({
   /** What analogues and bought-together can point at. */
   variationChoices: MultiSelectOption<string>[]
 }) {
-  const [expanded, setExpanded] = useState<Set<number>>(new Set())
   const variations = form.watch('variations')
   const options = form.watch('options')
   const errors = form.formState.errors.variations
 
   /** Side is driven by its option when there is one, so we never ask twice. */
   const sideFromOption = options.some(isSideOption)
-
-  const toggle = (index: number) =>
-    setExpanded((current) => {
-      const next = new Set(current)
-      if (next.has(index)) next.delete(index)
-      else next.add(index)
-      return next
-    })
 
   const soldCount = variations.filter((v) => v.enabled).length
   const allSold = soldCount === variations.length
@@ -79,14 +68,20 @@ export function ProductVariationsTable({
     })
   }
 
+  const cell = 'px-1.5 py-1.5 align-top'
+  const th = 'px-2 py-2 text-left font-semibold whitespace-nowrap'
+  /** Pinned left, so the row being filled stays named while the table scrolls sideways. */
+  const pinned = 'bg-surface sticky z-10'
+  const errorText = (message?: string) =>
+    message ? <p className="text-danger text-2xs mt-0.5 whitespace-normal">{message}</p> : null
+
   return (
     <div className="border-border rounded-card overflow-hidden border">
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-max min-w-full text-sm">
           <thead className="bg-canvas">
             <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-              <th className="w-8" />
-              <th className="w-10 px-3 py-2 text-left font-semibold">
+              <th className={cn(th, 'bg-canvas sticky left-0 z-10 w-10')}>
                 <span className="sr-only">Sold</span>
                 <Checkbox
                   aria-label={allSold ? 'Stop selling every combination' : 'Sell every combination'}
@@ -94,11 +89,14 @@ export function ProductVariationsTable({
                   onCheckedChange={(next) => setAllSold(next)}
                 />
               </th>
-              <th className="px-3 py-2 text-left font-semibold">Variation</th>
-              <th className="px-3 py-2 text-left font-semibold">
+              <th className={cn(th, 'bg-canvas border-border sticky left-10 z-10 border-r')}>
+                Variation
+              </th>
+              <th className={th}>
                 SKU<span className="text-danger ml-0.5">*</span>
               </th>
-              <th className="px-3 py-2 text-left font-semibold">Barcode</th>
+              <th className={th}>Barcode</th>
+              {sideFromOption ? null : <th className={th}>Side</th>}
               <FillableHeader
                 label="Cost"
                 onFill={() => fillDown('costPrice')}
@@ -110,287 +108,277 @@ export function ProductVariationsTable({
                 onFill={() => fillDown('salePrice')}
                 many={variations.length > 1}
               />
+              <th className={th}>Discounted</th>
+              <th className={th}>Landed cost</th>
+              <th className={th}>Reorder point</th>
+              <th className={th}>Shelf</th>
+              <th className={th}>Zone</th>
+              <th className={th}>Mobile SKU</th>
+              <th className={th}>Mobile product name</th>
+              <th className={th}>Analogues</th>
+              <th className={th}>Frequently bought together</th>
+              <th className={th}>Status</th>
             </tr>
           </thead>
           <tbody>
             {variations.map((variation, index) => {
               const name = combinationName(variation.optionValues)
               const sold = variation.enabled
-              const open = expanded.has(index) && sold
               const rowError = errors?.[index]
               return (
                 // Keyed by the combination, which is unique by construction:
                 // two rows can briefly share an id while options are edited.
-                <Fragment key={name || index}>
-                  <tr className="border-border border-t align-middle">
-                    <td className="pl-2">
-                      <button
-                        type="button"
-                        onClick={() => toggle(index)}
-                        aria-expanded={open}
-                        disabled={!sold}
-                        aria-label={`More fields for ${name}`}
-                        className="text-fg-subtle hover:text-fg grid size-6 place-items-center disabled:opacity-30"
-                      >
-                        <ChevronRight
-                          className={cn('size-4 transition-transform', open && 'rotate-90')}
+                <tr key={name || index} className="border-border border-t">
+                  <td className={cn(cell, pinned, 'left-0 px-3 py-3.5')}>
+                    <Controller
+                      control={form.control}
+                      name={`variations.${index}.enabled`}
+                      render={({ field }) => (
+                        <Checkbox
+                          aria-label={`Sell ${name}`}
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
                         />
-                      </button>
-                    </td>
-                    <td className="px-3 py-2">
+                      )}
+                    />
+                  </td>
+                  <td className={cn(cell, pinned, 'border-border left-10 border-r px-3 py-3')}>
+                    {/* Generated, never typed — the reason options exist. */}
+                    <span
+                      className={cn(
+                        'text-fg whitespace-nowrap',
+                        !sold && 'text-fg-subtle line-through',
+                      )}
+                    >
+                      {name}
+                    </span>
+                    <span className="text-fg-subtle text-2xs block whitespace-nowrap">
+                      {sold ? productName : 'not sold'}
+                    </span>
+                  </td>
+                  <td className={cell}>
+                    <Input
+                      className="w-36"
+                      aria-label={`SKU — ${name}`}
+                      disabled={!sold}
+                      aria-invalid={rowError?.sku ? true : undefined}
+                      {...form.register(`variations.${index}.sku`)}
+                    />
+                    {errorText(rowError?.sku?.message)}
+                  </td>
+                  <td className={cell}>
+                    <Input
+                      className="w-36"
+                      aria-label={`Barcode — ${name}`}
+                      disabled={!sold}
+                      {...form.register(`variations.${index}.barcode`)}
+                    />
+                  </td>
+                  {sideFromOption ? null : (
+                    <td className={cell}>
                       <Controller
                         control={form.control}
-                        name={`variations.${index}.enabled`}
+                        name={`variations.${index}.partSide`}
                         render={({ field }) => (
-                          <Checkbox
-                            aria-label={`Sell ${name}`}
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
+                          <Select
+                            className="w-32"
+                            aria-label={`Side — ${name}`}
+                            disabled={!sold}
+                            value={field.value ?? undefined}
+                            onChange={field.onChange}
+                            options={PART_SIDES}
+                            placeholder="Not sided"
                           />
                         )}
                       />
                     </td>
-                    <td className="px-3 py-2">
-                      {/* Generated, never typed — the reason options exist. */}
-                      <span className={cn('text-fg', !sold && 'text-fg-subtle line-through')}>
-                        {name}
-                      </span>
-                      <span className="text-fg-subtle text-2xs ml-2">
-                        {sold ? productName : 'not sold'}
-                      </span>
-                    </td>
-                    <td className="px-2 py-1.5">
-                      <Input
-                        className="w-36"
-                        aria-label="SKU"
-                        disabled={!sold}
-                        aria-invalid={rowError?.sku ? true : undefined}
-                        {...form.register(`variations.${index}.sku`)}
-                      />
-                      {rowError?.sku ? (
-                        <p className="text-danger text-2xs mt-0.5">{rowError.sku.message}</p>
-                      ) : null}
-                    </td>
-                    <td className="px-2 py-1.5">
-                      <Input
-                        className="w-36"
-                        aria-label="Barcode"
-                        disabled={!sold}
-                        {...form.register(`variations.${index}.barcode`)}
-                      />
-                    </td>
-                    <td className="px-2 py-1.5">
-                      <div className="flex gap-1.5">
-                        <Controller
-                          control={form.control}
-                          name={`variations.${index}.costPrice`}
-                          render={({ field }) => (
-                            <NumberField
-                              className="w-24"
-                              nullable={false}
-                              step="any"
-                              disabled={!sold}
-                              aria-label="Cost"
-                              value={field.value}
-                              onChange={(v) => field.onChange(v ?? 0)}
-                              onBlur={field.onBlur}
-                            />
-                          )}
-                        />
-                        <Controller
-                          control={form.control}
-                          name={`variations.${index}.costCurrency`}
-                          render={({ field }) => (
-                            <Select
-                              value={field.value}
-                              onChange={field.onChange}
-                              options={CURRENCIES}
-                              disabled={!sold}
-                              aria-label="Cost currency"
-                              className="w-20"
-                            />
-                          )}
-                        />
-                      </div>
-                    </td>
-                    <td className="px-2 py-1.5">
+                  )}
+                  <td className={cell}>
+                    <div className="flex gap-1.5">
                       <Controller
                         control={form.control}
-                        name={`variations.${index}.salePrice`}
+                        name={`variations.${index}.costPrice`}
                         render={({ field }) => (
                           <NumberField
-                            className="w-32"
+                            className="w-24"
                             nullable={false}
+                            step="any"
                             disabled={!sold}
-                            aria-label="Sale price"
+                            aria-label={`Cost — ${name}`}
                             value={field.value}
                             onChange={(v) => field.onChange(v ?? 0)}
                             onBlur={field.onBlur}
                           />
                         )}
                       />
-                    </td>
-                  </tr>
-
-                  {open ? (
-                    <tr className="bg-canvas/50">
-                      <td colSpan={2} />
-                      <td colSpan={5} className="px-3 pt-1 pb-3">
-                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                          <Field
-                            label="Discounted price"
-                            hint="Leave empty for none"
-                            error={rowError?.discountPrice?.message}
-                          >
-                            {(p) => (
-                              <Controller
-                                control={form.control}
-                                name={`variations.${index}.discountPrice`}
-                                render={({ field }) => (
-                                  <NumberField {...p} {...fieldProps(field)} />
-                                )}
-                              />
-                            )}
-                          </Field>
-                          <Field
-                            label="Reorder point"
-                            hint="Warn below this"
-                            error={rowError?.lowStockThreshold?.message}
-                          >
-                            {(p) => (
-                              <Controller
-                                control={form.control}
-                                name={`variations.${index}.lowStockThreshold`}
-                                render={({ field }) => (
-                                  <NumberField {...p} {...fieldProps(field)} />
-                                )}
-                              />
-                            )}
-                          </Field>
-                          <Field label="Shelf">
-                            {(p) => (
-                              <Input
-                                {...p}
-                                placeholder="A-12-3"
-                                {...form.register(`variations.${index}.shelfAddress`)}
-                              />
-                            )}
-                          </Field>
-                          <Field label="Analogues" hint="Can stand in for this one">
-                            {() => (
-                              <Controller
-                                control={form.control}
-                                name={`variations.${index}.analogueIds`}
-                                render={({ field }) => (
-                                  <MultiSelect
-                                    aria-label="Analogues"
-                                    className="w-full"
-                                    value={field.value}
-                                    onChange={field.onChange}
-                                    options={variationChoices}
-                                    placeholder="None"
-                                  />
-                                )}
-                              />
-                            )}
-                          </Field>
-                          <Field label="Frequently bought together">
-                            {() => (
-                              <Controller
-                                control={form.control}
-                                name={`variations.${index}.boughtTogetherIds`}
-                                render={({ field }) => (
-                                  <MultiSelect
-                                    aria-label="Frequently bought together"
-                                    className="w-full"
-                                    value={field.value}
-                                    onChange={field.onChange}
-                                    options={variationChoices}
-                                    placeholder="None"
-                                  />
-                                )}
-                              />
-                            )}
-                          </Field>
-                          <Field label="Mobile SKU">
-                            {(p) => (
-                              <Input {...p} {...form.register(`variations.${index}.mobileSku`)} />
-                            )}
-                          </Field>
-                          <Field label="Mobile product name">
-                            {(p) => (
-                              <Input {...p} {...form.register(`variations.${index}.mobileName`)} />
-                            )}
-                          </Field>
-                          <Field label="Zone" hint="Warehouse zone">
-                            {(p) => (
-                              <Input
-                                {...p}
-                                placeholder="Zone A"
-                                {...form.register(`variations.${index}.zone`)}
-                              />
-                            )}
-                          </Field>
-                          <Field
-                            label="Landed cost"
-                            hint="Per unit in UZS, with freight and duty"
-                            error={rowError?.landedCost?.message}
-                          >
-                            {(p) => (
-                              <Controller
-                                control={form.control}
-                                name={`variations.${index}.landedCost`}
-                                render={({ field }) => (
-                                  <NumberField {...p} {...fieldProps(field)} />
-                                )}
-                              />
-                            )}
-                          </Field>
-                          {sideFromOption ? null : (
-                            <Field label="Side" hint="Which side of the vehicle it fits">
-                              {(p) => (
-                                <Controller
-                                  control={form.control}
-                                  name={`variations.${index}.partSide`}
-                                  render={({ field }) => (
-                                    <Select
-                                      {...p}
-                                      className="w-full"
-                                      value={field.value ?? undefined}
-                                      onChange={field.onChange}
-                                      options={PART_SIDES}
-                                      placeholder="Not sided"
-                                    />
-                                  )}
-                                />
-                              )}
-                            </Field>
-                          )}
-                          <Field label="Status">
-                            {(p) => (
-                              <Controller
-                                control={form.control}
-                                name={`variations.${index}.status`}
-                                render={({ field }) => (
-                                  <Select
-                                    {...p}
-                                    className="w-full"
-                                    value={field.value}
-                                    onChange={field.onChange}
-                                    options={[
-                                      { value: 'active', label: 'Active' },
-                                      { value: 'archived', label: 'Archived' },
-                                    ]}
-                                  />
-                                )}
-                              />
-                            )}
-                          </Field>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : null}
-                </Fragment>
+                      <Controller
+                        control={form.control}
+                        name={`variations.${index}.costCurrency`}
+                        render={({ field }) => (
+                          <Select
+                            value={field.value}
+                            onChange={field.onChange}
+                            options={CURRENCIES}
+                            disabled={!sold}
+                            aria-label={`Cost currency — ${name}`}
+                            className="w-20"
+                          />
+                        )}
+                      />
+                    </div>
+                    {errorText(rowError?.costPrice?.message)}
+                  </td>
+                  <td className={cell}>
+                    <Controller
+                      control={form.control}
+                      name={`variations.${index}.salePrice`}
+                      render={({ field }) => (
+                        <NumberField
+                          className="w-32"
+                          nullable={false}
+                          disabled={!sold}
+                          aria-label={`Sale price — ${name}`}
+                          value={field.value}
+                          onChange={(v) => field.onChange(v ?? 0)}
+                          onBlur={field.onBlur}
+                        />
+                      )}
+                    />
+                    {errorText(rowError?.salePrice?.message)}
+                  </td>
+                  <td className={cell}>
+                    <Controller
+                      control={form.control}
+                      name={`variations.${index}.discountPrice`}
+                      render={({ field }) => (
+                        <NumberField
+                          className="w-32"
+                          disabled={!sold}
+                          aria-label={`Discounted price — ${name}`}
+                          {...fieldProps(field)}
+                        />
+                      )}
+                    />
+                    {errorText(rowError?.discountPrice?.message)}
+                  </td>
+                  <td className={cell}>
+                    <Controller
+                      control={form.control}
+                      name={`variations.${index}.landedCost`}
+                      render={({ field }) => (
+                        <NumberField
+                          className="w-32"
+                          disabled={!sold}
+                          aria-label={`Landed cost — ${name}`}
+                          {...fieldProps(field)}
+                        />
+                      )}
+                    />
+                    {errorText(rowError?.landedCost?.message)}
+                  </td>
+                  <td className={cell}>
+                    <Controller
+                      control={form.control}
+                      name={`variations.${index}.lowStockThreshold`}
+                      render={({ field }) => (
+                        <NumberField
+                          className="w-24"
+                          disabled={!sold}
+                          aria-label={`Reorder point — ${name}`}
+                          {...fieldProps(field)}
+                        />
+                      )}
+                    />
+                    {errorText(rowError?.lowStockThreshold?.message)}
+                  </td>
+                  <td className={cell}>
+                    <Input
+                      className="w-28"
+                      placeholder="A-12-3"
+                      aria-label={`Shelf — ${name}`}
+                      disabled={!sold}
+                      {...form.register(`variations.${index}.shelfAddress`)}
+                    />
+                  </td>
+                  <td className={cell}>
+                    <Input
+                      className="w-28"
+                      placeholder="Zone A"
+                      aria-label={`Zone — ${name}`}
+                      disabled={!sold}
+                      {...form.register(`variations.${index}.zone`)}
+                    />
+                  </td>
+                  <td className={cell}>
+                    <Input
+                      className="w-36"
+                      aria-label={`Mobile SKU — ${name}`}
+                      disabled={!sold}
+                      {...form.register(`variations.${index}.mobileSku`)}
+                    />
+                  </td>
+                  <td className={cell}>
+                    <Input
+                      className="w-48"
+                      aria-label={`Mobile product name — ${name}`}
+                      disabled={!sold}
+                      {...form.register(`variations.${index}.mobileName`)}
+                    />
+                  </td>
+                  <td className={cell}>
+                    <Controller
+                      control={form.control}
+                      name={`variations.${index}.analogueIds`}
+                      render={({ field }) => (
+                        <MultiSelect
+                          aria-label={`Analogues — ${name}`}
+                          className="w-48"
+                          disabled={!sold}
+                          value={field.value}
+                          onChange={field.onChange}
+                          options={variationChoices}
+                          placeholder="None"
+                        />
+                      )}
+                    />
+                  </td>
+                  <td className={cell}>
+                    <Controller
+                      control={form.control}
+                      name={`variations.${index}.boughtTogetherIds`}
+                      render={({ field }) => (
+                        <MultiSelect
+                          aria-label={`Frequently bought together — ${name}`}
+                          className="w-48"
+                          disabled={!sold}
+                          value={field.value}
+                          onChange={field.onChange}
+                          options={variationChoices}
+                          placeholder="None"
+                        />
+                      )}
+                    />
+                  </td>
+                  <td className={cell}>
+                    <Controller
+                      control={form.control}
+                      name={`variations.${index}.status`}
+                      render={({ field }) => (
+                        <Select
+                          className="w-32"
+                          aria-label={`Status — ${name}`}
+                          disabled={!sold}
+                          value={field.value}
+                          onChange={field.onChange}
+                          options={[
+                            { value: 'active', label: 'Active' },
+                            { value: 'archived', label: 'Archived' },
+                          ]}
+                        />
+                      )}
+                    />
+                  </td>
+                </tr>
               )
             })}
           </tbody>
@@ -419,7 +407,7 @@ function FillableHeader({
   many: boolean
 }) {
   return (
-    <th className="px-3 py-2 text-left font-semibold">
+    <th className="px-2 py-2 text-left font-semibold whitespace-nowrap">
       <span className="inline-flex items-center gap-1.5">
         {label}
         {required ? <span className="text-danger">*</span> : null}

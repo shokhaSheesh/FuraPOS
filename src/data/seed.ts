@@ -8,6 +8,7 @@ import type {
   Product,
   VariationRow,
 } from '@/features/products/model/product'
+import { productAttributes } from '@/features/products/model/product'
 import type { Sale } from '@/features/sales/model/sale'
 import type { Transfer } from '@/features/transfers/model/transfer'
 import type { Correction, CorrectionReason } from '@/features/corrections/model/correction'
@@ -216,6 +217,14 @@ const productNouns = [
  * Most parts have one variation; side-specific ones (steps, mirrors, wings)
  * have a left and a right, which is exactly the split the reference data shows.
  */
+/*
+  The attributes carried over from OX's product list draw from their own
+  generator, so adding them does not shift a single value the rest of the
+  dataset — and its tests — were built on.
+*/
+const attrRandom = makeRandom(11)
+const attrPick = <T>(values: readonly T[]): T => values[Math.floor(attrRandom() * values.length)]!
+
 export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
   const category = pick(categories)
   const brand = random() > 0.15 ? pick(brands) : null
@@ -270,23 +279,58 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
       shelfAddress:
         random() > 0.4 ? `${pick(['A', 'B', 'C'])}-${between(1, 20)}-${between(1, 9)}` : null,
       moq: random() > 0.7 ? between(2, 12) : null,
+      zone: null as string | null,
+      // Freight and duty on top of what the supplier invoiced.
+      landedCost: Math.round(costUzs * (costCurrency === 'USD' ? 1.12 : 1.03)) as number | null,
       imageUrl: null,
       status: 'active' as const,
     }
   })
 
+  const oem = random() > 0.4 ? String(between(1_000_000, 9_999_999)) : null
+  for (const variation of variations) {
+    variation.zone = variation.shelfAddress ? `Zone ${variation.shelfAddress[0]}` : null
+  }
+  // Drawn here, in the order the object below used to draw them.
+  const manufacturer = random() > 0.3 ? pick(['Space', 'Sampa', 'Febi', 'Dinex']) : null
+  const tags = random() > 0.6 ? [pick(['bestseller', 'import', 'oem', 'clearance'])] : []
+  const unit = pick(['pcs', 'pcs', 'pcs', 'l', 'kg'] as const)
+
   return {
     id: productId,
     name,
-    description: random() > 0.4 ? String(between(1_000_000, 9_999_999)) : null,
+    description:
+      index % 3 === 0
+        ? null
+        : `${category.name} for ${vehicle.make}, ${attrPick(['original', 'aftermarket', 'OEM-equivalent'])} quality`,
+    oem,
+    videoUrl: index % 9 === 0 ? `https://youtu.be/fura-${index + 1}` : null,
+    modifiers: index % 5 === 0 ? [attrPick(['Fitting', 'Bolt kit', 'Gasket'])] : [],
+    // Linked after every product exists — see below.
+    analogueIds: [],
+    boughtTogetherIds: [],
+    isTracked: (index + 1) % 17 !== 0,
+    isSellable: (index + 1) % 23 !== 0,
+    isCountable: unit !== 'kg' && unit !== 'l',
+    isTaxable: (index + 1) % 4 !== 0,
+    isManufactured: (index + 1) % 29 === 0,
+    isWeighted: unit === 'kg',
+    mobileSku: index % 2 === 0 ? `M-${String(index + 1).padStart(5, '0')}` : null,
+    mobileName: index % 2 === 0 ? name.split(' ').slice(0, 2).join(' ') : null,
+    partType: attrPick(['Original', 'Aftermarket', 'Aftermarket', null]),
+    gender: null,
+    season: attrPick(['All-season', 'All-season', 'Winter', 'Summer', null]),
+    analogueCodes:
+      attrRandom() > 0.6 ? String(Math.floor(attrRandom() * 9_000_000) + 1_000_000) : null,
+    boughtTogetherNote: null,
     categoryId: category.id,
     categoryName: category.name,
     categoryPath: category.path,
     brandId: brand?.id ?? null,
     brandName: brand?.name ?? null,
-    manufacturer: random() > 0.3 ? pick(['Space', 'Sampa', 'Febi', 'Dinex']) : null,
-    tags: random() > 0.6 ? [pick(['bestseller', 'import', 'oem', 'clearance'])] : [],
-    unit: pick(['pcs', 'pcs', 'pcs', 'l', 'kg'] as const),
+    manufacturer,
+    tags,
+    unit,
     vehicleMake: vehicle.make,
     vehicleModels: [...vehicle.models].slice(0, between(1, vehicle.models.length)),
     cargoWeightKg: random() > 0.5 ? between(1, 60) : null,
@@ -300,6 +344,28 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
     updatedAt: createdAt,
   } satisfies Product
 })
+
+/*
+  Analogues are parts in the same category for the same truck brand; what gets
+  bought together is the next part along in a different category. Both by
+  position, so the links are stable and never point at the product itself.
+*/
+for (const product of products) {
+  product.analogueIds = products
+    .filter(
+      (other) =>
+        other.id !== product.id &&
+        other.categoryId === product.categoryId &&
+        other.vehicleMake === product.vehicleMake,
+    )
+    .slice(0, 2)
+    .map((other) => other.id)
+  product.boughtTogetherIds = products
+    .filter((other) => other.categoryId !== product.categoryId)
+    .filter((_, i) => i % 41 === Number(product.id.slice(4)) % 41)
+    .slice(0, 2)
+    .map((other) => other.id)
+}
 
 /** The flat, sellable list: what the catalogue shows and what a sale points at. */
 export const variations: VariationRow[] = products.flatMap((product) =>
@@ -324,6 +390,7 @@ export const variations: VariationRow[] = products.flatMap((product) =>
     cargoSize: product.cargoSize,
     isShippable: product.isShippable,
     showOnline: product.showOnline,
+    ...productAttributes(product),
     options: product.options,
   })),
 )

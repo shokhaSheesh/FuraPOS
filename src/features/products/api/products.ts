@@ -38,7 +38,7 @@ function filterVariations(all: VariationRow[], query: ListQuery) {
       }
     }
     return matches(
-      [v.fullName, v.sku, v.barcode, v.brandName, v.description, v.vehicleMake],
+      [v.fullName, v.sku, v.barcode, v.brandName, v.oem, v.description, v.vehicleMake],
       query.search,
     )
   })
@@ -70,7 +70,7 @@ export function useProducts(query: ListQuery, options: { enabled?: boolean } = {
       ) {
         return false
       }
-      return matches([p.name, p.description, p.brandName, p.vehicleMake], query.search)
+      return matches([p.name, p.oem, p.description, p.brandName, p.vehicleMake], query.search)
     })
     return paginate(filtered, query)
   }, [products, query, options.enabled])
@@ -120,6 +120,12 @@ export function useCategories() {
 
 export function useBrands() {
   const items = useDataStore((s) => s.brands)
+  return { data: { items }, isLoading: false }
+}
+
+/** Every product, for pickers that link one part to others — analogues, bought together. */
+export function useAllProducts() {
+  const items = useDataStore((s) => s.products)
   return { data: { items }, isLoading: false }
 }
 

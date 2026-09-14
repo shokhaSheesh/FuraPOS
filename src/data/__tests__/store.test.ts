@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useDataStore } from '../store'
 import { matches, paginate } from '../query'
+import { NEW_PRODUCT_ATTRIBUTES } from '@/features/products/model/product'
 import type { SaleLine } from '@/features/sales/model/sale'
 
 const line = (over: Partial<SaleLine> = {}): SaleLine => ({
@@ -122,6 +123,7 @@ describe('data store', () => {
       cargoSize: null,
       isShippable: true,
       showOnline: false,
+      ...NEW_PRODUCT_ATTRIBUTES,
       status: 'active',
       options: [{ id: 'opt-side', name: 'Side', values: ['Left', 'Right'] }],
       variations: [
@@ -137,6 +139,8 @@ describe('data store', () => {
           lowStockThreshold: null,
           shelfAddress: null,
           moq: null,
+          zone: null,
+          landedCost: null,
           stockByLocation: [{ locationId: 'loc-1', quantity: 4 }],
           status: 'active',
         },
@@ -152,6 +156,8 @@ describe('data store', () => {
           lowStockThreshold: null,
           shelfAddress: null,
           moq: null,
+          zone: null,
+          landedCost: null,
           stockByLocation: [
             { locationId: 'loc-1', quantity: 4 },
             { locationId: 'loc-3', quantity: 6 },

@@ -92,15 +92,122 @@ export interface ProductVariation {
   shelfAddress: string | null
   /** Minimum quantity a supplier will accept. */
   moq: number | null
+  /** The warehouse zone the shelf sits in — OX's Зона. */
+  zone: string | null
+  /**
+   * What one unit cost us once it was on the shelf, in UZS — OX's
+   * Себестоимость. Supplier price plus freight and duty, so it is not the same
+   * number as `costPrice`, which is what the supplier invoices.
+   */
+  landedCost: number | null
 
   imageUrl: string | null
   status: ProductStatus
 }
 
-export interface Product {
+/**
+ * The rest of OX's product columns, carried over one for one — see "Product
+ * list" in docs/OX-NAVIGATION-MAP.md. Kept as one group so the flat variation
+ * row copies them in a single spread and cannot miss one.
+ */
+export interface ProductAttributes {
+  /** OX keeps OEM as its own column, beside the free-text description. */
+  oem: string | null
+  videoUrl: string | null
+  /** Extras offered with it at the counter — OX's Модификаторы. */
+  modifiers: string[]
+  /** Parts that can stand in for this one — OX's Аналоги. */
+  analogueIds: Id[]
+  /** Parts usually bought with it — OX's С этим вместе покупают. */
+  boughtTogetherIds: Id[]
+  /** Stock is counted for it (Отслеживание). */
+  isTracked: boolean
+  /** Can go on a sale (Продаваемый). */
+  isSellable: boolean
+  /** Sold in whole units (Исчисляемый). */
+  isCountable: boolean
+  /** Carries VAT (Облагаемый налогом). */
+  isTaxable: boolean
+  /** Assembled by us rather than bought in (Изготовляемый). */
+  isManufactured: boolean
+  /** Sold by weight (Весовой). */
+  isWeighted: boolean
+  /** The SKU and name the mobile app shows — Артикул моб, Название продукта моб. */
+  mobileSku: string | null
+  mobileName: string | null
+  /** Тип. */
+  partType: string | null
+  /** Пол. */
+  gender: string | null
+  /** Сезон. */
+  season: string | null
+  /** Аналог — cross-reference codes as typed, beside the linked Аналоги. */
+  analogueCodes: string | null
+  /** Вместе покупает — a typed note, beside the linked list. */
+  boughtTogetherNote: string | null
+}
+
+export const productAttributes = (p: ProductAttributes): ProductAttributes => ({
+  oem: p.oem,
+  videoUrl: p.videoUrl,
+  modifiers: p.modifiers,
+  analogueIds: p.analogueIds,
+  boughtTogetherIds: p.boughtTogetherIds,
+  isTracked: p.isTracked,
+  isSellable: p.isSellable,
+  isCountable: p.isCountable,
+  isTaxable: p.isTaxable,
+  isManufactured: p.isManufactured,
+  isWeighted: p.isWeighted,
+  mobileSku: p.mobileSku,
+  mobileName: p.mobileName,
+  partType: p.partType,
+  gender: p.gender,
+  season: p.season,
+  analogueCodes: p.analogueCodes,
+  boughtTogetherNote: p.boughtTogetherNote,
+})
+
+/** What a new product starts with. Tracked, sellable, counted and taxed: the ordinary part. */
+export const NEW_PRODUCT_ATTRIBUTES: ProductAttributes = {
+  oem: null,
+  videoUrl: null,
+  modifiers: [],
+  analogueIds: [],
+  boughtTogetherIds: [],
+  isTracked: true,
+  isSellable: true,
+  isCountable: true,
+  isTaxable: true,
+  isManufactured: false,
+  isWeighted: false,
+  mobileSku: null,
+  mobileName: null,
+  partType: null,
+  gender: null,
+  season: null,
+  analogueCodes: null,
+  boughtTogetherNote: null,
+}
+
+/** Every yes/no a product carries, in OX's column order. All are switched in place on the list. */
+export const PRODUCT_FLAGS = [
+  { key: 'isShippable', label: 'Shippable', hint: 'Can be sent by courier' },
+  { key: 'showOnline', label: 'Show online', hint: 'Visible in the storefront' },
+  { key: 'isTracked', label: 'Tracking', hint: 'Stock is counted' },
+  { key: 'isSellable', label: 'Sellable', hint: 'Can go on a sale' },
+  { key: 'isCountable', label: 'Countable', hint: 'Sold in whole units' },
+  { key: 'isTaxable', label: 'Taxable', hint: 'VAT applies' },
+  { key: 'isManufactured', label: 'Manufactured', hint: 'Made by us, not bought in' },
+  { key: 'isWeighted', label: 'Weighted', hint: 'Sold by weight' },
+] as const
+
+export type ProductFlag = (typeof PRODUCT_FLAGS)[number]['key']
+
+export interface Product extends ProductAttributes {
   id: Id
   name: string
-  /** Free text; the reference tenant keeps the OEM number here. */
+  /** Free text. The OEM number has its own field, `oem`. */
   description: string | null
   categoryId: Id
   categoryName: string
@@ -141,7 +248,7 @@ export interface Product {
  * A variation flattened with the parent fields needed to display or search it.
  * This is what the catalogue lists and what a sale line points at.
  */
-export interface VariationRow extends ProductVariation {
+export interface VariationRow extends ProductVariation, ProductAttributes {
   productName: string
   /** Product name and variation together, e.g. "Brake disc — Left". */
   fullName: string
@@ -378,6 +485,8 @@ export const variationFormSchema = z.object({
   lowStockThreshold: z.number().int().nonnegative().nullable(),
   shelfAddress: z.string().nullable(),
   moq: z.number().int().positive().nullable(),
+  zone: z.string().nullable(),
+  landedCost: z.number().nonnegative().nullable(),
   status: z.enum(['active', 'archived', 'draft']),
   stockByLocation: z.array(stockAtLocationFormSchema),
   optionValues: z.array(z.object({ optionId: z.string(), value: z.string() })),
@@ -398,6 +507,24 @@ export const productFormSchema = z
     cargoSize: z.string().nullable(),
     isShippable: z.boolean(),
     showOnline: z.boolean(),
+    oem: z.string().nullable(),
+    videoUrl: z.string().nullable(),
+    modifiers: z.array(z.string()),
+    analogueIds: z.array(z.string()),
+    boughtTogetherIds: z.array(z.string()),
+    isTracked: z.boolean(),
+    isSellable: z.boolean(),
+    isCountable: z.boolean(),
+    isTaxable: z.boolean(),
+    isManufactured: z.boolean(),
+    isWeighted: z.boolean(),
+    mobileSku: z.string().nullable(),
+    mobileName: z.string().nullable(),
+    partType: z.string().nullable(),
+    gender: z.string().nullable(),
+    season: z.string().nullable(),
+    analogueCodes: z.string().nullable(),
+    boughtTogetherNote: z.string().nullable(),
     status: z.enum(['active', 'archived', 'draft']),
     variationMode: z.enum(['single', 'multiple']),
     options: z.array(optionFormSchema).max(MAX_OPTIONS),

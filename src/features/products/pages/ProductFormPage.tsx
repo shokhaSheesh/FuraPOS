@@ -11,12 +11,14 @@ import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
 import { Button } from '@/shared/ui/Button'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 import { Input } from '@/shared/ui/Input'
+import { MultiSelect } from '@/shared/ui/MultiSelect'
 import { Select } from '@/shared/ui/Select'
 import { Switch } from '@/shared/ui/Switch'
 import { TagsInput } from '@/shared/ui/TagsInput'
 import { toast } from '@/shared/ui/toast'
 import { paths } from '@/shared/config/paths'
 import {
+  useAllProducts,
   useBrands,
   useCategories,
   useCreateProduct,
@@ -29,13 +31,17 @@ import { ProductStockSection } from '../components/ProductStockSection'
 import { ProductOptionsEditor } from '../components/ProductOptionsEditor'
 import { ProductVariationsTable } from '../components/ProductVariationsTable'
 import {
+  NEW_PRODUCT_ATTRIBUTES,
   PART_SIDES,
+  PRODUCT_FLAGS,
   combinationName,
   isSideOption,
+  productAttributes,
   productFormSchema,
   reconcileVariations,
   usableOptions,
   type OptionValue,
+  type ProductFlag,
   type ProductFormValues,
   type VariationMode,
 } from '../model/product'
@@ -95,6 +101,8 @@ const emptyVariation = (
   lowStockThreshold: null,
   shelfAddress: null,
   moq: null,
+  zone: null,
+  landedCost: null,
   status: 'active' as const,
   stockByLocation: stockRows(locations),
 })
@@ -153,6 +161,7 @@ export function ProductForm({
   const { data: categories } = useCategories()
   const { data: brands } = useBrands()
   const { data: locationData } = useLocations()
+  const { data: allProducts } = useAllProducts()
   const locations = locationData.items
   const create = useCreateProduct()
   const update = useUpdateProduct(productId ?? '')
@@ -177,6 +186,7 @@ export function ProductForm({
             cargoSize: existing.cargoSize,
             isShippable: existing.isShippable,
             showOnline: existing.showOnline,
+            ...productAttributes(existing),
             status: existing.status,
             variationMode: existing.options.length ? 'multiple' : 'single',
             options: existing.options.map((option) => ({ ...option, values: [...option.values] })),
@@ -210,6 +220,8 @@ export function ProductForm({
                 lowStockThreshold: v.lowStockThreshold,
                 shelfAddress: v.shelfAddress,
                 moq: v.moq,
+                zone: v.zone,
+                landedCost: v.landedCost,
                 status: v.status,
                 stockByLocation: stockRows(locations, v.stockByLocation),
               })),
@@ -231,6 +243,7 @@ export function ProductForm({
             cargoSize: null,
             isShippable: true,
             showOnline: false,
+            ...NEW_PRODUCT_ATTRIBUTES,
             status: 'active',
             variationMode: 'single',
             options: [],
@@ -248,6 +261,21 @@ export function ProductForm({
 
   const variations = form.watch('variations')
   const options = form.watch('options')
+
+  /** Every other part, for the analogue and bought-together pickers — never itself. */
+  const productChoices = useMemo(
+    () =>
+      allProducts.items
+        .filter((product) => product.id !== productId)
+        .map((product) => ({
+          value: product.id,
+          label: product.name,
+          meta: [product.oem && `OEM ${product.oem}`, product.categoryName]
+            .filter(Boolean)
+            .join(' · '),
+        })),
+    [allProducts.items, productId],
+  )
   const mode = form.watch('variationMode')
   const single = mode === 'single'
   const productName = form.watch('name')
@@ -445,8 +473,8 @@ export function ProductForm({
             >
               {(p) => <Input {...p} placeholder="Brake disc HD72" {...form.register('name')} />}
             </Field>
-            <Field label="OEM number" hint="Or any reference text">
-              {(p) => <Input {...p} {...form.register('description')} />}
+            <Field label="OEM">
+              {(p) => <Input {...p} placeholder="1234567" {...form.register('oem')} />}
             </Field>
             <Field label="Category" required error={form.formState.errors.categoryId?.message}>
               {(p) => (
@@ -505,6 +533,25 @@ export function ProductForm({
                   )}
                 />
               )}
+            </Field>
+            <Field label="Type">
+              {(p) => (
+                <Input {...p} placeholder="Original, aftermarket…" {...form.register('partType')} />
+              )}
+            </Field>
+            <Field label="Gender">{(p) => <Input {...p} {...form.register('gender')} />}</Field>
+            <Field label="Season">
+              {(p) => (
+                <Input {...p} placeholder="All-season, winter…" {...form.register('season')} />
+              )}
+            </Field>
+            <Field label="Video" hint="A link to it">
+              {(p) => (
+                <Input {...p} placeholder="https://youtu.be/…" {...form.register('videoUrl')} />
+              )}
+            </Field>
+            <Field label="Description" className="sm:col-span-2 lg:col-span-3">
+              {(p) => <Input {...p} {...form.register('description')} />}
             </Field>
             <Field label="Tags" className="sm:col-span-2 lg:col-span-3">
               {(p) => (
@@ -581,6 +628,83 @@ export function ProductForm({
             </Field>
             <Field label="Cargo size">
               {(p) => <Input {...p} placeholder="120*60*30" {...form.register('cargoSize')} />}
+            </Field>
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Related products</CardTitle>
+          </CardHeader>
+          <CardBody className="grid gap-3 sm:grid-cols-2">
+            <Field label="Analogues" hint="Parts that can stand in for this one">
+              {() => (
+                <Controller
+                  control={form.control}
+                  name="analogueIds"
+                  render={({ field: f }) => (
+                    <MultiSelect
+                      aria-label="Analogues"
+                      className="w-full"
+                      value={f.value}
+                      onChange={f.onChange}
+                      options={productChoices}
+                      placeholder="None"
+                      searchPlaceholder="Search by name or OEM…"
+                    />
+                  )}
+                />
+              )}
+            </Field>
+            <Field label="Frequently bought together" hint="Offered beside it on a sale">
+              {() => (
+                <Controller
+                  control={form.control}
+                  name="boughtTogetherIds"
+                  render={({ field: f }) => (
+                    <MultiSelect
+                      aria-label="Frequently bought together"
+                      className="w-full"
+                      value={f.value}
+                      onChange={f.onChange}
+                      options={productChoices}
+                      placeholder="None"
+                      searchPlaceholder="Search by name or OEM…"
+                    />
+                  )}
+                />
+              )}
+            </Field>
+            <Field label="Analogue" hint="Cross-reference codes, as typed">
+              {(p) => <Input {...p} {...form.register('analogueCodes')} />}
+            </Field>
+            <Field label="Buys together" hint="A note, as typed">
+              {(p) => <Input {...p} {...form.register('boughtTogetherNote')} />}
+            </Field>
+            <Field label="Modifiers" hint="Extras offered with it" className="sm:col-span-2">
+              {(p) => (
+                <Controller
+                  control={form.control}
+                  name="modifiers"
+                  render={({ field: f }) => (
+                    <TagsInput id={p.id} value={f.value} onChange={f.onChange} />
+                  )}
+                />
+              )}
+            </Field>
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Mobile app</CardTitle>
+          </CardHeader>
+          <CardBody className="grid gap-3 sm:grid-cols-2">
+            <Field label="Mobile SKU">
+              {(p) => <Input {...p} {...form.register('mobileSku')} />}
+            </Field>
+            <Field label="Mobile product name">
+              {(p) => <Input {...p} {...form.register('mobileName')} />}
             </Field>
           </CardBody>
         </Card>
@@ -750,6 +874,31 @@ export function ProductForm({
                     />
                   )}
                 </Field>
+                <Field label="Zone" hint="Warehouse zone">
+                  {(p) => (
+                    <Input {...p} placeholder="Zone A" {...form.register('variations.0.zone')} />
+                  )}
+                </Field>
+                <Field
+                  label="Landed cost"
+                  hint="Per unit in UZS, with freight and duty"
+                  error={form.formState.errors.variations?.[0]?.landedCost?.message}
+                >
+                  {(p) => (
+                    <Controller
+                      control={form.control}
+                      name="variations.0.landedCost"
+                      render={({ field: f }) => (
+                        <NumberField
+                          {...p}
+                          value={f.value}
+                          onChange={f.onChange}
+                          onBlur={f.onBlur}
+                        />
+                      )}
+                    />
+                  )}
+                </Field>
               </div>
             ) : (
               <>
@@ -771,19 +920,16 @@ export function ProductForm({
           <CardHeader>
             <CardTitle>Availability</CardTitle>
           </CardHeader>
-          <CardBody className="grid items-end gap-3 sm:grid-cols-3">
-            <ToggleRow
-              control={form.control}
-              name="isShippable"
-              label="Shippable"
-              hint="Can be sent by courier"
-            />
-            <ToggleRow
-              control={form.control}
-              name="showOnline"
-              label="Show online"
-              hint="Visible in the storefront"
-            />
+          <CardBody className="grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {PRODUCT_FLAGS.map((flag) => (
+              <ToggleRow
+                key={flag.key}
+                control={form.control}
+                name={flag.key}
+                label={flag.label}
+                hint={flag.hint}
+              />
+            ))}
             <Field label="Status">
               {(p) => (
                 <Controller
@@ -831,7 +977,7 @@ function ToggleRow({
   hint,
 }: {
   control: Control<ProductFormValues>
-  name: 'isShippable' | 'showOnline'
+  name: ProductFlag
   label: string
   hint: string
 }) {

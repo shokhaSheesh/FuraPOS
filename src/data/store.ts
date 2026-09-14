@@ -1,6 +1,6 @@
 import { create } from 'zustand'
-import { combinationName } from '@/features/products/model/product'
-import type { Product, VariationRow } from '@/features/products/model/product'
+import { combinationName, productAttributes } from '@/features/products/model/product'
+import type { Product, ProductFlag, VariationRow } from '@/features/products/model/product'
 import type { Transfer, TransferLine, TransferStatus } from '@/features/transfers/model/transfer'
 import type {
   Correction,
@@ -151,7 +151,7 @@ interface CatalogState {
   updateSale: (id: string, patch: { status?: SaleStatus; paid?: number }) => Sale | undefined
   deleteVariation: (id: string) => void
   /** Inline toggles on the catalogue row, as in the reference product. */
-  setProductFlag: (productId: string, flag: 'isShippable' | 'showOnline', value: boolean) => void
+  setProductFlag: (productId: string, flag: ProductFlag, value: boolean) => void
   createProduct: (input: ProductInput) => Product
   updateProduct: (id: string, input: ProductInput) => Product | undefined
 
@@ -556,6 +556,7 @@ function flatten(product: Product): VariationRow[] {
     cargoSize: product.cargoSize,
     isShippable: product.isShippable,
     showOnline: product.showOnline,
+    ...productAttributes(product),
   }))
 }
 

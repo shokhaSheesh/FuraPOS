@@ -53,7 +53,7 @@ export default function OrderDocumentPage() {
       level: levelOf(line.urgencyId),
       // The OEM number lives in the product description in this catalogue, and
       // it is the code a factory actually recognises.
-      oem: variations.find((v) => v.id === line.variationId)?.description ?? null,
+      oem: variations.find((v) => v.id === line.variationId)?.oem ?? null,
       brand: variations.find((v) => v.id === line.variationId)?.brandName ?? null,
     }))
     .sort((a, b) => (a.level?.rank ?? 999) - (b.level?.rank ?? 999))

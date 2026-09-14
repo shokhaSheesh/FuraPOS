@@ -1,4 +1,4 @@
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil, PlayCircle, Trash2 } from 'lucide-react'
 import { Badge } from '@/shared/ui/Badge'
 import { RowActions } from '@/shared/components/RowActions'
 import { Switch } from '@/shared/ui/Switch'
@@ -12,6 +12,8 @@ import {
   effectivePrice,
   marginRatio,
   PART_SIDES,
+  PRODUCT_FLAGS,
+  type ProductFlag,
   type VariationRow,
 } from '../model/product'
 
@@ -21,9 +23,17 @@ const Empty = () => <span className="text-fg-subtle">—</span>
 const cost = (v: VariationRow) =>
   v.costCurrency === 'USD' ? `${formatNumber(v.costPrice)} USD` : formatMoney(v.costPrice)
 
+const text = (value: string | null) => value ?? <Empty />
+
 /**
- * Column order follows DESIGN_RULES § 5.2:
- * identifier → name → categorisation → quantities → money → status → actions.
+ * Every column OX's Вариации list offers, in OX's own order, and nothing taken
+ * away — the brief is parity first, pruning after. The Russian name of each is
+ * beside it so the two lists can be read against each other; the mapping is
+ * also in docs/OX-NAVIGATION-MAP.md. Margin and Status are ours and sit after
+ * OX's last column.
+ *
+ * Cost columns still need `products.cost.view`: parity with OX's column list
+ * does not mean showing a seller what we paid.
  */
 export function buildProductColumns({
   usdRate,
@@ -40,29 +50,16 @@ export function buildProductColumns({
   canDelete: boolean
   canSeeCost: boolean
 }): TableColumn<VariationRow>[] {
+  const costOnly = (columns: TableColumn<VariationRow>[]) => (canSeeCost ? columns : [])
+
   return [
+    // Рисунок
     {
-      accessorKey: 'sku',
-      header: 'SKU',
-      cell: ({ row }) => <span className="text-2xs font-mono">{row.original.sku}</span>,
-      enableHiding: false,
+      id: 'image',
+      header: 'Image',
+      cell: ({ row }) => <ProductThumb src={row.original.imageUrl} size="sm" />,
     },
-    {
-      accessorKey: 'fullName',
-      header: 'Name',
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2.5">
-          <ProductThumb src={row.original.imageUrl} size="sm" />
-          <div className="min-w-0">
-            <span className="font-medium">{row.original.productName}</span>
-            {row.original.name !== 'Standard' ? (
-              <span className="text-fg-muted"> · {row.original.name}</span>
-            ) : null}
-          </div>
-        </div>
-      ),
-      enableHiding: false,
-    },
+    // ID Вариации
     {
       accessorKey: 'id',
       header: 'Variation ID',
@@ -70,6 +67,21 @@ export function buildProductColumns({
         <span className="text-fg-muted text-2xs font-mono">{row.original.id}</span>
       ),
     },
+    // Названия вариации
+    {
+      accessorKey: 'fullName',
+      header: 'Variation name',
+      cell: ({ row }) => (
+        <div className="min-w-0">
+          <span className="font-medium">{row.original.productName}</span>
+          {row.original.name !== 'Standard' ? (
+            <span className="text-fg-muted"> · {row.original.name}</span>
+          ) : null}
+        </div>
+      ),
+      enableHiding: false,
+    },
+    // Штрих-код
     {
       accessorKey: 'barcode',
       header: 'Barcode',
@@ -80,65 +92,114 @@ export function buildProductColumns({
           <Empty />
         ),
     },
+    // Артикул
     {
-      accessorKey: 'description',
-      header: 'OEM / description',
-      cell: ({ row }) => row.original.description ?? <Empty />,
+      accessorKey: 'sku',
+      header: 'SKU',
+      cell: ({ row }) => <span className="text-2xs font-mono">{row.original.sku}</span>,
     },
+    // MOQ
+    {
+      accessorKey: 'moq',
+      header: 'MOQ',
+      meta: { align: 'right' },
+      cell: ({ row }) => (row.original.moq ? formatNumber(row.original.moq) : <Empty />),
+    },
+    // Категории
+    {
+      accessorKey: 'categoryPath',
+      header: 'Categories',
+      cell: ({ row }) => row.original.categoryPath,
+    },
+    // Бренд
     {
       accessorKey: 'brandName',
       header: 'Brand',
-      cell: ({ row }) => row.original.brandName ?? <Empty />,
+      cell: ({ row }) => text(row.original.brandName),
     },
+    // Описание
     {
-      accessorKey: 'manufacturer',
-      header: 'Manufacturer',
-      cell: ({ row }) => row.original.manufacturer ?? <Empty />,
+      accessorKey: 'description',
+      header: 'Description',
+      cell: ({ row }) => text(row.original.description),
     },
-    {
-      accessorKey: 'categoryPath',
-      header: 'Category',
-      cell: ({ row }) => <span title={row.original.categoryPath}>{row.original.categoryName}</span>,
-    },
-    {
-      accessorKey: 'vehicleMake',
-      header: 'Make',
-      cell: ({ row }) => row.original.vehicleMake ?? <Empty />,
-    },
-    {
-      id: 'vehicleModels',
-      header: 'Model',
-      cell: ({ row }) =>
-        row.original.vehicleModels.length ? row.original.vehicleModels.join(', ') : <Empty />,
-    },
-    {
-      accessorKey: 'partSide',
-      header: 'Side',
-      cell: ({ row }) =>
-        PART_SIDES.find((s) => s.value === row.original.partSide)?.label ?? <Empty />,
-    },
+    // Теги
     {
       accessorKey: 'tags',
       header: 'Tags',
+      cell: ({ row }) => <Chips values={row.original.tags} />,
+    },
+    // С этим вместе покупают
+    {
+      id: 'boughtTogetherIds',
+      header: 'Frequently bought together',
+      cell: ({ row }) => <LinkedProducts ids={row.original.boughtTogetherIds} />,
+    },
+    // Модификаторы
+    {
+      id: 'modifiers',
+      header: 'Modifiers',
+      cell: ({ row }) => <Chips values={row.original.modifiers} />,
+    },
+    // Аналоги
+    {
+      id: 'analogueIds',
+      header: 'Analogues',
+      cell: ({ row }) => <LinkedProducts ids={row.original.analogueIds} />,
+    },
+    // Отгружаемый … Весовой — switched in place, as OX does
+    ...PRODUCT_FLAGS.map((flag): TableColumn<VariationRow> => ({
+      accessorKey: flag.key,
+      header: flag.label,
+      cell: ({ row }) => <FlagToggle row={row.original} flag={flag.key} label={flag.label} />,
+    })),
+    // Видео
+    {
+      accessorKey: 'videoUrl',
+      header: 'Video',
       cell: ({ row }) =>
-        row.original.tags.length ? (
-          <div className="flex gap-1">
-            {row.original.tags.map((tag) => (
-              <Badge key={tag}>{tag}</Badge>
-            ))}
-          </div>
+        row.original.videoUrl ? (
+          <a
+            href={row.original.videoUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="text-primary inline-flex items-center gap-1 hover:underline"
+          >
+            <PlayCircle className="size-4" />
+            Watch
+          </a>
         ) : (
           <Empty />
         ),
     },
+    // Зона
     {
-      accessorKey: 'shelfAddress',
-      header: 'Shelf',
-      cell: ({ row }) => row.original.shelfAddress ?? <Empty />,
+      accessorKey: 'zone',
+      header: 'Zone',
+      cell: ({ row }) => text(row.original.zone),
     },
+    // Локация
+    {
+      id: 'location',
+      header: 'Location',
+      cell: ({ row }) => {
+        const at = row.original.stockByLocation
+        if (!at.length) return <Empty />
+        // One location reads as itself; several read as a count, with the
+        // breakdown on hover rather than a cell nobody can fit.
+        return at.length === 1 ? (
+          at[0]!.locationName
+        ) : (
+          <span title={at.map((s) => `${s.locationName}: ${s.quantity}`).join('\n')}>
+            {at.length} locations
+          </span>
+        )
+      },
+    },
+    // Кол-во
     {
       accessorKey: 'stock',
-      header: 'Stock',
+      header: 'Quantity',
       meta: { align: 'right' },
       cell: ({ row }) => {
         const { stock, lowStockThreshold, unit } = row.original
@@ -157,53 +218,21 @@ export function buildProductColumns({
         )
       },
     },
-    {
-      id: 'location',
-      header: 'Location',
-      cell: ({ row }) => {
-        const at = row.original.stockByLocation
-        if (!at.length) return <Empty />
-        // One location reads as itself; several read as a count, with the
-        // breakdown on hover rather than a cell nobody can fit.
-        return at.length === 1 ? (
-          at[0]!.locationName
-        ) : (
-          <span title={at.map((s) => `${s.locationName}: ${s.quantity}`).join('\n')}>
-            {at.length} locations
-          </span>
-        )
-      },
-    },
-    {
-      accessorKey: 'moq',
-      header: 'MOQ',
-      meta: { align: 'right' },
-      cell: ({ row }) => (row.original.moq ? formatNumber(row.original.moq) : <Empty />),
-    },
-    ...(canSeeCost
-      ? ([
-          {
-            accessorKey: 'costPrice',
-            header: 'Cost',
-            meta: { align: 'right' },
-            cell: ({ row }) => cost(row.original),
-          },
-          {
-            id: 'costValue',
-            header: 'Stock at cost',
-            meta: { align: 'right' },
-            cell: ({ row }) => {
-              return formatMoney(costInUzs(row.original, usdRate) * row.original.stock)
-            },
-          },
-        ] as TableColumn<VariationRow>[])
-      : []),
+    // Цена продажи за ед.
     {
       accessorKey: 'salePrice',
-      header: 'Price',
+      header: 'Sale price per unit',
       meta: { align: 'right' },
       cell: ({ row }) => formatMoney(row.original.salePrice),
     },
+    // Общая сумма продажи
+    {
+      id: 'saleValue',
+      header: 'Total sale value',
+      meta: { align: 'right' },
+      cell: ({ row }) => formatMoney(effectivePrice(row.original) * row.original.stock),
+    },
+    // Со скидкой
     {
       accessorKey: 'discountPrice',
       header: 'Discounted',
@@ -215,8 +244,9 @@ export function buildProductColumns({
           <Empty />
         ),
     },
+    // Скидка
     {
-      accessorKey: 'discount',
+      id: 'discount',
       header: 'Discount',
       meta: { align: 'right' },
       cell: ({ row }) => {
@@ -224,48 +254,151 @@ export function buildProductColumns({
         return off > 0 ? <span className="text-warning">− {formatMoney(off)}</span> : <Empty />
       },
     },
+    ...costOnly([
+      // Цена поставщика за ед.
+      {
+        accessorKey: 'costPrice',
+        header: 'Supplier price per unit',
+        meta: { align: 'right' },
+        cell: ({ row }) => cost(row.original),
+      },
+      // Общая сумма поставщ.
+      {
+        id: 'costValue',
+        header: 'Total supplier value',
+        meta: { align: 'right' },
+        cell: ({ row }) => formatMoney(costInUzs(row.original, usdRate) * row.original.stock),
+      },
+      // Себестоимость
+      {
+        accessorKey: 'landedCost',
+        header: 'Landed cost',
+        meta: { align: 'right' },
+        cell: ({ row }) =>
+          row.original.landedCost === null ? <Empty /> : formatMoney(row.original.landedCost),
+      },
+    ]),
+    // Марка
     {
-      id: 'saleValue',
-      header: 'Stock at sale',
-      meta: { align: 'right' },
-      cell: ({ row }) => formatMoney(effectivePrice(row.original) * row.original.stock),
+      accessorKey: 'vehicleMake',
+      header: 'Make',
+      cell: ({ row }) => text(row.original.vehicleMake),
     },
-    ...(canSeeCost
-      ? ([
-          {
-            id: 'margin',
-            header: 'Margin',
-            meta: { align: 'right' },
-            cell: ({ row }) => (
-              <span className="text-fg-muted">
-                {formatPercent(marginRatio(row.original, usdRate))}
-              </span>
-            ),
-          },
-        ] as TableColumn<VariationRow>[])
-      : []),
+    // Вес карго
     {
       accessorKey: 'cargoWeightKg',
-      header: 'Weight',
+      header: 'Cargo weight',
       meta: { align: 'right' },
       cell: ({ row }) =>
         row.original.cargoWeightKg ? `${formatNumber(row.original.cargoWeightKg)} kg` : <Empty />,
     },
+    // Размер карго
     {
       accessorKey: 'cargoSize',
-      header: 'Size',
-      cell: ({ row }) => row.original.cargoSize ?? <Empty />,
+      header: 'Cargo size',
+      cell: ({ row }) => text(row.original.cargoSize),
     },
+    // Категория конечное
     {
-      accessorKey: 'isShippable',
-      header: 'Shippable',
-      cell: ({ row }) => <FlagToggle row={row.original} flag="isShippable" label="Shippable" />,
+      accessorKey: 'categoryName',
+      header: 'End category',
+      cell: ({ row }) => row.original.categoryName,
     },
+    // Бренд товара
     {
-      accessorKey: 'showOnline',
-      header: 'Online',
-      cell: ({ row }) => <FlagToggle row={row.original} flag="showOnline" label="Show online" />,
+      accessorKey: 'manufacturer',
+      header: 'Product brand',
+      cell: ({ row }) => text(row.original.manufacturer),
     },
+    // Артикул моб
+    {
+      accessorKey: 'mobileSku',
+      header: 'Mobile SKU',
+      cell: ({ row }) =>
+        row.original.mobileSku ? (
+          <span className="text-2xs font-mono">{row.original.mobileSku}</span>
+        ) : (
+          <Empty />
+        ),
+    },
+    // Название продукта моб
+    {
+      accessorKey: 'mobileName',
+      header: 'Mobile product name',
+      cell: ({ row }) => text(row.original.mobileName),
+    },
+    // Часть
+    {
+      accessorKey: 'partSide',
+      header: 'Part',
+      cell: ({ row }) =>
+        PART_SIDES.find((s) => s.value === row.original.partSide)?.label ?? <Empty />,
+    },
+    // OEM
+    {
+      accessorKey: 'oem',
+      header: 'OEM',
+      cell: ({ row }) =>
+        row.original.oem ? (
+          <span className="text-2xs font-mono">{row.original.oem}</span>
+        ) : (
+          <Empty />
+        ),
+    },
+    // Тип
+    {
+      accessorKey: 'partType',
+      header: 'Type',
+      cell: ({ row }) => text(row.original.partType),
+    },
+    // Пол
+    {
+      accessorKey: 'gender',
+      header: 'Gender',
+      cell: ({ row }) => text(row.original.gender),
+    },
+    // Сезон
+    {
+      accessorKey: 'season',
+      header: 'Season',
+      cell: ({ row }) => text(row.original.season),
+    },
+    // Модель
+    {
+      id: 'vehicleModels',
+      header: 'Model',
+      cell: ({ row }) =>
+        row.original.vehicleModels.length ? row.original.vehicleModels.join(', ') : <Empty />,
+    },
+    // Адрес товара
+    {
+      accessorKey: 'shelfAddress',
+      header: 'Product address',
+      cell: ({ row }) => text(row.original.shelfAddress),
+    },
+    // Аналог
+    {
+      accessorKey: 'analogueCodes',
+      header: 'Analogue',
+      cell: ({ row }) => text(row.original.analogueCodes),
+    },
+    // Вместе покупает
+    {
+      accessorKey: 'boughtTogetherNote',
+      header: 'Buys together',
+      cell: ({ row }) => text(row.original.boughtTogetherNote),
+    },
+    // Ours, not OX's
+    ...costOnly([
+      {
+        id: 'margin',
+        header: 'Margin',
+        meta: { align: 'right' },
+        cell: ({ row }) => (
+          <span className="text-fg-muted">{formatPercent(marginRatio(row.original, usdRate))}</span>
+        ),
+      },
+    ]),
     {
       accessorKey: 'status',
       header: 'Status',
@@ -301,41 +434,71 @@ export function buildProductColumns({
   ]
 }
 
-/** Dense by design: the least-used columns are off until someone asks. */
+/** Hidden on first open; the list starts with what it always showed, now in OX's order. */
 export const PRODUCT_COLUMNS_HIDDEN_BY_DEFAULT = [
   'id',
-  'manufacturer',
-  'discount',
-  'location',
-  'description',
-  'vehicleModels',
-  'partSide',
-  'tags',
-  'shelfAddress',
   'moq',
-  'costValue',
-  'discountPrice',
+  'description',
+  'tags',
+  'boughtTogetherIds',
+  'modifiers',
+  'analogueIds',
+  ...PRODUCT_FLAGS.map((flag) => flag.key),
+  'videoUrl',
+  'zone',
+  'location',
   'saleValue',
+  'discountPrice',
+  'discount',
+  'costValue',
+  'landedCost',
   'cargoWeightKg',
   'cargoSize',
-  'isShippable',
-  'showOnline',
+  'categoryName',
+  'manufacturer',
+  'mobileSku',
+  'mobileName',
+  'partSide',
+  'oem',
+  'partType',
+  'gender',
+  'season',
+  'vehicleModels',
+  'shelfAddress',
+  'analogueCodes',
+  'boughtTogetherNote',
 ]
 
+function Chips({ values }: { values: string[] }) {
+  if (!values.length) return <Empty />
+  return (
+    <div className="flex gap-1">
+      {values.map((value) => (
+        <Badge key={value}>{value}</Badge>
+      ))}
+    </div>
+  )
+}
+
+/** Linked parts by name; the first is shown, the rest counted, all of them on hover. */
+function LinkedProducts({ ids }: { ids: string[] }) {
+  const products = useDataStore((s) => s.products)
+  if (!ids.length) return <Empty />
+  const names = ids.map((id) => products.find((p) => p.id === id)?.name ?? id)
+  return (
+    <span title={names.join('\n')}>
+      {names[0]}
+      {names.length > 1 ? <span className="text-fg-muted"> +{names.length - 1}</span> : null}
+    </span>
+  )
+}
+
 /**
- * Shippable and Online are edited in place, as in the reference product. Both
+ * The yes/no columns are edited in place, as in the reference product. They
  * live on the *product*, so flipping one moves every variation of that part —
  * which is why the store updates them together rather than per row.
  */
-function FlagToggle({
-  row,
-  flag,
-  label,
-}: {
-  row: VariationRow
-  flag: 'isShippable' | 'showOnline'
-  label: string
-}) {
+function FlagToggle({ row, flag, label }: { row: VariationRow; flag: ProductFlag; label: string }) {
   const setFlag = useDataStore((s) => s.setProductFlag)
   return (
     <Switch

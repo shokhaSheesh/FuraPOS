@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  NEW_PRODUCT_ATTRIBUTES,
   combinationName,
   optionCombinations,
   productFormSchema,
@@ -21,6 +22,8 @@ const variation = (over: Partial<ProductFormValues['variations'][number]> = {}) 
   lowStockThreshold: null,
   shelfAddress: null,
   moq: null,
+  zone: null,
+  landedCost: null,
   status: 'active' as const,
   stockByLocation: [{ locationId: 'loc-1', quantity: 3 }],
   ...over,
@@ -40,6 +43,7 @@ const values = (over: Partial<ProductFormValues> = {}): ProductFormValues => ({
   cargoSize: null,
   isShippable: true,
   showOnline: false,
+  ...NEW_PRODUCT_ATTRIBUTES,
   status: 'active',
   variationMode: 'single',
   options: [],

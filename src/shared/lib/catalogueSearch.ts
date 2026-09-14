@@ -43,7 +43,8 @@ export function searchVariations(variations: VariationRow[], term: string): Vari
           v.fullName,
           v.sku,
           v.barcode,
-          v.description,
+          v.oem,
+          v.mobileSku,
           v.brandName,
           v.vehicleMake,
           ...v.vehicleModels,
@@ -63,5 +64,5 @@ export const variationDetails = (v: VariationRow) =>
     v.vehicleModels.length ? v.vehicleModels.join(', ') : null,
     v.categoryName,
     v.brandName,
-    v.description ? `OEM ${v.description}` : null,
+    v.oem ? `OEM ${v.oem}` : null,
   ].filter(Boolean) as string[]

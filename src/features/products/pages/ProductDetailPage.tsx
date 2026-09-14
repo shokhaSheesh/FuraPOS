@@ -11,8 +11,9 @@ import { paths } from '@/shared/config/paths'
 import { cn } from '@/shared/lib/cn'
 import { formatDate, formatMoney, formatNumber, formatPercent } from '@/shared/lib/format'
 import { USD_RATE } from '@/data/seed'
-import { useProduct } from '../api/products'
+import { useAllProducts, useProduct } from '../api/products'
 import {
+  PRODUCT_FLAGS,
   costInUzs,
   effectivePrice,
   marginRatio,
@@ -65,9 +66,8 @@ export default function ProductDetailPage() {
       <PageHeader
         title={product.name}
         description={
-          [product.categoryPath, product.description && `OEM ${product.description}`]
-            .filter(Boolean)
-            .join(' · ') || undefined
+          [product.categoryPath, product.oem && `OEM ${product.oem}`].filter(Boolean).join(' · ') ||
+          undefined
         }
         action={
           <Button variant="primary" asChild>
@@ -198,18 +198,45 @@ function VariationsTable({ product }: { product: Product }) {
 }
 
 function Details({ product }: { product: Product }) {
+  const { data: all } = useAllProducts()
+  const products = all.items
+  const linked = (ids: string[]) =>
+    ids.map((id) => products.find((p) => p.id === id)?.name ?? id).join(', ')
   const rows: [string, React.ReactNode][] = [
     ['Category', product.categoryPath],
     ['Supplier brand', product.brandName ?? <Empty />],
     ['Manufacturer', product.manufacturer ?? <Empty />],
-    ['OEM number', product.description ?? <Empty />],
+    ['OEM', product.oem ?? <Empty />],
+    ['Description', product.description ?? <Empty />],
+    ['Type', product.partType ?? <Empty />],
+    ['Gender', product.gender ?? <Empty />],
+    ['Season', product.season ?? <Empty />],
     ['Unit', product.unit],
     ['Vehicle make', product.vehicleMake ?? <Empty />],
     ['Vehicle models', product.vehicleModels.join(', ') || <Empty />],
     ['Cargo weight', product.cargoWeightKg ? `${product.cargoWeightKg} kg` : <Empty />],
     ['Cargo size', product.cargoSize ?? <Empty />],
     ['Shippable', product.isShippable ? 'Yes' : 'No'],
-    ['Show online', product.showOnline ? 'Yes' : 'No'],
+    ...PRODUCT_FLAGS.filter((flag) => flag.key !== 'isShippable').map(
+      (flag): [string, React.ReactNode] => [flag.label, product[flag.key] ? 'Yes' : 'No'],
+    ),
+    [
+      'Video',
+      product.videoUrl ? (
+        <a href={product.videoUrl} target="_blank" rel="noreferrer" className="text-primary">
+          Watch
+        </a>
+      ) : (
+        <Empty />
+      ),
+    ],
+    ['Modifiers', product.modifiers.join(', ') || <Empty />],
+    ['Analogues', linked(product.analogueIds) || <Empty />],
+    ['Analogue', product.analogueCodes ?? <Empty />],
+    ['Frequently bought together', linked(product.boughtTogetherIds) || <Empty />],
+    ['Buys together', product.boughtTogetherNote ?? <Empty />],
+    ['Mobile SKU', product.mobileSku ?? <Empty />],
+    ['Mobile product name', product.mobileName ?? <Empty />],
     ['Created', formatDate(product.createdAt)],
     ['Updated', formatDate(product.updatedAt)],
   ]

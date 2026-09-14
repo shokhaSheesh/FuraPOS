@@ -283,6 +283,30 @@ export function ProductVariationsTable({
                               />
                             )}
                           </Field>
+                          <Field label="Zone" hint="Warehouse zone">
+                            {(p) => (
+                              <Input
+                                {...p}
+                                placeholder="Zone A"
+                                {...form.register(`variations.${index}.zone`)}
+                              />
+                            )}
+                          </Field>
+                          <Field
+                            label="Landed cost"
+                            hint="Per unit in UZS, with freight and duty"
+                            error={rowError?.landedCost?.message}
+                          >
+                            {(p) => (
+                              <Controller
+                                control={form.control}
+                                name={`variations.${index}.landedCost`}
+                                render={({ field }) => (
+                                  <NumberField {...p} {...fieldProps(field)} />
+                                )}
+                              />
+                            )}
+                          </Field>
                           {sideFromOption ? null : (
                             <Field label="Side" hint="Which side of the vehicle it fits">
                               {(p) => (

@@ -26,6 +26,13 @@ import type { PrintTemplate } from '@/features/printTemplates/model/template'
 import type { CashRegister, CashShift } from '@/features/cashShifts/model/shift'
 import type { Driver } from '@/features/drivers/model/driver'
 import type {
+  DeliveryMethod,
+  OnlineSale,
+  OnlineSaleStatus,
+  PaymentProvider,
+  PaymentTransaction,
+} from '@/features/onlineSales/model/onlineSale'
+import type {
   Brand,
   CategorySettings,
   CompanySettings,
@@ -473,6 +480,7 @@ const roleSpecs: { id: string; name: string; keys: string[] }[] = [
     keys: [
       ...expand('dashboard', ['view']),
       ...expand('sales.orders', ['view', 'create', 'edit', 'delete', 'export']),
+      ...expand('sales.online', ['view', 'export']),
       ...expand('products.list', ['view', 'create', 'edit', 'export']),
       ...expand('products.transfers', ['view', 'create', 'edit']),
       ...expand('products.corrections', ['view', 'create']),
@@ -519,6 +527,7 @@ const roleSpecs: { id: string; name: string; keys: string[] }[] = [
     keys: [
       ...expand('dashboard', ['view']),
       ...expand('sales.orders', ['view', 'export']),
+      ...expand('sales.online', ['view']),
       ...expand('products.cost', ['view']),
       ...expand('products.suppliers', ['view']),
       ...expand('personnel.salary', ['view']),
@@ -1915,6 +1924,165 @@ export const drivers: Driver[] = (
     updatedAt: new Date(Date.now() - between(1, 30) * 86_400_000).toISOString(),
   }
 })
+
+/**
+ * Orders from the e-commerce app. Read-only in this back office — they arrive
+ * already placed, paid and moving through the app's own statuses.
+ *
+ * Drawn from their own random stream, so adding them shifts nothing else in
+ * the seed. Customers are partly our drivers (most app users are) and partly
+ * people we have no other record of.
+ */
+export const onlineSales: OnlineSale[] = (() => {
+  const rng = makeRandom(7)
+  const oPick = <T>(values: readonly T[]): T => values[Math.floor(rng() * values.length)]!
+  const oBetween = (min: number, max: number) => Math.floor(rng() * (max - min + 1)) + min
+  const strangers = [
+    ['Мансурбек', '+998 90 525 50 02'],
+    ['Dilshod Rahimov', '+998 93 404 11 22'],
+    ['Jasur Ergashev', '+998 97 212 33 44'],
+    ['Otabek Qodirov', '+998 99 818 70 70'],
+  ] as const
+  const pickupPoints = [
+    'Buxoro Vokzal',
+    'Toshkent — Chorsu',
+    'Samarqand Darvoza',
+    'Namangan Markaz',
+  ]
+  const statuses: OnlineSaleStatus[] = [
+    'new',
+    'preparing',
+    'preparing',
+    'ready',
+    'delivering',
+    'delivering',
+    'delivered',
+    'delivered',
+    'delivered',
+    'delivered',
+    'cancelled',
+  ]
+  const providers: PaymentProvider[] = ['payme', 'payme', 'click', 'uzum', 'cash']
+
+  return Array.from({ length: 60 }, (_, index): OnlineSale => {
+    const createdAt = new Date(
+      Date.now() - oBetween(0, 45) * 86_400_000 - oBetween(0, 20) * 3_600_000,
+    )
+    const drawn = oPick(statuses)
+    const provider = oPick(providers)
+    const driver = rng() > 0.35 ? oPick(drivers) : null
+    const stranger = oPick(strangers)
+    const method: DeliveryMethod = rng() > 0.3 ? 'emu' : rng() > 0.5 ? 'pickup' : 'courier'
+    // Nobody delivers a pickup: it waits at the shop until it is collected.
+    const status: OnlineSaleStatus = method === 'pickup' && drawn === 'delivering' ? 'ready' : drawn
+    // A pickup is collected from one of our shops, never from the warehouse.
+    const location =
+      method === 'pickup'
+        ? oPick([locations[1], locations[2]])
+        : rng() > 0.4
+          ? locations[0]
+          : oPick(locations)
+
+    const lines = Array.from({ length: oBetween(1, 4) }, (_, lineIndex) => {
+      const variation = oPick(variations)
+      return {
+        id: `osl-${index + 1}-${lineIndex + 1}`,
+        variationId: variation.id,
+        productId: variation.productId,
+        sku: variation.sku,
+        name: variation.fullName,
+        imageUrl: variation.imageUrl,
+        quantity: oBetween(1, 4),
+        unitPrice: variation.discountPrice ?? variation.salePrice,
+      }
+    })
+    const products = lines.reduce((sum, l) => sum + l.quantity * l.unitPrice, 0)
+    const deliveryFee = method === 'pickup' ? 0 : oPick([25_000, 33_000, 45_000])
+    const discount = rng() > 0.8 ? Math.round(products * 0.05) : 0
+    const total = products + deliveryFee - discount
+    const cashbackUsed = rng() > 0.75 ? Math.min(total, oPick([20_000, 50_000, 150_000])) : 0
+    const toPay = Math.max(0, total - cashbackUsed)
+
+    // Cash on delivery is only collected once it has been delivered.
+    const paid = provider === 'cash' ? status === 'delivered' : status !== 'new' || rng() > 0.5
+    const refunded = status === 'cancelled' && paid && provider !== 'cash'
+    const estimated = new Date(createdAt.getTime() + oBetween(1, 5) * 86_400_000).toISOString()
+    // Online payments clear straight away; cash is collected on the doorstep.
+    const paidAt =
+      provider === 'cash' ? estimated : new Date(createdAt.getTime() + 60_000).toISOString()
+    const transactions: PaymentTransaction[] =
+      paid && toPay > 0
+        ? [
+            {
+              id: `opt-${index + 1}-1`,
+              provider,
+              reference: `${provider.toUpperCase()}-${String(1_000_000_000 + index * 7919).slice(0, 10)}`,
+              status: 'success',
+              amount: toPay,
+              createdAt: paidAt,
+            },
+            ...(refunded
+              ? [
+                  {
+                    id: `opt-${index + 1}-2`,
+                    provider,
+                    reference: `${provider.toUpperCase()}-R${1000 + index}`,
+                    status: 'refunded' as const,
+                    amount: toPay,
+                    createdAt: new Date(createdAt.getTime() + 86_400_000).toISOString(),
+                  },
+                ]
+              : []),
+          ]
+        : []
+
+    return {
+      id: `os-${index + 1}`,
+      number: `ORD-${982_983_600_000 + index * 137}`,
+      status,
+      paymentStatus: refunded ? 'refunded' : paid || toPay === 0 ? 'paid' : 'unpaid',
+      paymentProvider: provider,
+      customerName: driver?.fullName ?? stranger[0],
+      customerPhone: driver?.phone ?? stranger[1],
+      customerAddress:
+        method === 'courier'
+          ? oPick(['Toshkent, Sergeli 5-kvartal, 12', 'Toshkent, Olmazor, Farobiy 44'])
+          : null,
+      customerNote:
+        rng() > 0.8 ? oPick(['Call before delivery', 'Leave at the security post']) : null,
+      driverId: driver?.id ?? null,
+      locationId: location.id,
+      locationName: location.name,
+      employeeName: status === 'new' ? null : oPick(['Mansurbek', 'Dilnoza', 'Sardor']),
+      deliveryMethod: method,
+      express: rng() > 0.85,
+      pickupPoint: method === 'emu' ? oPick(pickupPoints) : null,
+      courierStatus:
+        method === 'emu'
+          ? status === 'delivered'
+            ? 'DELIVERED'
+            : status === 'delivering'
+              ? 'IN_TRANSIT'
+              : status === 'cancelled'
+                ? 'CANCELLED'
+                : 'NEW'
+          : null,
+      courierOrderId:
+        method === 'emu'
+          ? `74b3${(index * 99_991).toString(16).padStart(4, '0')}-3910-4a43-8727-beca5fe1${String(index).padStart(4, '0')}`
+          : null,
+      estimatedDeliveryAt: method === 'pickup' ? null : estimated,
+      deliveredAt: status === 'delivered' ? estimated : null,
+      lines,
+      deliveryFee,
+      discount,
+      cashbackUsed,
+      transactions,
+      createdAt: createdAt.toISOString(),
+      updatedAt: new Date(createdAt.getTime() + oBetween(1, 30) * 3_600_000).toISOString(),
+    }
+  }).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+})()
 
 /**
  * Who collected each sale.

@@ -32,6 +32,8 @@ const documentPath = (entry: StockLogEntry) => {
       return paths.products.correctionDetail(entry.documentId)
     case 'sale':
       return paths.sales.orderDetail(entry.documentId)
+    case 'online_sale':
+      return paths.sales.onlineDetail(entry.documentId)
   }
 }
 

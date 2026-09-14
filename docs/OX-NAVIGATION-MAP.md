@@ -501,6 +501,23 @@ The barcode and QR code are **drawn, not encoded** — there is no encoder in th
 is out of scope. They are to scale and obviously not scannable, which answers the only question the
 preview is being asked: how much room does the code take.
 
+### Online sales — orders from the e-commerce app, view only
+
+No OX equivalent; the client's e-commerce app has its own superadmin where these orders are placed,
+paid and moved through their statuses. The back office only **sees** them, because they take stock
+and they are revenue — so there is no "+ Add", no status control, no cancel and no editing.
+
+Taken from the superadmin's order screen: number, created/updated, status, payment status and
+provider, customer name/phone/address/note, delivery method, express, EMU pickup point, EMU status
+and order id, estimated and actual delivery, products with price and quantity, the money summary
+(products, delivery, discount, cashback used, paid) and payment transactions. **Left out:** the
+status and employee controls, Cancel, Add item, the empty Seller and Scheduled-at fields, and raw
+gateway metadata — all of which exist to run the app, not to read an order. **Added:** which of our
+locations it was picked from, since that is where stock comes off.
+
+Every order except a cancelled one takes its parts off that location from the moment it is placed,
+and shows in **Product logs** as an "Online sale" beside counter sales and transfers.
+
 ### Cash shifts — «Кассовые смены», built at the client's request
 
 Added after a client meeting. OX ships a full POS on a separate domain and its

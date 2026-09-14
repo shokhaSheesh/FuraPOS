@@ -49,6 +49,8 @@ const CategoriesSettingsPage = lazy(
   () => import('@/features/settings/pages/CategoriesSettingsPage'),
 )
 const OrderDocumentPage = lazy(() => import('@/features/orders/pages/OrderDocumentPage'))
+const OnlineSalesListPage = lazy(() => import('@/features/onlineSales/pages/OnlineSalesListPage'))
+const OnlineSaleDetailPage = lazy(() => import('@/features/onlineSales/pages/OnlineSaleDetailPage'))
 const UrgencySettingsPage = lazy(() => import('@/features/settings/pages/UrgencySettingsPage'))
 const BillingSettingsPage = lazy(() => import('@/features/settings/pages/BillingSettingsPage'))
 const PersonalSettingsPage = lazy(() => import('@/features/settings/pages/PersonalSettingsPage'))
@@ -120,6 +122,14 @@ const routes: RouteObject[] = [
       { path: paths.sales.newSale, element: page(<NewSalePage />, 'sales.orders.create') },
       { path: paths.sales.orders, element: page(<AllSalesPage />, 'sales.orders.view') },
       { path: paths.sales.orderDetail(), element: page(<SaleDetailPage />, 'sales.orders.view') },
+      {
+        path: paths.sales.online,
+        element: page(<OnlineSalesListPage />, 'sales.online.view'),
+      },
+      {
+        path: paths.sales.onlineDetail(),
+        element: page(<OnlineSaleDetailPage />, 'sales.online.view'),
+      },
 
       // --- Products / Services -------------------------------------------
       { path: paths.products.root, element: <Navigate to={paths.products.list} replace /> },

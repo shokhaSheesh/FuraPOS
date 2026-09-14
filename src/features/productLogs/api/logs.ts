@@ -4,6 +4,7 @@ import { matches, paginate } from '@/data/query'
 import { correctionReasonLabel } from '@/features/corrections/model/correction'
 import { byNewest, byOldest, type StockLogEntry, type StockLogKind } from '../model/log'
 
+import { takesStock } from '@/features/onlineSales/model/onlineSale'
 type State = ReturnType<typeof useDataStore.getState>
 
 /**
@@ -133,6 +134,31 @@ export function buildStockLog(state: State): StockLogEntry[] {
     }
   }
 
+  // Orders from the e-commerce app take parts off the shelf they were picked
+  // from, from the moment they are placed; a cancelled one gives them back.
+  for (const order of state.onlineSales) {
+    if (!takesStock(order)) continue
+    for (const line of order.lines) {
+      push({
+        id: `log-online-${order.id}-${line.id}`,
+        at: order.createdAt,
+        kind: 'online_sale',
+        variationId: line.variationId,
+        productId: line.productId,
+        sku: line.sku,
+        name: line.name,
+        imageUrl: line.imageUrl,
+        locationId: order.locationId,
+        locationName: order.locationName,
+        delta: -line.quantity,
+        documentId: order.id,
+        documentNumber: order.number,
+        reason: null,
+        by: order.employeeName ?? 'E-commerce app',
+      })
+    }
+  }
+
   return withBalances(entries, state)
 }
 
@@ -191,9 +217,10 @@ export function useStockLog(filters: LogFilters = {}) {
   const receipts = useDataStore((s) => s.receipts)
   const transfers = useDataStore((s) => s.transfers)
   const corrections = useDataStore((s) => s.corrections)
+  const onlineSales = useDataStore((s) => s.onlineSales)
 
   return useMemo(() => {
-    const state = { variations, sales, receipts, transfers, corrections } as State
+    const state = { variations, sales, receipts, transfers, corrections, onlineSales } as State
     const all = buildStockLog(state)
 
     const from = filters.from ? new Date(String(filters.from)).getTime() : null
@@ -221,6 +248,7 @@ export function useStockLog(filters: LogFilters = {}) {
     receipts,
     transfers,
     corrections,
+    onlineSales,
     filters.search,
     filters.location,
     filters.kind,

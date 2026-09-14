@@ -32,6 +32,7 @@ import type { Client, ClientStatus } from '@/features/clients/model/client'
 import type { Promotion } from '@/features/promotions/model/promotion'
 import type { ReportDefinition } from '@/features/reports/model/report'
 import type { PrintTemplate } from '@/features/printTemplates/model/template'
+import type { OnlineSale } from '@/features/onlineSales/model/onlineSale'
 import type { Driver, DriverDraft } from '@/features/drivers/model/driver'
 import {
   openShiftFor,
@@ -86,6 +87,7 @@ import {
   reports as seedReports,
   printTemplates as seedPrintTemplates,
   drivers as seedDrivers,
+  onlineSales as seedOnlineSales,
   cashRegisters as seedCashRegisters,
   cashShifts as seedCashShifts,
   companySettings as seedCompany,
@@ -128,6 +130,8 @@ interface CatalogState {
   reports: ReportDefinition[]
   printTemplates: PrintTemplate[]
   drivers: Driver[]
+  /** Orders from the e-commerce app — read-only here, but they take stock. */
+  onlineSales: OnlineSale[]
   cashRegisters: CashRegister[]
   cashShifts: CashShift[]
   company: CompanySettings
@@ -685,6 +689,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
   reports: seedReports,
   printTemplates: seedPrintTemplates,
   drivers: seedDrivers,
+  onlineSales: seedOnlineSales,
   cashRegisters: seedCashRegisters,
   cashShifts: seedCashShifts,
   company: seedCompany,

@@ -14,7 +14,7 @@ import type { Id, IsoDate } from '@/shared/types'
  * that can disagree with the first.
  */
 export type StockLogKind =
-  'receipt' | 'transfer_in' | 'transfer_out' | 'correction' | 'stocktake' | 'sale'
+  'receipt' | 'transfer_in' | 'transfer_out' | 'correction' | 'stocktake' | 'sale' | 'online_sale'
 
 export const STOCK_LOG_KINDS: {
   value: StockLogKind
@@ -28,6 +28,7 @@ export const STOCK_LOG_KINDS: {
   { value: 'correction', label: 'Correction', direction: 'both' },
   { value: 'stocktake', label: 'Stocktake', direction: 'both' },
   { value: 'sale', label: 'Sale', direction: 'out' },
+  { value: 'online_sale', label: 'Online sale', direction: 'out' },
 ]
 
 export const logKindLabel = (kind: StockLogKind) =>

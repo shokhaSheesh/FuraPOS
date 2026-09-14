@@ -1,11 +1,11 @@
+import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { useFieldArray, useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, Send, Trash2 } from 'lucide-react'
+import { ArrowLeft, Send, Trash2, Wand2 } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
-import { ProductPicker } from '@/shared/components/ProductPicker'
 import { ProductThumb } from '@/shared/components/ProductThumb'
 import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
 import { Button } from '@/shared/ui/Button'
@@ -17,7 +17,15 @@ import { paths } from '@/shared/config/paths'
 import { formatMoney, formatNumber } from '@/shared/lib/format'
 import { useDataStore } from '@/data/store'
 import { USD_RATE } from '@/data/seed'
+import { unitsSoldAt } from '@/shared/lib/demand'
+import {
+  catalogueFor,
+  summariseCatalogue,
+  type CatalogueEntry,
+} from '@/features/suppliers/model/catalogue'
 import { useCreateOrder } from '../api/orders'
+import { SupplierCatalogue } from '../components/SupplierCatalogue'
+import { GenerateOrderModal } from '../components/GenerateOrderModal'
 import { orderDraftSchema, toUzs, type OrderDraft } from '../model/order'
 
 const CURRENCIES = [
@@ -37,6 +45,10 @@ export default function NewOrderPage() {
   const navigate = useNavigate()
   const suppliers = useDataStore((s) => s.suppliers)
   const locations = useDataStore((s) => s.locations)
+  const supplierProducts = useDataStore((s) => s.supplierProducts)
+  const variations = useDataStore((s) => s.variations)
+  const sales = useDataStore((s) => s.sales)
+  const [generating, setGenerating] = useState(false)
   const create = useCreateOrder()
 
   const form = useForm<OrderDraft>({
@@ -52,6 +64,49 @@ export default function NewOrderPage() {
 
   const { fields, append, remove } = useFieldArray({ control: form.control, name: 'lines' })
   const lines = form.watch('lines')
+  const supplierId = form.watch('supplierId')
+  const supplier = suppliers.find((s) => s.id === supplierId)
+
+  /* Their catalogue, with our stock beside each line. Everything on this
+     screen starts from it once a supplier is chosen. */
+  const entries = useMemo(
+    () => (supplierId ? catalogueFor(supplierProducts, variations, supplierId) : []),
+    [supplierProducts, variations, supplierId],
+  )
+  const summary = summariseCatalogue(entries)
+  const addedIds = entries
+    .filter((entry) => entry.variation && lines.some((l) => l.variationId === entry.variation!.id))
+    .map((entry) => entry.product.id)
+
+  /** Put a catalogue line on the order, or top up the one already there. */
+  const addEntry = (entry: CatalogueEntry, quantity?: number) => {
+    const variation = entry.variation
+    if (!variation) return
+    const current = form.getValues('lines')
+    const existing = current.findIndex((line) => line.variationId === variation.id)
+    if (existing > -1) {
+      form.setValue(
+        `lines.${existing}.orderedQuantity`,
+        quantity ?? (current[existing]?.orderedQuantity ?? 0) + 1,
+        { shouldDirty: true },
+      )
+      return
+    }
+    append({
+      id: `line-${variation.id}`,
+      variationId: variation.id,
+      productId: variation.productId,
+      sku: variation.sku,
+      name: variation.fullName,
+      imageUrl: variation.imageUrl,
+      unit: variation.unit,
+      orderedQuantity: quantity ?? entry.product.moq ?? 1,
+      receivedQuantity: 0,
+      // Their catalogue price is where the agreement starts, not our last cost.
+      unitCost: entry.product.price,
+      costCurrency: entry.product.currency,
+    })
+  }
 
   const total = lines.reduce(
     (sum, line) => sum + line.orderedQuantity * toUzs(line.unitCost, line.costCurrency, USD_RATE),
@@ -120,7 +175,15 @@ export default function NewOrderPage() {
                       {...p}
                       className="w-full"
                       value={field.value || undefined}
-                      onChange={field.onChange}
+                      onChange={(next) => {
+                        // Lines priced from one supplier's catalogue mean nothing
+                        // on an order to another, so switching starts again.
+                        if (next !== field.value && form.getValues('lines').length) {
+                          form.setValue('lines', [])
+                          toast.info('Items cleared — they came from the other supplier')
+                        }
+                        field.onChange(next)
+                      }}
                       placeholder="Pick a supplier"
                       options={suppliers.map((s) => ({ value: s.id, label: s.name }))}
                     />
@@ -173,54 +236,52 @@ export default function NewOrderPage() {
           <CardHeader className="flex-col items-stretch gap-1">
             <div className="flex items-center justify-between gap-3">
               <CardTitle>Items</CardTitle>
-              {lines.length ? (
-                <span className="text-fg-muted text-sm tabular-nums">
-                  {formatNumber(units)} units · {formatMoney(Math.round(total))}
-                </span>
-              ) : null}
+              <div className="flex items-center gap-3">
+                {lines.length ? (
+                  <span className="text-fg-muted text-sm tabular-nums">
+                    {formatNumber(units)} units · {formatMoney(Math.round(total))}
+                  </span>
+                ) : null}
+                {supplier ? (
+                  <Button type="button" variant="secondary" onClick={() => setGenerating(true)}>
+                    <Wand2 />
+                    Suggest what to order
+                  </Button>
+                ) : null}
+              </div>
             </div>
             <p className="text-fg-subtle text-2xs">
-              The price defaults to what it last cost. Change it to what was agreed — that is the
-              number the delivery will be checked against.
+              {supplier
+                ? `${supplier.name}'s catalogue — ${formatNumber(summary.products)} products across ${formatNumber(summary.categories.length)} categories and ${formatNumber(summary.brands.length)} brands. The price starts at what they ask; change it to what was agreed.`
+                : 'Pick a supplier and their catalogue appears here.'}
             </p>
           </CardHeader>
           <CardBody className="space-y-3">
-            <ProductPicker
-              placeholder="Search a product to add to this order…"
-              onPick={(variation) => {
-                const existing = lines.findIndex((line) => line.variationId === variation.id)
-                if (existing > -1) {
-                  form.setValue(
-                    `lines.${existing}.orderedQuantity`,
-                    (lines[existing]?.orderedQuantity ?? 0) + 1,
-                    { shouldDirty: true },
-                  )
-                  return
+            {supplier ? (
+              <SupplierCatalogue
+                entries={entries}
+                addedIds={addedIds}
+                onPick={(entry) => addEntry(entry)}
+                soldFor={(entry) =>
+                  entry.variation ? unitsSoldAt(sales, entry.variation.id, null, 3) : 0
                 }
-                append({
-                  id: `line-${Date.now()}`,
-                  variationId: variation.id,
-                  productId: variation.productId,
-                  sku: variation.sku,
-                  name: variation.fullName,
-                  imageUrl: variation.imageUrl,
-                  unit: variation.unit,
-                  orderedQuantity: variation.moq ?? 1,
-                  receivedQuantity: 0,
-                  unitCost: variation.costPrice,
-                  costCurrency: variation.costCurrency,
-                })
-              }}
-            />
+              />
+            ) : (
+              <div className="border-border rounded-card text-fg-muted border border-dashed p-6 text-center text-sm">
+                Choose a supplier above to see what they sell.
+              </div>
+            )}
 
             {form.formState.errors.lines?.root ? (
               <p className="text-danger text-2xs">{form.formState.errors.lines.root.message}</p>
             ) : null}
 
             {fields.length === 0 ? (
-              <p className="text-fg-subtle text-sm">
-                Nothing added yet. Search above to put a product on this order.
-              </p>
+              supplier ? (
+                <p className="text-fg-subtle text-sm">
+                  Nothing added yet. Pick from their catalogue, or let the system suggest.
+                </p>
+              ) : null
             ) : (
               <div className="border-border rounded-card overflow-x-auto border">
                 <table className="w-full text-sm">
@@ -339,6 +400,22 @@ export default function NewOrderPage() {
           </CardBody>
         </Card>
       </div>
+
+      {supplier ? (
+        <GenerateOrderModal
+          open={generating}
+          onOpenChange={setGenerating}
+          entries={entries}
+          supplierName={supplier.name}
+          onAdd={(suggestions) => {
+            for (const suggestion of suggestions) {
+              const entry = entries.find((e) => e.product.id === suggestion.supplierProductId)
+              if (entry) addEntry(entry, suggestion.suggested)
+            }
+            toast.success(`${suggestions.length} products added from the suggestion`)
+          }}
+        />
+      ) : null}
     </form>
   )
 }

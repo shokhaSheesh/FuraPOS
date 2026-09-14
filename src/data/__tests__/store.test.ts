@@ -210,12 +210,19 @@ describe('location scope', () => {
 })
 
 describe('booking a delivery against an order', () => {
-  /** An order still waiting on stock, so there is something to short-ship. */
+  /**
+   * An order still waiting on stock *and able to take a delivery*. Matching on
+   * outstanding lines alone picked whichever order the seed happened to put
+   * first — which broke as soon as the seed's random sequence shifted and that
+   * turned out to be a draft, which cannot be received against at all.
+   */
   const openOrder = () =>
     useDataStore
       .getState()
-      .orders.find((order) =>
-        order.lines.some((line) => line.orderedQuantity - line.receivedQuantity > 0),
+      .orders.find(
+        (order) =>
+          ['sent', 'confirmed', 'partial'].includes(order.status) &&
+          order.lines.some((line) => line.orderedQuantity - line.receivedQuantity > 1),
       )
 
   it('keeps the invoiced and the counted figures apart when a delivery is short', () => {

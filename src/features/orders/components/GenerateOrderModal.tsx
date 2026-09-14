@@ -104,8 +104,8 @@ export function GenerateOrderModal({
             <Wand2 className="text-fg-subtle mx-auto mb-2 size-5" />
             <p className="text-fg font-medium">Nothing needs ordering</p>
             <p className="text-2xs mt-1">
-              Everything {supplierName} carries is either stocked deep enough for another{' '}
-              {months} months, or has not sold in that time.
+              Everything {supplierName} carries is either stocked deep enough for another {months}{' '}
+              months, or has not sold in that time.
             </p>
           </div>
         ) : (
@@ -162,12 +162,16 @@ export function GenerateOrderModal({
                           // Says why it is more than the gap, rather than
                           // quietly ordering more than was asked for.
                           <p className="text-fg-subtle text-2xs font-normal whitespace-nowrap">
-                            {formatNumber(suggestion.shortfall)} short, {formatNumber(suggestion.suggested)} minimum
+                            {formatNumber(suggestion.shortfall)} short,{' '}
+                            {formatNumber(suggestion.suggested)} minimum
                           </p>
                         ) : null}
                       </td>
                       <td className="text-fg-muted px-3 py-2 text-right tabular-nums">
-                        {formatMoneyIn(suggestion.suggested * suggestion.price, suggestion.currency)}
+                        {formatMoneyIn(
+                          suggestion.suggested * suggestion.price,
+                          suggestion.currency,
+                        )}
                       </td>
                     </tr>
                   )

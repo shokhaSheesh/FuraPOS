@@ -35,7 +35,12 @@ const entry = (over: {
 
 type TestSale = Pick<Sale, 'status' | 'locationId' | 'createdAt' | 'lines'>
 
-const sale = (variationId: string, quantity: number, days = 10, locationId = 'loc-1'): TestSale => ({
+const sale = (
+  variationId: string,
+  quantity: number,
+  days = 10,
+  locationId = 'loc-1',
+): TestSale => ({
   status: 'completed',
   locationId,
   createdAt: daysAgo(days),
@@ -61,11 +66,12 @@ const run = (entries: CatalogueEntry[], sales: TestSale[], months = 3) =>
   suggestOrder({ entries, sales, months, now: NOW })
 
 describe('suggestOrder', () => {
-  it("orders the difference between what sold and what is left", () => {
+  it('orders the difference between what sold and what is left', () => {
     // The client's case: sold 20 over three months, 2 left, so 18 short.
-    const [suggestion] = run([entry({ id: 'a', variationId: 'var-a', stock: 2 })], [
-      sale('var-a', 20),
-    ])
+    const [suggestion] = run(
+      [entry({ id: 'a', variationId: 'var-a', stock: 2 })],
+      [sale('var-a', 20)],
+    )
     expect(suggestion?.sold).toBe(20)
     expect(suggestion?.stock).toBe(2)
     expect(suggestion?.suggested).toBe(18)
@@ -88,9 +94,10 @@ describe('suggestOrder', () => {
   })
 
   it('raises the quantity to the supplier minimum when they will not break a carton', () => {
-    const [suggestion] = run([entry({ id: 'a', variationId: 'var-a', stock: 2, moq: 50 })], [
-      sale('var-a', 20),
-    ])
+    const [suggestion] = run(
+      [entry({ id: 'a', variationId: 'var-a', stock: 2, moq: 50 })],
+      [sale('var-a', 20)],
+    )
     expect(suggestion?.shortfall).toBe(18)
     expect(suggestion?.suggested).toBe(50)
   })
@@ -103,9 +110,9 @@ describe('suggestOrder', () => {
   })
 
   it('ignores sales outside the window', () => {
-    expect(run([entry({ id: 'a', variationId: 'var-a', stock: 2 })], [sale('var-a', 20, 200)])).toEqual(
-      [],
-    )
+    expect(
+      run([entry({ id: 'a', variationId: 'var-a', stock: 2 })], [sale('var-a', 20, 200)]),
+    ).toEqual([])
   })
 
   it('reads six months when asked for six', () => {

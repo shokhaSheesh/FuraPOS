@@ -51,7 +51,8 @@ export function SupplierCatalogue({
   }, [term])
 
   const categories = useMemo(
-    () => [...new Set(entries.map((e) => e.product.categoryName).filter(Boolean))].sort() as string[],
+    () =>
+      [...new Set(entries.map((e) => e.product.categoryName).filter(Boolean))].sort() as string[],
     [entries],
   )
   const brands = useMemo(
@@ -64,7 +65,10 @@ export function SupplierCatalogue({
       entries.filter((entry) => {
         if (category !== ANY && entry.product.categoryName !== category) return false
         if (brand !== ANY && entry.product.brandName !== brand) return false
-        return matches([entry.product.name, entry.product.supplierSku, entry.product.brandName], debounced)
+        return matches(
+          [entry.product.name, entry.product.supplierSku, entry.product.brandName],
+          debounced,
+        )
       }),
     [entries, category, brand, debounced],
   )
@@ -147,8 +151,11 @@ export function SupplierCatalogue({
                 <li key={entry.product.id}>
                   <button
                     type="button"
+                    // A line with nothing of ours behind it has nowhere to land
+                    // when it is received, so it cannot go on an order yet.
+                    disabled={!entry.variation}
                     onClick={() => onPick(entry)}
-                    className="hover:bg-surface-muted flex w-full items-center gap-3 px-3 py-2 text-left text-sm"
+                    className="hover:bg-surface-muted flex w-full items-center gap-3 px-3 py-2 text-left text-sm disabled:cursor-not-allowed disabled:hover:bg-transparent"
                   >
                     <span className="text-fg-subtle text-2xs w-24 shrink-0 font-mono">
                       {entry.product.supplierSku}
@@ -192,7 +199,9 @@ export function SupplierCatalogue({
                         already ? 'text-success' : 'text-fg-subtle',
                       )}
                     >
-                      {already ? (
+                      {!entry.variation ? (
+                        'Not stocked'
+                      ) : already ? (
                         <>
                           <Check className="size-3.5" />
                           Added
@@ -214,7 +223,8 @@ export function SupplierCatalogue({
 
       {results.length > 0 ? (
         <p className="text-fg-subtle text-2xs">
-          Showing {formatNumber(Math.min(visible, results.length))} of {formatNumber(results.length)}
+          Showing {formatNumber(Math.min(visible, results.length))} of{' '}
+          {formatNumber(results.length)}
           {results.length > visible ? ' — scroll for more' : ''}
         </p>
       ) : null}

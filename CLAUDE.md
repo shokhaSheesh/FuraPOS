@@ -145,12 +145,13 @@ Conventions that are load-bearing — follow them rather than inventing per-scre
   `{ data, isLoading }` and `{ mutate, isPending }` shapes so screens read the same either way.
   All money/date/number rendering goes through `src/shared/lib/format.ts`.
 - **Charts do not use the brand palette.** Series colours come from the validated categorical
-  palette in `src/shared/lib/chart.ts` — brand yellow fails contrast as a mark (1.48:1 on white).
+  palette in `src/shared/lib/chart.ts` — the UI blue is for actions, not data series.
   Never re-order it, and never eyeball a change: run the dataviz palette validator.
 - **Colors, radii and shadows live only in `src/styles/tokens.css`.** No hex values and no raw
   Tailwind palette classes (`slate-700`) in components — use the semantic tokens (`bg-surface`,
-  `text-fg-muted`, `border-border`). Brand yellow `#FFCB00` always carries near-black text, and never
-  means "warning". Chrome and text are true neutrals; navy is the `info` tone only.
+  `text-fg-muted`, `border-border`). The palette is light blue and white (client request): sky blue `#0A7BC4` with white
+  text for primary actions, light blue `#E6F3FC` for soft fills, a white sidebar. Nothing blue means
+  "warning" — warning is orange.
 - **`src/data/seed.ts` is the dataset.** Changing a screen's data shape means changing the seed and
   its test.
 

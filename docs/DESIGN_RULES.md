@@ -14,6 +14,21 @@ Implementation lives in `src/styles/tokens.css` (colors) and `src/shared/ui` + `
 
 ## 1. Color
 
+> **Palette changed — light blue and white, at the client's request.** The yellow-on-black treatment
+> described in §1.1–1.2 below is superseded. What applies now:
+>
+> | Token                    | Light                 | Dark                  | Use                                      |
+> | ------------------------ | --------------------- | --------------------- | ---------------------------------------- |
+> | `surface` / `chrome`     | `#FFFFFF`             | `#111A2B` / `#0E1729` | Cards, and the sidebar                   |
+> | `canvas`                 | `#F3F7FB`             | `#0B1220`             | Behind cards                             |
+> | `primary-soft`           | `#E6F3FC`             | `#12304A`             | Light blue fills: active nav, highlights |
+> | `primary` / `primary-fg` | `#0A7BC4` / `#FFFFFF` | `#4FB0EE` / `#0B1220` | The primary action, active state, focus  |
+>
+> The button blue is the lightest sky blue that carries white text at 4.5:1 — paler blues fail
+> contrast — so "light blue" lives in the fills and canvas while button labels stay readable. Warning
+> stays orange and danger red, so nothing blue is a status. The one-primary rule, and the ≤5% rule
+> (now for blue), still hold. `src/styles/tokens.css` is the authority.
+
 ### 1.1 Brand palette (from the brand book, p.8)
 
 | Color  | Hex       | Brand meaning        | Where it is used in the app                                              |

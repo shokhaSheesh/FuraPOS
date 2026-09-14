@@ -49,7 +49,7 @@ export function Sidebar() {
 const rowBase =
   'mt-0.5 flex w-full items-center gap-2.5 rounded-control px-2.5 py-2 text-sm font-medium transition-colors'
 const rowIdle = 'text-chrome-fg-muted hover:bg-chrome-muted hover:text-chrome-fg'
-const rowActive = 'bg-primary/15 text-primary'
+const rowActive = 'bg-primary-soft text-primary'
 
 function SidebarSection({ section, collapsed }: { section: NavSection; collapsed: boolean }) {
   const { pathname } = useLocation()
@@ -113,7 +113,7 @@ function SidebarSection({ section, collapsed }: { section: NavSection; collapsed
                 className={({ isActive }) =>
                   cn(
                     'rounded-control mt-0.5 flex items-center gap-2 px-2.5 py-1.5 text-sm',
-                    isActive ? 'bg-primary/15 text-primary font-medium' : rowIdle,
+                    isActive ? 'bg-primary-soft text-primary font-medium' : rowIdle,
                   )
                 }
               >
@@ -128,7 +128,7 @@ function SidebarSection({ section, collapsed }: { section: NavSection; collapsed
   )
 }
 
-/** `New` / `Beta` only — the sole yellow badges in the product (§ 8.1). */
+/** `New` / `Beta` only — the sole filled-blue badges in the product (§ 8.1). */
 function LifecycleBadge({ children }: { children: string }) {
   return (
     <span className="bg-primary text-2xs text-primary-fg rounded-full px-1.5 py-0.5 leading-none font-medium capitalize">

@@ -9,7 +9,7 @@ import { cn } from '@/shared/lib/cn'
 export function Logo({ collapsed, className }: { collapsed?: boolean; className?: string }) {
   return (
     <span className={cn('flex items-center gap-2.5', className)}>
-      <span className="rounded-control flex size-8 shrink-0 items-center justify-center bg-white">
+      <span className="rounded-control border-chrome-border flex size-8 shrink-0 items-center justify-center border bg-white">
         <img src="/brand/logo-256.png" alt="" width={28} height={28} className="size-7" />
       </span>
       {!collapsed ? (

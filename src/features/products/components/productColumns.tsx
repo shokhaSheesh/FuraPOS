@@ -143,7 +143,7 @@ export function buildProductColumns({
       cell: ({ row }) => {
         const { stock, lowStockThreshold, unit } = row.original
         // Low stock is "needs attention" (warning), out of stock is a problem
-        // (danger). Neither is yellow — yellow is the brand.
+        // (danger). Neither is blue — blue is the brand.
         const low = lowStockThreshold !== null && stock <= lowStockThreshold
         const out = stock === 0
         return (

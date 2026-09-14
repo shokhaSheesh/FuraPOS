@@ -12,7 +12,7 @@ export interface TabItem {
 
 /**
  * Section tabs on a detail page. An underline rather than a filled pill, so
- * tabs never compete with the one yellow primary action above them
+ * tabs never compete with the one blue primary action above them
  * (docs/DESIGN_RULES.md § 6).
  */
 export function Tabs({

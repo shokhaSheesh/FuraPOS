@@ -7,28 +7,30 @@
  * semantic names below (bg-surface, text-fg-muted, border-border) and never a
  * hex value or a stock Tailwind palette class like `slate-700`.
  *
- * Brand palette (Fura Sentr brand guidelines, p.8):
- *   #FFCB00  yellow  — the accent. Primary actions, active state, focus (dark)
- *   #000000  black   — the chrome, verbatim. Sidebar and dark-mode canvas
- *   #D8D9D9  grey    — borders, dividers, rules
- *   #0F0F35  navy    — reserved: the `info` tone only. Never chrome, never text.
+ * Palette — light blue and white, at the client's request (it replaced the
+ * original yellow-on-black brand treatment):
+ *   #FFFFFF  white      — surfaces and the sidebar
+ *   #F3F7FB  pale blue  — the canvas behind cards
+ *   #E6F3FC  light blue — soft fills: active nav, selected rows, highlights
+ *   #0A7BC4  sky blue   — primary actions, active state, focus
  *
- * The identity is the logo: yellow on black. Everything else is neutral grey.
- * No colour cast anywhere — the neutrals are true neutrals, so nothing reads
- * blue, purple or warm next to the yellow.
+ * Why the button blue is not paler: white text on a truly light blue fails
+ * contrast (#38BDF8 is 2.1:1, #1E9BE8 is 3.0:1). #0A7BC4 is the lightest sky
+ * blue that carries white text at 4.5:1, so the "light" lives in the fills and
+ * the canvas, and the one thing people must read — the button label — stays
+ * readable. In dark mode the relationship flips: a light blue button with dark
+ * text.
  *
- * Two rules that follow from the palette and are not negotiable:
- *   1. Yellow always carries near-black text, never white (1.7:1 vs 13:1).
- *   2. Yellow is the brand, so it can never also mean "warning". Warning is
- *      orange. Nothing yellow in the UI is a status.
+ * Neutrals carry a faint cool tint so greys sit with the blue rather than
+ * reading warm beside it. Warning stays orange and danger red; nothing blue is
+ * a warning.
  *
  * See docs/DESIGN_RULES.md for how these are applied.
  * ============================================================================
  */
 
 @theme {
-  --font-sans:
-    'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-display: 'Designer', 'Inter', sans-serif;
   --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace;
 
@@ -44,81 +46,82 @@
 :root {
   color-scheme: light;
 
-  --color-canvas: #f3f3f4;
+  --color-canvas: #f3f7fb;
   --color-surface: #ffffff;
-  --color-surface-muted: #f6f6f7;
-  --color-surface-inset: #ededee;
+  --color-surface-muted: #f6f9fc;
+  --color-surface-inset: #edf3f9;
 
-  --color-border: #d8d9d9; /* brand grey, verbatim */
-  --color-border-strong: #bdbec1;
+  --color-border: #dce5ee;
+  --color-border-strong: #c3cfdb;
 
-  --color-fg: #141414; /* near-black, not #000 — pure black vibrates on white */
-  --color-fg-muted: #626366;
-  --color-fg-subtle: #8f9094;
+  --color-fg: #111827;
+  --color-fg-muted: #5b6778;
+  --color-fg-subtle: #8a96a6;
   --color-fg-inverted: #ffffff;
 
-  --color-primary: #ffcb00; /* brand yellow, verbatim */
-  --color-primary-hover: #f2c000;
-  --color-primary-active: #dbae00;
-  --color-primary-fg: #141414;
-  --color-primary-soft: #fff4cc;
-  --color-primary-border: #ebbb00;
+  --color-primary: #0a7bc4; /* sky blue — the lightest that carries white text at 4.5:1 */
+  --color-primary-hover: #096eaf;
+  --color-primary-active: #08619a;
+  --color-primary-fg: #ffffff;
+  --color-primary-soft: #e6f3fc; /* the light blue */
+  --color-primary-border: #9ccdee;
 
-  /* Chrome: the sidebar. Pure black in BOTH themes — it is the brand's black. */
-  --color-chrome: #000000;
-  --color-chrome-muted: #161616;
-  --color-chrome-fg: #e8e8e8;
-  --color-chrome-fg-muted: #8f8f8f;
-  --color-chrome-border: #1f1f1f;
+  /* Chrome: the sidebar. White, with a hairline edge against the canvas. */
+  --color-chrome: #ffffff;
+  --color-chrome-muted: #f1f6fb;
+  --color-chrome-fg: #111827;
+  --color-chrome-fg-muted: #5b6778;
+  --color-chrome-border: #dce5ee;
 
-  /* Status. Deliberately NOT yellow — yellow is the brand. */
   --color-success: #15803d;
   --color-success-soft: #e3f4e9;
-  --color-warning: #c2410c; /* orange, so it cannot be read as brand */
+  --color-warning: #c2410c; /* orange, so nothing blue is ever a warning */
   --color-warning-soft: #fdece3;
   --color-danger: #c81e1e;
   --color-danger-soft: #fce9e9;
-  --color-info: #0f0f35; /* brand navy lives here and only here */
-  --color-info-soft: #e9e9f1;
+  --color-info: #1d5fa8;
+  --color-info-soft: #e8f0fb;
 
-  --color-ring: #141414;
+  --color-ring: #0a7bc4;
+  /* Behind a modal. Its own token now the sidebar is no longer dark. */
+  --color-overlay: #0f1b2d;
 
-  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.06);
-  --shadow-popover: 0 8px 24px -6px rgb(0 0 0 / 0.16);
-  --shadow-modal: 0 24px 60px -12px rgb(0 0 0 / 0.3);
+  --shadow-card: 0 1px 2px rgb(16 42 67 / 0.06);
+  --shadow-popover: 0 8px 24px -6px rgb(16 42 67 / 0.16);
+  --shadow-modal: 0 24px 60px -12px rgb(16 42 67 / 0.28);
 }
 
 /* ----------------------------------------------------------------- DARK --- */
 :root[data-theme='dark'] {
   color-scheme: dark;
 
-  /* Pure black canvas; surfaces lift off it in three steps. No tint anywhere. */
-  --color-canvas: #000000;
-  --color-surface: #121212;
-  --color-surface-muted: #1a1a1a;
-  --color-surface-inset: #202020;
+  /* Deep navy rather than black, so the blue accent belongs to the scene. */
+  --color-canvas: #0b1220;
+  --color-surface: #111a2b;
+  --color-surface-muted: #16213a;
+  --color-surface-inset: #1b2842;
 
-  --color-border: #262626;
-  --color-border-strong: #383838;
+  --color-border: #22314b;
+  --color-border-strong: #31425f;
 
-  --color-fg: #e8e8e8; /* not #fff — full white on pure black glares */
-  --color-fg-muted: #9c9c9c;
-  --color-fg-subtle: #6a6a6a;
-  --color-fg-inverted: #141414;
+  --color-fg: #e6edf5;
+  --color-fg-muted: #9aa8ba;
+  --color-fg-subtle: #6b7a8f;
+  --color-fg-inverted: #0b1220;
 
-  --color-primary: #ffcb00;
-  --color-primary-hover: #ffd633;
-  --color-primary-active: #f2c000;
-  --color-primary-fg: #141414;
-  --color-primary-soft: #2e2810;
-  --color-primary-border: #5c4f14;
+  /* Flipped: a light blue button with dark text reads better on navy. */
+  --color-primary: #4fb0ee;
+  --color-primary-hover: #6bbef2;
+  --color-primary-active: #3aa2e6;
+  --color-primary-fg: #0b1220;
+  --color-primary-soft: #12304a;
+  --color-primary-border: #1f4f75;
 
-  /* Same black as the canvas; the hairline border is what separates them. */
-  --color-chrome: #000000;
-  --color-chrome-muted: #161616;
-  --color-chrome-fg: #e8e8e8;
-  --color-chrome-fg-muted: #8f8f8f;
-  --color-chrome-border: #1f1f1f;
+  --color-chrome: #0e1729;
+  --color-chrome-muted: #16213a;
+  --color-chrome-fg: #e6edf5;
+  --color-chrome-fg-muted: #8a99ae;
+  --color-chrome-border: #1b2842;
 
   --color-success: #4ade80;
   --color-success-soft: #14291c;
@@ -126,10 +129,11 @@
   --color-warning-soft: #2e1d10;
   --color-danger: #f87171;
   --color-danger-soft: #2e1616;
-  --color-info: #a5a8d6;
-  --color-info-soft: #1c1c2e;
+  --color-info: #8db8f5;
+  --color-info-soft: #152542;
 
-  --color-ring: #ffcb00;
+  --color-ring: #4fb0ee;
+  --color-overlay: #000000;
 
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.5);
   --shadow-popover: 0 8px 24px -6px rgb(0 0 0 / 0.7);
@@ -168,6 +172,7 @@
   --color-info: var(--color-info);
   --color-info-soft: var(--color-info-soft);
   --color-ring: var(--color-ring);
+  --color-overlay: var(--color-overlay);
   --shadow-card: var(--shadow-card);
   --shadow-popover: var(--shadow-popover);
   --shadow-modal: var(--shadow-modal);

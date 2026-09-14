@@ -58,7 +58,7 @@ export function Modal({
   return (
     <Dialog.Root open={open} onOpenChange={(next) => (submitting ? undefined : onOpenChange(next))}>
       <Dialog.Portal>
-        <Dialog.Overlay className="bg-chrome/40 fixed inset-0 z-50 backdrop-blur-[1px]" />
+        <Dialog.Overlay className="bg-overlay/40 fixed inset-0 z-50 backdrop-blur-[1px]" />
         <Dialog.Content
           onEscapeKeyDown={guard}
           onPointerDownOutside={guard}

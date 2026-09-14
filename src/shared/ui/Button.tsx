@@ -10,7 +10,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        /** Brand yellow with NAVY text — never white. Contrast rule, §1.2. */
+        /** Sky blue with white text (light theme); light blue with dark text (dark). */
         primary: 'bg-primary text-primary-fg hover:bg-primary-hover active:bg-primary-active',
         secondary: 'border border-border bg-surface text-fg hover:bg-surface-muted',
         ghost: 'text-fg-muted hover:bg-surface-muted hover:text-fg',

@@ -11,19 +11,23 @@ import { Input } from '@/shared/ui/Input'
 import { Modal } from '@/shared/ui/Modal'
 import { Switch } from '@/shared/ui/Switch'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
+import { Tabs } from '@/shared/ui/Tabs'
 import { toast } from '@/shared/ui/toast'
 import { useSession } from '@/app/providers/SessionProvider'
 import { formatNumber } from '@/shared/lib/format'
 import type { TableColumn } from '@/shared/components/table/features'
 import { useDataStore } from '@/data/store'
-import { brandSchema, type Brand } from '../model/settings'
+import { brandSchema, type Brand, type VehicleMake } from '../model/settings'
+import { TruckBrandsPanel } from '../components/TruckBrandsPanel'
 
 /**
- * Brands.
+ * Brands — two lists that are easy to confuse, kept apart by a tab.
  *
- * A short list that other screens depend on: a product points at a brand, and
- * promotions used to be scoped by one. It is a settings screen rather than a
- * module because nobody opens it twice a week.
+ *   - **Part brands** make the part: Bosch, Denso. A product points at one.
+ *   - **Truck brands** make the lorry it fits: DAF, MAN — each with its models.
+ *     A product says which of them it fits, and a driver's truck is one.
+ *
+ * A settings screen rather than a module because nobody opens it twice a week.
  */
 export default function BrandsSettingsPage() {
   const { can } = useSession()
@@ -38,6 +42,31 @@ export default function BrandsSettingsPage() {
   const [draft, setDraft] = useState({ name: '', zone: '', active: true })
   const [showErrors, setShowErrors] = useState(false)
   const [deleting, setDeleting] = useState<Brand | null>(null)
+  const [tab, setTab] = useState<'parts' | 'trucks'>('parts')
+
+  const vehicleMakes = useDataStore((s) => s.vehicleMakes)
+  const createMake = useDataStore((s) => s.createVehicleMake)
+  const renameMake = useDataStore((s) => s.renameVehicleMake)
+  const [makeDialog, setMakeDialog] = useState<{ make: VehicleMake | null } | null>(null)
+  const [makeName, setMakeName] = useState('')
+
+  const openMake = (make: VehicleMake | null) => {
+    setMakeName(make?.name ?? '')
+    setMakeDialog({ make })
+  }
+
+  const saveMake = () => {
+    const editing = makeDialog?.make ?? null
+    const result = editing ? renameMake(editing.id, makeName) : createMake(makeName)
+    if (!result.ok) {
+      toast.error(result.error)
+      return
+    }
+    toast.success(
+      editing ? 'Renamed everywhere it is used' : `${makeName.trim()} added — now add its models`,
+    )
+    setMakeDialog(null)
+  }
 
   const counts = useMemo(() => {
     const map = new Map<string, number>()
@@ -139,33 +168,95 @@ export default function BrandsSettingsPage() {
     <>
       <PageHeader
         title="Brands"
-        description="Who makes the parts you sell. A product points at one of these, so renaming a brand here renames it everywhere."
+        description={
+          tab === 'parts'
+            ? 'Who makes the parts you sell. A product points at one of these, so renaming a brand here renames it everywhere.'
+            : 'The trucks your parts fit, and their models. Products and drivers’ trucks are picked from this list.'
+        }
         action={
           can('settings.brands.create') ? (
-            <Button variant="primary" onClick={() => openFor(null)}>
-              <Plus />
-              Add brand
-            </Button>
+            tab === 'parts' ? (
+              <Button variant="primary" onClick={() => openFor(null)}>
+                <Plus />
+                Add brand
+              </Button>
+            ) : (
+              <Button variant="primary" onClick={() => openMake(null)}>
+                <Plus />
+                Add truck brand
+              </Button>
+            )
           ) : null
         }
       />
 
-      <DataTable
-        storageKey="settings-brands"
-        columns={columns}
-        data={brands}
-        total={brands.length}
-        isLoading={false}
-        pagination={{ page: 1, pageSize: 50 }}
-        onPaginationChange={() => {}}
-        emptyState={
-          <EmptyState
-            icon={Tag}
-            title="No brands yet"
-            description="Add the manufacturers whose parts you stock."
-          />
-        }
+      <Tabs
+        value={tab}
+        onValueChange={(next) => setTab(next as 'parts' | 'trucks')}
+        items={[
+          {
+            value: 'parts',
+            label: 'Part brands',
+            badge: brands.length,
+            content: (
+              <DataTable
+                storageKey="settings-brands"
+                columns={columns}
+                data={brands}
+                total={brands.length}
+                isLoading={false}
+                pagination={{ page: 1, pageSize: 50 }}
+                onPaginationChange={() => {}}
+                emptyState={
+                  <EmptyState
+                    icon={Tag}
+                    title="No brands yet"
+                    description="Add the manufacturers whose parts you stock."
+                  />
+                }
+              />
+            ),
+          },
+          {
+            value: 'trucks',
+            label: 'Truck brands & models',
+            badge: vehicleMakes.length,
+            content: <TruckBrandsPanel onEditMake={(make) => openMake(make)} />,
+          },
+        ]}
       />
+
+      <Modal
+        open={makeDialog !== null}
+        onOpenChange={(next) => {
+          if (!next) setMakeDialog(null)
+        }}
+        title={makeDialog?.make ? `Rename ${makeDialog.make.name}` : 'New truck brand'}
+        description={
+          makeDialog?.make
+            ? 'Every product and truck that says this brand is updated to the new name.'
+            : 'Add its models on its card afterwards.'
+        }
+        primary={{ label: makeDialog?.make ? 'Rename' : 'Add brand', onClick: saveMake }}
+      >
+        <Field label="Name" required>
+          {(p) => (
+            <Input
+              {...p}
+              autoFocus
+              placeholder="Shacman"
+              value={makeName}
+              onChange={(event) => setMakeName(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault()
+                  saveMake()
+                }
+              }}
+            />
+          )}
+        </Field>
+      </Modal>
 
       <Modal
         open={open}

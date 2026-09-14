@@ -47,7 +47,9 @@ import type {
   NotificationChannel,
   NotificationPreferences,
   UrgencyLevel,
+  VehicleMake,
 } from '@/features/settings/model/settings'
+import { sameName, vehicleUsage } from '@/features/settings/model/settings'
 export type { Client }
 import type { ReorderSettings } from '@/features/schedules/model/reorder'
 import { buildReorderLines, lineCostUzs, needsOrdering } from '@/features/schedules/model/reorder'
@@ -89,6 +91,7 @@ import {
   companySettings as seedCompany,
   brandSettings as seedBrandSettings,
   urgencyLevels as seedUrgencyLevels,
+  vehicleMakeSettings as seedVehicleMakes,
   locationSettings as seedLocationSettings,
   categorySettings as seedCategorySettings,
   notificationPreferences as seedNotifications,
@@ -131,6 +134,8 @@ interface CatalogState {
   brandSettings: Brand[]
   /** «Zarurlik darajasi» — the levels a China order line can carry. */
   urgencyLevels: UrgencyLevel[]
+  /** Truck brands and their models — what products fit and what trucks are. */
+  vehicleMakes: VehicleMake[]
   locationSettings: LocationSettings[]
   categorySettings: CategorySettings[]
   notifications: NotificationPreferences
@@ -200,6 +205,23 @@ interface CatalogState {
   createBrand: (input: Omit<Brand, 'id'>) => Brand
   updateBrand: (id: string, input: Omit<Brand, 'id'>) => void
   deleteBrand: (id: string) => { ok: true } | { ok: false; error: string }
+  createVehicleMake: (
+    name: string,
+  ) => { ok: true; make: VehicleMake } | { ok: false; error: string }
+  /** Renames the make here and on every product and truck that uses it. */
+  renameVehicleMake: (id: string, name: string) => { ok: true } | { ok: false; error: string }
+  deleteVehicleMake: (id: string) => { ok: true } | { ok: false; error: string }
+  addVehicleModel: (makeId: string, name: string) => { ok: true } | { ok: false; error: string }
+  /** Renames the model here and on every product and truck of that make that uses it. */
+  renameVehicleModel: (
+    makeId: string,
+    modelId: string,
+    name: string,
+  ) => { ok: true } | { ok: false; error: string }
+  deleteVehicleModel: (
+    makeId: string,
+    modelId: string,
+  ) => { ok: true } | { ok: false; error: string }
   createUrgencyLevel: (input: Omit<UrgencyLevel, 'id'>) => UrgencyLevel
   updateUrgencyLevel: (id: string, input: Omit<UrgencyLevel, 'id'>) => void
   /** Refused while an order line still carries the level. */
@@ -637,6 +659,18 @@ function namesOfDrivers(
   return driverIds.map((id) => state.drivers.find((driver) => driver.id === id)?.fullName ?? '—')
 }
 
+/** Every truck a driver is attached to, his own and his autopark's. */
+const allTrucks = (drivers: Driver[]) =>
+  drivers.flatMap((d) => [...d.ownTrucks, ...(d.autoparkTruck ? [d.autoparkTruck] : [])])
+
+const usageText = ({ products, trucks }: { products: number; trucks: number }) =>
+  [
+    products ? `${products} ${products === 1 ? 'product' : 'products'}` : null,
+    trucks ? `${trucks} ${trucks === 1 ? 'truck' : 'trucks'}` : null,
+  ]
+    .filter(Boolean)
+    .join(' and ')
+
 export const useDataStore = create<CatalogState>((set, get) => ({
   products: seedProducts,
   variations: seedVariations,
@@ -656,6 +690,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
   company: seedCompany,
   brandSettings: seedBrandSettings,
   urgencyLevels: seedUrgencyLevels,
+  vehicleMakes: seedVehicleMakes,
   locationSettings: seedLocationSettings,
   categorySettings: seedCategorySettings,
   notifications: seedNotifications,
@@ -1468,6 +1503,133 @@ export const useDataStore = create<CatalogState>((set, get) => ({
 
   updateCompany: (input) =>
     set({ company: { ...get().company, ...input, updatedAt: new Date().toISOString() } }),
+
+  createVehicleMake: (raw) => {
+    const name = raw.trim()
+    if (!name) return { ok: false, error: 'Give the brand a name' }
+    if (get().vehicleMakes.some((make) => sameName(make.name, name))) {
+      return { ok: false, error: `${name} is already on the list` }
+    }
+    const make: VehicleMake = { id: `vm-${Date.now()}`, name, models: [] }
+    set({ vehicleMakes: [...get().vehicleMakes, make] })
+    return { ok: true, make }
+  },
+
+  renameVehicleMake: (id, raw) => {
+    const name = raw.trim()
+    const make = get().vehicleMakes.find((m) => m.id === id)
+    if (!make) return { ok: false, error: 'That brand no longer exists' }
+    if (!name) return { ok: false, error: 'Give the brand a name' }
+    if (get().vehicleMakes.some((m) => m.id !== id && sameName(m.name, name))) {
+      return { ok: false, error: `${name} is already on the list` }
+    }
+    const was = make.name
+    const fix = (value: string | null) => (value !== null && sameName(value, was) ? name : value)
+    const fixTruck = <T extends { make: string | null }>(truck: T): T => ({
+      ...truck,
+      make: fix(truck.make),
+    })
+    // Products and trucks store the name, so a rename is written through or
+    // the old spelling lingers everywhere it was used.
+    set({
+      vehicleMakes: get().vehicleMakes.map((m) => (m.id === id ? { ...m, name } : m)),
+      products: get().products.map((p) => ({ ...p, vehicleMake: fix(p.vehicleMake) })),
+      variations: get().variations.map((v) => ({ ...v, vehicleMake: fix(v.vehicleMake) })),
+      drivers: get().drivers.map((d) => ({
+        ...d,
+        ownTrucks: d.ownTrucks.map(fixTruck),
+        autoparkTruck: d.autoparkTruck ? fixTruck(d.autoparkTruck) : null,
+      })),
+    })
+    return { ok: true }
+  },
+
+  deleteVehicleMake: (id) => {
+    const make = get().vehicleMakes.find((m) => m.id === id)
+    if (!make) return { ok: false, error: 'That brand no longer exists' }
+    const usage = vehicleUsage(make.name, null, get().products, allTrucks(get().drivers))
+    if (usage.products + usage.trucks > 0) {
+      return {
+        ok: false,
+        error: `${make.name} is used by ${usageText(usage)} — change those first`,
+      }
+    }
+    set({ vehicleMakes: get().vehicleMakes.filter((m) => m.id !== id) })
+    return { ok: true }
+  },
+
+  addVehicleModel: (makeId, raw) => {
+    const name = raw.trim()
+    const make = get().vehicleMakes.find((m) => m.id === makeId)
+    if (!make) return { ok: false, error: 'That brand no longer exists' }
+    if (!name) return { ok: false, error: 'Type the model first' }
+    if (make.models.some((model) => sameName(model.name, name))) {
+      return { ok: false, error: `${make.name} ${name} is already there` }
+    }
+    set({
+      vehicleMakes: get().vehicleMakes.map((m) =>
+        m.id === makeId ? { ...m, models: [...m.models, { id: `vmm-${Date.now()}`, name }] } : m,
+      ),
+    })
+    return { ok: true }
+  },
+
+  renameVehicleModel: (makeId, modelId, raw) => {
+    const name = raw.trim()
+    const make = get().vehicleMakes.find((m) => m.id === makeId)
+    const model = make?.models.find((m) => m.id === modelId)
+    if (!make || !model) return { ok: false, error: 'That model no longer exists' }
+    if (!name) return { ok: false, error: 'Give the model a name' }
+    if (make.models.some((m) => m.id !== modelId && sameName(m.name, name))) {
+      return { ok: false, error: `${make.name} ${name} is already there` }
+    }
+    const was = model.name
+    const ofMake = (value: string | null) => value !== null && sameName(value, make.name)
+    const fixList = (models: string[]) => models.map((m) => (sameName(m, was) ? name : m))
+    const fixTruck = <T extends { make: string | null; model: string | null }>(truck: T): T =>
+      ofMake(truck.make) && truck.model !== null && sameName(truck.model, was)
+        ? { ...truck, model: name }
+        : truck
+    set({
+      vehicleMakes: get().vehicleMakes.map((m) =>
+        m.id === makeId
+          ? { ...m, models: m.models.map((x) => (x.id === modelId ? { ...x, name } : x)) }
+          : m,
+      ),
+      // Only products of this make: "FH16" under Volvo is not "FH16" under anyone else.
+      products: get().products.map((p) =>
+        ofMake(p.vehicleMake) ? { ...p, vehicleModels: fixList(p.vehicleModels) } : p,
+      ),
+      variations: get().variations.map((v) =>
+        ofMake(v.vehicleMake) ? { ...v, vehicleModels: fixList(v.vehicleModels) } : v,
+      ),
+      drivers: get().drivers.map((d) => ({
+        ...d,
+        ownTrucks: d.ownTrucks.map(fixTruck),
+        autoparkTruck: d.autoparkTruck ? fixTruck(d.autoparkTruck) : null,
+      })),
+    })
+    return { ok: true }
+  },
+
+  deleteVehicleModel: (makeId, modelId) => {
+    const make = get().vehicleMakes.find((m) => m.id === makeId)
+    const model = make?.models.find((m) => m.id === modelId)
+    if (!make || !model) return { ok: false, error: 'That model no longer exists' }
+    const usage = vehicleUsage(make.name, model.name, get().products, allTrucks(get().drivers))
+    if (usage.products + usage.trucks > 0) {
+      return {
+        ok: false,
+        error: `${make.name} ${model.name} is used by ${usageText(usage)} — change those first`,
+      }
+    }
+    set({
+      vehicleMakes: get().vehicleMakes.map((m) =>
+        m.id === makeId ? { ...m, models: m.models.filter((x) => x.id !== modelId) } : m,
+      ),
+    })
+    return { ok: true }
+  },
 
   createUrgencyLevel: (input) => {
     const level: UrgencyLevel = { ...input, id: `urg-${Date.now()}` }

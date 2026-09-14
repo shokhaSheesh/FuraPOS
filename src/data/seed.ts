@@ -32,6 +32,7 @@ import type {
   LocationSettings,
   NotificationPreferences,
   UrgencyLevel,
+  VehicleMake,
 } from '@/features/settings/model/settings'
 
 /** `expand('sales.orders', ['view','create'])` → `sales.orders.view`, … */
@@ -2105,6 +2106,35 @@ export const companySettings: CompanySettings = {
 }
 
 /** Brands, with the zone OX records against each. */
+/**
+ * Truck brands and models, gathered from what products and trucks already say.
+ *
+ * Built from the data rather than a separate list so that nothing already
+ * entered falls outside it — a model a driver's truck uses but no product
+ * mentions still has to be pickable.
+ */
+const slug = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+
+export const vehicleMakeSettings: VehicleMake[] = (() => {
+  const byMake = new Map<string, Set<string>>()
+  const note = (make: string | null, model: string | null) => {
+    if (!make) return
+    const models = byMake.get(make) ?? new Set<string>()
+    if (model) models.add(model)
+    byMake.set(make, models)
+  }
+  for (const entry of vehicleMakes) entry.models.forEach((model) => note(entry.make, model))
+  for (const driver of drivers) {
+    for (const truck of driver.ownTrucks) note(truck.make, truck.model)
+    if (driver.autoparkTruck) note(driver.autoparkTruck.make, driver.autoparkTruck.model)
+  }
+  return [...byMake].map(([make, models]) => ({
+    id: `vm-${slug(make)}`,
+    name: make,
+    models: [...models].map((model) => ({ id: `vmm-${slug(make)}-${slug(model)}`, name: model })),
+  }))
+})()
+
 export const brandSettings: Brand[] = brands.map((brand, index) => ({
   id: brand.id,
   name: brand.name,

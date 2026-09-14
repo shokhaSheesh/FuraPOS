@@ -556,6 +556,22 @@ which is where the answer actually is.
 **Knock-on, now resolved: «Расписание подбора» had nothing left to schedule.** The answer was not to
 delete it but to give the run somewhere to land — see below.
 
+### Brands — part brands and truck brands & models
+
+Two lists that are easy to confuse, kept apart by a tab on the one Brands screen:
+
+- **Part brands** make the part — Bosch, Denso. A product points at one. (OX's «Бренды».)
+- **Truck brands & models** make the lorry it fits — DAF → XF 105, CF 85. No OX equivalent; added
+  at the client's request. One card per brand with its models as chips: add a run of models by
+  typing and pressing Enter, click a chip to rename, × to remove. Each shows how many products and
+  trucks use it.
+
+Products ("Fitment") and drivers' trucks now **pick** from this list instead of typing, which is
+what stopped one model being spelled "XF105", "XF 105" and "xf-105". They still store names rather
+than ids, so a rename is written through to every product and truck, and a make or model still in
+use cannot be deleted. The starting list is gathered from what products and trucks already said,
+which is how it surfaced a real duplicate in the data: **Mercedes** and **Mercedes-Benz**.
+
 ### Orders — three kinds, at the client's request
 
 «Закуп 3 ta type bo'ladi». One order screen with a switch at the top, rather than three screens,

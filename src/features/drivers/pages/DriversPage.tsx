@@ -1,3 +1,4 @@
+import { VehicleMakeSelect, VehicleModelSelect } from '@/shared/components/VehicleSelects'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { Pencil, Plus, Trash2, Truck } from 'lucide-react'
@@ -379,21 +380,17 @@ export default function DriversPage() {
                         value={truck.plate}
                         onChange={(event) => setOwnTruck(index, { plate: event.target.value })}
                       />
-                      <Input
+                      <VehicleMakeSelect
                         aria-label={`Make ${index + 1}`}
-                        placeholder="Scania"
-                        value={truck.make ?? ''}
-                        onChange={(event) =>
-                          setOwnTruck(index, { make: event.target.value || null })
-                        }
+                        value={truck.make}
+                        // A model belongs to one brand, so a new brand clears it.
+                        onChange={(make) => setOwnTruck(index, { make, model: null })}
                       />
-                      <Input
+                      <VehicleModelSelect
                         aria-label={`Model ${index + 1}`}
-                        placeholder="R450"
-                        value={truck.model ?? ''}
-                        onChange={(event) =>
-                          setOwnTruck(index, { model: event.target.value || null })
-                        }
+                        make={truck.make}
+                        value={truck.model}
+                        onChange={(model) => setOwnTruck(index, { model })}
                       />
                     </div>
                     <Button
@@ -455,23 +452,21 @@ export default function DriversPage() {
               </Field>
               <Field label="Make">
                 {(p) => (
-                  <Input
-                    {...p}
-                    placeholder="MAN"
+                  <VehicleMakeSelect
+                    id={p.id}
                     disabled={draft.autoparkId === null}
-                    value={draft.autoparkTruck?.make ?? ''}
-                    onChange={(event) => setAutoparkTruck({ make: event.target.value || null })}
+                    value={draft.autoparkTruck?.make ?? null}
+                    onChange={(make) => setAutoparkTruck({ make, model: null })}
                   />
                 )}
               </Field>
               <Field label="Model">
-                {(p) => (
-                  <Input
-                    {...p}
-                    placeholder="TGX 18.440"
+                {() => (
+                  <VehicleModelSelect
                     disabled={draft.autoparkId === null}
-                    value={draft.autoparkTruck?.model ?? ''}
-                    onChange={(event) => setAutoparkTruck({ model: event.target.value || null })}
+                    make={draft.autoparkTruck?.make ?? null}
+                    value={draft.autoparkTruck?.model ?? null}
+                    onChange={(model) => setAutoparkTruck({ model })}
                   />
                 )}
               </Field>

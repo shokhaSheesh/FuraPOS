@@ -105,6 +105,65 @@ export const urgencyLevelSchema = z.object({
   rank: z.number().int().min(1, 'Order starts at 1'),
 })
 
+/**
+ * A truck brand and the models it comes in — DAF → XF 105, CF 85.
+ *
+ * Not the same thing as a part brand. Bosch makes the filter; DAF makes the
+ * lorry it fits. For a truck-parts business the second list is the one people
+ * search by, and until now it was typed by hand on every product and every
+ * truck, which is how one model ends up as "XF105", "XF 105" and "xf-105".
+ *
+ * Products and trucks keep the *names* rather than ids, so nothing downstream
+ * had to change shape; this list is what those names are picked from, and a
+ * rename here is written through to them so the two never drift.
+ */
+export interface VehicleModel {
+  id: Id
+  name: string
+}
+
+export interface VehicleMake {
+  id: Id
+  name: string
+  models: VehicleModel[]
+}
+
+/** Case- and space-insensitive, so "XF105" is caught as a copy of "XF 105". */
+export const sameName = (a: string, b: string) =>
+  a.replace(/\s+/g, '').toLowerCase() === b.replace(/\s+/g, '').toLowerCase()
+
+/** What leans on a make or one of its models, so neither is deleted out from under it. */
+export interface VehicleUsage {
+  products: number
+  trucks: number
+}
+
+interface TruckLike {
+  make: string | null
+  model: string | null
+}
+
+export function vehicleUsage(
+  make: string,
+  model: string | null,
+  products: { vehicleMake: string | null; vehicleModels: string[] }[],
+  trucks: TruckLike[],
+): VehicleUsage {
+  const productCount = products.filter(
+    (product) =>
+      product.vehicleMake !== null &&
+      sameName(product.vehicleMake, make) &&
+      (model === null || product.vehicleModels.some((m) => sameName(m, model))),
+  ).length
+  const truckCount = trucks.filter(
+    (truck) =>
+      truck.make !== null &&
+      sameName(truck.make, make) &&
+      (model === null || (truck.model !== null && sameName(truck.model, model))),
+  ).length
+  return { products: productCount, trucks: truckCount }
+}
+
 export type LocationKind = 'warehouse' | 'shop'
 
 export const LOCATION_KINDS: { value: LocationKind; label: string }[] = [

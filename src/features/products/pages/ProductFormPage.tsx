@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router'
 import { useForm, Controller, type Control } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowLeft } from 'lucide-react'
+import { VehicleMakeSelect, VehicleModelsMultiSelect } from '@/shared/components/VehicleSelects'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
@@ -500,20 +501,37 @@ export default function ProductFormPage() {
             <CardTitle>Fitment</CardTitle>
           </CardHeader>
           <CardBody className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Field label="Vehicle make">
-              {(p) => <Input {...p} placeholder="DAF" {...form.register('vehicleMake')} />}
-            </Field>
-            <Field label="Vehicle models" hint="Enter to add each one">
+            {/* Picked from Settings → Brands → Truck brands, so one model is
+                never spelled three ways across the catalogue. */}
+            <Field label="Truck brand" hint="The lorry this part fits">
               {(p) => (
+                <Controller
+                  control={form.control}
+                  name="vehicleMake"
+                  render={({ field: f }) => (
+                    <VehicleMakeSelect
+                      id={p.id}
+                      value={f.value}
+                      onChange={(make) => {
+                        // Models belong to one brand; switching brand drops them.
+                        if (make !== f.value) form.setValue('vehicleModels', [])
+                        f.onChange(make)
+                      }}
+                    />
+                  )}
+                />
+              )}
+            </Field>
+            <Field label="Models it fits" hint="Leave empty if it fits every model of the brand">
+              {() => (
                 <Controller
                   control={form.control}
                   name="vehicleModels"
                   render={({ field: f }) => (
-                    <TagsInput
-                      id={p.id}
+                    <VehicleModelsMultiSelect
+                      make={form.watch('vehicleMake')}
                       value={f.value}
                       onChange={f.onChange}
-                      placeholder="XF 105"
                     />
                   )}
                 />

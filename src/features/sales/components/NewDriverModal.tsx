@@ -1,3 +1,4 @@
+import { VehicleMakeSelect, VehicleModelSelect } from '@/shared/components/VehicleSelects'
 import { useEffect, useState } from 'react'
 import { Modal } from '@/shared/ui/Modal'
 import { Input } from '@/shared/ui/Input'
@@ -115,21 +116,19 @@ export function NewDriverModal({
             </Field>
             <Field label="Make">
               {(p) => (
-                <Input
-                  {...p}
-                  placeholder="Scania"
-                  value={truck.make ?? ''}
-                  onChange={(event) => setTruck({ make: event.target.value || null })}
+                <VehicleMakeSelect
+                  id={p.id}
+                  value={truck.make}
+                  onChange={(make) => setTruck({ make, model: null })}
                 />
               )}
             </Field>
             <Field label="Model">
-              {(p) => (
-                <Input
-                  {...p}
-                  placeholder="R450"
-                  value={truck.model ?? ''}
-                  onChange={(event) => setTruck({ model: event.target.value || null })}
+              {() => (
+                <VehicleModelSelect
+                  make={truck.make}
+                  value={truck.model}
+                  onChange={(model) => setTruck({ model })}
                 />
               )}
             </Field>

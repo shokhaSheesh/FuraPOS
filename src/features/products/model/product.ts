@@ -99,6 +99,18 @@ export interface ProductVariation {
    */
   landedCost: number | null
 
+  /*
+    Per variation, as OX has them: the left step's analogue is another left
+    step, and the mobile app lists "left" and "right" as two things.
+  */
+  /** Variations that can stand in for this one — OX's Аналоги. */
+  analogueIds: Id[]
+  /** Variations usually bought with it — OX's С этим вместе покупают. */
+  boughtTogetherIds: Id[]
+  /** The SKU and name the mobile app shows — Артикул моб, Название продукта моб. */
+  mobileSku: string | null
+  mobileName: string | null
+
   imageUrl: string | null
   status: ProductStatus
 }
@@ -112,10 +124,6 @@ export interface ProductAttributes {
   /** OX keeps OEM as its own column, beside the free-text description. */
   oem: string | null
   videoUrl: string | null
-  /** Parts that can stand in for this one — OX's Аналоги. */
-  analogueIds: Id[]
-  /** Parts usually bought with it — OX's С этим вместе покупают. */
-  boughtTogetherIds: Id[]
   /** Stock is counted for it (Отслеживание). */
   isTracked: boolean
   /** Can go on a sale (Продаваемый). */
@@ -128,56 +136,41 @@ export interface ProductAttributes {
   isManufactured: boolean
   /** Sold by weight (Весовой). */
   isWeighted: boolean
-  /** The SKU and name the mobile app shows — Артикул моб, Название продукта моб. */
-  mobileSku: string | null
-  mobileName: string | null
   /** Тип. */
   partType: string | null
   /** Пол. */
   gender: string | null
   /** Сезон. */
   season: string | null
-  /** Вместе покупает — a typed note, beside the linked list. */
-  boughtTogetherNote: string | null
 }
 
 export const productAttributes = (p: ProductAttributes): ProductAttributes => ({
   oem: p.oem,
   videoUrl: p.videoUrl,
-  analogueIds: p.analogueIds,
-  boughtTogetherIds: p.boughtTogetherIds,
   isTracked: p.isTracked,
   isSellable: p.isSellable,
   isCountable: p.isCountable,
   isTaxable: p.isTaxable,
   isManufactured: p.isManufactured,
   isWeighted: p.isWeighted,
-  mobileSku: p.mobileSku,
-  mobileName: p.mobileName,
   partType: p.partType,
   gender: p.gender,
   season: p.season,
-  boughtTogetherNote: p.boughtTogetherNote,
 })
 
 /** What a new product starts with. Tracked, sellable, counted and taxed: the ordinary part. */
 export const NEW_PRODUCT_ATTRIBUTES: ProductAttributes = {
   oem: null,
   videoUrl: null,
-  analogueIds: [],
-  boughtTogetherIds: [],
   isTracked: true,
   isSellable: true,
   isCountable: true,
   isTaxable: true,
   isManufactured: false,
   isWeighted: false,
-  mobileSku: null,
-  mobileName: null,
   partType: null,
   gender: null,
   season: null,
-  boughtTogetherNote: null,
 }
 
 /** Every yes/no a product carries, in OX's column order. All are switched in place on the list. */
@@ -426,6 +419,8 @@ export function reconcileVariations<
       id: undefined,
       sku: '',
       ...('barcode' in donor ? { barcode: null } : {}),
+      // The mobile SKU identifies one sellable thing just as the SKU does.
+      ...('mobileSku' in donor ? { mobileSku: null } : {}),
     })
   })
 
@@ -476,6 +471,10 @@ export const variationFormSchema = z.object({
   shelfAddress: z.string().nullable(),
   zone: z.string().nullable(),
   landedCost: z.number().nonnegative().nullable(),
+  analogueIds: z.array(z.string()),
+  boughtTogetherIds: z.array(z.string()),
+  mobileSku: z.string().nullable(),
+  mobileName: z.string().nullable(),
   status: z.enum(['active', 'archived', 'draft']),
   stockByLocation: z.array(stockAtLocationFormSchema),
   optionValues: z.array(z.object({ optionId: z.string(), value: z.string() })),
@@ -498,20 +497,15 @@ export const productFormSchema = z
     showOnline: z.boolean(),
     oem: z.string().nullable(),
     videoUrl: z.string().nullable(),
-    analogueIds: z.array(z.string()),
-    boughtTogetherIds: z.array(z.string()),
     isTracked: z.boolean(),
     isSellable: z.boolean(),
     isCountable: z.boolean(),
     isTaxable: z.boolean(),
     isManufactured: z.boolean(),
     isWeighted: z.boolean(),
-    mobileSku: z.string().nullable(),
-    mobileName: z.string().nullable(),
     partType: z.string().nullable(),
     gender: z.string().nullable(),
     season: z.string().nullable(),
-    boughtTogetherNote: z.string().nullable(),
     status: z.enum(['active', 'archived', 'draft']),
     variationMode: z.enum(['single', 'multiple']),
     options: z.array(optionFormSchema).max(MAX_OPTIONS),

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useRef, useState, type PointerEvent, type ReactNode } from 'react'
 import {
   useTable,
   type ColumnVisibilityState,
@@ -70,6 +70,26 @@ function readStoredVisibility(
   }
 }
 
+/** Widths the user dragged, per column id, in pixels. Absent means "fit the content". */
+type ColumnWidths = Record<string, number>
+
+const MIN_COLUMN_WIDTH = 48
+
+function readStoredWidths(storageKey: string | undefined): ColumnWidths {
+  if (!storageKey) return {}
+  try {
+    return (
+      (JSON.parse(localStorage.getItem(`widths:${storageKey}`) ?? 'null') as ColumnWidths) ?? {}
+    )
+  } catch {
+    return {}
+  }
+}
+
+/** Fixed when dragged: the cell clips rather than pushing its column wider again. */
+const widthStyle = (width: number | undefined) =>
+  width === undefined ? undefined : { width, minWidth: width, maxWidth: width }
+
 export function DataTable<T extends RowData>({
   columns,
   data,
@@ -91,6 +111,65 @@ export function DataTable<T extends RowData>({
   const [columnVisibility, setColumnVisibility] = useState<ColumnVisibilityState>(() =>
     readStoredVisibility(storageKey, initialHidden),
   )
+
+  /*
+    Column widths are dragged from the right edge of a heading and remembered
+    alongside the column choices. Until a column is dragged it sizes to its
+    content, as before; a double-click on the edge puts it back to that.
+  */
+  const [widths, setWidths] = useState<ColumnWidths>(() => readStoredWidths(storageKey))
+  const drag = useRef<{ id: string; startX: number; startWidth: number } | null>(null)
+
+  const saveWidths = (next: ColumnWidths) => {
+    setWidths(next)
+    if (!storageKey) return
+    try {
+      localStorage.setItem(`widths:${storageKey}`, JSON.stringify(next))
+    } catch {
+      // Storage can be unavailable; the width still applies for this visit.
+    }
+  }
+
+  const startResize = (event: PointerEvent<HTMLSpanElement>, id: string) => {
+    event.preventDefault()
+    event.stopPropagation()
+    const th = event.currentTarget.closest('th')
+    if (!th) return
+    event.currentTarget.setPointerCapture(event.pointerId)
+    drag.current = { id, startX: event.clientX, startWidth: th.getBoundingClientRect().width }
+  }
+
+  const moveResize = (event: PointerEvent<HTMLSpanElement>) => {
+    const current = drag.current
+    if (!current) return
+    const width = Math.max(
+      MIN_COLUMN_WIDTH,
+      Math.round(current.startWidth + event.clientX - current.startX),
+    )
+    setWidths((previous) => ({ ...previous, [current.id]: width }))
+  }
+
+  const endResize = () => {
+    if (!drag.current) return
+    drag.current = null
+    // Persist once, when the drag ends, not on every pointer move.
+    setWidths((previous) => {
+      if (storageKey) {
+        try {
+          localStorage.setItem(`widths:${storageKey}`, JSON.stringify(previous))
+        } catch {
+          // As above.
+        }
+      }
+      return previous
+    })
+  }
+
+  const resetWidth = (id: string) => {
+    const next = { ...widths }
+    delete next[id]
+    saveWidths(next)
+  }
 
   const table = useTable({
     features: tableFeatureSet,
@@ -169,12 +248,15 @@ export function DataTable<T extends RowData>({
                   const canSort = Boolean(onSortingChange) && header.column.getCanSort()
                   const sorted = header.column.getIsSorted()
                   const alignRight = header.column.columnDef.meta?.align === 'right'
+                  const resizable = header.column.id !== 'actions'
                   return (
                     <th
                       key={header.id}
                       scope="col"
+                      style={widthStyle(widths[header.column.id])}
                       className={cn(
-                        'text-2xs text-fg-muted h-10 px-3 font-semibold tracking-wide whitespace-nowrap uppercase',
+                        'text-2xs text-fg-muted group/th relative h-10 px-3 font-semibold tracking-wide whitespace-nowrap uppercase',
+                        widths[header.column.id] !== undefined && 'overflow-hidden text-ellipsis',
                         alignRight ? 'text-right' : 'text-left',
                       )}
                     >
@@ -198,6 +280,22 @@ export function DataTable<T extends RowData>({
                       ) : (
                         <table.FlexRender header={header} />
                       )}
+                      {resizable ? (
+                        <span
+                          role="separator"
+                          aria-orientation="vertical"
+                          aria-label="Drag to resize the column, double-click to fit it"
+                          onPointerDown={(event) => startResize(event, header.column.id)}
+                          onPointerMove={moveResize}
+                          onPointerUp={endResize}
+                          onPointerCancel={endResize}
+                          onClick={(event) => event.stopPropagation()}
+                          onDoubleClick={() => resetWidth(header.column.id)}
+                          className="absolute inset-y-0 right-0 flex w-2 cursor-col-resize touch-none justify-center"
+                        >
+                          <span className="bg-border-strong group-hover/th:bg-primary/60 my-2.5 w-px" />
+                        </span>
+                      ) : null}
                     </th>
                   )
                 })}
@@ -241,8 +339,12 @@ export function DataTable<T extends RowData>({
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
+                      style={widthStyle(widths[cell.column.id])}
                       className={cn(
                         'text-fg h-11 px-3 py-0 whitespace-nowrap',
+                        // Only a dragged column clips; clipping every cell would cut off
+                        // the focus ring of an input sitting in one.
+                        widths[cell.column.id] !== undefined && 'overflow-hidden text-ellipsis',
                         cell.column.columnDef.meta?.align === 'right' ? 'text-right' : 'text-left',
                       )}
                     >

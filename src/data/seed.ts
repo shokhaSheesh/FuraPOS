@@ -281,6 +281,17 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
       zone: null as string | null,
       // Freight and duty on top of what the supplier invoiced.
       landedCost: Math.round(costUzs * (costCurrency === 'USD' ? 1.12 : 1.03)) as number | null,
+      // Linked once every product exists — see below.
+      analogueIds: [] as string[],
+      boughtTogetherIds: [] as string[],
+      mobileSku:
+        index % 2 === 0
+          ? `M-${String(index + 1).padStart(5, '0')}${sided ? `-${spec.side === 'left' ? 'L' : 'R'}` : ''}`
+          : null,
+      mobileName:
+        index % 2 === 0
+          ? `${name.split(' ').slice(0, 2).join(' ')}${sided ? ` ${spec.name}` : ''}`
+          : null,
       imageUrl: null,
       status: 'active' as const,
     }
@@ -309,20 +320,15 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
     oem,
     videoUrl: index % 9 === 0 ? `https://youtu.be/fura-${index + 1}` : null,
     // Linked after every product exists — see below.
-    analogueIds: [],
-    boughtTogetherIds: [],
     isTracked: (index + 1) % 17 !== 0,
     isSellable: (index + 1) % 23 !== 0,
     isCountable: unit !== 'kg' && unit !== 'l',
     isTaxable: (index + 1) % 4 !== 0,
     isManufactured: (index + 1) % 29 === 0,
     isWeighted: unit === 'kg',
-    mobileSku: index % 2 === 0 ? `M-${String(index + 1).padStart(5, '0')}` : null,
-    mobileName: index % 2 === 0 ? name.split(' ').slice(0, 2).join(' ') : null,
     partType: attrPick(['Original', 'Aftermarket', 'Aftermarket', null]),
     gender: null,
     season: attrPick(['All-season', 'All-season', 'Winter', 'Summer', null]),
-    boughtTogetherNote: null,
     categoryId: category.id,
     categoryName: category.name,
     categoryPath: category.path,
@@ -346,25 +352,29 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
 })
 
 /*
-  Analogues are parts in the same category for the same truck brand; what gets
-  bought together is the next part along in a different category. Both by
-  position, so the links are stable and never point at the product itself.
+  Analogues are the matching variation (same side) of parts in the same
+  category for the same truck brand; what gets bought together is a part from
+  a different category. Both by position, so the links are stable and never
+  point at the variation itself.
 */
+const sameSide = (other: Product, side: PartSide | null) =>
+  other.variations.find((v) => v.partSide === side) ?? other.variations[0]!
 for (const product of products) {
-  product.analogueIds = products
-    .filter(
-      (other) =>
-        other.id !== product.id &&
-        other.categoryId === product.categoryId &&
-        other.vehicleMake === product.vehicleMake,
-    )
-    .slice(0, 2)
-    .map((other) => other.id)
-  product.boughtTogetherIds = products
+  const analogues = products.filter(
+    (other) =>
+      other.id !== product.id &&
+      other.categoryId === product.categoryId &&
+      other.vehicleMake === product.vehicleMake,
+  )
+  const together = products
     .filter((other) => other.categoryId !== product.categoryId)
     .filter((_, i) => i % 41 === Number(product.id.slice(4)) % 41)
-    .slice(0, 2)
-    .map((other) => other.id)
+  for (const variation of product.variations) {
+    variation.analogueIds = analogues
+      .slice(0, 2)
+      .map((other) => sameSide(other, variation.partSide).id)
+    variation.boughtTogetherIds = together.slice(0, 2).map((other) => other.variations[0]!.id)
+  }
 }
 
 /** The flat, sellable list: what the catalogue shows and what a sale points at. */

@@ -381,12 +381,6 @@ export function buildProductColumns({
       header: 'Product address',
       cell: ({ row }) => text(row.original.shelfAddress),
     },
-    // Вместе покупает
-    {
-      accessorKey: 'boughtTogetherNote',
-      header: 'Buys together',
-      cell: ({ row }) => text(row.original.boughtTogetherNote),
-    },
     // Ours, not OX's
     ...costOnly([
       {
@@ -462,7 +456,6 @@ export const PRODUCT_COLUMNS_HIDDEN_BY_DEFAULT = [
   'season',
   'vehicleModels',
   'shelfAddress',
-  'boughtTogetherNote',
 ]
 
 function Chips({ values }: { values: string[] }) {
@@ -476,11 +469,12 @@ function Chips({ values }: { values: string[] }) {
   )
 }
 
-/** Linked parts by name; the first is shown, the rest counted, all of them on hover. */
+/** Linked variations by name; the first is shown, the rest counted, all of them on hover. */
 function LinkedProducts({ ids }: { ids: string[] }) {
-  const products = useDataStore((s) => s.products)
-  if (!ids.length) return <Empty />
-  const names = ids.map((id) => products.find((p) => p.id === id)?.name ?? id)
+  const variations = useDataStore((s) => s.variations)
+  // A link to a variation deleted since is not shown as a bare id.
+  const names = ids.flatMap((id) => variations.find((v) => v.id === id)?.fullName ?? [])
+  if (!names.length) return <Empty />
   return (
     <span title={names.join('\n')}>
       {names[0]}

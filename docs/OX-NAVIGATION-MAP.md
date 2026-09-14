@@ -15,21 +15,21 @@ it is being built.
 
 OX shows badges on two sections: **Закупки** is `New`, **Финансы** is `beta`. We mirror both.
 
-| #   | OX (ru)               | Ours (en)            | OX route               |
-| --- | --------------------- | -------------------- | ---------------------- |
-| 1   | Дашборд               | Dashboard            | `/app/dashboard`       |
-| 2   | Продажи               | Sales                | —                      |
-| 3   | Продукты/Услуги       | Products / Services  | —                      |
-| 4   | Закупки `New`         | Procurement `New`    | —                      |
-| 5   | Управление персоналом | Personnel management | —                      |
-| 6   | Финансы `beta`        | Finance `beta`       | `/app/finance`         |
-| 7   | Маркетинг             | Marketing            | —                      |
-| 8   | Аналитика             | Analytics            | —                      |
-| 9   | Интеграции            | _(not in scope)_     | `/app/integration`     |
-| 10  | Мои загрузки          | My uploads           | `/app/exports`         |
-| 11  | Партнёрская программа | _(not in scope)_     | `/app/partner-program` |
-| 12  | Настройки             | Settings             | `/app/settings`        |
-| 13  | Поддержка             | _(not in scope)_     | —                      |
+| #   | OX (ru)               | Ours (en)            | OX route                            |
+| --- | --------------------- | -------------------- | ----------------------------------- |
+| 1   | Дашборд               | Dashboard            | `/app/dashboard`                    |
+| 2   | Продажи               | Sales                | —                                   |
+| 3   | Продукты/Услуги       | Products / Services  | —                                   |
+| 4   | Закупки `New`         | Procurement `New`    | —                                   |
+| 5   | Управление персоналом | Personnel management | —                                   |
+| 6   | Финансы `beta`        | Finance `beta`       | `/app/finance`                      |
+| 7   | Маркетинг             | Marketing            | —                                   |
+| 8   | Аналитика             | Analytics            | —                                   |
+| 9   | Интеграции            | _(not in scope)_     | `/app/integration`                  |
+| 10  | Мои загрузки          | My uploads           | `/app/exports`                      |
+| 11  | Партнёрская программа | _(not in scope)_     | `boughtTogetherIds` — per variation |
+| 12  | Настройки             | Settings             | `/app/settings`                     |
+| 13  | Поддержка             | _(not in scope)_     | `analogueIds` — per variation       |
 
 ## 2. Продажи — Sales
 
@@ -1575,9 +1575,9 @@ to drop is the client's call once they have seen them all. Most start hidden in 
 | 8   | Бренд                      | Brand                      | `brandName`                             |
 | 9   | Описание                   | Description                | `description`                           |
 | 10  | Теги                       | Tags                       | `tags`                                  |
-| 11  | С этим вместе покупают     | Frequently bought together | `boughtTogetherIds` (linked products)   |
+| 11  | С этим вместе покупают     | Frequently bought together | `boughtTogetherIds` — per variation     |
 | 12  | Модификаторы               | Modifiers                  | **Removed** at the client's request     |
-| 13  | Аналоги                    | Analogues                  | `analogueIds` (linked products)         |
+| 13  | Аналоги                    | Analogues                  | `analogueIds` — per variation           |
 | 14  | Отгружаемый                | Shippable                  | `isShippable`                           |
 | 15  | Показать в онлайн-магазине | Show online                | `showOnline`                            |
 | 16  | Отслеживание               | Tracking                   | `isTracked`                             |
@@ -1602,8 +1602,8 @@ to drop is the client's call once they have seen them all. Most start hidden in 
 | 35  | Размер карго               | Cargo size                 | `cargoSize`                             |
 | 36  | Категория конечное         | End category               | `categoryName` (the leaf of the path)   |
 | 37  | Бренд товара               | Product brand              | `manufacturer`                          |
-| 38  | Артикул моб                | Mobile SKU                 | `mobileSku`                             |
-| 39  | Название продукта моб      | Mobile product name        | `mobileName`                            |
+| 38  | Артикул моб                | Mobile SKU                 | `mobileSku` — per variation             |
+| 39  | Название продукта моб      | Mobile product name        | `mobileName` — per variation            |
 | 40  | Часть                      | Part                       | `partSide`                              |
 | 41  | OEM                        | OEM                        | `oem` — no longer kept in `description` |
 | 42  | Тип                        | Type                       | `partType`                              |
@@ -1612,11 +1612,17 @@ to drop is the client's call once they have seen them all. Most start hidden in 
 | 45  | Модель                     | Model                      | `vehicleModels`                         |
 | 46  | Адрес товара               | Product address            | `shelfAddress`                          |
 | 47  | Аналог                     | Analogue                   | **Removed** at the client's request     |
-| 48  | Вместе покупает            | Buys together              | `boughtTogetherNote` (typed text)       |
+| 48  | Вместе покупает            | Buys together              | **Removed** at the client's request     |
 
 Removed after review (client's call): **MOQ** (the minimum lives on the supplier's catalogue line,
 where it belongs — so reorder schedules no longer round to it), **Модификаторы**, and the typed
-**Аналог** codes, keeping the linked **Аналоги** as the one analogue field.
+**Аналог** codes, keeping the linked **Аналоги** as the one analogue field; and **Вместе покупает**, the typed note.
+Аналоги, С этим вместе покупают, Артикул моб and Название продукта моб sit on the **variation**, as
+in OX's own form — the left step's analogue is another left step.
+
+The list has two views: **By variation** and **By location** (a variation once per location it is
+stocked at). A quantity column per location is available on By variation from Columns, off by
+default. Every column is resizable by dragging the edge of its heading; double-click fits it again.
 
 After OX's last column come two of ours: **Margin** and **Status**. OX's first menu entry, Добавить,
 is the row-expand control rather than a column. The three cost columns (30–32) still need

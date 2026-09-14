@@ -18,13 +18,13 @@ import { TagsInput } from '@/shared/ui/TagsInput'
 import { toast } from '@/shared/ui/toast'
 import { paths } from '@/shared/config/paths'
 import {
-  useAllProducts,
   useBrands,
   useCategories,
   useCreateProduct,
   useLocations,
   useProduct,
   useUpdateProduct,
+  useVariationChoices,
 } from '../api/products'
 import { SegmentedControl } from '@/shared/ui/SegmentedControl'
 import { ProductStockSection } from '../components/ProductStockSection'
@@ -102,6 +102,10 @@ const emptyVariation = (
   shelfAddress: null,
   zone: null,
   landedCost: null,
+  analogueIds: [],
+  boughtTogetherIds: [],
+  mobileSku: null,
+  mobileName: null,
   status: 'active' as const,
   stockByLocation: stockRows(locations),
 })
@@ -160,7 +164,7 @@ export function ProductForm({
   const { data: categories } = useCategories()
   const { data: brands } = useBrands()
   const { data: locationData } = useLocations()
-  const { data: allProducts } = useAllProducts()
+  const variationChoices = useVariationChoices(editing ? productId : undefined)
   const locations = locationData.items
   const create = useCreateProduct()
   const update = useUpdateProduct(productId ?? '')
@@ -220,6 +224,10 @@ export function ProductForm({
                 shelfAddress: v.shelfAddress,
                 zone: v.zone,
                 landedCost: v.landedCost,
+                analogueIds: v.analogueIds,
+                boughtTogetherIds: v.boughtTogetherIds,
+                mobileSku: v.mobileSku,
+                mobileName: v.mobileName,
                 status: v.status,
                 stockByLocation: stockRows(locations, v.stockByLocation),
               })),
@@ -260,20 +268,6 @@ export function ProductForm({
   const variations = form.watch('variations')
   const options = form.watch('options')
 
-  /** Every other part, for the analogue and bought-together pickers — never itself. */
-  const productChoices = useMemo(
-    () =>
-      allProducts.items
-        .filter((product) => product.id !== productId)
-        .map((product) => ({
-          value: product.id,
-          label: product.name,
-          meta: [product.oem && `OEM ${product.oem}`, product.categoryName]
-            .filter(Boolean)
-            .join(' · '),
-        })),
-    [allProducts.items, productId],
-  )
   const mode = form.watch('variationMode')
   const single = mode === 'single'
   const productName = form.watch('name')
@@ -630,68 +624,74 @@ export function ProductForm({
           </CardBody>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Related products</CardTitle>
-          </CardHeader>
-          <CardBody className="grid gap-3 sm:grid-cols-2">
-            <Field label="Analogues" hint="Parts that can stand in for this one">
-              {() => (
-                <Controller
-                  control={form.control}
-                  name="analogueIds"
-                  render={({ field: f }) => (
-                    <MultiSelect
-                      aria-label="Analogues"
-                      className="w-full"
-                      value={f.value}
-                      onChange={f.onChange}
-                      options={productChoices}
-                      placeholder="None"
-                      searchPlaceholder="Search by name or OEM…"
+        {/*
+          These belong to the variation, as in OX: the left step's analogue is
+          another left step. Sold one way, there is one variation, so they read
+          as the product's own; with several, each row carries its own.
+        */}
+        {single ? (
+          <>
+            <Card>
+              <CardHeader>
+                <CardTitle>Related products</CardTitle>
+              </CardHeader>
+              <CardBody className="grid gap-3 sm:grid-cols-2">
+                <Field label="Analogues" hint="Parts that can stand in for this one">
+                  {() => (
+                    <Controller
+                      control={form.control}
+                      name="variations.0.analogueIds"
+                      render={({ field: f }) => (
+                        <MultiSelect
+                          aria-label="Analogues"
+                          className="w-full"
+                          value={f.value}
+                          onChange={f.onChange}
+                          options={variationChoices}
+                          placeholder="None"
+                          searchPlaceholder="Search by name or OEM…"
+                        />
+                      )}
                     />
                   )}
-                />
-              )}
-            </Field>
-            <Field label="Frequently bought together" hint="Offered beside it on a sale">
-              {() => (
-                <Controller
-                  control={form.control}
-                  name="boughtTogetherIds"
-                  render={({ field: f }) => (
-                    <MultiSelect
-                      aria-label="Frequently bought together"
-                      className="w-full"
-                      value={f.value}
-                      onChange={f.onChange}
-                      options={productChoices}
-                      placeholder="None"
-                      searchPlaceholder="Search by name or OEM…"
+                </Field>
+                <Field label="Frequently bought together" hint="Offered beside it on a sale">
+                  {() => (
+                    <Controller
+                      control={form.control}
+                      name="variations.0.boughtTogetherIds"
+                      render={({ field: f }) => (
+                        <MultiSelect
+                          aria-label="Frequently bought together"
+                          className="w-full"
+                          value={f.value}
+                          onChange={f.onChange}
+                          options={variationChoices}
+                          placeholder="None"
+                          searchPlaceholder="Search by name or OEM…"
+                        />
+                      )}
                     />
                   )}
-                />
-              )}
-            </Field>
-            <Field label="Buys together" hint="A note, as typed">
-              {(p) => <Input {...p} {...form.register('boughtTogetherNote')} />}
-            </Field>
-          </CardBody>
-        </Card>
+                </Field>
+              </CardBody>
+            </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Mobile app</CardTitle>
-          </CardHeader>
-          <CardBody className="grid gap-3 sm:grid-cols-2">
-            <Field label="Mobile SKU">
-              {(p) => <Input {...p} {...form.register('mobileSku')} />}
-            </Field>
-            <Field label="Mobile product name">
-              {(p) => <Input {...p} {...form.register('mobileName')} />}
-            </Field>
-          </CardBody>
-        </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Mobile app</CardTitle>
+              </CardHeader>
+              <CardBody className="grid gap-3 sm:grid-cols-2">
+                <Field label="Mobile SKU">
+                  {(p) => <Input {...p} {...form.register('variations.0.mobileSku')} />}
+                </Field>
+                <Field label="Mobile product name">
+                  {(p) => <Input {...p} {...form.register('variations.0.mobileName')} />}
+                </Field>
+              </CardBody>
+            </Card>
+          </>
+        ) : null}
 
         <Card>
           <CardHeader className="flex-col items-stretch gap-2 sm:flex-row sm:items-center">
@@ -867,7 +867,11 @@ export function ProductForm({
               <>
                 <ProductOptionsEditor form={form} options={options} onChange={applyOptions} />
                 {variations.length ? (
-                  <ProductVariationsTable form={form} productName={productName.trim()} />
+                  <ProductVariationsTable
+                    form={form}
+                    productName={productName.trim()}
+                    variationChoices={variationChoices}
+                  />
                 ) : (
                   <p className="text-fg-subtle text-sm">
                     Name an option and give it values — the variations appear here.

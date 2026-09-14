@@ -11,7 +11,7 @@ import { paths } from '@/shared/config/paths'
 import { cn } from '@/shared/lib/cn'
 import { formatDate, formatMoney, formatNumber, formatPercent } from '@/shared/lib/format'
 import { USD_RATE } from '@/data/seed'
-import { useAllProducts, useProduct } from '../api/products'
+import { useProduct } from '../api/products'
 import {
   PRODUCT_FLAGS,
   costInUzs,
@@ -197,10 +197,6 @@ function VariationsTable({ product }: { product: Product }) {
 }
 
 function Details({ product }: { product: Product }) {
-  const { data: all } = useAllProducts()
-  const products = all.items
-  const linked = (ids: string[]) =>
-    ids.map((id) => products.find((p) => p.id === id)?.name ?? id).join(', ')
   const rows: [string, React.ReactNode][] = [
     ['Category', product.categoryPath],
     ['Supplier brand', product.brandName ?? <Empty />],
@@ -229,11 +225,6 @@ function Details({ product }: { product: Product }) {
         <Empty />
       ),
     ],
-    ['Analogues', linked(product.analogueIds) || <Empty />],
-    ['Frequently bought together', linked(product.boughtTogetherIds) || <Empty />],
-    ['Buys together', product.boughtTogetherNote ?? <Empty />],
-    ['Mobile SKU', product.mobileSku ?? <Empty />],
-    ['Mobile product name', product.mobileName ?? <Empty />],
     ['Created', formatDate(product.createdAt)],
     ['Updated', formatDate(product.updatedAt)],
   ]

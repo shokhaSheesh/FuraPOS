@@ -6,6 +6,7 @@ import { NumberField } from '@/shared/components/NumberField'
 import { Button } from '@/shared/ui/Button'
 import { Checkbox } from '@/shared/ui/Checkbox'
 import { Input } from '@/shared/ui/Input'
+import { MultiSelect, type MultiSelectOption } from '@/shared/ui/MultiSelect'
 import { Select } from '@/shared/ui/Select'
 import { cn } from '@/shared/lib/cn'
 import { PART_SIDES, combinationName, isSideOption, type ProductFormValues } from '../model/product'
@@ -31,9 +32,12 @@ const CURRENCIES = [
 export function ProductVariationsTable({
   form,
   productName,
+  variationChoices,
 }: {
   form: UseFormReturn<ProductFormValues>
   productName: string
+  /** What analogues and bought-together can point at. */
+  variationChoices: MultiSelectOption<string>[]
 }) {
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
   const variations = form.watch('variations')
@@ -270,6 +274,52 @@ export function ProductVariationsTable({
                                 placeholder="A-12-3"
                                 {...form.register(`variations.${index}.shelfAddress`)}
                               />
+                            )}
+                          </Field>
+                          <Field label="Analogues" hint="Can stand in for this one">
+                            {() => (
+                              <Controller
+                                control={form.control}
+                                name={`variations.${index}.analogueIds`}
+                                render={({ field }) => (
+                                  <MultiSelect
+                                    aria-label="Analogues"
+                                    className="w-full"
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    options={variationChoices}
+                                    placeholder="None"
+                                  />
+                                )}
+                              />
+                            )}
+                          </Field>
+                          <Field label="Frequently bought together">
+                            {() => (
+                              <Controller
+                                control={form.control}
+                                name={`variations.${index}.boughtTogetherIds`}
+                                render={({ field }) => (
+                                  <MultiSelect
+                                    aria-label="Frequently bought together"
+                                    className="w-full"
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    options={variationChoices}
+                                    placeholder="None"
+                                  />
+                                )}
+                              />
+                            )}
+                          </Field>
+                          <Field label="Mobile SKU">
+                            {(p) => (
+                              <Input {...p} {...form.register(`variations.${index}.mobileSku`)} />
+                            )}
+                          </Field>
+                          <Field label="Mobile product name">
+                            {(p) => (
+                              <Input {...p} {...form.register(`variations.${index}.mobileName`)} />
                             )}
                           </Field>
                           <Field label="Zone" hint="Warehouse zone">

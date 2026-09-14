@@ -34,15 +34,16 @@ function scopeToLocation(all: VariationRow[], locationId: string) {
  *
  * - `variations`: one row per variation, stock summed across locations;
  * - `location`: one row per variation *per location it is stocked at*, so a
- *   part kept in three places reads as three rows, each with its own quantity;
- * - `matrix`: one row per variation, with a quantity column per location.
+ *   part kept in three places reads as three rows, each with its own quantity.
+ *
+ * A quantity column per location is not a view: it is a set of optional
+ * columns on `variations`, switched on from the Columns menu.
  */
-export type ProductListView = 'variations' | 'location' | 'matrix'
+export type ProductListView = 'variations' | 'location'
 
 export const PRODUCT_LIST_VIEWS: { value: ProductListView; label: string }[] = [
   { value: 'variations', label: 'By variation' },
   { value: 'location', label: 'By location' },
-  { value: 'matrix', label: 'Stock per location' },
 ]
 
 export const productListView = (value: unknown): ProductListView =>
@@ -161,10 +162,30 @@ export function useBrands() {
   return { data: { items }, isLoading: false }
 }
 
-/** Every product, for pickers that link one part to others — analogues, bought together. */
+/** Every product, for showing what a variation is linked to. */
 export function useAllProducts() {
   const items = useDataStore((s) => s.products)
   return { data: { items }, isLoading: false }
+}
+
+/**
+ * Every variation as a picker option, for linking one to others — analogues,
+ * bought together. A product's own variations are left out: a part is not its
+ * own analogue.
+ */
+export function useVariationChoices(exceptProductId?: string) {
+  const variations = useDataStore((s) => s.variations)
+  return useMemo(
+    () =>
+      variations
+        .filter((v) => v.productId !== exceptProductId)
+        .map((v) => ({
+          value: v.id,
+          label: v.fullName,
+          meta: [v.sku, v.oem && `OEM ${v.oem}`].filter(Boolean).join(' · '),
+        })),
+    [variations, exceptProductId],
+  )
 }
 
 /** Warehouses and shops a product can be stocked at. */

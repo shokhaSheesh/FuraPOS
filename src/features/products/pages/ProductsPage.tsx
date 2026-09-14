@@ -77,23 +77,26 @@ export default function ProductsPage() {
         canDelete: can('products.list.delete'),
         onEdit: (variation) => navigate(paths.products.detail(variation.productId)),
         onDelete: setPendingDelete,
-        // Filtered to one location there is only one column to show, and it is Quantity.
-        stockColumnsFor: view === 'matrix' && !locationId ? locationData.items : [],
+        // A column per location, off until picked from Columns. Pointless once
+        // the list is split or filtered by location: Quantity already is that.
+        stockColumnsFor: view === 'variations' && !locationId ? locationData.items : [],
       }),
     [can, navigate, view, locationId, locationData.items],
   )
 
   /*
     Each view remembers its own columns. By location has to show Location —
-    it is the whole point of the view — and the per-location view has no use
-    for a Location count beside a column per location.
+    it is the whole point of the view.
   */
   const hidden = useMemo(
     () =>
       view === 'location'
         ? PRODUCT_COLUMNS_HIDDEN_BY_DEFAULT.filter((id) => id !== 'location')
-        : PRODUCT_COLUMNS_HIDDEN_BY_DEFAULT,
-    [view],
+        : [
+            ...PRODUCT_COLUMNS_HIDDEN_BY_DEFAULT,
+            ...locationData.items.map((item) => `stockAt:${item.id}`),
+          ],
+    [view, locationData.items],
   )
 
   const isFiltered = Boolean(query.search || query.status || query.stock || query.location)

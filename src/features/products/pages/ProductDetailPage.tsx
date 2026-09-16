@@ -129,12 +129,12 @@ function VariationsTable({ product }: { product: Product }) {
         <table className="w-full text-sm">
           <thead className="bg-surface-muted">
             <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-              {['Variation', 'SKU', 'Barcode', 'Side', 'Shelf', 'MOQ'].map((h) => (
+              {['Variation', 'SKU', 'Barcode', 'Part'].map((h) => (
                 <th key={h} scope="col" className="h-9 px-3 text-left font-semibold">
                   {h}
                 </th>
               ))}
-              {['Cost', 'Price', 'Discounted', 'Margin', 'Stock'].map((h) => (
+              {['Supplier price', 'Sale price', 'Wholesale', 'Margin', 'Stock'].map((h) => (
                 <th key={h} scope="col" className="h-9 px-3 text-right font-semibold">
                   {h}
                 </th>
@@ -156,15 +156,24 @@ function VariationsTable({ product }: { product: Product }) {
                 <td className="text-2xs px-3 py-2 font-mono">{v.sku}</td>
                 <td className="text-2xs px-3 py-2 font-mono">{v.barcode ?? <Empty />}</td>
                 <td className="px-3 py-2">{v.partSide ?? <Empty />}</td>
-                <td className="px-3 py-2">{v.shelfAddress ?? <Empty />}</td>
                 <td className="px-3 py-2 text-right tabular-nums">
                   {v.costCurrency === 'USD'
                     ? `${formatNumber(v.costPrice)} USD`
                     : formatMoney(v.costPrice)}
                 </td>
-                <td className="px-3 py-2 text-right tabular-nums">{formatMoney(v.salePrice)}</td>
-                <td className="text-warning px-3 py-2 text-right tabular-nums">
-                  {v.discountPrice ? formatMoney(v.discountPrice) : <Empty />}
+                <td className="px-3 py-2 text-right tabular-nums">
+                  {v.saleCurrency === 'USD'
+                    ? `${formatNumber(v.salePrice)} USD`
+                    : formatMoney(v.salePrice)}
+                </td>
+                <td className="px-3 py-2 text-right tabular-nums">
+                  {v.wholesalePrice === null ? (
+                    <Empty />
+                  ) : v.wholesaleCurrency === 'USD' ? (
+                    `${formatNumber(v.wholesalePrice)} USD`
+                  ) : (
+                    formatMoney(v.wholesalePrice)
+                  )}
                 </td>
                 <td className="text-fg-muted px-3 py-2 text-right tabular-nums">
                   {formatPercent(marginRatio(v, USD_RATE))}

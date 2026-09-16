@@ -24,10 +24,17 @@ export function ProductStockSection({
   form,
   locations,
   editing,
+  part = 'both',
 }: {
   form: UseFormReturn<ProductFormValues>
   locations: readonly { id: string; name: string }[]
   editing: boolean
+  /**
+   * Which half to render. The locations a product is stocked at are decided
+   * with the rest of what the product *is* (step one, as in the reference),
+   * while the quantities belong with stock (step three).
+   */
+  part?: 'locations' | 'quantities' | 'both'
 }) {
   const locationIds = form.watch('locationIds')
   // Only what is actually sold gets a shelf: an unticked combination does not
@@ -47,10 +54,128 @@ export function ProductStockSection({
     form.setValue('locationIds', next, { shouldValidate: true, shouldDirty: true })
   }
 
+  const picker = (
+    <div className="space-y-1.5">
+      <p className="text-fg-muted text-sm">
+        Stocked at<span className="text-danger ml-0.5">*</span>
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        {locations.map((location) => {
+          const on = locationIds.includes(location.id)
+          return (
+            <button
+              key={location.id}
+              type="button"
+              aria-pressed={on}
+              onClick={() => toggle(location.id)}
+              className={cn(
+                'rounded-control inline-flex items-center gap-1.5 border px-2.5 py-1 text-sm transition-colors',
+                on
+                  ? 'border-fg bg-fg text-fg-inverted'
+                  : 'border-border text-fg-muted hover:border-border-strong hover:text-fg',
+              )}
+            >
+              {on ? <Check className="size-3.5" /> : null}
+              {location.name}
+            </button>
+          )
+        })}
+      </div>
+      {form.formState.errors.locationIds ? (
+        <p className="text-danger text-2xs">{form.formState.errors.locationIds.message}</p>
+      ) : null}
+    </div>
+  )
+
+  const quantities =
+    selected.length === 0 ? (
+      <p className="text-fg-subtle text-sm">
+        Pick a location above to enter quantities against it.
+      </p>
+    ) : (
+      <div className="border-border rounded-card overflow-x-auto border">
+        <table className="w-full text-sm">
+          <thead className="bg-canvas">
+            <tr className="text-fg-muted text-2xs tracking-wide uppercase">
+              <th className="px-3 py-2 text-left font-semibold">
+                {single ? 'Product' : 'Variation'}
+              </th>
+              {selected.map((location) => (
+                <th key={location.id} className="px-3 py-2 text-right font-semibold">
+                  {location.name}
+                </th>
+              ))}
+              <th className="px-3 py-2 text-right font-semibold">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {variations.map(({ variation, index }) => {
+              const total = variation.stockByLocation.reduce(
+                (sum, row, rowIndex) =>
+                  locationIds.includes(locations[rowIndex]?.id ?? '')
+                    ? sum + (Number.isFinite(row.quantity) ? row.quantity : 0)
+                    : sum,
+                0,
+              )
+              return (
+                <tr key={index} className="border-border border-t">
+                  <td className="text-fg px-3 py-2">
+                    {/* The same name the catalogue will list it under. */}
+                    {single
+                      ? productName || 'This product'
+                      : [productName, combinationName(variation.optionValues)]
+                          .filter(Boolean)
+                          .join(' — ') || `Variation ${index + 1}`}
+                    <span className="text-fg-subtle text-2xs ml-2">
+                      {variation.sku || 'no SKU'}
+                    </span>
+                  </td>
+                  {locations.map((location, locationIndex) =>
+                    locationIds.includes(location.id) ? (
+                      <td key={location.id} className="px-2 py-1.5">
+                        <Controller
+                          control={form.control}
+                          name={`variations.${index}.stockByLocation.${locationIndex}.quantity`}
+                          render={({ field }) => (
+                            <NumberField
+                              className="w-24"
+                              nullable={false}
+                              aria-label={`Quantity at ${location.name}`}
+                              value={field.value}
+                              onChange={(v) => field.onChange(v ?? 0)}
+                              onBlur={field.onBlur}
+                            />
+                          )}
+                        />
+                      </td>
+                    ) : null,
+                  )}
+                  <td className="text-fg px-3 py-2 text-right font-medium tabular-nums">
+                    {formatNumber(total)}
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    )
+
+  if (part === 'locations') {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Locations</CardTitle>
+        </CardHeader>
+        <CardBody>{picker}</CardBody>
+      </Card>
+    )
+  }
+
   return (
     <Card>
       <CardHeader className="flex-col items-stretch gap-1">
-        <CardTitle>Stock</CardTitle>
+        <CardTitle>Quantity</CardTitle>
         <p className="text-fg-subtle text-2xs">
           {editing
             ? 'Editing a quantity here writes the new figure directly. To record why it changed, use Corrections instead.'
@@ -58,109 +183,8 @@ export function ProductStockSection({
         </p>
       </CardHeader>
       <CardBody className="space-y-4">
-        <div className="space-y-1.5">
-          <p className="text-fg-muted text-sm">
-            Stocked at<span className="text-danger ml-0.5">*</span>
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {locations.map((location) => {
-              const on = locationIds.includes(location.id)
-              return (
-                <button
-                  key={location.id}
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => toggle(location.id)}
-                  className={cn(
-                    'rounded-control inline-flex items-center gap-1.5 border px-2.5 py-1 text-sm transition-colors',
-                    on
-                      ? 'border-fg bg-fg text-fg-inverted'
-                      : 'border-border text-fg-muted hover:border-border-strong hover:text-fg',
-                  )}
-                >
-                  {on ? <Check className="size-3.5" /> : null}
-                  {location.name}
-                </button>
-              )
-            })}
-          </div>
-          {form.formState.errors.locationIds ? (
-            <p className="text-danger text-2xs">{form.formState.errors.locationIds.message}</p>
-          ) : null}
-        </div>
-
-        {selected.length === 0 ? (
-          <p className="text-fg-subtle text-sm">
-            Pick a location above to enter quantities against it.
-          </p>
-        ) : (
-          <div className="border-border rounded-card overflow-x-auto border">
-            <table className="w-full text-sm">
-              <thead className="bg-canvas">
-                <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-                  <th className="px-3 py-2 text-left font-semibold">
-                    {single ? 'Product' : 'Variation'}
-                  </th>
-                  {selected.map((location) => (
-                    <th key={location.id} className="px-3 py-2 text-right font-semibold">
-                      {location.name}
-                    </th>
-                  ))}
-                  <th className="px-3 py-2 text-right font-semibold">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {variations.map(({ variation, index }) => {
-                  const total = variation.stockByLocation.reduce(
-                    (sum, row, rowIndex) =>
-                      locationIds.includes(locations[rowIndex]?.id ?? '')
-                        ? sum + (Number.isFinite(row.quantity) ? row.quantity : 0)
-                        : sum,
-                    0,
-                  )
-                  return (
-                    <tr key={index} className="border-border border-t">
-                      <td className="text-fg px-3 py-2">
-                        {/* The same name the catalogue will list it under. */}
-                        {single
-                          ? productName || 'This product'
-                          : [productName, combinationName(variation.optionValues)]
-                              .filter(Boolean)
-                              .join(' — ') || `Variation ${index + 1}`}
-                        <span className="text-fg-subtle text-2xs ml-2">
-                          {variation.sku || 'no SKU'}
-                        </span>
-                      </td>
-                      {locations.map((location, locationIndex) =>
-                        locationIds.includes(location.id) ? (
-                          <td key={location.id} className="px-2 py-1.5">
-                            <Controller
-                              control={form.control}
-                              name={`variations.${index}.stockByLocation.${locationIndex}.quantity`}
-                              render={({ field }) => (
-                                <NumberField
-                                  className="w-24"
-                                  nullable={false}
-                                  aria-label={`Quantity at ${location.name}`}
-                                  value={field.value}
-                                  onChange={(v) => field.onChange(v ?? 0)}
-                                  onBlur={field.onBlur}
-                                />
-                              )}
-                            />
-                          </td>
-                        ) : null,
-                      )}
-                      <td className="text-fg px-3 py-2 text-right font-medium tabular-nums">
-                        {formatNumber(total)}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+        {part === 'both' ? picker : null}
+        {quantities}
       </CardBody>
     </Card>
   )

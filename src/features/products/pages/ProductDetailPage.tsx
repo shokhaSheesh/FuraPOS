@@ -209,8 +209,6 @@ function Details({ product }: { product: Product }) {
     ['Unit', product.unit],
     ['Vehicle make', product.vehicleMake ?? <Empty />],
     ['Vehicle models', product.vehicleModels.join(', ') || <Empty />],
-    ['Cargo weight', product.cargoWeightKg ? `${product.cargoWeightKg} kg` : <Empty />],
-    ['Cargo size', product.cargoSize ?? <Empty />],
     ['Created', formatDate(product.createdAt)],
     ['Updated', formatDate(product.updatedAt)],
   ]

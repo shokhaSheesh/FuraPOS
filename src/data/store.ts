@@ -557,8 +557,6 @@ function flatten(product: Product): VariationRow[] {
     unit: product.unit,
     vehicleMake: product.vehicleMake,
     vehicleModels: product.vehicleModels,
-    cargoWeightKg: product.cargoWeightKg,
-    cargoSize: product.cargoSize,
     oem: product.oem,
   }))
 }

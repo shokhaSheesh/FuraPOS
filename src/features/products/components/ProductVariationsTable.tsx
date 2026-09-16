@@ -85,6 +85,7 @@ export function ProductVariationsTable({
               <th className={cn(th, 'bg-canvas border-border sticky left-10 z-10 border-r')}>
                 Variation
               </th>
+              <th className={th}>Variation name</th>
               <th className={th}>
                 SKU<span className="text-danger ml-0.5">*</span>
               </th>
@@ -103,6 +104,8 @@ export function ProductVariationsTable({
                 many={variations.length > 1}
               />
               <th className={th}>Wholesale price</th>
+              <th className={th}>Cargo weight</th>
+              <th className={th}>Cargo size</th>
               <th className={th}>Status</th>
             </tr>
           </thead>
@@ -141,6 +144,15 @@ export function ProductVariationsTable({
                     <span className="text-fg-subtle text-2xs block whitespace-nowrap">
                       {sold ? productName : 'not sold'}
                     </span>
+                  </td>
+                  <td className={cell}>
+                    <Input
+                      className="w-36"
+                      placeholder={name}
+                      aria-label={`Variation name — ${name}`}
+                      disabled={!sold}
+                      {...form.register(`variations.${index}.name`)}
+                    />
                   </td>
                   <td className={cell}>
                     <Input
@@ -278,6 +290,32 @@ export function ProductVariationsTable({
                         )}
                       />
                     </div>
+                  </td>
+                  <td className={cell}>
+                    <Controller
+                      control={form.control}
+                      name={`variations.${index}.cargoWeightKg`}
+                      render={({ field }) => (
+                        <NumberField
+                          className="w-24"
+                          step="any"
+                          disabled={!sold}
+                          aria-label={`Cargo weight — ${name}`}
+                          value={field.value}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                        />
+                      )}
+                    />
+                  </td>
+                  <td className={cell}>
+                    <Input
+                      className="w-28"
+                      placeholder="120*60*30"
+                      aria-label={`Cargo size — ${name}`}
+                      disabled={!sold}
+                      {...form.register(`variations.${index}.cargoSize`)}
+                    />
                   </td>
                   <td className={cell}>
                     <Controller

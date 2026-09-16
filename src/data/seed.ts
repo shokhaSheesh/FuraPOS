@@ -263,6 +263,9 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
       sku: `SKU-${String(index + 1).padStart(5, '0')}${sided ? `-${spec.side === 'Left' ? 'L' : 'R'}` : ''}`,
       barcode: random() > 0.3 ? String(4_600_000_000_000 + index * 10 + vIndex) : null,
       partSide: spec.side,
+      // Filled in below, from the draws that used to sit on the product.
+      cargoWeightKg: null as number | null,
+      cargoSize: null as string | null,
       costPrice,
       costCurrency: costCurrency as CostCurrency,
       salePrice,
@@ -291,6 +294,16 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
   // The tags draw stays for the same reason, though the field itself has gone.
   if (random() > 0.6) pick(['bestseller', 'import', 'oem', 'clearance'])
   const unit = pick(['pcs', 'pcs', 'pcs', 'l', 'kg'] as const)
+  const vehicleModels = [...vehicle.models].slice(0, between(1, vehicle.models.length))
+  // Cargo moved onto the variation, but the draws stay in the order the product
+  // used to make them so the rest of the dataset does not shift.
+  const cargoWeightKg = random() > 0.5 ? between(1, 60) : null
+  const cargoSize =
+    random() > 0.5 ? `${between(20, 160)}*${between(20, 90)}*${between(10, 60)}` : null
+  for (const variation of variations) {
+    variation.cargoWeightKg = cargoWeightKg
+    variation.cargoSize = cargoSize
+  }
 
   return {
     id: productId,
@@ -308,9 +321,7 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
     manufacturer,
     unit,
     vehicleMake: vehicle.make,
-    vehicleModels: [...vehicle.models].slice(0, between(1, vehicle.models.length)),
-    cargoWeightKg: random() > 0.5 ? between(1, 60) : null,
-    cargoSize: random() > 0.5 ? `${between(20, 160)}*${between(20, 90)}*${between(10, 60)}` : null,
+    vehicleModels,
     options,
     variations,
     status: random() > 0.92 ? 'archived' : 'active',
@@ -337,8 +348,6 @@ export const variations: VariationRow[] = products.flatMap((product) =>
     unit: product.unit,
     vehicleMake: product.vehicleMake,
     vehicleModels: product.vehicleModels,
-    cargoWeightKg: product.cargoWeightKg,
-    cargoSize: product.cargoSize,
     oem: product.oem,
     options: product.options,
   })),

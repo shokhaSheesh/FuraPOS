@@ -78,6 +78,11 @@ export interface ProductVariation {
   /** Free text, e.g. "Left" or "Передний". */
   partSide: string | null
 
+  /** How heavy and how big this one is to ship — OX's Вес карго, Размер карго. */
+  cargoWeightKg: number | null
+  /** Free text, e.g. "120*60*30". */
+  cargoSize: string | null
+
   costPrice: number
   costCurrency: CostCurrency
   salePrice: number
@@ -125,10 +130,6 @@ export interface Product {
   vehicleMake: string | null
   vehicleModels: string[]
 
-  cargoWeightKg: number | null
-  /** Free text, e.g. "120*60*30". */
-  cargoSize: string | null
-
   /** The axes this product varies along. Empty when it is sold one way. */
   options: ProductOption[]
   variations: ProductVariation[]
@@ -156,8 +157,6 @@ export interface VariationRow extends ProductVariation {
   unit: UnitOfMeasure
   vehicleMake: string | null
   vehicleModels: string[]
-  cargoWeightKg: number | null
-  cargoSize: string | null
   options: ProductOption[]
 }
 
@@ -385,6 +384,8 @@ export const variationFormSchema = z.object({
   sku: z.string(),
   barcode: z.string().nullable(),
   partSide: z.string().nullable(),
+  cargoWeightKg: z.number().nonnegative().nullable(),
+  cargoSize: z.string().nullable(),
   costPrice: z.number().nonnegative(),
   costCurrency: z.enum(['USD', 'UZS']),
   salePrice: z.number().nonnegative(),
@@ -411,8 +412,6 @@ export const productFormSchema = z
     unit: z.enum(['pcs', 'kg', 'l', 'm', 'pack']),
     vehicleMake: z.string().nullable(),
     vehicleModels: z.array(z.string()),
-    cargoWeightKg: z.number().nonnegative().nullable(),
-    cargoSize: z.string().nullable(),
     oem: z.string().nullable(),
     status: z.enum(['active', 'archived', 'draft']),
     variationMode: z.enum(['single', 'multiple']),

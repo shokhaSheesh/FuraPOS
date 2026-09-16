@@ -86,6 +86,8 @@ const emptyVariation = (
   sku: '',
   barcode: null,
   partSide: null,
+  cargoWeightKg: null,
+  cargoSize: null,
   costPrice: 0,
   costCurrency: 'USD' as const,
   salePrice: 0,
@@ -176,8 +178,6 @@ export function ProductForm({
             unit: existing.unit,
             vehicleMake: existing.vehicleMake,
             vehicleModels: existing.vehicleModels,
-            cargoWeightKg: existing.cargoWeightKg,
-            cargoSize: existing.cargoSize,
             status: existing.status,
             variationMode: existing.options.length ? 'multiple' : 'single',
             options: existing.options.map((option) => ({ ...option, values: [...option.values] })),
@@ -206,6 +206,8 @@ export function ProductForm({
                 sku: v.sku,
                 barcode: v.barcode,
                 partSide: v.partSide,
+                cargoWeightKg: v.cargoWeightKg,
+                cargoSize: v.cargoSize,
                 costPrice: v.costPrice,
                 costCurrency: v.costCurrency,
                 salePrice: v.salePrice,
@@ -233,8 +235,6 @@ export function ProductForm({
             unit: 'pcs',
             vehicleMake: null,
             vehicleModels: [],
-            cargoWeightKg: null,
-            cargoSize: null,
             status: 'active',
             variationMode: 'single',
             options: [],
@@ -570,27 +570,6 @@ export function ProductForm({
                 />
               )}
             </Field>
-            <Field label="Cargo weight (kg)">
-              {(p) => (
-                <Controller
-                  control={form.control}
-                  name="cargoWeightKg"
-                  render={({ field: f }) => (
-                    <NumberField
-                      {...p}
-                      step="any"
-                      className="text-left"
-                      value={f.value}
-                      onChange={f.onChange}
-                      onBlur={f.onBlur}
-                    />
-                  )}
-                />
-              )}
-            </Field>
-            <Field label="Cargo size">
-              {(p) => <Input {...p} placeholder="120*60*30" {...form.register('cargoSize')} />}
-            </Field>
           </CardBody>
         </Card>
 
@@ -739,6 +718,33 @@ export function ProductForm({
                         )}
                       />
                     </div>
+                  )}
+                </Field>
+                <Field label="Cargo weight (kg)">
+                  {(p) => (
+                    <Controller
+                      control={form.control}
+                      name="variations.0.cargoWeightKg"
+                      render={({ field: f }) => (
+                        <NumberField
+                          {...p}
+                          step="any"
+                          className="text-left"
+                          value={f.value}
+                          onChange={f.onChange}
+                          onBlur={f.onBlur}
+                        />
+                      )}
+                    />
+                  )}
+                </Field>
+                <Field label="Cargo size">
+                  {(p) => (
+                    <Input
+                      {...p}
+                      placeholder="120*60*30"
+                      {...form.register('variations.0.cargoSize')}
+                    />
                   )}
                 </Field>
                 <Field label="Part" hint="Which part of the vehicle it fits">

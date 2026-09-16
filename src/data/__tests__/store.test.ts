@@ -121,7 +121,6 @@ describe('data store', () => {
       vehicleModels: ['XF 105'],
       cargoWeightKg: null,
       cargoSize: null,
-      isShippable: true,
       showOnline: false,
       ...NEW_PRODUCT_ATTRIBUTES,
       customFields: {},

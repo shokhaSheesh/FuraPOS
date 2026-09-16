@@ -322,12 +322,7 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
         : `${category.name} for ${vehicle.make}, ${attrPick(['original', 'aftermarket', 'OEM-equivalent'])} quality`,
     oem,
     // Linked after every product exists — see below.
-    isTracked: (index + 1) % 17 !== 0,
     isSellable: (index + 1) % 23 !== 0,
-    isCountable: unit !== 'kg' && unit !== 'l',
-    isTaxable: (index + 1) % 4 !== 0,
-    isManufactured: (index + 1) % 29 === 0,
-    isWeighted: unit === 'kg',
     partType: attrPick(['Original', 'Aftermarket', 'Aftermarket', null]),
     categoryId: category.id,
     categoryName: category.name,
@@ -341,8 +336,12 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
     vehicleModels: [...vehicle.models].slice(0, between(1, vehicle.models.length)),
     cargoWeightKg: random() > 0.5 ? between(1, 60) : null,
     cargoSize: random() > 0.5 ? `${between(20, 160)}*${between(20, 90)}*${between(10, 60)}` : null,
-    isShippable: random() > 0.15,
-    showOnline: random() > 0.35,
+    // The shippable flag drew here before it was dropped; the draw stays so the
+    // rest of the dataset does not shift.
+    showOnline: (() => {
+      random()
+      return random() > 0.35
+    })(),
     options,
     variations,
     customFields: (index % 3 === 0
@@ -401,7 +400,6 @@ export const variations: VariationRow[] = products.flatMap((product) =>
     vehicleModels: product.vehicleModels,
     cargoWeightKg: product.cargoWeightKg,
     cargoSize: product.cargoSize,
-    isShippable: product.isShippable,
     showOnline: product.showOnline,
     ...productAttributes(product),
     customFields: { ...product.customFields, ...variation.customFields },

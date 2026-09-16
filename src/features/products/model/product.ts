@@ -134,55 +134,34 @@ export interface ProductVariation {
 export interface ProductAttributes {
   /** OX keeps OEM as its own column, beside the free-text description. */
   oem: string | null
-  /** Stock is counted for it (Отслеживание). */
-  isTracked: boolean
   /** Can go on a sale (Продаваемый). */
   isSellable: boolean
-  /** Sold in whole units (Исчисляемый). */
-  isCountable: boolean
-  /** Carries VAT (Облагаемый налогом). */
-  isTaxable: boolean
-  /** Assembled by us rather than bought in (Изготовляемый). */
-  isManufactured: boolean
-  /** Sold by weight (Весовой). */
-  isWeighted: boolean
   /** Тип. */
   partType: string | null
 }
 
 export const productAttributes = (p: ProductAttributes): ProductAttributes => ({
   oem: p.oem,
-  isTracked: p.isTracked,
   isSellable: p.isSellable,
-  isCountable: p.isCountable,
-  isTaxable: p.isTaxable,
-  isManufactured: p.isManufactured,
-  isWeighted: p.isWeighted,
   partType: p.partType,
 })
 
 /** What a new product starts with. Tracked, sellable, counted and taxed: the ordinary part. */
 export const NEW_PRODUCT_ATTRIBUTES: ProductAttributes = {
   oem: null,
-  isTracked: true,
   isSellable: true,
-  isCountable: true,
-  isTaxable: true,
-  isManufactured: false,
-  isWeighted: false,
   partType: null,
 }
 
-/** Every yes/no a product carries, in OX's column order. All are switched in place on the list. */
+/**
+ * The yes/nos a product carries, in OX's column order. Switched in place on
+ * the list. OX has six more — shippable, tracking, countable, taxable,
+ * manufactured, weighted — all dropped at the client's request: the business
+ * answers them the same way for everything it sells.
+ */
 export const PRODUCT_FLAGS = [
-  { key: 'isShippable', label: 'Shippable', hint: 'Can be sent by courier' },
   { key: 'showOnline', label: 'Show online', hint: 'Visible in the storefront' },
-  { key: 'isTracked', label: 'Tracking', hint: 'Stock is counted' },
   { key: 'isSellable', label: 'Sellable', hint: 'Can go on a sale' },
-  { key: 'isCountable', label: 'Countable', hint: 'Sold in whole units' },
-  { key: 'isTaxable', label: 'Taxable', hint: 'VAT applies' },
-  { key: 'isManufactured', label: 'Manufactured', hint: 'Made by us, not bought in' },
-  { key: 'isWeighted', label: 'Weighted', hint: 'Sold by weight' },
 ] as const
 
 export type ProductFlag = (typeof PRODUCT_FLAGS)[number]['key']
@@ -216,7 +195,6 @@ export interface Product extends ProductAttributes {
   /** Free text, e.g. "120*60*30". */
   cargoSize: string | null
 
-  isShippable: boolean
   showOnline: boolean
 
   /** Answers to the business's own product-level columns — Settings → Product columns. */
@@ -256,7 +234,6 @@ export interface VariationRow extends ProductVariation, ProductAttributes {
   vehicleModels: string[]
   cargoWeightKg: number | null
   cargoSize: string | null
-  isShippable: boolean
   showOnline: boolean
   options: ProductOption[]
 }
@@ -517,15 +494,9 @@ export const productFormSchema = z
     vehicleModels: z.array(z.string()),
     cargoWeightKg: z.number().nonnegative().nullable(),
     cargoSize: z.string().nullable(),
-    isShippable: z.boolean(),
     showOnline: z.boolean(),
     oem: z.string().nullable(),
-    isTracked: z.boolean(),
     isSellable: z.boolean(),
-    isCountable: z.boolean(),
-    isTaxable: z.boolean(),
-    isManufactured: z.boolean(),
-    isWeighted: z.boolean(),
     partType: z.string().nullable(),
     customFields: customFieldValuesSchema,
     status: z.enum(['active', 'archived', 'draft']),

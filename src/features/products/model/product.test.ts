@@ -48,7 +48,6 @@ const values = (over: Partial<ProductFormValues> = {}): ProductFormValues => ({
   vehicleModels: [],
   cargoWeightKg: null,
   cargoSize: null,
-  isShippable: true,
   showOnline: false,
   ...NEW_PRODUCT_ATTRIBUTES,
   customFields: {},

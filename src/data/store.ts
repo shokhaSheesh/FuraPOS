@@ -563,7 +563,6 @@ function flatten(product: Product): VariationRow[] {
     vehicleModels: product.vehicleModels,
     cargoWeightKg: product.cargoWeightKg,
     cargoSize: product.cargoSize,
-    isShippable: product.isShippable,
     showOnline: product.showOnline,
     ...productAttributes(product),
     customFields: { ...product.customFields, ...variation.customFields },

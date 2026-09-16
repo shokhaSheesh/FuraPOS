@@ -1614,7 +1614,10 @@ to drop is the client's call once they have seen them all. Most start hidden in 
 | 47  | Аналог                     | Analogue                   | **Removed** at the client's request     |
 | 48  | Вместе покупает            | Buys together              | **Removed** at the client's request     |
 
-Removed after review (client's call): **MOQ** (the minimum lives on the supplier's catalogue line,
+Removed after review (client's call): the yes/no columns **Отгружаемый**, **Отслеживание**,
+**Исчисляемый**, **Облагаемый налогом**, **Изготовляемый** and **Весовой** — only
+**Показать в онлайн-магазине** and **Продаваемый** remain, since the business answers the rest the
+same way for everything it sells. Also: **MOQ** (the minimum lives on the supplier's catalogue line,
 where it belongs — so reorder schedules no longer round to it), **Модификаторы**, and the typed
 **Аналог** codes, keeping the linked **Аналоги** as the one analogue field; and **Вместе покупает**, the typed note.
 Аналоги, С этим вместе покупают, Артикул моб and Название продукта моб sit on the **variation**, as

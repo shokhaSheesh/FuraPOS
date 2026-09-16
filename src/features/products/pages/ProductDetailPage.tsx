@@ -89,7 +89,6 @@ export default function ProductDetailPage() {
                 {product.vehicleModels.length ? ` · ${product.vehicleModels.join(', ')}` : ''}
               </Badge>
             ) : null}
-            {product.isShippable ? <Badge>Shippable</Badge> : null}
             {product.showOnline ? <Badge>Online</Badge> : null}
             {product.tags.map((tag) => (
               <Badge key={tag}>{tag}</Badge>
@@ -220,10 +219,10 @@ function Details({ product }: { product: Product }) {
     ['Vehicle models', product.vehicleModels.join(', ') || <Empty />],
     ['Cargo weight', product.cargoWeightKg ? `${product.cargoWeightKg} kg` : <Empty />],
     ['Cargo size', product.cargoSize ?? <Empty />],
-    ['Shippable', product.isShippable ? 'Yes' : 'No'],
-    ...PRODUCT_FLAGS.filter((flag) => flag.key !== 'isShippable').map(
-      (flag): [string, React.ReactNode] => [flag.label, product[flag.key] ? 'Yes' : 'No'],
-    ),
+    ...PRODUCT_FLAGS.map((flag): [string, React.ReactNode] => [
+      flag.label,
+      product[flag.key] ? 'Yes' : 'No',
+    ]),
     ...productFields.map((field): [string, React.ReactNode] => [
       field.name,
       displayFieldValue(field, product.customFields[field.id]) ?? <Empty />,

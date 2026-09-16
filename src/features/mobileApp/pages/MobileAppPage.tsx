@@ -15,7 +15,11 @@ import {
   Gauge,
   Map,
   Milestone,
+  Package,
+  MapPin,
   Plus,
+  RefreshCw,
+  Scale,
   MoreHorizontal,
   Power,
   Receipt,
@@ -87,6 +91,28 @@ const QUICK_EXPENSES: { label: string; icon: LucideIcon; tone: MobileTone }[] = 
   { label: 'Штраф', icon: Receipt, tone: 'orange' },
   { label: 'Прочее', icon: MoreHorizontal, tone: 'grey' },
 ]
+
+/**
+ * The trip under way. Only on the screen while the truck's status is "В рейсе"
+ * — parked or in the workshop there is nothing to show.
+ */
+const CURRENT_TRIP = {
+  number: 'Рейс #TR-1048',
+  from: { code: 'UZ', city: 'Ташкент', address: 'Чиланзарский район, проспект Бунёдкор, 7' },
+  to: { code: 'DE', city: 'Берлин', address: 'Tempelhof, Ordensmeisterstraße 15' },
+  done: '2 840',
+  total: '4 600 км',
+  percent: 62,
+  elapsed: '3 дня',
+  cargo: 'Яблоки',
+  weight: '20 т',
+  distance: '4 600 км',
+  income: '$5 800',
+  spend: '$2 150',
+  eta: '1 день 8 ч',
+  place: 'Казахстан, трасса М-36',
+  updated: 'Обновлено 30 сек назад',
+}
 
 const PERIODS = [
   { value: 'month', label: 'Этот месяц' },
@@ -387,6 +413,7 @@ export default function MobileAppPage() {
           <QuickExpenses />
           <NewTrip />
           <CaptureOdometer />
+          <CurrentTrip />
           <Statistics />
           <Finance onOpen={setOpen} />
           <SpendSplit />
@@ -412,17 +439,15 @@ function TruckCard() {
       <div className="flex gap-3 p-3">
         {/* The photo slot: a real truck picture goes here in the app. */}
         <div
-          className="grid h-[132px] w-[104px] shrink-0 place-items-center rounded-2xl"
+          className="grid h-[108px] w-[92px] shrink-0 place-items-center rounded-2xl"
           style={{ background: TONES.grey.soft }}
         >
-          <Truck className="size-9" style={{ color: M.textSubtle }} />
+          <Truck className="size-8" style={{ color: M.textSubtle }} />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-2">
-            <p className="flex-1 text-[15px] leading-snug font-bold" style={{ color: M.text }}>
-              {TRUCK.make}
-              <br />
-              {TRUCK.model}
+            <p className="flex-1 text-[14px] leading-tight font-bold" style={{ color: M.text }}>
+              {TRUCK.make} {TRUCK.model}
             </p>
             <span
               className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
@@ -433,7 +458,7 @@ function TruckCard() {
             </span>
           </div>
           <Plate />
-          <dl className="mt-2 divide-y" style={{ borderColor: M.divider }}>
+          <dl className="mt-1 divide-y" style={{ borderColor: M.divider }}>
             <Spec icon={Calendar} value={TRUCK.year} label="Год" />
             <Spec icon={Container} value={TRUCK.kind} label="Тип" />
             <Spec icon={Gauge} value={TRUCK.odometer} label="Пробег" />
@@ -442,7 +467,7 @@ function TruckCard() {
       </div>
 
       <div className="flex items-center gap-3 border-t px-3 py-3" style={{ borderColor: M.border }}>
-        <Container className="size-7 shrink-0" style={{ color: M.textSubtle }} />
+        <Container className="size-6 shrink-0" style={{ color: M.textSubtle }} />
         <div className="min-w-0">
           <p className="text-[11px]" style={{ color: M.textSubtle }}>
             Прицеп
@@ -464,20 +489,20 @@ function TruckCard() {
 function Plate() {
   return (
     <div
-      className="mt-2 inline-flex h-9 items-stretch overflow-hidden rounded-lg border-2"
+      className="mt-1.5 inline-flex h-7 items-stretch overflow-hidden rounded-lg border-2"
       style={{ borderColor: M.text, background: M.card }}
     >
       <span className="grid w-9 place-items-center text-[13px] font-bold" style={{ color: M.text }}>
         {TRUCK.region}
       </span>
       <span
-        className="grid flex-1 place-items-center border-x-2 px-2 text-[14px] font-bold tracking-wide"
+        className="grid flex-1 place-items-center border-x-2 px-2 text-[13px] font-bold tracking-wide"
         style={{ borderColor: M.text, color: M.text }}
       >
         {TRUCK.plate}
       </span>
-      <span className="grid w-7 place-items-center">
-        <span className="flex h-4 w-5 flex-col overflow-hidden rounded-[2px]">
+      <span className="grid w-6 place-items-center">
+        <span className="flex h-3.5 w-4 flex-col overflow-hidden rounded-[2px]">
           <span className="flex-1 bg-[#0099b5]" />
           <span className="flex-1 bg-white" />
           <span className="flex-1 bg-[#1eb53a]" />
@@ -489,11 +514,11 @@ function Plate() {
 
 function Spec({ icon: Icon, value, label }: { icon: LucideIcon; value: string; label: string }) {
   return (
-    <div className="flex items-center gap-2.5 py-2">
+    <div className="flex items-center gap-2.5 py-1.5">
       {/* Black, like the design — not the back office's blue. */}
       <Icon className="size-4 shrink-0" style={{ color: M.text }} />
       <div className="leading-tight">
-        <dd className="text-[13px] font-bold" style={{ color: M.text }}>
+        <dd className="text-[12.5px] font-bold" style={{ color: M.text }}>
           {value}
         </dd>
         <dt className="text-[10px]" style={{ color: M.textSubtle }}>
@@ -566,6 +591,276 @@ function QuickExpenses() {
         </div>
       </PhoneCard>
     </PhoneSection>
+  )
+}
+
+/** The trip under way: where it goes, how far along it is, and where the truck is now. */
+function CurrentTrip() {
+  const inTrip = STATUSES.find((status) => status.active)?.label === 'В рейсе'
+  if (!inTrip) return null
+
+  return (
+    <PhoneSection>
+      <div className="mb-2 flex items-center gap-2 px-4">
+        <span
+          className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium"
+          style={{ background: TONES.green.soft, color: TONES.green.fg }}
+        >
+          <span className="size-1.5 rounded-full" style={{ background: TONES.green.fg }} />В рейсе
+        </span>
+        <span className="text-[13px] font-semibold" style={{ color: M.textMuted }}>
+          {CURRENT_TRIP.number}
+        </span>
+      </div>
+
+      <PhoneCard>
+        <div className="flex items-center gap-2">
+          <IconTile icon={Route} tone="blue" size="sm" shape="square" />
+          <p className="text-[15px] font-bold" style={{ color: M.text }}>
+            Маршрут
+          </p>
+        </div>
+
+        <Waypoint
+          label="Пункт отправления"
+          tone="blue"
+          code={CURRENT_TRIP.from.code}
+          city={CURRENT_TRIP.from.city}
+          address={CURRENT_TRIP.from.address}
+        />
+        <p className="py-1 text-center text-[14px]" style={{ color: M.textSubtle }}>
+          ↓
+        </p>
+        <Waypoint
+          label="Пункт назначения"
+          tone="purple"
+          code={CURRENT_TRIP.to.code}
+          city={CURRENT_TRIP.to.city}
+          address={CURRENT_TRIP.to.address}
+        />
+
+        <div className="mt-3 flex items-baseline justify-between text-[12px]">
+          <span style={{ color: M.textSubtle }}>
+            <span className="font-bold" style={{ color: M.text }}>
+              {CURRENT_TRIP.done}
+            </span>{' '}
+            / {CURRENT_TRIP.total}
+          </span>
+          <span className="font-semibold" style={{ color: TONES.blue.fg }}>
+            {CURRENT_TRIP.percent}%
+          </span>
+          <span style={{ color: M.textSubtle }}>
+            В пути{' '}
+            <span className="font-bold" style={{ color: M.text }}>
+              {CURRENT_TRIP.elapsed}
+            </span>
+          </span>
+        </div>
+        <div className="mt-1.5 h-1.5 w-full rounded-full" style={{ background: M.screen }}>
+          <div
+            className="h-full rounded-full"
+            style={{ width: `${CURRENT_TRIP.percent}%`, background: TONES.blue.fg }}
+          />
+        </div>
+
+        <div className="mt-3 grid grid-cols-3 divide-x" style={{ borderColor: M.divider }}>
+          <TripFact icon={Package} tone="grey" label="Груз" value={CURRENT_TRIP.cargo} />
+          <TripFact icon={Scale} tone="green" label="Вес" value={CURRENT_TRIP.weight} />
+          <TripFact icon={Route} tone="purple" label="Расстояние" value={CURRENT_TRIP.distance} />
+        </div>
+
+        <div
+          className="mt-3 grid grid-cols-3 items-center gap-2 border-t pt-3"
+          style={{ borderColor: M.divider }}
+        >
+          <div>
+            <p className="text-[11px]" style={{ color: M.textSubtle }}>
+              Доход
+            </p>
+            <p className="text-[16px] font-bold" style={{ color: TONES.green.fg }}>
+              {CURRENT_TRIP.income}
+            </p>
+          </div>
+          <div>
+            <p className="text-[11px]" style={{ color: M.textSubtle }}>
+              Расход
+            </p>
+            <p className="text-[16px] font-bold" style={{ color: TONES.red.fg }}>
+              {CURRENT_TRIP.spend}
+            </p>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Clock className="size-4 shrink-0" style={{ color: M.textSubtle }} />
+            <div>
+              <p className="text-[11px]" style={{ color: M.textSubtle }}>
+                До прибытия
+              </p>
+              <p className="text-[13px] font-bold" style={{ color: M.text }}>
+                {CURRENT_TRIP.eta}
+              </p>
+            </div>
+          </div>
+        </div>
+      </PhoneCard>
+
+      <PhoneCard className="mt-2.5">
+        <p className="text-[15px] font-bold" style={{ color: M.text }}>
+          Местоположение
+        </p>
+        <MiniMap />
+        <div className="mt-2.5 flex items-center gap-2">
+          <MapPin className="size-4 shrink-0" style={{ color: M.textSubtle }} />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[13px] font-semibold" style={{ color: M.text }}>
+              {CURRENT_TRIP.place}
+            </p>
+            <p
+              className="inline-flex items-center gap-1 text-[11px] whitespace-nowrap"
+              style={{ color: TONES.green.fg }}
+            >
+              <span className="size-1.5 rounded-full" style={{ background: TONES.green.fg }} />
+              {CURRENT_TRIP.updated}
+            </p>
+          </div>
+          <span
+            className="inline-flex shrink-0 items-center gap-1 rounded-xl border px-2 py-1.5 text-[11px] font-semibold"
+            style={{ borderColor: M.border, color: TONES.blue.fg }}
+          >
+            <Map className="size-3.5" />
+            Карта
+            <ArrowRight className="size-3" />
+          </span>
+        </div>
+        <button
+          type="button"
+          className="mt-2.5 flex h-10 w-full items-center justify-center gap-1.5 rounded-2xl text-[13px] font-semibold"
+          style={{ background: TONES.blue.soft, color: TONES.blue.fg }}
+        >
+          <RefreshCw className="size-3.5" />
+          Обновить данные
+        </button>
+      </PhoneCard>
+    </PhoneSection>
+  )
+}
+
+/** One end of the route, boxed and tinted the way the design separates them. */
+function Waypoint({
+  label,
+  tone,
+  code,
+  city,
+  address,
+}: {
+  label: string
+  tone: MobileTone
+  code: string
+  city: string
+  address: string
+}) {
+  return (
+    <div
+      className="mt-2.5 rounded-2xl border p-2.5"
+      style={{ borderColor: TONES[tone].fg, background: M.card }}
+    >
+      <p
+        className="inline-flex items-center gap-1 text-[11px] font-medium"
+        style={{ color: TONES[tone].fg }}
+      >
+        <MapPin className="size-3" />
+        {label}
+      </p>
+      <p className="mt-1 flex items-center gap-1.5">
+        <span
+          className="rounded-md px-1.5 py-0.5 text-[10px] font-bold"
+          style={{ background: TONES[tone].fg, color: '#FFFFFF' }}
+        >
+          {code}
+        </span>
+        <span className="text-[15px] font-bold" style={{ color: M.text }}>
+          {city}
+        </span>
+      </p>
+      <p className="mt-0.5 text-[12px]" style={{ color: M.textSubtle }}>
+        {address}
+      </p>
+    </div>
+  )
+}
+
+function TripFact({
+  icon: Icon,
+  tone,
+  label,
+  value,
+}: {
+  icon: LucideIcon
+  tone: MobileTone
+  label: string
+  value: string
+}) {
+  return (
+    <div className="flex items-center gap-2 px-1.5 first:pl-0 last:pr-0">
+      <IconTile icon={Icon} tone={tone} size="sm" shape="square" />
+      <div className="min-w-0">
+        <p className="text-[10px]" style={{ color: M.textSubtle }}>
+          {label}
+        </p>
+        <p className="truncate text-[12px] font-bold" style={{ color: M.text }}>
+          {value}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * The map is drawn, not fetched: a mock has no tiles, and a grey rectangle
+ * would not show what the card is for — the route, and where on it the truck is.
+ */
+function MiniMap() {
+  return (
+    <div
+      className="relative mt-2.5 h-28 overflow-hidden rounded-2xl"
+      style={{ background: '#EDF1E6' }}
+    >
+      <svg viewBox="0 0 320 112" className="size-full">
+        <path
+          d="M0 76 C 60 70, 90 40, 150 44 S 260 30, 320 22"
+          fill="none"
+          stroke="#A9B79A"
+          strokeWidth="1"
+        />
+        <path
+          d="M20 96 C 80 92, 120 66, 190 56 S 280 40, 316 34"
+          fill="none"
+          stroke="#7C8B93"
+          strokeWidth="1.5"
+          strokeDasharray="5 4"
+        />
+        <circle cx="66" cy="94" r="2.5" fill="#FFFFFF" stroke="#7C8B93" />
+        <circle cx="150" cy="78" r="2.5" fill="#FFFFFF" stroke="#7C8B93" />
+        <circle cx="236" cy="62" r="2.5" fill="#FFFFFF" stroke="#7C8B93" />
+        <text x="60" y="106" fontSize="7" fill="#6B7280">
+          Узбекистан
+        </text>
+        <text x="130" y="92" fontSize="7" fill="#6B7280">
+          Шымкент
+        </text>
+        <text x="216" y="56" fontSize="7" fill="#6B7280">
+          Алматы
+        </text>
+        <text x="140" y="22" fontSize="8" fill="#4B5563" fontWeight="600">
+          Казахстан
+        </text>
+      </svg>
+      <span
+        className="absolute top-1/2 left-1/2 grid size-8 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full"
+        style={{ background: TONES.blue.fg, boxShadow: `0 0 0 6px ${TONES.blue.soft}` }}
+      >
+        <Truck className="size-4" style={{ color: '#FFFFFF' }} />
+      </span>
+    </div>
   )
 }
 

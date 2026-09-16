@@ -101,11 +101,6 @@ export const navigation: NavSection[] = [
     badge: 'new',
     items: [
       { label: 'Orders', to: paths.procurement.orders, permission: 'procurement.orders.view' },
-      {
-        label: 'Reorder schedules',
-        to: paths.procurement.schedules,
-        permission: 'procurement.schedules.view',
-      },
     ],
   },
   {

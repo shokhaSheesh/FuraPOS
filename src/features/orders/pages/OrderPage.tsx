@@ -15,6 +15,8 @@ import { DataTable } from '@/shared/components/DataTable'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
+import { AddProductsMenu } from '@/shared/components/AddProductsMenu'
+import { ProductPicker } from '@/shared/components/ProductPicker'
 import { ProductThumb } from '@/shared/components/ProductThumb'
 import { ScrollSentinel } from '@/shared/components/ScrollSentinel'
 import { SearchInput } from '@/shared/components/SearchInput'
@@ -42,7 +44,6 @@ import {
   canCancel,
   canReceive,
   daysLate,
-  deliveredRatio,
   lineOutstanding,
   nextStep,
   orderSource,
@@ -51,8 +52,6 @@ import {
   orderValue,
   orderedUnits,
   outstandingUnits,
-  outstandingValue,
-  receivedUnits,
   toUzs,
   type OrderLine,
   type PurchaseOrder,
@@ -180,14 +179,17 @@ function useOrderRows(order: PurchaseOrder): OrderRow[] {
       stockHere: shelvesOf(line.variationId),
     })
 
+    /*
+      Only a supplier's own catalogue fills the table. A market run or a
+      factory order is picked out of *our* catalogue, which is every product we
+      carry — hundreds of rows of which two are wanted. That is a search, not a
+      list to read down, so those two start empty and use the same Add products
+      menu a receipt does.
+    */
     const catalogue =
-      order.status !== 'draft'
-        ? []
-        : order.kind === 'supplier'
-          ? order.supplierId
-            ? catalogueFor(supplierProducts, variations, order.supplierId)
-            : []
-          : ownCatalogue(variations)
+      order.status === 'draft' && order.kind === 'supplier' && order.supplierId
+        ? catalogueFor(supplierProducts, variations, order.supplierId)
+        : []
 
     if (catalogue.length === 0) return order.lines.map(fromLine)
 
@@ -243,6 +245,10 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
   const [cards, setCards] = useState(false)
   const [search, setSearch] = useState('')
   const [suggesting, setSuggesting] = useState(false)
+  const [adding, setAdding] = useState(false)
+
+  /** Whether their catalogue is already the table, so nothing needs adding. */
+  const fromCatalogue = order.kind === 'supplier' && order.status === 'draft'
 
   const matching = search.trim()
     ? all.filter((row) =>
@@ -313,6 +319,39 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
 
   return (
     <>
+      {adding && !fromCatalogue ? (
+        <Card className="p-3">
+          <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <ProductPicker
+                onPick={(variation) =>
+                  setQuantity(
+                    {
+                      key: variation.id,
+                      line: order.lines.find((l) => l.variationId === variation.id) ?? null,
+                      index: order.lines.findIndex((l) => l.variationId === variation.id),
+                      variation,
+                      name: variation.fullName,
+                      quantity: 0,
+                      unitCost: variation.costPrice,
+                      costCurrency: variation.costCurrency,
+                      newToUs: false,
+                      stockHere: [],
+                    },
+                    (order.lines.find((l) => l.variationId === variation.id)?.orderedQuantity ??
+                      0) + 1,
+                  )
+                }
+                placeholder="Search or scan a barcode to put it on this order…"
+              />
+            </div>
+            <Button variant="secondary" onClick={() => setAdding(false)}>
+              Close scanning
+            </Button>
+          </div>
+        </Card>
+      ) : null}
+
       <DataTable
         storageKey={cards ? 'order-lines-cards' : 'order-lines'}
         columns={columns}
@@ -348,10 +387,16 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
               </Button>
             </div>
             {editable ? (
-              <Button variant="primary" onClick={() => setSuggesting(true)}>
+              <Button
+                variant={fromCatalogue ? 'primary' : 'secondary'}
+                onClick={() => setSuggesting(true)}
+              >
                 <Wand2 />
                 Suggest
               </Button>
+            ) : null}
+            {editable && !fromCatalogue ? (
+              <AddProductsMenu onPickFromCatalogue={() => setAdding(true)} />
             ) : null}
           </div>
         }
@@ -387,9 +432,11 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
           <EmptyState
             title="Nothing on this order yet"
             description={
-              order.status === 'draft'
-                ? 'There is no catalogue to pick from — check the supplier on this order.'
-                : 'This order was sent with no products on it.'
+              order.status !== 'draft'
+                ? 'This order was sent with no products on it.'
+                : fromCatalogue
+                  ? 'This supplier lists nothing, so there is nothing to order from them.'
+                  : 'Use “Add products” to put the first line on, or let Suggest work out what is worth ordering.'
             }
           />
         }
@@ -534,38 +581,12 @@ function ReviewStep({ order, editable }: { order: PurchaseOrder; editable: boole
   const navigate = useNavigate()
   const { can } = useSession()
   const actions = useOrderActions(order.id)
-  const receipts = useOrderReceipts(order.id)
   const [confirmCancel, setConfirmCancel] = useState(false)
   const canSeeCost = can('products.cost.view')
   const send = nextStep(order.status, order.kind)
-  const late = daysLate(order)
 
   return (
     <>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Figure
-          label="Ordered"
-          value={`${formatNumber(orderedUnits(order))} units`}
-          meta={canSeeCost ? formatMoney(Math.round(orderValue(order, USD_RATE))) : ''}
-        />
-        <Figure
-          label="Delivered"
-          value={`${formatNumber(receivedUnits(order))} units`}
-          meta={`${Math.round(deliveredRatio(order) * 100)}% of the order`}
-        />
-        <Figure
-          label="Still coming"
-          value={`${formatNumber(outstandingUnits(order))} units`}
-          meta={canSeeCost ? formatMoney(Math.round(outstandingValue(order, USD_RATE))) : ''}
-          tone={outstandingUnits(order) > 0 && late ? 'danger' : undefined}
-        />
-        <Figure
-          label="Deliveries"
-          value={formatNumber(receipts.length)}
-          meta={order.sentAt ? `Sent ${formatDate(order.sentAt)}` : 'Not sent yet'}
-        />
-      </div>
-
       <DetailsCard order={order} editable={editable} />
 
       <Card>
@@ -903,29 +924,5 @@ function DeliveriesStep({ order }: { order: PurchaseOrder }) {
         </div>
       </Modal>
     </>
-  )
-}
-
-function Figure({
-  label,
-  value,
-  meta,
-  tone,
-}: {
-  label: string
-  value: string
-  meta: string
-  tone?: 'danger'
-}) {
-  return (
-    <Card className="p-4">
-      <p className="text-fg-muted text-sm">{label}</p>
-      <p
-        className={`mt-0.5 text-lg font-semibold ${tone === 'danger' ? 'text-danger' : 'text-fg'}`}
-      >
-        {value}
-      </p>
-      {meta ? <p className="text-fg-subtle text-2xs">{meta}</p> : null}
-    </Card>
   )
 }

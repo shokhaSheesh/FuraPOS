@@ -64,10 +64,7 @@ export const permissionTree: readonly PermissionNode[] = [
   {
     key: 'procurement',
     label: 'Procurement',
-    children: [
-      { key: 'procurement.orders', label: 'Orders', actions: crudExport },
-      { key: 'procurement.schedules', label: 'Reorder schedules', actions: crud },
-    ],
+    children: [{ key: 'procurement.orders', label: 'Orders', actions: crudExport }],
   },
   {
     key: 'personnel',

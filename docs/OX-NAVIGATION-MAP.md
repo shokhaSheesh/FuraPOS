@@ -641,11 +641,11 @@ Two decisions worth recording:
 
 ## 4. Закупки — Procurement
 
-| OX (ru)            | Ours (en)         | OX route                     |
-| ------------------ | ----------------- | ---------------------------- |
-| Подбор товаров     | — (removed)       | `/app/procurement/selection` |
-| Заказы             | Orders            | `/app/procurement/orders`    |
-| Расписание подбора | Reorder schedules | `/app/procurement/schedules` |
+| OX (ru)            | Ours (en)   | OX route                     |
+| ------------------ | ----------- | ---------------------------- |
+| Подбор товаров     | — (removed) | `/app/procurement/selection` |
+| Заказы             | Orders      | `/app/procurement/orders`    |
+| Расписание подбора | — _(cut)_   | `/app/procurement/schedules` |
 
 ### Product selection — removed
 
@@ -776,66 +776,25 @@ checking their delivery against something they were never sent.
   price is agreed; taking it from the catalogue with no way to change it would make the check
   against the delivery meaningless.
 
-### Reorder schedules — «Расписание подбора»
+### Reorder schedules — «Расписание подбора» — **cut**
 
-OX's columns, from the live tenant: Поставщик · Дни месяца · Время · Период продаж · Страховой
-запас · Срок доставки · Следующий запуск · Последний запуск · Статус. Its own description reads:
-_"В указанные дни месяца система считает по товарам поставщика, что и сколько дозаказать (остаток,
-скорость продаж, срок доставки, MOQ), и уведомляет ответственных."_
+Built, then **removed at the client's request** — page, model, store actions, seed and permission
+all gone, not merely hidden.
 
-We keep every one of those columns. The change is what a run **does**.
+What it did: ran the reorder pass on a timetable (days of the month, a time of day) against a
+supplier and a location, and left a draft order behind for somebody to look at. The reasoning was
+that with ten thousand products nobody checks stock and sales one by one, so the pass should happen
+whether or not anyone remembers to ask for it.
 
-**OX notifies. We leave a draft order.** OX's run ends in a notification: the buyer still has to
-open the selection, read it, and retype the whole thing as an order. Ours creates a real draft
-order in Orders — priced, addressed to the supplier, with an expected date one lead time out — for
-a person to check and send. The schedule does the arithmetic and the typing; committing money to a
-supplier stays a human decision, and **nothing is ever sent automatically**.
-
-That is also the answer to the knock-on from removing Product selection. The reorder arithmetic was
-never worth a screen of its own — it is worth exactly what it produces — so it survives here, with
-its sixteen tests, as the engine behind a schedule rather than a page someone has to visit.
-
-**Corrections to an earlier note in this document.** Product selection's entry said OX has no
-lead-time field at all. It does, on this screen: «Срок доставки». It is missing from the _manual_
-run, not from the product.
-
-**What we changed, and why:**
-
-- **A day the month does not have is clamped to its last day, not skipped.** Someone who asks for
-  the 31st wants a run at the end of every month; silently missing February would be the one month
-  they never find out about. The rule is stated under the day picker rather than left to be
-  discovered.
-- **The dialog shows what a run would order right now**, recalculated as the numbers change — count,
-  units and rough value. A schedule is a promise about the future made out of four abstract knobs,
-  and nobody can tell from the knobs whether they have asked for eleven products or eleven hundred.
-  OX asks for the same four numbers and shows nothing until a fortnight later.
-- **"Last run" says what it produced**, linking to the order, and distinguishes _never run_ from
-  _ran and found nothing_. A run that finds nothing is a real, useful outcome — the shelves are
-  fine — and is recorded rather than silently skipped, so nobody wonders whether it happened.
-- **Run now**, for the buyer who is not waiting until the 15th. It records `trigger: 'manual'`, so
-  a hand-run and a due run stay distinguishable.
-- **The cadence reads as a sentence** — "the 1st and 15th of the month" — not a row of bare numbers
-  to decode.
-- **The horizon is spelled out**: "each delivery has to last 51 days — 30 to arrive + 14 until the
-  next order + 7 spare". Three knobs that are really one number should say so.
-
-**Not built, deliberately:** OX's «уведомляет ответственных» — who gets told. That belongs in the
-notification preferences (event type × channel), not on this screen, and the events system is not
-built yet.
-
-## 5. Управление персоналом — Personnel management
-
-| OX (ru)             | Ours (en)      | OX route                               |
-| ------------------- | -------------- | -------------------------------------- |
-| Сотрудники          | Employees      | `/app/personal-management/users`       |
-| Мотивация продавцов | — (removed)    | `/app/personal-management/motivations` |
-| Планирование        | — (removed)    | `/app/personal-management/list/target` |
-| Доступы и роли      | Access & roles | `/app/personal-management/roles`       |
+**That reasoning has not gone away, and the pass itself has not either** — it is the Suggest button
+on an order's product step, which runs exactly the same analysis. What was cut is the _timetable_:
+somebody now has to open an order and press it. If unattended reorder comes back, it is the
+scheduling that needs rebuilding, not the suggestion.
 
 ### Employees — «Сотрудники»
 
 Built **without an OX reference screenshot**, like Transfers, Corrections, Goods receipt,
-Stocktaking, Repricing, Orders and Reorder schedules. Flagged so a later screenshot reads as new
+Stocktaking, Repricing and Orders. Flagged so a later screenshot reads as new
 information rather than a contradiction.
 
 **The framing.** A staff list that is names and phone numbers is an address book, and nobody opens

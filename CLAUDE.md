@@ -51,7 +51,9 @@ Do not rename a nav item or invent a screen without updating that map first.
    **its own product columns** in Settings → Product columns (client request, like OX's
    «Настройка полей») — text, number, list or yes/no, per product or per variation. They show on
    the product list and the product form, and nowhere else.
-4. **Procurement** `New` — product selection (AI-driven reorder), orders, selection schedule.
+4. **Procurement** `New` — orders. The AI-driven reorder pass lives on the order itself, as the
+   Suggest button on its product step. OX's «Расписание подбора» (reorder schedules) was built and
+   then **cut at the client's request** — see docs/OX-NAVIGATION-MAP.md.
 5. **Personnel management** — employees, seller motivation, planning, access & roles (granular
    per-module tree, supports partial/indeterminate access, not just on/off).
 6. **Finance** `beta` — dashboard, transactions, contracts, invoices, budget, scenarios; then a

@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import { DropdownMenu } from 'radix-ui'
 import {
   ArrowLeft,
   ChevronDown,
@@ -9,16 +8,15 @@ import {
   List,
   PackageCheck,
   Plus,
-  Search,
   Sliders,
   Trash2,
-  Upload,
 } from 'lucide-react'
 import { DataTable } from '@/shared/components/DataTable'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
 import { ProductPicker } from '@/shared/components/ProductPicker'
+import { AddProductsMenu } from '@/shared/components/AddProductsMenu'
 import { ScrollSentinel } from '@/shared/components/ScrollSentinel'
 import { SearchInput } from '@/shared/components/SearchInput'
 import { useInfiniteRows } from '@/shared/hooks/useInfiniteRows'
@@ -477,73 +475,6 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
         }
       />
     </>
-  )
-}
-
-/**
- * The three ways the reference product lets products onto a receipt.
- *
- * Each one says what it is *for* under its name, because "create a new
- * product" and "pick from the catalogue" both sound like the same thing to
- * somebody standing in front of an open box for the first time.
- */
-function AddProductsMenu({ onPickFromCatalogue }: { onPickFromCatalogue: () => void }) {
-  const navigate = useNavigate()
-
-  const options = [
-    {
-      icon: Search,
-      label: 'Pick from the catalogue',
-      hint: 'Search or scan what you already stock',
-      onSelect: onPickFromCatalogue,
-    },
-    {
-      icon: Upload,
-      label: 'Upload a spreadsheet',
-      hint: "The supplier's own list, mapped to our fields",
-      onSelect: () => toast.info('Spreadsheet upload is not wired up in this build'),
-    },
-    {
-      icon: Plus,
-      label: 'Create a new product',
-      hint: 'For something we have never carried before',
-      onSelect: () => navigate(paths.products.new),
-    },
-  ]
-
-  return (
-    <DropdownMenu.Root>
-      <DropdownMenu.Trigger asChild>
-        <Button variant="primary">
-          <Plus />
-          Add products
-          <ChevronDown />
-        </Button>
-      </DropdownMenu.Trigger>
-      <DropdownMenu.Portal>
-        <DropdownMenu.Content
-          align="end"
-          sideOffset={4}
-          className="rounded-control border-border bg-surface shadow-popover z-50 w-72 border p-1"
-        >
-          {options.map((option) => (
-            <DropdownMenu.Item
-              key={option.label}
-              onSelect={option.onSelect}
-              className="rounded-control data-[highlighted]:bg-surface-muted flex cursor-pointer items-start gap-3 px-2 py-2 outline-none"
-            >
-              <span className="bg-surface-inset text-fg-muted mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full">
-                <option.icon className="size-4" />
-              </span>
-              <span className="min-w-0">
-                <span className="text-fg block text-sm font-medium">{option.label}</span>
-                <span className="text-fg-subtle text-2xs block">{option.hint}</span>
-              </span>
-            </DropdownMenu.Item>
-          ))}
-        </DropdownMenu.Content>
-      </DropdownMenu.Portal>
-    </DropdownMenu.Root>
   )
 }
 

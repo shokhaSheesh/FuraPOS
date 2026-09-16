@@ -69,7 +69,6 @@ export const paths = {
     orderDetail: (id = ':orderId') => `/procurement/orders/${id}`,
     /** The printable document for an order — outside the app shell, for saving as PDF. */
     orderDocument: (id = ':orderId') => `/procurement/orders/${id}/document`,
-    schedules: '/procurement/schedules', // OX: /app/procurement/schedules
   },
 
   personnel: {

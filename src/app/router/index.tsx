@@ -67,7 +67,6 @@ const RoleDetailPage = lazy(() => import('@/features/roles/pages/RoleDetailPage'
 const EmployeesPage = lazy(() => import('@/features/employees/pages/EmployeesPage'))
 const EmployeeDetailPage = lazy(() => import('@/features/employees/pages/EmployeeDetailPage'))
 const EmployeeFormPage = lazy(() => import('@/features/employees/pages/EmployeeFormPage'))
-const SchedulesPage = lazy(() => import('@/features/schedules/pages/SchedulesPage'))
 const OrdersListPage = lazy(() => import('@/features/orders/pages/OrdersListPage'))
 const OrderPage = lazy(() => import('@/features/orders/pages/OrderPage'))
 const NewSalePage = lazy(() => import('@/features/sales/pages/NewSalePage'))
@@ -263,10 +262,6 @@ const routes: RouteObject[] = [
       {
         path: paths.procurement.orderDetail(),
         element: page(<OrderPage />, 'procurement.orders.view'),
-      },
-      {
-        path: paths.procurement.schedules,
-        element: page(<SchedulesPage />, 'procurement.schedules.view'),
       },
 
       // --- Personnel management -------------------------------------------

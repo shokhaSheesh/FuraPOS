@@ -462,25 +462,6 @@ export function ProductForm({
         */}
         {step === 1 ? (
           <>
-            <Card>
-              <CardBody className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-fg text-sm font-semibold">This product is sold as</p>
-                  <p className="text-fg-subtle text-2xs">
-                    {single
-                      ? 'One sellable thing — it carries its own SKU, price and stock.'
-                      : 'Several sellable things, generated from the options on the next step.'}
-                  </p>
-                </div>
-                <SegmentedControl
-                  aria-label="How many variations"
-                  value={mode}
-                  onChange={setMode}
-                  options={MODES}
-                />
-              </CardBody>
-            </Card>
-
             <div className="grid gap-3 lg:grid-cols-3">
               <Card className="lg:col-span-2">
                 <CardHeader>
@@ -625,6 +606,27 @@ export function ProductForm({
 
         {step === 2 ? (
           <div className="space-y-3">
+            {/* Asked here, as the reference asks it: it is the first decision
+                of this step and it decides what the rest of the step shows. */}
+            <Card>
+              <CardBody className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-fg text-sm font-semibold">This product is sold as</p>
+                  <p className="text-fg-subtle text-2xs">
+                    {single
+                      ? 'One sellable thing — it carries its own SKU, price and stock.'
+                      : 'Several sellable things, generated from the options below.'}
+                  </p>
+                </div>
+                <SegmentedControl
+                  aria-label="How many variations"
+                  value={mode}
+                  onChange={setMode}
+                  options={MODES}
+                />
+              </CardBody>
+            </Card>
+
             <Card>
               <CardHeader className="flex-col items-stretch gap-2 sm:flex-row sm:items-center">
                 <div>

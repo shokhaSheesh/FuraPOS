@@ -345,11 +345,17 @@ export function ProductForm({
     setConfirmCollapse(false)
   }
 
-  /** A step is left only once its own fields are valid, so errors stay near their field. */
+  /**
+   * Any step can be clicked, forwards or back. Moving forward past a step that
+   * is not filled in lands on that step instead, with its errors showing —
+   * better than a stepper that looks clickable and quietly does nothing.
+   */
   const goTo = async (next: 1 | 2 | 3) => {
     if (next <= step) return setStep(next)
-    if (step === 1 && !(await form.trigger(['name', 'categoryId']))) return
-    if (step === 2 && !(await form.trigger(['variations', 'options']))) return
+    if (step === 1 || next === 3) {
+      if (!(await form.trigger(['name', 'categoryId']))) return setStep(1)
+    }
+    if (next === 3 && !(await form.trigger(['variations', 'options']))) return setStep(2)
     setStep(next)
   }
 
@@ -471,6 +477,7 @@ export function ProductForm({
           <Steps
             steps={['Product', single ? 'Variation' : 'Variations', 'Stock']}
             current={step}
+            selectable
             onSelect={(n) => goTo(n as 1 | 2 | 3)}
           />
         }

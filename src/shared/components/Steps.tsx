@@ -16,11 +16,19 @@ export function Steps({
   steps,
   current,
   onSelect,
+  selectable = false,
 }: {
   steps: string[]
   /** 1-based. */
   current: number
   onSelect: (step: number) => void
+  /**
+   * Lets a later step be clicked as well as an earlier one. A create screen
+   * whose steps depend on each other — a transfer's lines need its route —
+   * leaves this off; a form whose steps are only a way of grouping questions
+   * turns it on and decides for itself what to do about half-filled ones.
+   */
+  selectable?: boolean
 }) {
   return (
     <ol className="flex flex-wrap items-center gap-2 text-sm" aria-label="Steps">
@@ -33,13 +41,13 @@ export function Steps({
             {index > 0 ? <span className="bg-border h-px w-6" aria-hidden /> : null}
             <button
               type="button"
-              disabled={!done}
+              disabled={!selectable && !done}
               onClick={() => onSelect(number)}
               aria-current={active ? 'step' : undefined}
               className={cn(
                 'flex items-center gap-2 rounded-full py-0.5 pr-2.5 pl-0.5',
-                done && 'hover:bg-surface-inset',
-                !done && 'cursor-default',
+                (done || selectable) && !active && 'hover:bg-surface-inset',
+                !done && !selectable && 'cursor-default',
               )}
             >
               <span

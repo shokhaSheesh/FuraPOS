@@ -84,6 +84,7 @@ function adapt(fields: TableColumn<TransferRow>[]) {
 export function buildTransferLineColumns({
   canSeeCost,
   cards,
+  readOnly = false,
   fromName,
   toName,
   demandName,
@@ -93,6 +94,8 @@ export function buildTransferLineColumns({
   canSeeCost: boolean
   /** Collapses the identity columns into one rich cell. */
   cards: boolean
+  /** The review step shows the same rows without letting them be changed. */
+  readOnly?: boolean
   fromName: string
   toName: string
   demandName: string
@@ -175,50 +178,59 @@ export function buildTransferLineColumns({
       header: 'Move',
       enableHiding: false,
       meta: { align: 'right' },
-      cell: ({ row }) => (
-        <div className="flex justify-end">
-          <NumberField
-            className="w-24"
-            nullable={false}
-            min={0}
-            aria-label={`Move ${row.original.variation.fullName}`}
-            value={row.original.quantity}
-            // Never more than the shelf holds: a transfer that cannot be
-            // picked is one somebody has to unpick later.
-            onChange={(next) =>
-              onQuantityChange(
-                row.original,
-                Math.min(row.original.atSource, Math.max(0, next ?? 0)),
-              )
-            }
-          />
-        </div>
-      ),
+      cell: ({ row }) =>
+        readOnly ? (
+          <span className="text-fg font-medium tabular-nums">
+            {formatNumber(row.original.quantity)} {row.original.variation.unit}
+          </span>
+        ) : (
+          <div className="flex justify-end">
+            <NumberField
+              className="w-24"
+              nullable={false}
+              min={0}
+              aria-label={`Move ${row.original.variation.fullName}`}
+              value={row.original.quantity}
+              // Never more than the shelf holds: a transfer that cannot be
+              // picked is one somebody has to unpick later.
+              onChange={(next) =>
+                onQuantityChange(
+                  row.original,
+                  Math.min(row.original.atSource, Math.max(0, next ?? 0)),
+                )
+              }
+            />
+          </div>
+        ),
     },
   ]
 
-  const actions: TableColumn<TransferRow>[] = [
-    {
-      id: 'rowActions',
-      header: '',
-      enableHiding: false,
-      cell: ({ row }) =>
-        row.original.index > -1 ? (
-          <div className="flex justify-end">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={`Remove ${row.original.variation.fullName} from this transfer`}
-              title="Remove from this transfer"
-              className="hover:text-danger"
-              onClick={() => onRemove(row.original)}
-            >
-              <Trash2 />
-            </Button>
-          </div>
-        ) : null,
-    },
-  ]
+  // Nothing to remove on the review step: every row there is already a line,
+  // and taking one off belongs on the step where they were chosen.
+  const actions: TableColumn<TransferRow>[] = readOnly
+    ? []
+    : [
+        {
+          id: 'rowActions',
+          header: '',
+          enableHiding: false,
+          cell: ({ row }) =>
+            row.original.index > -1 ? (
+              <div className="flex justify-end">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={`Remove ${row.original.variation.fullName} from this transfer`}
+                  title="Remove from this transfer"
+                  className="hover:text-danger"
+                  onClick={() => onRemove(row.original)}
+                >
+                  <Trash2 />
+                </Button>
+              </div>
+            ) : null,
+        },
+      ]
 
   return [...lead, ...own, ...rest, ...actions]
 }

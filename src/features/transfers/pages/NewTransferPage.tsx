@@ -11,6 +11,7 @@ import { SearchInput } from '@/shared/components/SearchInput'
 import { useInfiniteRows } from '@/shared/hooks/useInfiniteRows'
 import { Steps } from '@/shared/components/Steps'
 import { buildTransferLineColumns, type TransferRow } from '../components/transferLineColumns'
+import type { TableColumn } from '@/shared/components/table/features'
 import { Field } from '@/shared/components/Field'
 import { GenerateTransferModal } from '../components/GenerateTransferModal'
 import type { TransferSuggestion } from '../model/suggest'
@@ -90,7 +91,7 @@ export default function NewTransferPage() {
   const [search, setSearch] = useState('')
   const [cards, setCards] = useState(false)
   /** Route and note first, products second — the reference product's two-page create. */
-  const [step, setStep] = useState<1 | 2>(1)
+  const [step, setStep] = useState<1 | 2 | 3>(1)
 
   /** Adds what the proposal chose, leaving anything already listed alone. */
   const addSuggestions = (suggestions: TransferSuggestion[]) => {
@@ -123,14 +124,30 @@ export default function NewTransferPage() {
     )
   }
 
-  /** Products depend on the route, so it has to be complete before step 2. */
-  const goToProducts = async () => {
-    const ok = await form.trigger(['kind', 'fromLocationId', 'toLocationId'])
-    if (!ok) {
-      toast.error('Pick both locations first')
+  /**
+   * Moving between steps, checking only what the next one actually needs.
+   *
+   * Going back is always allowed; going forward past something unfilled lands
+   * on the step that is unfilled, with its error showing, rather than on a
+   * screen that cannot work yet.
+   */
+  const goTo = async (next: 1 | 2 | 3) => {
+    if (next <= step) {
+      setStep(next)
       return
     }
-    setStep(2)
+    // The products step is the source's shelf, so it cannot exist without one.
+    if (!(await form.trigger(['kind', 'fromLocationId', 'toLocationId']))) {
+      toast.error('Pick both locations first')
+      setStep(1)
+      return
+    }
+    if (next === 3 && lines.length === 0) {
+      toast.error('Put something on the transfer first')
+      setStep(2)
+      return
+    }
+    setStep(next)
     window.scrollTo({ top: 0 })
   }
 
@@ -265,6 +282,25 @@ export default function NewTransferPage() {
 
   const movingUnits = lines.reduce((sum, line) => sum + (line.requestedQuantity || 0), 0)
 
+  /*
+    Just the rows actually going, for the review step. Out of a shelf holding a
+    thousand parts somebody picks a handful, and the whole point of the last
+    step is seeing that handful on its own — scrolling the shelf again looking
+    for the ones with a number in them is the thing it exists to avoid.
+  */
+  const chosenRows = allRows.filter((row) => row.index > -1 && row.quantity > 0)
+
+  const reviewColumns = buildTransferLineColumns({
+    canSeeCost,
+    cards: false,
+    readOnly: true,
+    fromName: from?.name ?? 'source',
+    toName: to?.name ?? 'destination',
+    demandName: demandLocation?.name ?? (requesting ? 'here' : 'source'),
+    onQuantityChange: setQuantity,
+    onRemove: (row) => remove(row.index),
+  })
+
   return (
     <form>
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
@@ -283,25 +319,29 @@ export default function NewTransferPage() {
         }
         below={
           <Steps
-            steps={['Route', 'Products']}
+            steps={['Route', 'Products', 'Review']}
             current={step}
-            onSelect={(n) => setStep(n as 1 | 2)}
+            onSelect={(n) => goTo(n as 1 | 2 | 3)}
+            // `goTo` decides what a forward jump is allowed to do, so the
+            // steps stay clickable and land you on whatever is unfilled.
+            selectable
+            wide
           />
         }
         action={
-          step === 1 ? (
+          step < 3 ? (
             <div className="flex items-center gap-2">
               <Button type="button" variant="secondary" asChild>
                 <Link to={paths.products.transfers}>Cancel</Link>
               </Button>
-              <Button type="button" variant="primary" onClick={goToProducts}>
+              <Button type="button" variant="primary" onClick={() => goTo((step + 1) as 2 | 3)}>
                 Continue
                 <ArrowRight />
               </Button>
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <Button type="button" variant="secondary" onClick={() => setStep(1)}>
+              <Button type="button" variant="secondary" onClick={() => setStep(2)}>
                 <ArrowLeft />
                 Back
               </Button>
@@ -324,7 +364,17 @@ export default function NewTransferPage() {
       />
 
       <div className="mt-4 space-y-3">
-        {step === 1 ? (
+        {step === 3 ? (
+          <ReviewStep
+            rows={chosenRows}
+            columns={reviewColumns}
+            movingUnits={movingUnits}
+            fromName={from?.name ?? '—'}
+            toName={to?.name ?? '—'}
+            requesting={requesting}
+            comment={form.watch('comment')}
+          />
+        ) : step === 1 ? (
           <>
             <Card>
               <CardHeader className="flex-col items-stretch gap-2">
@@ -548,5 +598,67 @@ export default function NewTransferPage() {
         />
       </div>
     </form>
+  )
+}
+
+/**
+ * The last look before it goes: only the lines actually moving.
+ *
+ * The products step is the whole sending shelf, hundreds of rows deep, and
+ * picking a dozen out of it leaves nowhere to see the dozen together. That is
+ * what this is for — the document as it will exist, rather than the shelf it
+ * was chosen from.
+ */
+function ReviewStep({
+  rows,
+  columns,
+  movingUnits,
+  fromName,
+  toName,
+  requesting,
+  comment,
+}: {
+  rows: TransferRow[]
+  columns: TableColumn<TransferRow>[]
+  movingUnits: number
+  fromName: string
+  toName: string
+  requesting: boolean
+  comment: string
+}) {
+  return (
+    <>
+      <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
+        <div className="min-w-0">
+          <p className="text-fg-subtle text-2xs">{requesting ? 'Request' : 'Transfer'}</p>
+          <p className="text-fg flex items-center gap-2 text-sm font-medium">
+            {fromName}
+            <ArrowRight className="text-fg-subtle size-3.5" />
+            {toName}
+          </p>
+          {comment ? <p className="text-fg-subtle text-2xs truncate">{comment}</p> : null}
+        </div>
+        <p className="text-fg-muted text-sm">
+          {requesting ? 'Asking for' : 'Moving'}{' '}
+          <strong className="text-fg font-medium">{formatNumber(movingUnits)}</strong> units across{' '}
+          <strong className="text-fg font-medium">{formatNumber(rows.length)}</strong>{' '}
+          {rows.length === 1 ? 'product' : 'products'}
+        </p>
+      </Card>
+
+      <DataTable
+        storageKey="transfer-review"
+        columns={columns}
+        data={rows}
+        total={rows.length}
+        getRowId={(row) => row.key}
+        emptyState={
+          <EmptyState
+            title="Nothing on this transfer yet"
+            description="Go back to Products and put a quantity against what should move."
+          />
+        }
+      />
+    </>
   )
 }

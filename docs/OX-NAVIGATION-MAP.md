@@ -794,6 +794,16 @@ whose demand justifies the move.
 Ten rows at a time, growing as you scroll. `Suggest what to ask for` stays on the toolbar for a
 requested transfer.
 
+**A third step, Review**, for the reason the second one created: the products step is the whole
+sending shelf, hundreds of rows deep, and picking a dozen out of it leaves nowhere to see the dozen
+together. Review shows only the lines actually moving, read-only, with the route and the totals
+above them — the document as it will exist rather than the shelf it was chosen from. Send and Save
+as draft live there, so nothing dispatches without that look.
+
+The stepper is full width like the other documents', and its steps are clickable: jumping forward
+past something unfilled lands on the step that is unfilled, with the reason, rather than on a screen
+that cannot work yet.
+
 **Not done:** merging New transfer and the transfer detail page into one stepped document, the way
 Goods receipt and Orders now are. A transfer has the same life — drafted, sent, counted in at the
 far end by somebody else days later — so it is the obvious next step, along with Corrections and

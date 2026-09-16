@@ -49,7 +49,16 @@ export function Steps({
         const done = number < current
         const active = number === current
         return (
-          <li key={label} className={cn('flex items-center gap-2', wide && 'min-w-0 flex-1')}>
+          /*
+            Only the connectors stretch, never the labels. Giving every step an
+            equal share of the width leaves the first one — which has no
+            connector before it — with all that space as padding, so the gaps
+            between steps come out different lengths.
+          */
+          <li
+            key={label}
+            className={cn('flex items-center gap-2', wide && index > 0 && 'min-w-0 flex-1')}
+          >
             {index > 0 ? (
               <span className={cn('bg-border h-px', wide ? 'flex-1' : 'w-6')} aria-hidden />
             ) : null}

@@ -88,7 +88,12 @@ export function Modal({
           {/* Only the body scrolls — header and footer stay anchored. */}
           <div className="min-h-0 flex-1 overflow-y-auto p-4">{children}</div>
 
-          {footer ?? (
+          {/* A custom footer replaces what is *in* the footer, never the
+              footer itself — otherwise it loses the rule and the padding and
+              ends up flush against the bottom edge of the dialog. */}
+          {footer ? (
+            <footer className="border-border border-t p-4">{footer}</footer>
+          ) : (
             <footer className="border-border flex items-center justify-end gap-2 border-t p-4">
               <Button variant="secondary" disabled={submitting} onClick={() => onOpenChange(false)}>
                 {secondaryLabel}

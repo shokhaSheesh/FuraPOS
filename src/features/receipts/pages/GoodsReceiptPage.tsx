@@ -9,7 +9,6 @@ import {
   List,
   PackageCheck,
   Plus,
-  Printer,
   Search,
   Sliders,
   Trash2,
@@ -413,15 +412,6 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
               placeholder="Search by barcode, SKU, variation or product name…"
             />
             <div className="flex-1" />
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Print these lines"
-              title="Print these lines"
-              onClick={() => window.print()}
-            >
-              <Printer />
-            </Button>
             <div className="border-border rounded-control flex items-center border p-0.5">
               <Button
                 variant={cards ? 'ghost' : 'secondary'}

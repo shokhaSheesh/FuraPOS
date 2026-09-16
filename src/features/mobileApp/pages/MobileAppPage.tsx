@@ -172,10 +172,64 @@ const OPERATIONS: {
   },
 ]
 
-const SPEND_SPLIT = [
-  { label: 'Топливо', operations: '3 операции', amount: '$1 130,00', share: 59 },
-  { label: 'Зарплата', operations: '2 операции', amount: '$772,00', share: 41 },
+const SPEND_SPLIT: {
+  label: string
+  operations: string
+  amount: string
+  share: number
+  icon: LucideIcon
+  tone: MobileTone
+  /** The slice's colour, which follows the design's order rather than the icon's. */
+  slice: MobileTone
+}[] = [
+  {
+    label: 'Топливо',
+    operations: '5 операций',
+    amount: '$1 850',
+    share: 59.3,
+    icon: Fuel,
+    tone: 'green',
+    slice: 'green',
+  },
+  {
+    label: 'Платные дороги',
+    operations: '8 операций',
+    amount: '$520',
+    share: 16.7,
+    icon: Milestone,
+    tone: 'blue',
+    slice: 'blue',
+  },
+  {
+    label: 'Еда',
+    operations: '19 операций',
+    amount: '$310',
+    share: 9.9,
+    icon: UtensilsCrossed,
+    tone: 'red',
+    slice: 'red',
+  },
+  {
+    label: 'Стоянка',
+    operations: '12 операций',
+    amount: '$240',
+    share: 7.7,
+    icon: SquareParking,
+    tone: 'blue',
+    slice: 'orange',
+  },
+  {
+    label: 'Мойка',
+    operations: '5 операций',
+    amount: '$200',
+    share: 6.4,
+    icon: Droplets,
+    tone: 'purple',
+    slice: 'purple',
+  },
 ]
+
+const SPEND_TOTAL = { amount: '$3 120', operations: '49 операций' }
 
 const TRIPS: {
   from: string
@@ -664,97 +718,134 @@ function Finance({ onOpen }: { onOpen: (state: OperationState) => void }) {
 
 function SpendSplit() {
   return (
-    <PhoneSection
-      title="Куда уходят расходы"
-      subtitle="Структура расходов"
-      action={
-        <span
-          className="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px]"
-          style={{ background: M.card, borderColor: M.border, color: M.textMuted }}
-        >
-          Последний месяц
-          <ChevronRight className="size-3 rotate-90" />
-        </span>
-      }
-    >
-      <PhoneCard>
-        <Donut />
-        <div
-          className="mt-4 flex items-center justify-between text-[10px]"
-          style={{ color: M.textSubtle }}
-        >
-          <span>Категория</span>
-          <span>Сумма · Доля</span>
+    <PhoneSection>
+      <PhoneCard padded={false}>
+        <div className="px-3.5 pt-3.5">
+          <p className="text-[15px] font-bold" style={{ color: M.text }}>
+            Куда уходят расходы
+          </p>
+          <p className="text-[11px]" style={{ color: M.textSubtle }}>
+            Этот месяц
+          </p>
         </div>
-        <div className="mt-1.5 space-y-1.5">
-          {SPEND_SPLIT.map((slice, index) => (
-            <div key={slice.label} className="flex items-center gap-2">
-              <span
-                className="size-2 shrink-0 rounded-full"
-                style={{ background: index === 0 ? TONES.green.fg : TONES.orange.fg }}
-              />
+
+        <Donut />
+
+        <div className="mt-1 divide-y" style={{ borderColor: M.divider }}>
+          {SPEND_SPLIT.map((slice) => (
+            <div key={slice.label} className="flex items-center gap-3 px-3.5 py-2.5">
+              <IconTile icon={slice.icon} tone={slice.tone} size="sm" shape="square" />
               <div className="min-w-0 flex-1">
-                <p className="text-[12px] font-semibold" style={{ color: M.text }}>
+                <p className="truncate text-[14px] font-bold" style={{ color: M.text }}>
                   {slice.label}
                 </p>
-                <p className="text-[10px]" style={{ color: M.textSubtle }}>
+                <p className="text-[12px]" style={{ color: M.textSubtle }}>
                   {slice.operations}
                 </p>
               </div>
-              <span className="text-[12px] font-bold" style={{ color: M.text }}>
-                {slice.amount}
-              </span>
-              <span
-                className="rounded-full px-1.5 py-0.5 text-[10px]"
-                style={{ background: TONES.grey.soft, color: M.textMuted }}
-              >
-                {slice.share}%
-              </span>
+              <div className="text-right">
+                <p className="text-[14px] font-bold" style={{ color: M.text }}>
+                  {slice.amount}
+                </p>
+                <p className="text-[12px]" style={{ color: M.textSubtle }}>
+                  {slice.share.toFixed(1).replace('.', ',')}%
+                </p>
+              </div>
+              <ChevronRight className="size-4 shrink-0" style={{ color: M.textSubtle }} />
             </div>
           ))}
+        </div>
+
+        <div className="px-3.5 pt-2 pb-3.5">
+          <div
+            className="flex items-start gap-2 rounded-xl px-3 py-2.5 text-[12px]"
+            style={{ background: M.screen, color: M.textMuted }}
+          >
+            <span
+              className="mt-0.5 grid size-4 shrink-0 place-items-center rounded-full border text-[9px] font-bold"
+              style={{ borderColor: M.textSubtle, color: M.textSubtle }}
+            >
+              i
+            </span>
+            <span>
+              Нажмите на категорию, чтобы открыть операции.
+              <br />
+              Удалённые расходы не учитываются в итогах.
+            </span>
+          </div>
         </div>
       </PhoneCard>
     </PhoneSection>
   )
 }
 
-/** Two slices, drawn as one stroked circle each — no chart library on a mock. */
+/**
+ * The ring, drawn by hand: one stroked arc per category with its share written
+ * inside it. No chart library on a mock, and none of this back office's chart
+ * palette either — the slice colours are the app's own.
+ */
 function Donut() {
-  const radius = 54
+  const radius = 72
   const circumference = 2 * Math.PI * radius
-  const first = (SPEND_SPLIT[0]!.share / 100) * circumference
+  let offset = 0
+
+  const slices = SPEND_SPLIT.map((slice) => {
+    const length = (slice.share / 100) * circumference
+    const midAngle = ((offset + length / 2) / circumference) * 360 - 90
+    const radians = (midAngle * Math.PI) / 180
+    const entry = {
+      ...slice,
+      length,
+      offset,
+      labelX: 100 + radius * Math.cos(radians),
+      labelY: 100 + radius * Math.sin(radians),
+    }
+    offset += length
+    return entry
+  })
+
   return (
-    <div className="relative mx-auto size-40">
-      <svg viewBox="0 0 140 140" className="size-full -rotate-90">
-        <circle
-          cx="70"
-          cy="70"
-          r={radius}
-          fill="none"
-          strokeWidth="18"
-          stroke={TONES.green.fg}
-          strokeDasharray={`${first} ${circumference - first}`}
-        />
-        <circle
-          cx="70"
-          cy="70"
-          r={radius}
-          fill="none"
-          strokeWidth="18"
-          stroke={TONES.orange.fg}
-          strokeDasharray={`${circumference - first} ${first}`}
-          strokeDashoffset={-first}
-        />
+    <div className="relative mx-auto mt-2 size-[220px]">
+      <svg viewBox="0 0 200 200" className="size-full">
+        <g transform="rotate(-90 100 100)">
+          {slices.map((slice) => (
+            <circle
+              key={slice.label}
+              cx="100"
+              cy="100"
+              r={radius}
+              fill="none"
+              strokeWidth="24"
+              stroke={TONES[slice.slice].fg}
+              strokeDasharray={`${slice.length} ${circumference - slice.length}`}
+              strokeDashoffset={-slice.offset}
+            />
+          ))}
+        </g>
+        {slices.map((slice) => (
+          <text
+            key={slice.label}
+            x={slice.labelX}
+            y={slice.labelY}
+            textAnchor="middle"
+            dominantBaseline="central"
+            fontSize="9"
+            fontWeight="700"
+            fill="#FFFFFF"
+          >
+            {slice.share.toFixed(1).replace('.', ',')}%
+          </text>
+        ))}
       </svg>
-      <div className="absolute inset-0 grid place-content-center text-center">
-        <p className="text-[10px]" style={{ color: M.textSubtle }}>
+      <div className="absolute inset-0 grid place-content-center px-12 text-center">
+        <p className="text-[10px]" style={{ color: M.textMuted }}>
           Всего расходов
         </p>
-        <p className="text-[18px] font-bold" style={{ color: M.text }}>
-          $1 902,00
+        <p className="text-[19px] font-bold" style={{ color: M.text }}>
+          {SPEND_TOTAL.amount}
         </p>
         <p className="text-[10px]" style={{ color: M.textSubtle }}>
-          5 операций
+          {SPEND_TOTAL.operations}
         </p>
       </div>
     </div>

@@ -351,7 +351,8 @@ function Plate() {
 function Spec({ icon: Icon, value, label }: { icon: LucideIcon; value: string; label: string }) {
   return (
     <div className="flex items-center gap-2.5 py-2">
-      <Icon className="size-4 shrink-0" style={{ color: TONES.blue.fg }} />
+      {/* Black, like the design — not the back office's blue. */}
+      <Icon className="size-4 shrink-0" style={{ color: M.text }} />
       <div className="leading-tight">
         <dd className="text-[13px] font-bold" style={{ color: M.text }}>
           {value}

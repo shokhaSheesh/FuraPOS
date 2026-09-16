@@ -739,6 +739,25 @@ because all three end the same way — an order that is received against when th
   the browser's own print dialog like Print templates — no PDF library. It is in English with
   unambiguous dates, since a factory reads it, and lists lines most urgent first.
 
+### Suggesting what to reorder — the low-stock gate
+
+`Suggest` on an order, and `Suggest what to ask for` on a requested transfer, both run the same
+arithmetic: **sold over the window − what we hold = what we are short by.** That alone proposes a
+top-up for anything at all short, which is not what a buyer does.
+
+**The client's case, verbatim:** 25 sold in three months, 22 still on the shelf. The arithmetic says
+"three short" and proposes three, and an order full of threes is not an order anybody places.
+
+So nothing is proposed until the shelf is down to **three or fewer** — `SUGGEST_AT_OR_BELOW` in
+`src/shared/lib/demand.ts`, one line to change. Deliberately a plain stock count rather than days of
+cover: they asked for "suggest it when there are three or fewer left", and a rule somebody can check
+by looking at the shelf is a rule they will trust.
+
+**The trade-off, on the record:** a part selling nine hundred a quarter with ten left is genuinely
+about to run out, and this rule will not raise it. Days of cover would — it is already computed, and
+sorts the list — so if the client ever finds fast movers slipping through, switching the gate from
+`stock <= 3` to `daysOfCover <= N` is a one-line change in the same place.
+
 ### Orders — built without an OX reference
 
 Built like Transfers, Corrections, Goods receipt, Stocktaking and Repricing: **no OX screenshot was

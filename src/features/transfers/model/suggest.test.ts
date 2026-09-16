@@ -80,11 +80,11 @@ describe('suggestTransfer', () => {
       id: 'a',
       stockByLocation: [
         { locationId: FROM, locationName: FROM, quantity: 100 },
-        { locationId: TO, locationName: TO, quantity: 20 },
+        { locationId: TO, locationName: TO, quantity: 2 },
       ],
     })
     const [suggestion] = run([v], [sale(TO, 'a', 90)])
-    expect(suggestion?.suggested).toBe(70)
+    expect(suggestion?.suggested).toBe(88)
   })
 
   it('proposes nothing when the destination already holds what it sells', () => {
@@ -115,18 +115,41 @@ describe('suggestTransfer', () => {
   })
 
   it('sends all but what the source sold when it is nearly out', () => {
-    // Sold 20 at the shop, 5 there, so 15 short. The warehouse has 5 and sold
+    // Sold 20 at the shop, 3 there, so 17 short. The warehouse has 5 and sold
     // 1, so it keeps 1 and sends 4.
     const v = variation({
       id: 'a',
       stockByLocation: [
         { locationId: FROM, locationName: FROM, quantity: 5 },
-        { locationId: TO, locationName: TO, quantity: 5 },
+        { locationId: TO, locationName: TO, quantity: 3 },
       ],
     })
     const [suggestion] = run([v], [sale(TO, 'a', 20), sale(FROM, 'a', 1)])
-    expect(suggestion?.shortfall).toBe(15)
+    expect(suggestion?.shortfall).toBe(17)
     expect(suggestion?.suggested).toBe(4)
+  })
+
+  it('leaves a shelf alone until it is nearly empty', () => {
+    // The client's case: 25 sold at the shop and 22 still there is "three
+    // short" by arithmetic, and an order full of threes is not an order
+    // anybody places. Nothing is proposed until the shelf is down to three.
+    const stocked = variation({
+      id: 'a',
+      stockByLocation: [
+        { locationId: FROM, locationName: FROM, quantity: 100 },
+        { locationId: TO, locationName: TO, quantity: 22 },
+      ],
+    })
+    expect(run([stocked], [sale(TO, 'a', 25)])).toEqual([])
+
+    const nearlyOut = variation({
+      id: 'a',
+      stockByLocation: [
+        { locationId: FROM, locationName: FROM, quantity: 100 },
+        { locationId: TO, locationName: TO, quantity: 3 },
+      ],
+    })
+    expect(run([nearlyOut], [sale(TO, 'a', 25)])).toHaveLength(1)
   })
 
   it('proposes nothing when the source cannot spare any', () => {
@@ -188,7 +211,7 @@ describe('suggestTransfer', () => {
       id: 'a',
       stockByLocation: [
         { locationId: FROM, locationName: FROM, quantity: 100 },
-        { locationId: TO, locationName: TO, quantity: 20 },
+        { locationId: TO, locationName: TO, quantity: 3 },
       ],
     })
     const b = variation({

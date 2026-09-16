@@ -1,6 +1,6 @@
 import type { Sale } from '@/features/sales/model/sale'
 import type { VariationRow } from '@/features/products/model/product'
-import { DAYS_PER_MONTH } from '@/shared/lib/demand'
+import { DAYS_PER_MONTH, SUGGEST_AT_OR_BELOW } from '@/shared/lib/demand'
 
 /**
  * Proposing a transfer from what actually sold.
@@ -98,6 +98,11 @@ export function suggestTransfer({
     if (destinationSold === 0) continue
 
     const destinationStock = stockAt(variation, toLocationId)
+    // Not until that shelf is nearly empty. A shop with twenty-two of
+    // something that sold twenty-five does not need a lorry. See
+    // SUGGEST_AT_OR_BELOW.
+    if (destinationStock > SUGGEST_AT_OR_BELOW) continue
+
     const shortfall = destinationSold - destinationStock
     if (shortfall <= 0) continue
 

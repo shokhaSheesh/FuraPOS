@@ -16,6 +16,23 @@ export type DemandWindow = (typeof DEMAND_WINDOWS)[number]
 /** Months are counted as 30 days — near enough, and the same every time. */
 export const DAYS_PER_MONTH = 30
 
+/**
+ * How low a shelf has to be before a suggestion will touch it.
+ *
+ * Without this, the arithmetic proposes a top-up for anything at all short:
+ * twenty-five sold and twenty-two held is three short, so it asks for three —
+ * and an order full of threes is not an order anybody places. A buyer restocks
+ * what is nearly *out*, not what is merely below its own last quarter.
+ *
+ * Client's number, and deliberately a plain stock count rather than days of
+ * cover: they asked for "suggest it when there are three or fewer left", and a
+ * rule somebody can check by looking at the shelf is a rule they will trust.
+ * The trade-off is on the record — a part selling nine hundred a quarter with
+ * ten left is genuinely about to run out and this rule will not raise it. See
+ * docs/OX-NAVIGATION-MAP.md.
+ */
+export const SUGGEST_AT_OR_BELOW = 3
+
 export function unitsSoldAt(
   sales: Pick<Sale, 'status' | 'locationId' | 'createdAt' | 'lines'>[],
   variationId: string,

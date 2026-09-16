@@ -1,6 +1,6 @@
 import type { Sale } from '@/features/sales/model/sale'
 import type { CatalogueEntry } from '@/features/suppliers/model/catalogue'
-import { DAYS_PER_MONTH, unitsSoldAt } from '@/shared/lib/demand'
+import { DAYS_PER_MONTH, SUGGEST_AT_OR_BELOW, unitsSoldAt } from '@/shared/lib/demand'
 
 /**
  * What to order, worked out from what sold.
@@ -20,6 +20,11 @@ import { DAYS_PER_MONTH, unitsSoldAt } from '@/shared/lib/demand'
  * Stock is counted company-wide rather than per shop. An order refills the
  * business, and a part sitting in the other warehouse is a part we do not need
  * to buy.
+ *
+ * Nothing is proposed until the shelf is nearly empty — see
+ * `SUGGEST_AT_OR_BELOW`. The arithmetic on its own proposes a top-up for
+ * anything at all short, and an order full of threes is not an order anybody
+ * places.
  */
 
 export interface OrderSuggestion {
@@ -62,6 +67,10 @@ export function suggestOrder({
     // Something the supplier lists but we have never stocked has no history to
     // reason from. Buying it is a judgement call, not an arithmetic one.
     if (!entry.variation) continue
+
+    // Not until the shelf is nearly empty. Being below the last window's sales
+    // is not a reason to buy; being nearly out is. See SUGGEST_AT_OR_BELOW.
+    if (entry.stock > SUGGEST_AT_OR_BELOW) continue
 
     // Null location: this is about the business, not one shelf.
     const sold = unitsSoldAt(sales, entry.variation.id, null, months, now)

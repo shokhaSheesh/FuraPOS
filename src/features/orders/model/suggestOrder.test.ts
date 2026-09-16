@@ -128,10 +128,21 @@ describe('suggestOrder', () => {
 
   it('puts the part that runs out soonest first', () => {
     const entries = [
-      entry({ id: 'a', variationId: 'var-a', stock: 10 }),
+      entry({ id: 'a', variationId: 'var-a', stock: 3 }),
       entry({ id: 'b', variationId: 'var-b', stock: 1 }),
     ]
     const sales = [sale('var-a', 20), sale('var-b', 20)]
     expect(run(entries, sales).map((s) => s.supplierProductId)).toEqual(['b', 'a'])
+  })
+  it('leaves a shelf alone until it is nearly empty', () => {
+    // The client's case: 25 sold and 22 still on the shelf is "three short" by
+    // arithmetic, and an order full of threes is not an order anybody places.
+    // Nothing is proposed until it is down to three.
+    const stocked = [entry({ id: 'a', variationId: 'var-a', stock: 22 })]
+    expect(run(stocked, [sale('var-a', 25)])).toEqual([])
+
+    const nearlyOut = [entry({ id: 'a', variationId: 'var-a', stock: 3 })]
+    const [suggestion] = run(nearlyOut, [sale('var-a', 25)])
+    expect(suggestion?.suggested).toBe(22)
   })
 })

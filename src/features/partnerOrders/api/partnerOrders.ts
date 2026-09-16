@@ -71,7 +71,6 @@ export function usePartnerOrderSummary(query: ListQuery) {
 export function usePartnerOrderActions(id: string) {
   const confirm = useDataStore((s) => s.confirmPartnerOrder)
   const ship = useDataStore((s) => s.shipPartnerOrder)
-  const confirmDelivery = useDataStore((s) => s.confirmPartnerDelivery)
   const cancel = useDataStore((s) => s.cancelPartnerOrder)
 
   type Opts<T = void> = { onSuccess?: (value: T) => void; onError?: (message: string) => void }
@@ -92,8 +91,6 @@ export function usePartnerOrderActions(id: string) {
       if (result.ok) opts?.onSuccess?.(result.shipmentId)
       else opts?.onError?.(result.error)
     },
-    confirmDelivery: (quantities: Record<string, number>, opts?: Opts) =>
-      run(confirmDelivery(id, quantities), opts, undefined as void),
     cancel: (opts?: Opts) => run(cancel(id), opts, undefined as void),
   }
 }

@@ -2414,21 +2414,13 @@ export const notificationPreferences: NotificationPreferences = {
  * generated before this file finished. Everything below is decided by position
  * instead, which also makes the spread of states deliberate rather than lucky.
  *
- * Six, covering every state the screen exists to show: one just arrived and
+ * Five, covering every state the screen exists to show: one just arrived and
  * unanswered, one accepted and not yet sent, one part shipped, one fully
- * shipped and waiting to be counted, one completed with a shortfall, and one
- * cancelled.
+ * shipped, and one cancelled.
  */
 export const partnerOrders: PartnerOrder[] = (() => {
   const businesses = clients.filter((client) => client.type === 'business')
-  const states: PartnerOrderStatus[] = [
-    'new',
-    'confirmed',
-    'partial',
-    'shipped',
-    'completed',
-    'cancelled',
-  ]
+  const states: PartnerOrderStatus[] = ['new', 'confirmed', 'partial', 'shipped', 'cancelled']
 
   return states.map((status, index) => {
     const sequence = index + 1
@@ -2448,14 +2440,6 @@ export const partnerOrders: PartnerOrder[] = (() => {
             ? Math.round(ordered / 2)
             : ordered
 
-      /*
-        One line of the completed order arrives two short. A trade order that
-        always arrives complete never shows the column that matters, and the
-        gap between what left and what landed is the only thing a delivery
-        note is really for.
-      */
-      const received = status === 'completed' ? Math.max(0, shipped - (lineIndex === 1 ? 2 : 0)) : 0
-
       return {
         id: `pol-${sequence}-${lineIndex + 1}`,
         variationId: variation.id,
@@ -2466,7 +2450,6 @@ export const partnerOrders: PartnerOrder[] = (() => {
         unit: variation.unit,
         orderedQuantity: ordered,
         shippedQuantity: shipped,
-        receivedQuantity: received,
         // Trade price: a little under the shelf price, as a reseller pays.
         unitPrice: Math.round(variation.salePrice * 0.85),
         currency: 'UZS' as const,
@@ -2474,7 +2457,7 @@ export const partnerOrders: PartnerOrder[] = (() => {
     })
 
     const shipments =
-      status === 'partial' || status === 'shipped' || status === 'completed'
+      status === 'partial' || status === 'shipped'
         ? [
             {
               id: `psh-po-${sequence}-1`,
@@ -2505,9 +2488,7 @@ export const partnerOrders: PartnerOrder[] = (() => {
       confirmedAt:
         status === 'new' ? null : new Date(placedAt.getTime() + 86_400_000).toISOString(),
       closedAt:
-        status === 'completed' || status === 'cancelled'
-          ? new Date(placedAt.getTime() + 6 * 86_400_000).toISOString()
-          : null,
+        status === 'cancelled' ? new Date(placedAt.getTime() + 6 * 86_400_000).toISOString() : null,
       updatedAt: placedAt.toISOString(),
     } satisfies PartnerOrder
   })

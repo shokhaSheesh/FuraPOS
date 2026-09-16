@@ -222,11 +222,6 @@ interface CatalogState {
     quantities: Record<string, number>,
     note: string,
   ) => { ok: true; shipmentId: string } | { ok: false; error: string }
-  /** What the other end says arrived. Closes the order. */
-  confirmPartnerDelivery: (
-    id: string,
-    quantities: Record<string, number>,
-  ) => { ok: true } | { ok: false; error: string }
   cancelPartnerOrder: (id: string) => { ok: true } | { ok: false; error: string }
 
   createOrder: (input: CreateOrderInput) => PurchaseOrder
@@ -1354,7 +1349,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
     const order = get().partnerOrders.find((o) => o.id === id)
     if (!order) return { ok: false, error: 'That order no longer exists' }
     if (order.status === 'new') return { ok: false, error: 'Accept the order before shipping it' }
-    if (order.status === 'cancelled' || order.status === 'completed') {
+    if (order.status === 'cancelled' || order.status === 'shipped') {
       return { ok: false, error: 'This order is closed' }
     }
 
@@ -1421,38 +1416,6 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       ...commitDeltas(get(), deltas, order.locationId, order.locationName),
     })
     return { ok: true, shipmentId: shipment.id }
-  },
-
-  confirmPartnerDelivery: (id, quantities) => {
-    const order = get().partnerOrders.find((o) => o.id === id)
-    if (!order) return { ok: false, error: 'That order no longer exists' }
-    if (order.shipments.length === 0) {
-      return { ok: false, error: 'Nothing has been sent yet' }
-    }
-
-    const now = new Date().toISOString()
-    set({
-      partnerOrders: get().partnerOrders.map((o) =>
-        o.id === id
-          ? {
-              ...o,
-              lines: o.lines.map((line) => ({
-                ...line,
-                // Never more than we sent: a claim for more than left the
-                // building is a different conversation.
-                receivedQuantity: Math.min(
-                  line.shippedQuantity,
-                  Math.max(0, quantities[line.id] ?? line.shippedQuantity),
-                ),
-              })),
-              status: 'completed',
-              closedAt: now,
-              updatedAt: now,
-            }
-          : o,
-      ),
-    })
-    return { ok: true }
   },
 
   cancelPartnerOrder: (id) => {

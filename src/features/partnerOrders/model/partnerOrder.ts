@@ -8,15 +8,19 @@ import type { Id, IsoDate } from '@/shared/types'
  * The two halves of one trade, seen from opposite ends — and the reason this
  * is a module rather than a kind of sale is the middle of it. A sale is a
  * single event: it happens, stock leaves, money is owed. An order placed with
- * us has a life: it arrives, we accept it, we ship it — often in parts, often
- * short — and the other side counts what turned up and tells us.
+ * us has a life: it arrives, we accept it, and we ship it — often in parts,
+ * over days.
  *
- * Neither of the existing sales screens can hold that. Offline sales is typed
+ * **Our side ends at the loading bay.** What the other end counted off the
+ * lorry is their business, recorded on their own goods receipt, exactly as we
+ * record a delivery from AKCHAEV on ours. Asking us to enter it would be
+ * asking one party to keep both sets of books.
+ *
+ * Neither of the existing sales screens can hold this. Offline sales is typed
  * in by us at the counter, and Online sales is a read-only feed from the
  * e-commerce app that we are not allowed to act on.
  */
-export type PartnerOrderStatus =
-  'new' | 'confirmed' | 'partial' | 'shipped' | 'completed' | 'cancelled'
+export type PartnerOrderStatus = 'new' | 'confirmed' | 'partial' | 'shipped' | 'cancelled'
 
 export const PARTNER_ORDER_STATUSES: {
   value: PartnerOrderStatus
@@ -27,13 +31,8 @@ export const PARTNER_ORDER_STATUSES: {
   { value: 'new', label: 'New', tone: 'info', hint: 'They have placed it; we have not answered' },
   { value: 'confirmed', label: 'Confirmed', tone: 'info', hint: 'We have accepted it' },
   { value: 'partial', label: 'Part shipped', tone: 'warning', hint: 'Some of it has gone' },
-  { value: 'shipped', label: 'Shipped', tone: 'info', hint: 'All of it has gone, not yet counted' },
-  {
-    value: 'completed',
-    label: 'Completed',
-    tone: 'success',
-    hint: 'They have counted what arrived',
-  },
+  // Terminal from our side: everything has left the building.
+  { value: 'shipped', label: 'Shipped', tone: 'success', hint: 'All of it has gone' },
   { value: 'cancelled', label: 'Cancelled', tone: 'danger', hint: 'Closed without shipping' },
 ]
 
@@ -46,11 +45,11 @@ export const partnerStatusTone = (status: PartnerOrderStatus) => meta(status).to
 export type Currency = 'USD' | 'UZS'
 
 /**
- * Three quantities, because three different people counted.
+ * Two quantities: what they asked for, and what we have put on a lorry.
  *
- * What they asked for, what we put on the lorry, and what they found in the
- * box. Collapsing any pair of them loses the only thing worth knowing: a
- * shortfall, and which end of the journey it happened at.
+ * There is deliberately no third. What they found in the box is counted at
+ * their end, on their own goods receipt — the same document we raise when
+ * AKCHAEV delivers to us.
  */
 export interface PartnerOrderLine {
   id: string
@@ -64,8 +63,6 @@ export interface PartnerOrderLine {
   orderedQuantity: number
   /** What we have sent, across every shipment. */
   shippedQuantity: number
-  /** What they have told us arrived. */
-  receivedQuantity: number
   /** What they are paying per unit, agreed when the order was accepted. */
   unitPrice: number
   currency: Currency
@@ -114,31 +111,12 @@ export const orderedUnits = (order: Pick<PartnerOrder, 'lines'>) =>
 export const shippedUnits = (order: Pick<PartnerOrder, 'lines'>) =>
   order.lines.reduce((sum, line) => sum + line.shippedQuantity, 0)
 
-export const receivedUnits = (order: Pick<PartnerOrder, 'lines'>) =>
-  order.lines.reduce((sum, line) => sum + line.receivedQuantity, 0)
-
 /** Still to send on one line, never below zero. */
 export const lineOutstanding = (line: PartnerOrderLine) =>
   Math.max(0, line.orderedQuantity - line.shippedQuantity)
 
 export const outstandingUnits = (order: Pick<PartnerOrder, 'lines'>) =>
   order.lines.reduce((sum, line) => sum + lineOutstanding(line), 0)
-
-/**
- * What went missing between our shelf and theirs.
- *
- * Only countable once they have told us what arrived, and only on lines we
- * have actually shipped — a line still sitting here is outstanding, not lost,
- * and counting it as a loss would make every part-shipped order look like a
- * disaster.
- */
-export const lineShortfall = (line: PartnerOrderLine, confirmed: boolean) =>
-  confirmed ? Math.max(0, line.shippedQuantity - line.receivedQuantity) : 0
-
-export const shortfallUnits = (order: Pick<PartnerOrder, 'lines' | 'status'>) =>
-  order.status === 'completed'
-    ? order.lines.reduce((sum, line) => sum + lineShortfall(line, true), 0)
-    : 0
 
 /** What the order is worth, priced at what they agreed to pay. */
 export const orderValue = (order: Pick<PartnerOrder, 'lines'>, usdRate: number) =>
@@ -179,12 +157,8 @@ export function nextStep(
 export const canShip = (status: PartnerOrderStatus) =>
   status === 'confirmed' || status === 'partial'
 
-/** Their side of it: they can only count what has actually been sent. */
-export const canConfirmDelivery = (status: PartnerOrderStatus) =>
-  status === 'partial' || status === 'shipped'
-
 export const canCancel = (status: PartnerOrderStatus) =>
-  status !== 'completed' && status !== 'cancelled'
+  status !== 'shipped' && status !== 'cancelled'
 
 /** Where an order stands once a shipment has gone out. */
 export function statusAfterShipping(order: Pick<PartnerOrder, 'lines'>): PartnerOrderStatus {

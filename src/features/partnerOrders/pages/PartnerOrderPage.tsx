@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
-import { ArrowLeft, Ban, Check, PackageCheck, Truck } from 'lucide-react'
+import { ArrowLeft, Ban, Check, Truck } from 'lucide-react'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
@@ -19,25 +19,25 @@ import { formatDate, formatDateTime, formatMoney, formatNumber } from '@/shared/
 import { USD_RATE } from '@/data/seed'
 import {
   canCancel,
-  canConfirmDelivery,
   canShip,
   lineOutstanding,
-  lineShortfall,
   nextStep,
   orderValue,
   orderedUnits,
   outstandingUnits,
   partnerStatusLabel,
   partnerStatusTone,
-  receivedUnits,
-  shippedUnits,
   shippedValue,
-  shortfallUnits,
   type PartnerOrder,
 } from '../model/partnerOrder'
 import { usePartnerOrder, usePartnerOrderActions } from '../api/partnerOrders'
 
-const STEPS = ['The order', 'Shipments', 'What arrived']
+/*
+  Two, not three. Our side of a partner order ends at the loading bay: what
+  they counted off the lorry is recorded at their end, on their own goods
+  receipt, exactly as we record a delivery from AKCHAEV on ours.
+*/
+const STEPS = ['The order', 'Shipments']
 
 /**
  * One order somebody placed with us, from arrival to their confirmation.
@@ -85,13 +85,7 @@ export default function PartnerOrderPage() {
 
       <Steps steps={STEPS} current={step} onSelect={setStep} selectable wide />
 
-      {step === 1 ? (
-        <OrderStep order={order} />
-      ) : step === 2 ? (
-        <ShipmentsStep order={order} />
-      ) : (
-        <ArrivalStep order={order} />
-      )}
+      {step === 1 ? <OrderStep order={order} /> : <ShipmentsStep order={order} />}
     </div>
   )
 }
@@ -348,144 +342,11 @@ function ShipmentsStep({ order }: { order: PartnerOrder }) {
   )
 }
 
-/* --- step 3: what arrived ------------------------------------------------ */
-
-function ArrivalStep({ order }: { order: PartnerOrder }) {
-  const { can } = useSession()
-  const actions = usePartnerOrderActions(order.id)
-  const [confirming, setConfirming] = useState(false)
-  const [quantities, setQuantities] = useState<Record<string, number>>({})
-
-  const open = () => {
-    setQuantities(Object.fromEntries(order.lines.map((line) => [line.id, line.shippedQuantity])))
-    setConfirming(true)
-  }
-
-  const counted = Object.values(quantities).reduce((sum, value) => sum + value, 0)
-  const done = order.status === 'completed'
-  const short = shortfallUnits(order)
-
-  return (
-    <>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Figure label="Ordered" value={`${formatNumber(orderedUnits(order))} units`} />
-        <Figure label="Sent" value={`${formatNumber(shippedUnits(order))} units`} />
-        <Figure
-          label="Confirmed as arrived"
-          value={done ? `${formatNumber(receivedUnits(order))} units` : 'Not yet counted'}
-        />
-        <Figure
-          label="Short on arrival"
-          value={done ? `${formatNumber(short)} units` : '—'}
-          tone={short > 0 ? 'danger' : undefined}
-        />
-      </div>
-
-      <Card>
-        <CardHeader className="items-start justify-between gap-3">
-          <div>
-            <CardTitle>What they say arrived</CardTitle>
-            {/*
-              In the real product this comes from the other end — they count
-              their delivery in their own back office and it lands here. There
-              is no second tenant in this build, so it is entered on their
-              behalf, and the screen says so rather than pretending.
-            */}
-            <p className="text-fg-subtle text-2xs mt-0.5">
-              Normally sent by {order.clientName} when they book the delivery in. Entered here on
-              their behalf.
-            </p>
-          </div>
-          {canConfirmDelivery(order.status) && can('sales.orders.edit') ? (
-            <Button variant="primary" size="sm" onClick={open}>
-              <PackageCheck />
-              Record what arrived
-            </Button>
-          ) : null}
-        </CardHeader>
-        <CardBody className="p-0">
-          <LineTable order={order} showArrival />
-        </CardBody>
-      </Card>
-
-      <Modal
-        open={confirming}
-        onOpenChange={setConfirming}
-        title="Record what arrived"
-        description="What the other end counted off the lorry. Anything short of what we sent is a claim against us."
-        size="lg"
-        primary={{
-          label: 'Confirm the delivery',
-          onClick: () =>
-            actions.confirmDelivery(quantities, {
-              onSuccess: () => {
-                setConfirming(false)
-                toast.success(`${order.number} completed`)
-              },
-              onError: (message) => toast.error(message),
-            }),
-        }}
-      >
-        <div className="border-border rounded-card overflow-x-auto border">
-          <table className="w-full text-sm">
-            <thead className="bg-canvas">
-              <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-                <th className="px-3 py-2 text-left font-semibold">Product</th>
-                <th className="px-3 py-2 text-right font-semibold">We sent</th>
-                <th className="px-3 py-2 text-right font-semibold">They counted</th>
-              </tr>
-            </thead>
-            <tbody>
-              {order.lines.map((line) => (
-                <tr key={line.id} className="border-border border-t">
-                  <td className="px-3 py-2">
-                    <div className="flex items-center gap-2.5">
-                      <ProductThumb src={line.imageUrl} size="sm" />
-                      <div className="min-w-0">
-                        <p className="text-fg font-medium">{line.name}</p>
-                        <p className="text-fg-subtle text-2xs font-mono">{line.sku}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="text-fg-muted px-3 py-2 text-right tabular-nums">
-                    {formatNumber(line.shippedQuantity)} {line.unit}
-                  </td>
-                  <td className="px-2 py-1.5 text-right">
-                    <NumberField
-                      className="w-24"
-                      nullable={false}
-                      min={0}
-                      disabled={line.shippedQuantity === 0}
-                      aria-label={`Arrived ${line.name}`}
-                      value={quantities[line.id] ?? 0}
-                      onChange={(next) =>
-                        setQuantities((current) => ({
-                          ...current,
-                          // Never more than left the building.
-                          [line.id]: Math.min(line.shippedQuantity, Math.max(0, next ?? 0)),
-                        }))
-                      }
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p className="text-fg-muted mt-3 text-sm">
-          {formatNumber(counted)} of {formatNumber(shippedUnits(order))} units confirmed.
-        </p>
-      </Modal>
-    </>
-  )
-}
-
 /* --- shared -------------------------------------------------------------- */
 
-function LineTable({ order, showArrival }: { order: PartnerOrder; showArrival?: boolean }) {
+function LineTable({ order }: { order: PartnerOrder }) {
   const { can } = useSession()
   const canSeeMoney = can('sales.orders.view')
-  const done = order.status === 'completed'
 
   return (
     <div className="overflow-x-auto">
@@ -495,21 +356,13 @@ function LineTable({ order, showArrival }: { order: PartnerOrder; showArrival?: 
             <th className="px-4 py-2 text-left font-semibold">Product</th>
             <th className="px-4 py-2 text-right font-semibold">Ordered</th>
             <th className="px-4 py-2 text-right font-semibold">Sent</th>
-            {showArrival ? (
-              <>
-                <th className="px-4 py-2 text-right font-semibold">Arrived</th>
-                <th className="px-4 py-2 text-right font-semibold">Short</th>
-              </>
-            ) : (
-              <th className="px-4 py-2 text-right font-semibold">Still to send</th>
-            )}
+            <th className="px-4 py-2 text-right font-semibold">Still to send</th>
             {canSeeMoney ? <th className="px-4 py-2 text-right font-semibold">Price</th> : null}
           </tr>
         </thead>
         <tbody>
           {order.lines.map((line) => {
             const left = lineOutstanding(line)
-            const short = lineShortfall(line, done)
             return (
               <tr key={line.id} className="border-border border-t">
                 <td className="px-4 py-2">
@@ -530,28 +383,13 @@ function LineTable({ order, showArrival }: { order: PartnerOrder; showArrival?: 
                 <td className="text-fg px-4 py-2 text-right tabular-nums">
                   {formatNumber(line.shippedQuantity)}
                 </td>
-                {showArrival ? (
-                  <>
-                    <td className="text-fg px-4 py-2 text-right tabular-nums">
-                      {done ? formatNumber(line.receivedQuantity) : '—'}
-                    </td>
-                    <td className="px-4 py-2 text-right tabular-nums">
-                      {short > 0 ? (
-                        <span className="text-danger font-medium">{formatNumber(short)}</span>
-                      ) : (
-                        <span className="text-fg-subtle">—</span>
-                      )}
-                    </td>
-                  </>
-                ) : (
-                  <td className="px-4 py-2 text-right tabular-nums">
-                    {left === 0 ? (
-                      <span className="text-success">complete</span>
-                    ) : (
-                      <span className="text-warning font-medium">{formatNumber(left)}</span>
-                    )}
-                  </td>
-                )}
+                <td className="px-4 py-2 text-right tabular-nums">
+                  {left === 0 ? (
+                    <span className="text-success">complete</span>
+                  ) : (
+                    <span className="text-warning font-medium">{formatNumber(left)}</span>
+                  )}
+                </td>
                 {canSeeMoney ? (
                   <td className="text-fg-muted px-4 py-2 text-right tabular-nums">
                     {formatMoney(line.unitPrice)}
@@ -564,7 +402,7 @@ function LineTable({ order, showArrival }: { order: PartnerOrder; showArrival?: 
         {canSeeMoney ? (
           <tfoot>
             <tr className="text-fg-muted border-border border-t">
-              <td className="px-4 py-2" colSpan={showArrival ? 5 : 4}>
+              <td className="px-4 py-2" colSpan={4}>
                 {formatNumber(outstandingUnits(order))} units still to send
               </td>
               <td className="text-fg px-4 py-2 text-right font-medium tabular-nums">
@@ -576,18 +414,5 @@ function LineTable({ order, showArrival }: { order: PartnerOrder; showArrival?: 
         ) : null}
       </table>
     </div>
-  )
-}
-
-function Figure({ label, value, tone }: { label: string; value: string; tone?: 'danger' }) {
-  return (
-    <Card className="p-4">
-      <p className="text-fg-muted text-sm">{label}</p>
-      <p
-        className={`mt-0.5 text-lg font-semibold ${tone === 'danger' ? 'text-danger' : 'text-fg'}`}
-      >
-        {value}
-      </p>
-    </Card>
   )
 }

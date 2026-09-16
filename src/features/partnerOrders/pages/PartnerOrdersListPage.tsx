@@ -22,7 +22,6 @@ import {
   partnerStatusTone,
   shippedRatio,
   shippedUnits,
-  shortfallUnits,
   type PartnerOrder,
 } from '../model/partnerOrder'
 import { usePartnerOrderStatusCounts, usePartnerOrders } from '../api/partnerOrders'
@@ -117,18 +116,6 @@ export default function PartnerOrdersListPage() {
           )
         },
       },
-      {
-        id: 'shortfall',
-        header: 'Short on arrival',
-        cell: ({ row }) => {
-          const short = shortfallUnits(row.original)
-          return short > 0 ? (
-            <span className="text-danger font-medium">{formatNumber(short)}</span>
-          ) : (
-            <span className="text-fg-subtle">—</span>
-          )
-        },
-      },
       ...(canSeeMoney
         ? ([
             {
@@ -173,7 +160,6 @@ export default function PartnerOrdersListPage() {
                 { value: 'confirmed', label: 'Confirmed' },
                 { value: 'partial', label: 'Part shipped' },
                 { value: 'shipped', label: 'Shipped' },
-                { value: 'completed', label: 'Completed' },
                 { value: 'cancelled', label: 'Cancelled' },
               ]}
               value={(query.status as string | null) ?? null}

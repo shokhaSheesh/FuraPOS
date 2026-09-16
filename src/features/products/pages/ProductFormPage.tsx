@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowLeft } from 'lucide-react'
 import { VehicleMakeSelect, VehicleModelsMultiSelect } from '@/shared/components/VehicleSelects'
 import { PageHeader } from '@/shared/components/PageHeader'
+import { Steps } from '@/shared/components/Steps'
 import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
 import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
@@ -165,6 +166,15 @@ export function ProductForm({
   /** Asked before collapsing several variations down to one, which discards. */
   const [confirmCollapse, setConfirmCollapse] = useState(false)
 
+  /*
+    Three steps, as on New transfer and New order: what the part is, then what
+    is actually sold and for how much, then how many there are. A product form
+    that asks thirty questions at once is where people give up; this also puts
+    the answers in the order they depend on each other — the variation grid is
+    built from the options chosen in step one's "sold as" switch.
+  */
+  const [step, setStep] = useState<1 | 2 | 3>(1)
+
   const defaults = useMemo<ProductFormValues>(
     () =>
       existing
@@ -320,6 +330,14 @@ export function ProductForm({
     setConfirmCollapse(false)
   }
 
+  /** A step is left only once its own fields are valid, so errors stay near their field. */
+  const goTo = async (next: 1 | 2 | 3) => {
+    if (next <= step) return setStep(next)
+    if (step === 1 && !(await form.trigger(['name', 'categoryId']))) return
+    if (step === 2 && !(await form.trigger(['variations', 'options']))) return
+    setStep(next)
+  }
+
   const onSubmit = form.handleSubmit(
     (values) => {
       // Duplicate SKUs inside one product would make two rows indistinguishable
@@ -405,402 +423,475 @@ export function ProductForm({
             <Button type="button" variant="secondary" onClick={onCancel}>
               Cancel
             </Button>
-            <Button type="submit" variant="primary">
-              {editing ? 'Save changes' : 'Create product'}
-            </Button>
+            {step === 3 ? (
+              <Button type="submit" variant="primary">
+                {editing ? 'Save changes' : 'Create product'}
+              </Button>
+            ) : (
+              <Button type="button" variant="primary" onClick={() => goTo((step + 1) as 2 | 3)}>
+                Continue
+              </Button>
+            )}
           </div>
+        }
+        below={
+          <Steps
+            steps={['Product', single ? 'Identity & pricing' : 'Variations', 'Stock']}
+            current={step}
+            onSelect={(n) => goTo(n as 1 | 2 | 3)}
+          />
         }
       />
 
       <div className="mt-4 space-y-3">
-        {/*
+        {step === 1 ? (
+          <>
+            {/*
+              The picture leads: it is what a person checks first on the shelf
+              and in the catalogue, and it is one decision on its own.
+            */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Picture</CardTitle>
+              </CardHeader>
+              <CardBody>
+                {single ? (
+                  <Controller
+                    control={form.control}
+                    name="variations.0.imageUrl"
+                    render={({ field: f }) => (
+                      <ImageField value={f.value} onChange={f.onChange} size="lg" />
+                    )}
+                  />
+                ) : (
+                  <p className="text-fg-subtle text-sm">
+                    Each variation has its own picture — they are on the next step, beside the
+                    variation they belong to.
+                  </p>
+                )}
+              </CardBody>
+            </Card>
+
+            {/*
           Above every section, because the answer changes what they all mean:
           in `single` the Product section describes the thing being sold, in
           `multiple` it describes a family that is not sellable by itself.
         */}
-        <Card>
-          <CardBody className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-fg text-sm font-semibold">This product is sold as</p>
-              <p className="text-fg-subtle text-2xs">
-                {single
-                  ? 'One sellable thing — it carries its own SKU, price and stock.'
-                  : 'Several sellable things, generated from the options below. Each combination gets its own SKU, price and stock.'}
-              </p>
-            </div>
-            <SegmentedControl
-              aria-label="How many variations"
-              value={mode}
-              onChange={setMode}
-              options={MODES}
-            />
-          </CardBody>
-        </Card>
+            <Card>
+              <CardBody className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-fg text-sm font-semibold">This product is sold as</p>
+                  <p className="text-fg-subtle text-2xs">
+                    {single
+                      ? 'One sellable thing — it carries its own SKU, price and stock.'
+                      : 'Several sellable things, generated from the options below. Each combination gets its own SKU, price and stock.'}
+                  </p>
+                </div>
+                <SegmentedControl
+                  aria-label="How many variations"
+                  value={mode}
+                  onChange={setMode}
+                  options={MODES}
+                />
+              </CardBody>
+            </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Product</CardTitle>
-          </CardHeader>
-          <CardBody className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <Field
-              label="Product name"
-              required
-              hint={single ? undefined : 'Shared by every variation below'}
-              error={form.formState.errors.name?.message}
-            >
-              {(p) => <Input {...p} placeholder="Brake disc HD72" {...form.register('name')} />}
-            </Field>
-            <Field label="OEM">
-              {(p) => <Input {...p} placeholder="1234567" {...form.register('oem')} />}
-            </Field>
-            <Field label="Category" required error={form.formState.errors.categoryId?.message}>
-              {(p) => (
-                <Controller
-                  control={form.control}
-                  name="categoryId"
-                  render={({ field: f }) => (
-                    <Select
-                      {...p}
-                      className="w-full"
-                      value={f.value || undefined}
-                      onChange={f.onChange}
-                      options={(categories?.items ?? []).map((c) => ({
-                        value: c.id,
-                        label: c.path,
-                      }))}
-                    />
-                  )}
-                />
-              )}
-            </Field>
-            <Field label="Supplier" hint="Who we buy it from">
-              {(p) => (
-                <Controller
-                  control={form.control}
-                  name="brandId"
-                  render={({ field: f }) => (
-                    <Select
-                      {...p}
-                      className="w-full"
-                      value={f.value ?? undefined}
-                      onChange={f.onChange}
-                      options={(brands?.items ?? []).map((b) => ({ value: b.id, label: b.name }))}
-                      placeholder="None"
-                    />
-                  )}
-                />
-              )}
-            </Field>
-            <Field label="Product brand" hint="Who made the part">
-              {(p) => <Input {...p} {...form.register('manufacturer')} />}
-            </Field>
-            <Field label="Unit">
-              {(p) => (
-                <Controller
-                  control={form.control}
-                  name="unit"
-                  render={({ field: f }) => (
-                    <Select
-                      {...p}
-                      className="w-full"
-                      value={f.value}
-                      onChange={f.onChange}
-                      options={[...UNITS]}
-                    />
-                  )}
-                />
-              )}
-            </Field>
-            <Field
-              label="Description"
-              hint="Shown to customers online — headings, lists and links are kept"
-              className="sm:col-span-2 lg:col-span-3"
-            >
-              {(p) => (
-                <Controller
-                  control={form.control}
-                  name="description"
-                  render={({ field: f }) => (
-                    <RichTextEditor id={p.id} value={f.value} onChange={f.onChange} />
-                  )}
-                />
-              )}
-            </Field>
-          </CardBody>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Fitment</CardTitle>
-          </CardHeader>
-          <CardBody className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {/* Picked from Settings → Brands → Truck brands, so one model is
-                never spelled three ways across the catalogue. */}
-            <Field label="Truck brand" hint="The lorry this part fits">
-              {(p) => (
-                <Controller
-                  control={form.control}
-                  name="vehicleMake"
-                  render={({ field: f }) => (
-                    <VehicleMakeSelect
-                      id={p.id}
-                      value={f.value}
-                      onChange={(make) => {
-                        // Models belong to one brand; switching brand drops them.
-                        if (make !== f.value) form.setValue('vehicleModels', [])
-                        f.onChange(make)
-                      }}
-                    />
-                  )}
-                />
-              )}
-            </Field>
-            <Field label="Models it fits" hint="Leave empty if it fits every model of the brand">
-              {() => (
-                <Controller
-                  control={form.control}
-                  name="vehicleModels"
-                  render={({ field: f }) => (
-                    <VehicleModelsMultiSelect
-                      make={form.watch('vehicleMake')}
-                      value={f.value}
-                      onChange={f.onChange}
-                    />
-                  )}
-                />
-              )}
-            </Field>
-          </CardBody>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex-col items-stretch gap-2 sm:flex-row sm:items-center">
-            <div>
-              <CardTitle>{single ? 'Identity & pricing' : 'Variations'}</CardTitle>
-              <p className="text-fg-subtle text-2xs">
-                {single
-                  ? 'This product is one sellable thing, so these belong to it directly.'
-                  : gridSummary}
-              </p>
-            </div>
-          </CardHeader>
-          <CardBody className="space-y-4">
-            {single ? (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <Field label="Picture" className="sm:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Product</CardTitle>
+              </CardHeader>
+              <CardBody className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <Field
+                  label="Product name"
+                  required
+                  hint={single ? undefined : 'Shared by every variation below'}
+                  error={form.formState.errors.name?.message}
+                >
+                  {(p) => <Input {...p} placeholder="Brake disc HD72" {...form.register('name')} />}
+                </Field>
+                <Field label="OEM">
+                  {(p) => <Input {...p} placeholder="1234567" {...form.register('oem')} />}
+                </Field>
+                <Field label="Category" required error={form.formState.errors.categoryId?.message}>
                   {(p) => (
                     <Controller
                       control={form.control}
-                      name="variations.0.imageUrl"
+                      name="categoryId"
                       render={({ field: f }) => (
-                        <ImageField id={p.id} value={f.value} onChange={f.onChange} />
-                      )}
-                    />
-                  )}
-                </Field>
-                <Field
-                  label="Variation name"
-                  hint="What this one is called — leave empty if it has no name"
-                >
-                  {(p) => (
-                    <Input {...p} placeholder="Standard" {...form.register('variations.0.name')} />
-                  )}
-                </Field>
-                <Field
-                  label="SKU"
-                  required
-                  error={form.formState.errors.variations?.[0]?.sku?.message}
-                >
-                  {(p) => <Input {...p} {...form.register('variations.0.sku')} />}
-                </Field>
-                <Field label="Barcode">
-                  {(p) => <Input {...p} {...form.register('variations.0.barcode')} />}
-                </Field>
-                <Field
-                  label="Cost"
-                  hint="What the supplier invoices"
-                  error={form.formState.errors.variations?.[0]?.costPrice?.message}
-                >
-                  {(p) => (
-                    <div className="flex gap-1.5">
-                      <Controller
-                        control={form.control}
-                        name="variations.0.costPrice"
-                        render={({ field: f }) => (
-                          <NumberField
-                            {...p}
-                            nullable={false}
-                            step="any"
-                            value={f.value}
-                            onChange={(v) => f.onChange(v ?? 0)}
-                            onBlur={f.onBlur}
-                          />
-                        )}
-                      />
-                      <Controller
-                        control={form.control}
-                        name="variations.0.costCurrency"
-                        render={({ field: f }) => (
-                          <Select
-                            value={f.value}
-                            onChange={f.onChange}
-                            options={CURRENCIES}
-                            aria-label="Cost currency"
-                            className="w-24"
-                          />
-                        )}
-                      />
-                    </div>
-                  )}
-                </Field>
-                <Field
-                  label="Sale price"
-                  required
-                  error={form.formState.errors.variations?.[0]?.salePrice?.message}
-                >
-                  {(p) => (
-                    <div className="flex gap-1.5">
-                      <Controller
-                        control={form.control}
-                        name="variations.0.salePrice"
-                        render={({ field: f }) => (
-                          <NumberField
-                            {...p}
-                            nullable={false}
-                            value={f.value}
-                            onChange={(v) => f.onChange(v ?? 0)}
-                            onBlur={f.onBlur}
-                          />
-                        )}
-                      />
-                      <Controller
-                        control={form.control}
-                        name="variations.0.saleCurrency"
-                        render={({ field: f }) => (
-                          <Select
-                            value={f.value}
-                            onChange={f.onChange}
-                            options={CURRENCIES}
-                            aria-label="Sale price currency"
-                            className="w-24"
-                          />
-                        )}
-                      />
-                    </div>
-                  )}
-                </Field>
-                <Field label="Wholesale price" hint="What a trade customer pays">
-                  {(p) => (
-                    <div className="flex gap-1.5">
-                      <Controller
-                        control={form.control}
-                        name="variations.0.wholesalePrice"
-                        render={({ field: f }) => (
-                          <NumberField
-                            {...p}
-                            value={f.value}
-                            onChange={f.onChange}
-                            onBlur={f.onBlur}
-                          />
-                        )}
-                      />
-                      <Controller
-                        control={form.control}
-                        name="variations.0.wholesaleCurrency"
-                        render={({ field: f }) => (
-                          <Select
-                            value={f.value}
-                            onChange={f.onChange}
-                            options={CURRENCIES}
-                            aria-label="Wholesale price currency"
-                            className="w-24"
-                          />
-                        )}
-                      />
-                    </div>
-                  )}
-                </Field>
-                <Field label="Cargo weight (kg)">
-                  {(p) => (
-                    <Controller
-                      control={form.control}
-                      name="variations.0.cargoWeightKg"
-                      render={({ field: f }) => (
-                        <NumberField
+                        <Select
                           {...p}
-                          step="any"
-                          className="text-left"
-                          value={f.value}
+                          className="w-full"
+                          value={f.value || undefined}
                           onChange={f.onChange}
-                          onBlur={f.onBlur}
+                          options={(categories?.items ?? []).map((c) => ({
+                            value: c.id,
+                            label: c.path,
+                          }))}
                         />
                       )}
                     />
                   )}
                 </Field>
-                <Field label="Cargo size">
+                <Field label="Supplier" hint="Who we buy it from">
                   {(p) => (
-                    <Input
-                      {...p}
-                      placeholder="120*60*30"
-                      {...form.register('variations.0.cargoSize')}
+                    <Controller
+                      control={form.control}
+                      name="brandId"
+                      render={({ field: f }) => (
+                        <Select
+                          {...p}
+                          className="w-full"
+                          value={f.value ?? undefined}
+                          onChange={f.onChange}
+                          options={(brands?.items ?? []).map((b) => ({
+                            value: b.id,
+                            label: b.name,
+                          }))}
+                          placeholder="None"
+                        />
+                      )}
                     />
                   )}
                 </Field>
-                <Field label="Part" hint="Which part of the vehicle it fits">
+                <Field label="Product brand" hint="Who made the part">
+                  {(p) => <Input {...p} {...form.register('manufacturer')} />}
+                </Field>
+                <Field label="Unit">
                   {(p) => (
-                    <Input {...p} placeholder="Left" {...form.register('variations.0.partSide')} />
+                    <Controller
+                      control={form.control}
+                      name="unit"
+                      render={({ field: f }) => (
+                        <Select
+                          {...p}
+                          className="w-full"
+                          value={f.value}
+                          onChange={f.onChange}
+                          options={[...UNITS]}
+                        />
+                      )}
+                    />
                   )}
                 </Field>
-                {/*
+                <Field
+                  label="Description"
+                  hint="Shown to customers online — headings, lists and links are kept"
+                  className="sm:col-span-2 lg:col-span-3"
+                >
+                  {(p) => (
+                    <Controller
+                      control={form.control}
+                      name="description"
+                      render={({ field: f }) => (
+                        <RichTextEditor id={p.id} value={f.value} onChange={f.onChange} />
+                      )}
+                    />
+                  )}
+                </Field>
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Fitment</CardTitle>
+              </CardHeader>
+              <CardBody className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {/* Picked from Settings → Brands → Truck brands, so one model is
+                never spelled three ways across the catalogue. */}
+                <Field label="Truck brand" hint="The lorry this part fits">
+                  {(p) => (
+                    <Controller
+                      control={form.control}
+                      name="vehicleMake"
+                      render={({ field: f }) => (
+                        <VehicleMakeSelect
+                          id={p.id}
+                          value={f.value}
+                          onChange={(make) => {
+                            // Models belong to one brand; switching brand drops them.
+                            if (make !== f.value) form.setValue('vehicleModels', [])
+                            f.onChange(make)
+                          }}
+                        />
+                      )}
+                    />
+                  )}
+                </Field>
+                <Field
+                  label="Models it fits"
+                  hint="Leave empty if it fits every model of the brand"
+                >
+                  {() => (
+                    <Controller
+                      control={form.control}
+                      name="vehicleModels"
+                      render={({ field: f }) => (
+                        <VehicleModelsMultiSelect
+                          make={form.watch('vehicleMake')}
+                          value={f.value}
+                          onChange={f.onChange}
+                        />
+                      )}
+                    />
+                  )}
+                </Field>
+              </CardBody>
+            </Card>
+          </>
+        ) : null}
+
+        {step === 2 ? (
+          <Card>
+            <CardHeader className="flex-col items-stretch gap-2 sm:flex-row sm:items-center">
+              <div>
+                <CardTitle>{single ? 'Identity & pricing' : 'Variations'}</CardTitle>
+                <p className="text-fg-subtle text-2xs">
+                  {single
+                    ? 'This product is one sellable thing, so these belong to it directly.'
+                    : gridSummary}
+                </p>
+              </div>
+            </CardHeader>
+            <CardBody className="space-y-4">
+              {single ? (
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <Field
+                    label="Variation name"
+                    hint="What this one is called — leave empty if it has no name"
+                  >
+                    {(p) => (
+                      <Input
+                        {...p}
+                        placeholder="Standard"
+                        {...form.register('variations.0.name')}
+                      />
+                    )}
+                  </Field>
+                  <Field
+                    label="SKU"
+                    required
+                    error={form.formState.errors.variations?.[0]?.sku?.message}
+                  >
+                    {(p) => <Input {...p} {...form.register('variations.0.sku')} />}
+                  </Field>
+                  <Field label="Barcode">
+                    {(p) => <Input {...p} {...form.register('variations.0.barcode')} />}
+                  </Field>
+                  <Field
+                    label="Cost"
+                    hint="What the supplier invoices"
+                    error={form.formState.errors.variations?.[0]?.costPrice?.message}
+                  >
+                    {(p) => (
+                      <div className="flex gap-1.5">
+                        <Controller
+                          control={form.control}
+                          name="variations.0.costPrice"
+                          render={({ field: f }) => (
+                            <NumberField
+                              {...p}
+                              nullable={false}
+                              step="any"
+                              value={f.value}
+                              onChange={(v) => f.onChange(v ?? 0)}
+                              onBlur={f.onBlur}
+                            />
+                          )}
+                        />
+                        <Controller
+                          control={form.control}
+                          name="variations.0.costCurrency"
+                          render={({ field: f }) => (
+                            <Select
+                              value={f.value}
+                              onChange={f.onChange}
+                              options={CURRENCIES}
+                              aria-label="Cost currency"
+                              className="w-24"
+                            />
+                          )}
+                        />
+                      </div>
+                    )}
+                  </Field>
+                  <Field
+                    label="Sale price"
+                    required
+                    error={form.formState.errors.variations?.[0]?.salePrice?.message}
+                  >
+                    {(p) => (
+                      <div className="flex gap-1.5">
+                        <Controller
+                          control={form.control}
+                          name="variations.0.salePrice"
+                          render={({ field: f }) => (
+                            <NumberField
+                              {...p}
+                              nullable={false}
+                              value={f.value}
+                              onChange={(v) => f.onChange(v ?? 0)}
+                              onBlur={f.onBlur}
+                            />
+                          )}
+                        />
+                        <Controller
+                          control={form.control}
+                          name="variations.0.saleCurrency"
+                          render={({ field: f }) => (
+                            <Select
+                              value={f.value}
+                              onChange={f.onChange}
+                              options={CURRENCIES}
+                              aria-label="Sale price currency"
+                              className="w-24"
+                            />
+                          )}
+                        />
+                      </div>
+                    )}
+                  </Field>
+                  <Field label="Wholesale price" hint="What a trade customer pays">
+                    {(p) => (
+                      <div className="flex gap-1.5">
+                        <Controller
+                          control={form.control}
+                          name="variations.0.wholesalePrice"
+                          render={({ field: f }) => (
+                            <NumberField
+                              {...p}
+                              value={f.value}
+                              onChange={f.onChange}
+                              onBlur={f.onBlur}
+                            />
+                          )}
+                        />
+                        <Controller
+                          control={form.control}
+                          name="variations.0.wholesaleCurrency"
+                          render={({ field: f }) => (
+                            <Select
+                              value={f.value}
+                              onChange={f.onChange}
+                              options={CURRENCIES}
+                              aria-label="Wholesale price currency"
+                              className="w-24"
+                            />
+                          )}
+                        />
+                      </div>
+                    )}
+                  </Field>
+                  <Field label="Cargo weight (kg)">
+                    {(p) => (
+                      <Controller
+                        control={form.control}
+                        name="variations.0.cargoWeightKg"
+                        render={({ field: f }) => (
+                          <NumberField
+                            {...p}
+                            step="any"
+                            className="text-left"
+                            value={f.value}
+                            onChange={f.onChange}
+                            onBlur={f.onBlur}
+                          />
+                        )}
+                      />
+                    )}
+                  </Field>
+                  <Field label="Cargo size">
+                    {(p) => (
+                      <Input
+                        {...p}
+                        placeholder="120*60*30"
+                        {...form.register('variations.0.cargoSize')}
+                      />
+                    )}
+                  </Field>
+                  <Field label="Part" hint="Which part of the vehicle it fits">
+                    {(p) => (
+                      <Input
+                        {...p}
+                        placeholder="Left"
+                        {...form.register('variations.0.partSide')}
+                      />
+                    )}
+                  </Field>
+                  {/*
                   These belong to the variation, as in OX — the left step's
                   analogue is another left step — so they sit with the rest of
                   what the one variation carries. With several, each row has them.
                 */}
-              </div>
-            ) : (
-              <>
-                <ProductOptionsEditor form={form} options={options} onChange={applyOptions} />
-                {variations.length ? (
-                  <ProductVariationsTable form={form} productName={productName.trim()} />
-                ) : (
-                  <p className="text-fg-subtle text-sm">
-                    Name an option and give it values — the variations appear here.
-                  </p>
-                )}
-              </>
-            )}
-          </CardBody>
-        </Card>
-        <ProductStockSection form={form} locations={locations} editing={editing} />
+                </div>
+              ) : (
+                <>
+                  <ProductOptionsEditor form={form} options={options} onChange={applyOptions} />
+                  {variations.length ? (
+                    <ProductVariationsTable form={form} productName={productName.trim()} />
+                  ) : (
+                    <p className="text-fg-subtle text-sm">
+                      Name an option and give it values — the variations appear here.
+                    </p>
+                  )}
+                </>
+              )}
+            </CardBody>
+          </Card>
+        ) : null}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Status</CardTitle>
-          </CardHeader>
-          <CardBody className="grid gap-3 sm:grid-cols-3">
-            <Field label="Status">
-              {(p) => (
-                <Controller
-                  control={form.control}
-                  name="status"
-                  render={({ field: f }) => (
-                    <Select
-                      {...p}
-                      className="w-full"
-                      value={f.value}
-                      onChange={f.onChange}
-                      options={[
-                        { value: 'active', label: 'Active' },
-                        { value: 'archived', label: 'Archived' },
-                      ]}
+        {step === 3 ? (
+          <>
+            <ProductStockSection form={form} locations={locations} editing={editing} />
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Status</CardTitle>
+              </CardHeader>
+              <CardBody className="grid gap-3 sm:grid-cols-3">
+                <Field label="Status">
+                  {(p) => (
+                    <Controller
+                      control={form.control}
+                      name="status"
+                      render={({ field: f }) => (
+                        <Select
+                          {...p}
+                          className="w-full"
+                          value={f.value}
+                          onChange={f.onChange}
+                          options={[
+                            { value: 'active', label: 'Active' },
+                            { value: 'archived', label: 'Archived' },
+                          ]}
+                        />
+                      )}
                     />
                   )}
-                />
-              )}
-            </Field>
-          </CardBody>
-        </Card>
+                </Field>
+              </CardBody>
+            </Card>
+          </>
+        ) : null}
+
+        <div className="flex items-center justify-between gap-2 pt-1">
+          {step > 1 ? (
+            <Button type="button" variant="secondary" onClick={() => setStep((step - 1) as 1 | 2)}>
+              <ArrowLeft />
+              Back
+            </Button>
+          ) : (
+            <span />
+          )}
+          {step === 3 ? (
+            <Button type="submit" variant="primary">
+              {editing ? 'Save changes' : 'Create product'}
+            </Button>
+          ) : (
+            <Button type="button" variant="primary" onClick={() => goTo((step + 1) as 2 | 3)}>
+              Continue
+            </Button>
+          )}
+        </div>
       </div>
 
       <ConfirmDialog

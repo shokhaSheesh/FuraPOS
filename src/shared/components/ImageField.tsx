@@ -26,7 +26,7 @@ export function ImageField({
   onChange: (value: string | null) => void
   id?: string
   className?: string
-  size?: 'sm' | 'md'
+  size?: 'sm' | 'md' | 'lg'
 }) {
   const input = useRef<HTMLInputElement>(null)
   const [reading, setReading] = useState(false)
@@ -48,7 +48,7 @@ export function ImageField({
     reader.readAsDataURL(file)
   }
 
-  const box = size === 'sm' ? 'size-12' : 'size-20'
+  const box = size === 'sm' ? 'size-12' : size === 'lg' ? 'size-28' : 'size-20'
 
   return (
     <div className={cn('flex items-center gap-3', className)}>
@@ -65,7 +65,7 @@ export function ImageField({
         {value ? (
           <img src={value} alt="" className="size-full object-cover" />
         ) : (
-          <ImagePlus className="size-5" />
+          <ImagePlus className={size === 'lg' ? 'size-7' : 'size-5'} />
         )}
       </button>
 
@@ -90,7 +90,7 @@ export function ImageField({
             <Trash2 />
             Remove
           </Button>
-        ) : (
+        ) : size === 'sm' ? null : (
           <span className="text-fg-subtle text-2xs">JPG or PNG, up to 2 MB</span>
         )}
       </div>

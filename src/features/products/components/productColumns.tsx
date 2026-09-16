@@ -172,12 +172,14 @@ export function buildProductColumns({
       cell: ({ row }) => {
         const at = row.original.stockByLocation.filter((entry) => entry.quantity > 0)
         if (!at.length) return <Empty />
-        // One place reads as itself; several read as a list, shortened with the
-        // full split on hover so a row never wraps.
-        const names = at.map((entry) => entry.locationName)
+        // Every place by name. A narrow column clips the list with an ellipsis
+        // rather than counting the rest, and the full split is on hover.
         return (
-          <span title={at.map((e) => `${e.locationName}: ${formatNumber(e.quantity)}`).join('\n')}>
-            {names.length === 1 ? names[0] : `${names[0]} +${names.length - 1}`}
+          <span
+            className="block truncate"
+            title={at.map((e) => `${e.locationName}: ${formatNumber(e.quantity)}`).join('\n')}
+          >
+            {at.map((entry) => entry.locationName).join(', ')}
           </span>
         )
       },
@@ -279,23 +281,28 @@ const rank = (column: TableColumn<VariationRow>) => {
  * Columns menu, and their order is remembered.
  */
 export const PRODUCT_COLUMN_ORDER = [
+  // What the row is
   'image',
   'productName',
   'name',
   'sku',
   'barcode',
-  'categoryPath',
-  'brandName',
+  // Where it is and how many
   'stock',
   'location',
+  // What it is worth
   'salePrice',
   'costPrice',
+  'brandName',
+  // How it is classified
+  'categoryPath',
   'partSide',
   'oem',
   'vehicleMake',
   'vehicleModels',
   'manufacturer',
   'categoryName',
+  // The rest
   'cargoWeightKg',
   'cargoSize',
   'description',

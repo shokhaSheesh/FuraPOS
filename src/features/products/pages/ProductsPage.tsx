@@ -274,7 +274,9 @@ export default function ProductsPage() {
 
       <DataTable
         key={view}
-        storageKey={view === 'variations' ? 'products' : `products-${view}`}
+        // Bumped when the default order changed, so a stored order from the
+        // old column set does not survive into the new one.
+        storageKey={view === 'variations' ? 'products-v2' : `products-v2-${view}`}
         columns={columns}
         initialHidden={hidden}
         getRowId={productRowId}

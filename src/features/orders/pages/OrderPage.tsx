@@ -17,7 +17,9 @@ import { EmptyState } from '@/shared/components/EmptyState'
 import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
 import { ProductThumb } from '@/shared/components/ProductThumb'
+import { ScrollSentinel } from '@/shared/components/ScrollSentinel'
 import { SearchInput } from '@/shared/components/SearchInput'
+import { useInfiniteRows } from '@/shared/hooks/useInfiniteRows'
 import { Steps } from '@/shared/components/Steps'
 import { Badge } from '@/shared/ui/Badge'
 import { Button } from '@/shared/ui/Button'
@@ -58,7 +60,15 @@ import {
 } from '../model/order'
 import { useOrder, useOrderActions, useOrderReceipts, useUpdateOrder } from '../api/orders'
 
-const STEPS = ['Add products', 'Extra data', 'Review and send', 'Deliveries']
+/*
+  Three, not the receipt's four. A receipt's "Extra data" step owns something
+  real — the freight and duty that turn a supplier's price into a cost price.
+  An order has no such thing: its only extra data is the date and the note,
+  both already asked on the way in, so a step for them would be the same two
+  questions twice. They live on Review instead, where they can still be
+  changed while the order is a draft.
+*/
+const STEPS = ['Add products', 'Review and send', 'Deliveries']
 
 /**
  * A purchase order, from empty document to delivered.
@@ -120,9 +130,7 @@ export default function OrderPage() {
       {step === 1 ? (
         <ProductsStep order={order} editable={editable} />
       ) : step === 2 ? (
-        <ExtraDataStep order={order} editable={editable} />
-      ) : step === 3 ? (
-        <ReviewStep order={order} />
+        <ReviewStep order={order} editable={editable} />
       ) : (
         <DeliveriesStep order={order} />
       )}
@@ -237,13 +245,18 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
   const [search, setSearch] = useState('')
   const [suggesting, setSuggesting] = useState(false)
 
-  const rows = search.trim()
+  const matching = search.trim()
     ? all.filter((row) =>
         [row.variation?.barcode, row.variation?.sku, row.name, row.variation?.productName]
           .filter((field): field is string => Boolean(field))
           .some((field) => field.toLowerCase().includes(search.trim().toLowerCase())),
       )
     : all
+
+  // Our own catalogue runs to hundreds of rows on a market order, so only the
+  // first slice is drawn and scrolling grows it. Search still reaches all of
+  // them, because the filter above runs first.
+  const { visible: rows, hasMore, shown, total, sentinel, showMore } = useInfiniteRows(matching)
 
   const writeLines = (lines: OrderLine[]) =>
     update.mutate({ lines }, { onError: (message) => toast.error(message) })
@@ -353,22 +366,32 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
           </div>
         }
         footer={
-          <div className="border-border text-fg-muted flex flex-wrap items-center gap-x-8 gap-y-1 border-t px-4 py-3 text-sm">
-            <span>
-              Total quantity: <strong className="text-fg font-medium">{formatNumber(units)}</strong>
-            </span>
-            <span>
-              Products: <strong className="text-fg font-medium">{order.lines.length}</strong>
-            </span>
-            {canSeeCost ? (
+          <>
+            <ScrollSentinel
+              ref={sentinel}
+              hasMore={hasMore}
+              shown={shown}
+              total={total}
+              onShowMore={showMore}
+            />
+            <div className="border-border text-fg-muted flex flex-wrap items-center gap-x-8 gap-y-1 border-t px-4 py-3 text-sm">
               <span>
-                Order value:{' '}
-                <strong className="text-fg font-medium">
-                  {formatMoney(Math.round(orderValue(order, USD_RATE)))}
-                </strong>
+                Total quantity:{' '}
+                <strong className="text-fg font-medium">{formatNumber(units)}</strong>
               </span>
-            ) : null}
-          </div>
+              <span>
+                Products: <strong className="text-fg font-medium">{order.lines.length}</strong>
+              </span>
+              {canSeeCost ? (
+                <span>
+                  Order value:{' '}
+                  <strong className="text-fg font-medium">
+                    {formatMoney(Math.round(orderValue(order, USD_RATE)))}
+                  </strong>
+                </span>
+              ) : null}
+            </div>
+          </>
         }
         emptyState={
           <EmptyState
@@ -428,9 +451,13 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
   )
 }
 
-/* --- step 2: extra data -------------------------------------------------- */
-
-function ExtraDataStep({ order, editable }: { order: PurchaseOrder; editable: boolean }) {
+/**
+ * The date and note, where they can still be changed.
+ *
+ * Both were asked when the order was created, so this is not a second place to
+ * fill them in — it is the only place to correct them once the order exists.
+ */
+function DetailsCard({ order, editable }: { order: PurchaseOrder; editable: boolean }) {
   const update = useUpdateOrder(order.id)
   const [expectedAt, setExpectedAt] = useState(order.expectedAt)
   const [comment, setComment] = useState(order.comment ?? '')
@@ -438,82 +465,82 @@ function ExtraDataStep({ order, editable }: { order: PurchaseOrder; editable: bo
   const dirty = expectedAt !== order.expectedAt || comment !== (order.comment ?? '')
 
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <CardTitle>About this order</CardTitle>
-        </CardHeader>
-        <CardBody className="grid gap-4 sm:grid-cols-2">
-          <Field
-            label="Expected"
-            hint="An order cannot be late against a date nobody gave, so leave it empty when nothing was promised"
-          >
-            {() =>
-              editable ? (
-                <DatePicker
-                  className="w-full"
-                  // The order carries an ISO string; the picker deals in dates,
-                  // so the conversion happens at the boundary.
-                  value={expectedAt ? new Date(expectedAt) : null}
-                  onChange={(date) => setExpectedAt(date ? date.toISOString() : null)}
-                />
-              ) : (
-                <p className="text-fg py-1.5 text-sm">
-                  {expectedAt ? formatDate(expectedAt) : 'Nothing was promised'}
-                </p>
-              )
-            }
-          </Field>
-          <Field label="Note" hint="Anything worth knowing when this order is queried later">
-            {(p) => (
+    <Card>
+      <CardHeader className="items-start justify-between gap-3">
+        <CardTitle>About this order</CardTitle>
+        {editable && dirty ? (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setExpectedAt(order.expectedAt)
+                setComment(order.comment ?? '')
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() =>
+                update.mutate(
+                  { expectedAt, comment: comment || null },
+                  {
+                    onSuccess: () => toast.success('Saved'),
+                    onError: (message) => toast.error(message),
+                  },
+                )
+              }
+            >
+              Save
+            </Button>
+          </div>
+        ) : null}
+      </CardHeader>
+      <CardBody className="grid gap-4 sm:grid-cols-2">
+        <Field
+          label="Expected"
+          hint="An order cannot be late against a date nobody gave, so leave it empty when nothing was promised"
+        >
+          {() =>
+            editable ? (
+              <DatePicker
+                className="w-full"
+                // The order carries an ISO string; the picker deals in dates,
+                // so the conversion happens at the boundary.
+                value={expectedAt ? new Date(expectedAt) : null}
+                onChange={(date) => setExpectedAt(date ? date.toISOString() : null)}
+              />
+            ) : (
+              <p className="text-fg py-1.5 text-sm">
+                {expectedAt ? formatDate(expectedAt) : 'Nothing was promised'}
+              </p>
+            )
+          }
+        </Field>
+        <Field label="Note" hint="Anything worth knowing when this order is queried later">
+          {(p) =>
+            editable ? (
               <Input
                 {...p}
                 placeholder="Container 4, Q3 restock"
-                disabled={!editable}
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
               />
-            )}
-          </Field>
-        </CardBody>
-      </Card>
-
-      {editable ? (
-        <div className="flex items-center justify-end gap-2">
-          <Button
-            variant="secondary"
-            disabled={!dirty}
-            onClick={() => {
-              setExpectedAt(order.expectedAt)
-              setComment(order.comment ?? '')
-            }}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            disabled={!dirty}
-            onClick={() =>
-              update.mutate(
-                { expectedAt, comment: comment || null },
-                {
-                  onSuccess: () => toast.success('Saved'),
-                  onError: (message) => toast.error(message),
-                },
-              )
-            }
-          >
-            Save
-          </Button>
-        </div>
-      ) : null}
-    </>
+            ) : (
+              <p className="text-fg py-1.5 text-sm">{comment || 'None'}</p>
+            )
+          }
+        </Field>
+      </CardBody>
+    </Card>
   )
 }
 
 /* --- step 3: review and send --------------------------------------------- */
 
-function ReviewStep({ order }: { order: PurchaseOrder }) {
+function ReviewStep({ order, editable }: { order: PurchaseOrder; editable: boolean }) {
   const navigate = useNavigate()
   const { can } = useSession()
   const actions = useOrderActions(order.id)
@@ -548,6 +575,8 @@ function ReviewStep({ order }: { order: PurchaseOrder }) {
           meta={order.sentAt ? `Sent ${formatDate(order.sentAt)}` : 'Not sent yet'}
         />
       </div>
+
+      <DetailsCard order={order} editable={editable} />
 
       <Card>
         <CardHeader className="items-start justify-between gap-3">

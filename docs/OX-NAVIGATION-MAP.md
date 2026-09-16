@@ -318,6 +318,12 @@ still.
    code in a "Their code" column and their asking price beside it. Typing a quantity is what puts a
    row on the receipt; clearing it takes it off. Nobody searches for anything, because that is not
    how a delivery is checked in — their invoice is in one hand and their catalogue is on the screen.
+   Long catalogues load as you scroll rather than all at once — forty rows, then forty more as the
+   reader nears the end, with the count and a "Show more" button under the table. Pagination would
+   be worse here than anywhere: somebody is reading down a price list with an invoice in hand, and a
+   page break in the middle of it is a place to lose their line. Searching still reaches every row,
+   drawn or not, because the filter runs before the slicing does.
+
    It is the **unfinished** receipt that works this way: once posted, the delivery is a fact and the
    question changes from "how many of each of these arrived" to "what was in it", so a completed
    receipt shows only its own lines. Lines they list but we have never stocked show as "new to us"
@@ -715,13 +721,18 @@ typed what was in the box, with nothing to check it against. An order is the oth
 commitment made weeks earlier. It is what makes _where is it_ and _is it late_ answerable, and what
 turns a receipt from a recording into a check.
 
-**Shaped like a goods receipt** (client request): a modal gate, then one document with four steps —
-Add products · Extra data · Review and send · Deliveries — freely clickable, replacing the old
-separate create and detail pages.
+**Shaped like a goods receipt** (client request): a modal gate, then one document with three steps —
+Add products · Review and send · Deliveries — freely clickable, replacing the old separate create
+and detail pages.
 
-The steps are the order's own life rather than the receipt's: it is built, given its dates and note,
-sent, and then delivered against, often weeks apart and by different people. **Payment is
-deliberately not a step.** A supplier debt is built when a delivery is posted, not when an order is
+Three, not the receipt's four. The receipt's "Extra data" step owns something real — the freight and
+duty that turn a supplier's price into a cost price. An order has no such thing: its only extra data
+is the date and the note, both already asked on the way in, so a step for them would be the same two
+questions twice. They sit on Review instead, where they can still be corrected while the order is a
+draft.
+
+The steps are the order's own life rather than the receipt's: it is built, sent, and then delivered
+against, often weeks apart and by different people. **Payment is deliberately not a step.** A supplier debt is built when a delivery is posted, not when an order is
 raised, and a second place to record money against the same supplier is how a balance stops being
 explainable. Prepayments are worth adding later as a fifth step if the client wants them; they would
 need to offset the receipt's debt when the goods arrive, which is real work rather than a form.

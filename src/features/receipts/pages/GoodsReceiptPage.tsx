@@ -20,7 +20,9 @@ import { EmptyState } from '@/shared/components/EmptyState'
 import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
 import { ProductPicker } from '@/shared/components/ProductPicker'
+import { ScrollSentinel } from '@/shared/components/ScrollSentinel'
 import { SearchInput } from '@/shared/components/SearchInput'
+import { useInfiniteRows } from '@/shared/hooks/useInfiniteRows'
 import { Steps } from '@/shared/components/Steps'
 import { Badge } from '@/shared/ui/Badge'
 import { Button } from '@/shared/ui/Button'
@@ -268,7 +270,7 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
   // Filtering only what is drawn, never what is stored: the index on each row
   // still points at its place in the receipt, so editing a filtered row edits
   // the right line.
-  const rows = search.trim()
+  const matching = search.trim()
     ? all.filter((row) =>
         [
           row.variation?.barcode,
@@ -281,6 +283,11 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
           .some((field) => field.toLowerCase().includes(search.trim().toLowerCase())),
       )
     : all
+
+  // A supplier's whole price list is hundreds of rows deep; only the first
+  // slice is drawn, and scrolling grows it. Searching still reaches all of
+  // them, because the filter above runs first.
+  const { visible: rows, hasMore, shown, total, sentinel, showMore } = useInfiniteRows(matching)
 
   const writeLines = (lines: ReceiptLine[]) =>
     update.mutate({ lines }, { onError: (message) => toast.error(message) })
@@ -443,15 +450,27 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
           </div>
         }
         footer={
-          <div className="border-border text-fg-muted flex flex-wrap items-center gap-x-8 gap-y-1 border-t px-4 py-3 text-sm">
-            <span>
-              Total quantity: <strong className="text-fg font-medium">{formatNumber(units)}</strong>
-            </span>
-            <span>
-              Product variations:{' '}
-              <strong className="text-fg font-medium">{formatNumber(receipt.lines.length)}</strong>
-            </span>
-          </div>
+          <>
+            <ScrollSentinel
+              ref={sentinel}
+              hasMore={hasMore}
+              shown={shown}
+              total={total}
+              onShowMore={showMore}
+            />
+            <div className="border-border text-fg-muted flex flex-wrap items-center gap-x-8 gap-y-1 border-t px-4 py-3 text-sm">
+              <span>
+                Total quantity:{' '}
+                <strong className="text-fg font-medium">{formatNumber(units)}</strong>
+              </span>
+              <span>
+                Product variations:{' '}
+                <strong className="text-fg font-medium">
+                  {formatNumber(receipt.lines.length)}
+                </strong>
+              </span>
+            </div>
+          </>
         }
         emptyState={
           fromCatalogue ? (

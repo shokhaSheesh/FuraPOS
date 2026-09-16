@@ -47,8 +47,10 @@ export const ORDER_KINDS: { value: OrderKind; label: string; hint: string }[] = 
   },
   {
     value: 'china',
-    label: 'To China',
-    hint: 'Pick from our catalogue, mark how urgent each line is, and hand the factory a PDF',
+    // Named for where the goods come from, like the other two, rather than for
+    // where the paperwork goes. A buyer thinks in deliveries, not in post.
+    label: 'From China',
+    hint: 'Made to order by a factory — picked from our catalogue, and handed over as a PDF',
   },
 ]
 

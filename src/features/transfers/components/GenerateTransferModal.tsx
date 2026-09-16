@@ -160,13 +160,6 @@ export function GenerateTransferModal({
                         <span className={suggestion.stockAtDestination === 0 ? 'text-danger' : ''}>
                           {formatNumber(suggestion.stockAtDestination)}
                         </span>
-                        {/* The reason the row is here, in words rather than
-                            leaving somebody to divide one column by another. */}
-                        <p className="text-fg-subtle text-2xs">
-                          {Number.isFinite(suggestion.daysOfCover)
-                            ? `${Math.round(suggestion.daysOfCover)} days left`
-                            : '—'}
-                        </p>
                       </td>
                       <td className="text-fg-muted px-3 py-2 text-right tabular-nums">
                         {formatNumber(suggestion.stockAtSource)}

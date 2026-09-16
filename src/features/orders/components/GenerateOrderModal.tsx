@@ -150,13 +150,6 @@ export function GenerateOrderModal({
                         <span className={suggestion.stock === 0 ? 'text-danger' : ''}>
                           {formatNumber(suggestion.stock)}
                         </span>
-                        {/* Why the row is here, in words rather than leaving
-                            somebody to divide one column by another. */}
-                        <p className="text-fg-subtle text-2xs">
-                          {Number.isFinite(suggestion.daysOfCover)
-                            ? `${Math.round(suggestion.daysOfCover)} days left`
-                            : '—'}
-                        </p>
                       </td>
                       <td className="text-fg w-40 px-3 py-2 text-right font-medium tabular-nums">
                         <span className="whitespace-nowrap">

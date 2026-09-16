@@ -140,11 +140,3 @@ export function suggestTransfer({
   // the one worth putting on the lorry.
   return suggestions.sort((a, b) => a.daysOfCover - b.daysOfCover)
 }
-
-/** "Sells 22, 3 left — about 4 days' cover" — the reason, in words. */
-export function explainSuggestion(suggestion: TransferSuggestion, months: number): string {
-  const cover = Number.isFinite(suggestion.daysOfCover)
-    ? `about ${Math.round(suggestion.daysOfCover)} days left`
-    : 'nothing sold yet'
-  return `Sold ${suggestion.soldAtDestination} in ${months} months, ${suggestion.stockAtDestination} in stock — ${cover}`
-}

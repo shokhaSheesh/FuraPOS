@@ -38,7 +38,7 @@ export function buildProductColumns({
   /** One quantity column per location, placed right after Quantity. Empty for none. */
   stockColumnsFor?: readonly { id: string; name: string }[]
 }): TableColumn<VariationRow>[] {
-  return [
+  const columns: TableColumn<VariationRow>[] = [
     // Рисунок
     {
       id: 'image',
@@ -164,6 +164,24 @@ export function buildProductColumns({
         )
       },
     })),
+    // Локация — where this stock is
+    {
+      id: 'location',
+      header: 'Location',
+      enableSorting: false,
+      cell: ({ row }) => {
+        const at = row.original.stockByLocation.filter((entry) => entry.quantity > 0)
+        if (!at.length) return <Empty />
+        // One place reads as itself; several read as a list, shortened with the
+        // full split on hover so a row never wraps.
+        const names = at.map((entry) => entry.locationName)
+        return (
+          <span title={at.map((e) => `${e.locationName}: ${formatNumber(e.quantity)}`).join('\n')}>
+            {names.length === 1 ? names[0] : `${names[0]} +${names.length - 1}`}
+          </span>
+        )
+      },
+    },
     // Категория
     {
       accessorKey: 'categoryPath',
@@ -243,7 +261,47 @@ export function buildProductColumns({
       ),
     },
   ]
+
+  // Most useful first — see PRODUCT_COLUMN_ORDER.
+  return [...columns].sort((a, b) => rank(a) - rank(b))
 }
+
+const rank = (column: TableColumn<VariationRow>) => {
+  const id = (column.id ?? (column as { accessorKey?: string }).accessorKey ?? '') as string
+  const index = PRODUCT_COLUMN_ORDER.indexOf(id)
+  return index === -1 ? PRODUCT_COLUMN_ORDER.length : index
+}
+
+/**
+ * The order the list opens in, most useful first: what the row *is*, then
+ * where it is and how many, then money, then the details that only matter
+ * once you are looking at one part. Each user can rearrange it from the
+ * Columns menu, and their order is remembered.
+ */
+export const PRODUCT_COLUMN_ORDER = [
+  'image',
+  'productName',
+  'name',
+  'sku',
+  'barcode',
+  'categoryPath',
+  'brandName',
+  'stock',
+  'location',
+  'salePrice',
+  'costPrice',
+  'partSide',
+  'oem',
+  'vehicleMake',
+  'vehicleModels',
+  'manufacturer',
+  'categoryName',
+  'cargoWeightKg',
+  'cargoSize',
+  'description',
+  'status',
+  'actions',
+]
 
 /**
  * Hidden on first open. The list is now short enough to show nearly all of it;

@@ -25,6 +25,7 @@ const variation = (over: Partial<ProductFormValues['variations'][number]> = {}) 
   lowStockThreshold: null,
   shelfAddress: null,
   status: 'active' as const,
+  imageUrl: null,
   stockByLocation: [{ locationId: 'loc-1', quantity: 3 }],
   ...over,
 })

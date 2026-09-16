@@ -492,8 +492,10 @@ export interface CreateSaleInput {
 
 type VariationInput = Omit<
   Product['variations'][number],
-  'id' | 'productId' | 'stock' | 'stockByLocation' | 'imageUrl' | 'name'
+  'id' | 'productId' | 'stock' | 'stockByLocation' | 'name' | 'imageUrl'
 > & {
+  /** A picture, when one was picked. Absent leaves the one already stored. */
+  imageUrl?: string | null
   /**
    * What to call it. Sent only for a product sold one way, where somebody types
    * it; with options the name is generated from them.
@@ -812,7 +814,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
         productId: id,
         name: variationName(variation.optionValues, variation.name),
         ...resolveStock(variation.stockByLocation, get().locations),
-        imageUrl: null,
+        imageUrl: variation.imageUrl ?? null,
       })),
       createdAt: now,
       updatedAt: now,
@@ -845,7 +847,8 @@ export const useDataStore = create<CatalogState>((set, get) => ({
           productId: id,
           name: variationName(variation.optionValues, variation.name),
           ...resolveStock(variation.stockByLocation, get().locations),
-          imageUrl: previous?.imageUrl ?? null,
+          // Kept when the form did not send one — it only does when it changed.
+          imageUrl: variation.imageUrl ?? previous?.imageUrl ?? null,
         }
       }),
       updatedAt: new Date().toISOString(),

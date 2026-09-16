@@ -4,6 +4,7 @@ import { NumberField } from '@/shared/components/NumberField'
 import { Button } from '@/shared/ui/Button'
 import { Checkbox } from '@/shared/ui/Checkbox'
 import { Input } from '@/shared/ui/Input'
+import { ImageField } from '@/shared/components/ImageField'
 import { Select } from '@/shared/ui/Select'
 import { cn } from '@/shared/lib/cn'
 import { combinationName, type ProductFormValues } from '../model/product'
@@ -88,6 +89,7 @@ export function ProductVariationsTable({
                 SKU<span className="text-danger ml-0.5">*</span>
               </th>
               <th className={th}>Barcode</th>
+              <th className={th}>Picture</th>
               <th className={th}>Part</th>
               <FillableHeader
                 label="Cost"
@@ -156,6 +158,15 @@ export function ProductVariationsTable({
                       aria-label={`Barcode — ${name}`}
                       disabled={!sold}
                       {...form.register(`variations.${index}.barcode`)}
+                    />
+                  </td>
+                  <td className={cell}>
+                    <Controller
+                      control={form.control}
+                      name={`variations.${index}.imageUrl`}
+                      render={({ field }) => (
+                        <ImageField size="sm" value={field.value} onChange={field.onChange} />
+                      )}
                     />
                   </td>
                   <td className={cell}>

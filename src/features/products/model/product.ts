@@ -395,6 +395,8 @@ export const variationFormSchema = z.object({
   lowStockThreshold: z.number().int().nonnegative().nullable(),
   shelfAddress: z.string().nullable(),
   status: z.enum(['active', 'archived', 'draft']),
+  /** A data URL, or null — see ImageField. */
+  imageUrl: z.string().nullable(),
   stockByLocation: z.array(stockAtLocationFormSchema),
   optionValues: z.array(z.object({ optionId: z.string(), value: z.string() })),
 })

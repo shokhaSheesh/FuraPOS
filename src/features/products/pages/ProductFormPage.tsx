@@ -11,6 +11,7 @@ import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
 import { Button } from '@/shared/ui/Button'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 import { Input } from '@/shared/ui/Input'
+import { ImageField } from '@/shared/components/ImageField'
 import { RichTextEditor } from '@/shared/ui/RichTextEditor'
 import { Select } from '@/shared/ui/Select'
 import { toast } from '@/shared/ui/toast'
@@ -97,6 +98,7 @@ const emptyVariation = (
   mobileSku: null,
   mobileName: null,
   status: 'active' as const,
+  imageUrl: null,
   stockByLocation: stockRows(locations),
 })
 
@@ -214,6 +216,7 @@ export function ProductForm({
                 lowStockThreshold: v.lowStockThreshold,
                 shelfAddress: v.shelfAddress,
                 status: v.status,
+                imageUrl: v.imageUrl,
                 stockByLocation: stockRows(locations, v.stockByLocation),
               })),
               (values) => ({ ...emptyVariation(locations, values), id: undefined, enabled: false }),
@@ -605,6 +608,17 @@ export function ProductForm({
           <CardBody className="space-y-4">
             {single ? (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <Field label="Picture" className="sm:col-span-2">
+                  {(p) => (
+                    <Controller
+                      control={form.control}
+                      name="variations.0.imageUrl"
+                      render={({ field: f }) => (
+                        <ImageField id={p.id} value={f.value} onChange={f.onChange} />
+                      )}
+                    />
+                  )}
+                </Field>
                 <Field
                   label="Variation name"
                   hint="What this one is called — leave empty if it has no name"

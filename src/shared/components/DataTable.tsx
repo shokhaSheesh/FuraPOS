@@ -5,7 +5,7 @@ import {
   type RowData,
   type SortingState,
 } from '@tanstack/react-table'
-import { ArrowDown, ArrowUp, ChevronsUpDown, Settings2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, ChevronsUpDown, Settings2 } from 'lucide-react'
 import { DropdownMenu } from 'radix-ui'
 import { cn } from '@/shared/lib/cn'
 import { Button } from '@/shared/ui/Button'
@@ -165,16 +165,17 @@ export function DataTable<T extends RowData>({
     order the screen declared.
   */
   const [order, setOrder] = useState<ColumnOrder>(() => readStoredOrder(storageKey))
-  const [dragging, setDragging] = useState<string | null>(null)
-  const [dropTarget, setDropTarget] = useState<string | null>(null)
 
   const ordered = useMemo(() => applyOrder(columns, order), [columns, order])
 
-  const moveColumn = (from: string, to: string) => {
-    if (from === to) return
-    const ids = ordered.map(columnId).filter((id) => id !== 'actions')
-    const next = ids.filter((id) => id !== from)
-    next.splice(next.indexOf(to), 0, from)
+  /** Moves a column one place left or right, which is what the arrows do. */
+  const moveColumn = (id: string, direction: -1 | 1) => {
+    const ids = ordered.map(columnId).filter((columnKey) => columnKey !== 'actions')
+    const from = ids.indexOf(id)
+    const to = from + direction
+    if (from === -1 || to < 0 || to >= ids.length) return
+    const next = [...ids]
+    next.splice(to, 0, ...next.splice(from, 1))
     setOrder(next)
     if (storageKey) {
       try {
@@ -279,27 +280,57 @@ export function DataTable<T extends RowData>({
               // of checkboxes; it never grows past the space actually available.
               className="rounded-control border-border bg-surface shadow-popover z-50 max-h-[min(18rem,var(--radix-dropdown-menu-content-available-height))] min-w-48 overflow-y-auto overscroll-contain border p-1"
             >
-              {table
-                .getAllLeafColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => (
-                  <DropdownMenu.CheckboxItem
-                    key={column.id}
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(checked) => column.toggleVisibility(Boolean(checked))}
-                    onSelect={(event) => event.preventDefault()}
-                    className="text-fg data-[highlighted]:bg-surface-muted flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm outline-none"
-                  >
-                    <span className="border-border-strong flex size-4 items-center justify-center rounded border">
-                      <DropdownMenu.ItemIndicator>
-                        <span className="bg-primary block size-2 rounded-[2px]" />
-                      </DropdownMenu.ItemIndicator>
-                    </span>
-                    {typeof column.columnDef.header === 'string'
-                      ? column.columnDef.header
-                      : column.id}
-                  </DropdownMenu.CheckboxItem>
-                ))}
+              {(() => {
+                const movable = table
+                  .getAllLeafColumns()
+                  .filter((column) => column.id !== 'actions')
+                  .map((column) => column.id)
+                return table
+                  .getAllLeafColumns()
+                  .filter((column) => column.getCanHide())
+                  .map((column) => {
+                    const position = movable.indexOf(column.id)
+                    return (
+                      <DropdownMenu.CheckboxItem
+                        key={column.id}
+                        checked={column.getIsVisible()}
+                        onCheckedChange={(checked) => column.toggleVisibility(Boolean(checked))}
+                        onSelect={(event) => event.preventDefault()}
+                        className="text-fg data-[highlighted]:bg-surface-muted flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm outline-none"
+                      >
+                        <span className="border-border-strong flex size-4 shrink-0 items-center justify-center rounded border">
+                          <DropdownMenu.ItemIndicator>
+                            <span className="bg-primary block size-2 rounded-[2px]" />
+                          </DropdownMenu.ItemIndicator>
+                        </span>
+                        <span className="flex-1 truncate">
+                          {typeof column.columnDef.header === 'string'
+                            ? column.columnDef.header
+                            : column.id}
+                        </span>
+                        {/* Ordering lives here rather than on the heading: a
+                            table is read by dragging it sideways, so dragging a
+                            heading to move it fought with scrolling. */}
+                        <span className="ml-1 flex shrink-0 items-center">
+                          <MoveButton
+                            label={`Move ${column.id} left`}
+                            disabled={position <= 0}
+                            onClick={() => moveColumn(column.id, -1)}
+                          >
+                            <ChevronUp />
+                          </MoveButton>
+                          <MoveButton
+                            label={`Move ${column.id} right`}
+                            disabled={position === -1 || position >= movable.length - 1}
+                            onClick={() => moveColumn(column.id, 1)}
+                          >
+                            <ChevronDown />
+                          </MoveButton>
+                        </span>
+                      </DropdownMenu.CheckboxItem>
+                    )
+                  })
+              })()}
             </DropdownMenu.Content>
           </DropdownMenu.Portal>
         </DropdownMenu.Root>
@@ -315,47 +346,15 @@ export function DataTable<T extends RowData>({
                   const sorted = header.column.getIsSorted()
                   const alignRight = header.column.columnDef.meta?.align === 'right'
                   const resizable = header.column.id !== 'actions'
-                  const draggable = header.column.id !== 'actions'
                   return (
                     <th
                       key={header.id}
                       scope="col"
-                      draggable={draggable}
-                      onDragStart={(event) => {
-                        setDragging(header.column.id)
-                        event.dataTransfer.effectAllowed = 'move'
-                        // Firefox needs data set for a drag to start at all.
-                        event.dataTransfer.setData('text/plain', header.column.id)
-                      }}
-                      onDragOver={(event) => {
-                        if (!dragging || !draggable) return
-                        event.preventDefault()
-                        setDropTarget(header.column.id)
-                      }}
-                      onDragLeave={() =>
-                        setDropTarget((current) => (current === header.column.id ? null : current))
-                      }
-                      onDrop={(event) => {
-                        event.preventDefault()
-                        if (dragging && draggable) moveColumn(dragging, header.column.id)
-                        setDragging(null)
-                        setDropTarget(null)
-                      }}
-                      onDragEnd={() => {
-                        setDragging(null)
-                        setDropTarget(null)
-                      }}
-                      title={draggable ? 'Drag to move this column' : undefined}
                       style={widthStyle(widths[header.column.id])}
                       className={cn(
                         'text-2xs text-fg-muted group/th relative h-10 px-3 font-semibold tracking-wide whitespace-nowrap uppercase',
                         widths[header.column.id] !== undefined && 'overflow-hidden text-ellipsis',
                         alignRight ? 'text-right' : 'text-left',
-                        draggable && 'cursor-grab active:cursor-grabbing',
-                        dragging === header.column.id && 'opacity-50',
-                        dropTarget === header.column.id &&
-                          dragging !== header.column.id &&
-                          'border-primary border-l-2',
                       )}
                     >
                       {header.isPlaceholder ? null : canSort ? (
@@ -461,5 +460,34 @@ export function DataTable<T extends RowData>({
           <TablePagination total={total} pagination={pagination} onChange={onPaginationChange} />
         ) : null)}
     </div>
+  )
+}
+
+/** One of the two arrows beside a column in the Columns menu. */
+function MoveButton({
+  label,
+  disabled,
+  onClick,
+  children,
+}: {
+  label: string
+  disabled: boolean
+  onClick: () => void
+  children: ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      disabled={disabled}
+      onClick={(event) => {
+        event.preventDefault()
+        event.stopPropagation()
+        onClick()
+      }}
+      className="text-fg-subtle hover:text-fg grid size-5 place-items-center disabled:opacity-25 [&_svg]:size-3.5"
+    >
+      {children}
+    </button>
   )
 }

@@ -39,15 +39,7 @@ export function searchVariations(variations: VariationRow[], term: string): Vari
     (v) =>
       v.status === 'active' &&
       matches(
-        [
-          v.fullName,
-          v.sku,
-          v.barcode,
-          v.oem,
-          v.brandName,
-          v.vehicleMake,
-          ...v.vehicleModels,
-        ],
+        [v.fullName, v.sku, v.barcode, v.oem, v.brandName, v.vehicleMake, ...v.vehicleModels],
         wanted,
       ),
   )

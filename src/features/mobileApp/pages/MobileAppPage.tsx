@@ -23,10 +23,18 @@ import {
   Wrench,
   type LucideIcon,
 } from 'lucide-react'
+import { useState } from 'react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { cn } from '@/shared/lib/cn'
 import { M, TONES, type MobileTone } from '../components/palette'
-import { IconTile, Phone, PhoneCard, PhoneHeader, PhoneSection } from '../components/phone'
+import {
+  IconTile,
+  Phone,
+  PhoneCard,
+  PhoneHeader,
+  PhoneSection,
+  SheetBadge,
+} from '../components/phone'
 import {
   DeletedOperationSheet,
   EditedOperationSheet,
@@ -107,7 +115,13 @@ const SPEND_BY_CATEGORY: {
   { label: 'Мойка', meta: '5 операций', amount: '−$200', icon: Droplets, tone: 'purple' },
 ]
 
-/** Individual entries, newest first — what "Все расходы" opens onto. */
+/**
+ * Individual entries, newest first. `state` is what opens when one is tapped:
+ * a record as entered, one that was deleted, or one that was edited — the
+ * three things a spend record can be.
+ */
+type OperationState = 'current' | 'deleted' | 'edited'
+
 const OPERATIONS: {
   title: string
   note: string
@@ -115,8 +129,26 @@ const OPERATIONS: {
   amount: string
   icon: LucideIcon
   tone: MobileTone
-  voided?: boolean
+  state: OperationState
 }[] = [
+  {
+    title: 'Топливо',
+    note: '',
+    by: '14.09.2026 · Шохруз Сафаров',
+    amount: '−$1 212,00',
+    icon: Fuel,
+    tone: 'green',
+    state: 'deleted',
+  },
+  {
+    title: 'Платная дорога',
+    note: 'Трасса М-5',
+    by: '05.09.2026 · Mansurjons',
+    amount: '−$40,00',
+    icon: Milestone,
+    tone: 'purple',
+    state: 'edited',
+  },
   {
     title: 'Зарплата',
     note: 'создано',
@@ -124,6 +156,7 @@ const OPERATIONS: {
     amount: '−$652,00',
     icon: Coins,
     tone: 'yellow',
+    state: 'current',
   },
   {
     title: 'Топливо',
@@ -132,6 +165,7 @@ const OPERATIONS: {
     amount: '−$1 000,00',
     icon: Fuel,
     tone: 'green',
+    state: 'current',
   },
   {
     title: 'Топливо',
@@ -140,6 +174,7 @@ const OPERATIONS: {
     amount: '−$10,00',
     icon: Fuel,
     tone: 'green',
+    state: 'current',
   },
   {
     title: 'Зарплата',
@@ -148,14 +183,7 @@ const OPERATIONS: {
     amount: '−$120,00',
     icon: Coins,
     tone: 'yellow',
-  },
-  {
-    title: 'Топливо',
-    note: '',
-    by: '08.09.2026 · Шохруз Сафаров',
-    amount: '−$120,00',
-    icon: Fuel,
-    tone: 'green',
+    state: 'current',
   },
 ]
 
@@ -229,63 +257,58 @@ const TABS: { label: string; icon: LucideIcon; active?: boolean }[] = [
  * behind the taps come next.
  */
 export default function MobileAppPage() {
+  /** Which operation's sheet is open, if any — the only state on the mock. */
+  const [open, setOpen] = useState<OperationState | null>(null)
+
   return (
     <>
       <PageHeader
         title="Mobile app"
-        description="A design mock of the fleet app — a separate product from this back office. The driver's own truck screen; the screens behind each action follow."
+        description="A design mock of the fleet app — a separate product from this back office. Tap an operation to open its record."
       />
 
-      <div className="mt-4 flex flex-wrap justify-center gap-6 pb-10">
-        <Screen caption="Моя машина" />
-        <Screen caption="Операция" sheet={<OperationSheet />} />
-        <Screen caption="Удалённая операция" sheet={<DeletedOperationSheet />} />
-        <Screen caption="Изменённая операция" sheet={<EditedOperationSheet />} />
+      <div className="mt-4 flex justify-center pb-10">
+        <Phone
+          tabBar={<TabBar />}
+          sheet={open ? SHEETS[open]({ onClose: () => setOpen(null) }) : undefined}
+          onDismissSheet={() => setOpen(null)}
+          header={
+            <PhoneHeader
+              title="Моя машина"
+              left={
+                <span
+                  className="grid size-9 place-items-center rounded-xl border"
+                  style={{ borderColor: M.border, background: M.card }}
+                >
+                  <ArrowLeft className="size-4" style={{ color: M.text }} />
+                </span>
+              }
+            />
+          }
+        >
+          <div className="pt-3" />
+          <TruckCard />
+          <Status />
+          <QuickExpenses />
+          <Statistics />
+          <Finance />
+          <Operations onOpen={setOpen} />
+          <SpendSplit />
+          <Trips />
+          <Mileage />
+          <AssignmentHistory />
+          <Documents />
+        </Phone>
       </div>
     </>
   )
 }
 
-/**
- * One phone. The three sheet states are shown as their own phones rather than
- * behind a tap, so a review can see all of them at once.
- */
-function Screen({ caption, sheet }: { caption: string; sheet?: React.ReactNode }) {
-  return (
-    <figure className="m-0">
-      <Phone
-        tabBar={<TabBar />}
-        sheet={sheet}
-        header={
-          <PhoneHeader
-            title="Моя машина"
-            left={
-              <span
-                className="grid size-9 place-items-center rounded-xl border"
-                style={{ borderColor: M.border, background: M.card }}
-              >
-                <ArrowLeft className="size-4" style={{ color: M.text }} />
-              </span>
-            }
-          />
-        }
-      >
-        <div className="pt-3" />
-        <TruckCard />
-        <Status />
-        <QuickExpenses />
-        <Statistics />
-        <Finance />
-        <Operations />
-        <SpendSplit />
-        <Trips />
-        <Mileage />
-        <AssignmentHistory />
-        <Documents />
-      </Phone>
-      <figcaption className="text-fg-muted mt-2 text-center text-xs">{caption}</figcaption>
-    </figure>
-  )
+/** Which sheet a tapped operation opens. */
+const SHEETS: Record<OperationState, (props: { onClose: () => void }) => React.ReactNode> = {
+  current: OperationSheet,
+  deleted: DeletedOperationSheet,
+  edited: EditedOperationSheet,
 }
 
 function TruckCard() {
@@ -611,17 +634,37 @@ function Finance() {
 }
 
 /** Each entry on its own row — tapping one opens the sheets shown beside this screen. */
-function Operations() {
+function Operations({ onOpen }: { onOpen: (state: OperationState) => void }) {
   return (
     <PhoneSection title="Операции" subtitle="Этот месяц">
       <PhoneCard padded={false}>
         <div className="divide-y" style={{ borderColor: M.divider }}>
           {OPERATIONS.map((operation, index) => (
-            <div key={index} className="flex items-center gap-3 px-3.5 py-3">
+            <button
+              type="button"
+              key={index}
+              onClick={() => onOpen(operation.state)}
+              className="flex w-full items-center gap-3 px-3.5 py-3 text-left"
+            >
               <IconTile icon={operation.icon} tone={operation.tone} size="sm" />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[14px] font-bold" style={{ color: M.text }}>
+                <p
+                  className="truncate text-[14px] font-bold"
+                  style={{
+                    color: operation.state === 'deleted' ? M.textSubtle : M.text,
+                    textDecoration: operation.state === 'deleted' ? 'line-through' : undefined,
+                  }}
+                >
                   {operation.title}
+                  {operation.state === 'deleted' ? (
+                    <span className="ml-1.5 align-middle">
+                      <SheetBadge label="Удалено" tone="red" />
+                    </span>
+                  ) : operation.state === 'edited' ? (
+                    <span className="ml-1.5 align-middle">
+                      <SheetBadge label="Изменено" tone="yellow" />
+                    </span>
+                  ) : null}
                 </p>
                 {operation.note ? (
                   <p className="truncate text-[13px]" style={{ color: M.textMuted }}>
@@ -632,11 +675,17 @@ function Operations() {
                   {operation.by}
                 </p>
               </div>
-              <span className="text-[14px] font-bold" style={{ color: TONES.red.fg }}>
+              <span
+                className="text-[14px] font-bold"
+                style={{
+                  color: operation.state === 'deleted' ? M.textSubtle : TONES.red.fg,
+                  textDecoration: operation.state === 'deleted' ? 'line-through' : undefined,
+                }}
+              >
                 {operation.amount}
               </span>
               <ChevronRight className="size-4 shrink-0" style={{ color: M.textSubtle }} />
-            </div>
+            </button>
           ))}
         </div>
       </PhoneCard>

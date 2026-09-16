@@ -19,12 +19,15 @@ export function Phone({
   header,
   tabBar,
   sheet,
+  onDismissSheet,
 }: {
   children: ReactNode
   header?: ReactNode
   tabBar?: ReactNode
   /** A bottom sheet over this screen, with the screen dimmed behind it. */
   sheet?: ReactNode
+  /** Tapping the dimmed area closes the sheet, as on a phone. */
+  onDismissSheet?: () => void
 }) {
   return (
     <div
@@ -45,7 +48,13 @@ export function Phone({
       </div>
       {sheet ? (
         <div className="absolute inset-0 flex flex-col justify-end">
-          <div className="absolute inset-0" style={{ background: 'rgba(15, 23, 42, 0.45)' }} />
+          <button
+            type="button"
+            aria-label="Закрыть"
+            onClick={onDismissSheet}
+            className="absolute inset-0 cursor-default"
+            style={{ background: 'rgba(15, 23, 42, 0.45)' }}
+          />
           {sheet}
         </div>
       ) : null}
@@ -62,13 +71,13 @@ export function PhoneSheet({
   badge,
   children,
   footer,
-  onCloseIcon = true,
+  onClose,
 }: {
   title: ReactNode
   badge?: ReactNode
   children: ReactNode
   footer?: ReactNode
-  onCloseIcon?: boolean
+  onClose?: () => void
 }) {
   return (
     <div
@@ -83,11 +92,15 @@ export function PhoneSheet({
           {title}
         </p>
         {badge}
-        {onCloseIcon ? (
-          <span className="ml-auto text-[18px] leading-none" style={{ color: M.textMuted }}>
-            ✕
-          </span>
-        ) : null}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Закрыть"
+          className="ml-auto text-[18px] leading-none"
+          style={{ color: M.textMuted }}
+        >
+          ✕
+        </button>
       </div>
       <div className="max-h-[520px] overflow-y-auto px-4 pb-2">{children}</div>
       {footer ? (

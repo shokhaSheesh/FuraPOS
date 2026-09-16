@@ -87,9 +87,10 @@ const SectionTitle = ({ title, hint }: { title: string; hint?: string }) => (
 )
 
 /** 1. A record as it stands: what it is, who added it, and what can be done. */
-export function OperationSheet() {
+export function OperationSheet({ onClose }: { onClose: () => void }) {
   return (
     <PhoneSheet
+      onClose={onClose}
       title="Детали записи"
       footer={
         <SheetButtons
@@ -121,18 +122,21 @@ export function OperationSheet() {
 }
 
 /** 2. A deleted record: why it is struck through, and the trail it left. */
-export function DeletedOperationSheet() {
+export function DeletedOperationSheet({ onClose }: { onClose: () => void }) {
   return (
     <PhoneSheet
+      onClose={onClose}
       title="Детали записи"
       badge={<SheetBadge label="Удалено" tone="red" />}
       footer={
-        <span
-          className="grid h-11 place-items-center rounded-2xl text-[13px] font-semibold"
+        <button
+          type="button"
+          onClick={onClose}
+          className="grid h-11 w-full place-items-center rounded-2xl text-[13px] font-semibold"
           style={{ background: M.text, color: M.card }}
         >
           Закрыть
-        </span>
+        </button>
       }
     >
       <div
@@ -243,9 +247,10 @@ function Timeline({
 }
 
 /** 3. An edited record: the version that counts, and the one it replaced. */
-export function EditedOperationSheet() {
+export function EditedOperationSheet({ onClose }: { onClose: () => void }) {
   return (
     <PhoneSheet
+      onClose={onClose}
       title="Расход #EXP-002481"
       badge={<SheetBadge label="Изменено" tone="yellow" />}
       footer={

@@ -119,7 +119,6 @@ export const paths = {
     locations: '/settings/locations',
     categories: '/settings/categories', // OX: /app/settings/products
     urgency: '/settings/urgency', // no OX equivalent — «Zarurlik darajasi», client request
-    billing: '/settings/billing',
     personal: '/settings/personal', // OX: Личные данные
   },
 

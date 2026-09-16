@@ -75,8 +75,8 @@ Do not rename a nav item or invent a screen without updating that map first.
    report, promotions report, call history.
 9. **My uploads** — an async job log for bulk imports (not a file manager) — filename, user, job
    type, status.
-10. **Settings** — general, brands, equipment, locations, sales, products, clients, billing,
-    personal data.
+10. **Settings** — general, brands, equipment, locations, categories, urgency levels, personal
+    data. Billing was built and then **cut at the client's request**.
 
 OX also has Integrations, Partner program, Support, and Settings entries for Webhooks and AI / MCP.
 **Those five are deliberately out of scope** — see non-goals below. The map records them so the

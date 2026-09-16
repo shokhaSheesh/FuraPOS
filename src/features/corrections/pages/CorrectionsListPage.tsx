@@ -1,28 +1,22 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { Plus, TrendingDown, TrendingUp, Scale } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
 import { SearchInput } from '@/shared/components/SearchInput'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { FilterSelect } from '@/shared/components/FilterSelect'
-import { Card } from '@/shared/ui/Card'
 import { Button } from '@/shared/ui/Button'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 import { toast } from '@/shared/ui/toast'
 import { useListQuery } from '@/shared/hooks/useListQuery'
 import { useSession } from '@/app/providers/SessionProvider'
 import { paths } from '@/shared/config/paths'
-import { formatMoney, formatNumber } from '@/shared/lib/format'
+import { formatNumber } from '@/shared/lib/format'
 import { useDataStore } from '@/data/store'
 import { USD_RATE } from '@/data/seed'
-import {
-  useCancelCorrection,
-  useCorrectionStatusCounts,
-  useCorrectionSummary,
-  useCorrections,
-} from '../api/corrections'
+import { useCancelCorrection, useCorrectionStatusCounts, useCorrections } from '../api/corrections'
 import {
   buildCorrectionColumns,
   CORRECTION_COLUMNS_HIDDEN_BY_DEFAULT,
@@ -52,7 +46,6 @@ export default function CorrectionsListPage() {
   }
   const { data, isLoading } = useCorrections(query)
   const { data: counts } = useCorrectionStatusCounts(scope)
-  const summary = useCorrectionSummary(scope)
   const canSeeCost = can('products.cost.view')
 
   const [pendingCancel, setPendingCancel] = useState<Correction | null>(null)
@@ -68,31 +61,6 @@ export default function CorrectionsListPage() {
       }),
     [can, canSeeCost],
   )
-
-  const tiles = [
-    {
-      icon: TrendingDown,
-      label: 'Written off',
-      value: formatNumber(summary.offUnits),
-      meta: canSeeCost ? `${formatMoney(summary.offValue)} at cost` : 'units',
-      tone: 'danger' as const,
-    },
-    {
-      icon: TrendingUp,
-      label: 'Written on',
-      value: formatNumber(summary.onUnits),
-      meta: canSeeCost ? `${formatMoney(summary.onValue)} at cost` : 'units found',
-    },
-    {
-      icon: Scale,
-      label: 'Net effect',
-      value: canSeeCost
-        ? `${summary.netValue < 0 ? '−' : ''}${formatMoney(Math.abs(summary.netValue))}`
-        : formatNumber(summary.onUnits - summary.offUnits),
-      meta: 'at cost, applied corrections only',
-      tone: summary.netValue < 0 ? ('danger' as const) : undefined,
-    },
-  ]
 
   return (
     <>
@@ -150,27 +118,6 @@ export default function CorrectionsListPage() {
           </div>
         }
       />
-
-      <div className="grid gap-3 sm:grid-cols-3">
-        {tiles.map((tile) => (
-          <Card key={tile.label} className="flex items-start gap-3 p-4">
-            <span className="bg-surface-inset text-fg-muted mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full">
-              <tile.icon className="size-4" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-fg-muted text-sm">{tile.label}</p>
-              <p
-                className={`mt-0.5 text-lg font-semibold ${
-                  tile.tone === 'danger' ? 'text-danger' : 'text-fg'
-                }`}
-              >
-                {tile.value}
-              </p>
-              <p className="text-fg-subtle text-2xs">{tile.meta}</p>
-            </div>
-          </Card>
-        ))}
-      </div>
 
       <DataTable
         storageKey="corrections"

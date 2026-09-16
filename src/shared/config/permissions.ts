@@ -106,7 +106,6 @@ export const permissionTree: readonly PermissionNode[] = [
       { key: 'settings.sales', label: 'Sales configuration', actions: crud },
       { key: 'settings.products', label: 'Product configuration', actions: crud },
       { key: 'settings.clients', label: 'Client configuration', actions: crud },
-      { key: 'settings.billing', label: 'Billing', actions: ['view', 'edit'] },
     ],
   },
 ]

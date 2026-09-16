@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { Plus, TrendingUp, FileEdit, Percent, Undo2 } from 'lucide-react'
+import { Plus, Undo2 } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
 import { SearchInput } from '@/shared/components/SearchInput'
@@ -8,7 +8,6 @@ import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { RowActions } from '@/shared/components/RowActions'
 import { Badge } from '@/shared/ui/Badge'
-import { Card } from '@/shared/ui/Card'
 import { Button } from '@/shared/ui/Button'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 import { toast } from '@/shared/ui/toast'
@@ -17,12 +16,7 @@ import { useSession } from '@/app/providers/SessionProvider'
 import { paths } from '@/shared/config/paths'
 import { formatDate, formatNumber, formatPercent } from '@/shared/lib/format'
 import type { TableColumn } from '@/shared/components/table/features'
-import {
-  useRepricingActions,
-  useRepricingStatusCounts,
-  useRepricingSummary,
-  useRepricings,
-} from '../api/repricings'
+import { useRepricingActions, useRepricingStatusCounts, useRepricings } from '../api/repricings'
 import {
   averageChange,
   belowCost,
@@ -51,7 +45,6 @@ export default function RepricingListPage() {
   const scope = { search: query.search, direction: query.direction }
   const { data, isLoading } = useRepricings(query)
   const { data: counts } = useRepricingStatusCounts(scope)
-  const summary = useRepricingSummary(scope)
   const canSeeCost = can('products.cost.view')
 
   const [pendingRevert, setPendingRevert] = useState<Repricing | null>(null)
@@ -175,29 +168,6 @@ export default function RepricingListPage() {
     [can, canSeeCost],
   )
 
-  const tiles = [
-    {
-      icon: FileEdit,
-      label: 'Waiting to be applied',
-      value: formatNumber(summary.drafts),
-      meta: 'prepared but not live yet',
-    },
-    {
-      icon: TrendingUp,
-      label: 'Average move',
-      value: `${summary.averageChange > 0 ? '+' : ''}${formatPercent(summary.averageChange)}`,
-      meta: `${formatNumber(summary.appliedLines)} prices changed`,
-    },
-    {
-      icon: Percent,
-      label: 'Margin',
-      value: canSeeCost
-        ? `${formatPercent(summary.marginBefore)} → ${formatPercent(summary.marginAfter)}`
-        : '—',
-      meta: 'before and after, across applied changes',
-    },
-  ]
-
   return (
     <>
       <PageHeader
@@ -239,21 +209,6 @@ export default function RepricingListPage() {
           </div>
         }
       />
-
-      <div className="grid gap-3 sm:grid-cols-3">
-        {tiles.map((tile) => (
-          <Card key={tile.label} className="flex items-start gap-3 p-4">
-            <span className="bg-surface-inset text-fg-muted mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full">
-              <tile.icon className="size-4" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-fg-muted text-sm">{tile.label}</p>
-              <p className="text-fg mt-0.5 text-lg font-semibold">{tile.value}</p>
-              <p className="text-fg-subtle text-2xs">{tile.meta}</p>
-            </div>
-          </Card>
-        ))}
-      </div>
 
       <DataTable
         storageKey="repricings"

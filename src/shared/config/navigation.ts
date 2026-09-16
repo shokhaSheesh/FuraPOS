@@ -180,7 +180,6 @@ export const navigation: NavSection[] = [
         to: paths.settings.urgency,
         permission: 'settings.products.view',
       },
-      { label: 'Billing', to: paths.settings.billing, permission: 'settings.billing.view' },
       { label: 'Personal data', to: paths.settings.personal },
     ],
   },

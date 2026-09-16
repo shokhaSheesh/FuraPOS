@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { Plus, ClipboardList, Target, TrendingDown } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
 import { SearchInput } from '@/shared/components/SearchInput'
@@ -8,7 +8,6 @@ import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { FilterSelect } from '@/shared/components/FilterSelect'
 import { Badge } from '@/shared/ui/Badge'
-import { Card } from '@/shared/ui/Card'
 import { Button } from '@/shared/ui/Button'
 import { RowActions } from '@/shared/components/RowActions'
 import { Ban } from 'lucide-react'
@@ -27,12 +26,7 @@ import {
 import type { TableColumn } from '@/shared/components/table/features'
 import { useDataStore } from '@/data/store'
 import { USD_RATE } from '@/data/seed'
-import {
-  useStocktakeStatusCounts,
-  useStocktakeSummary,
-  useStocktakes,
-  useStocktakeActions,
-} from '../api/stocktakes'
+import { useStocktakeStatusCounts, useStocktakes, useStocktakeActions } from '../api/stocktakes'
 import {
   accuracy,
   discrepancies,
@@ -64,7 +58,6 @@ export default function StocktakingListPage() {
   const scope = { search: query.search, location: query.location }
   const { data, isLoading } = useStocktakes(query)
   const { data: counts } = useStocktakeStatusCounts(scope)
-  const summary = useStocktakeSummary(scope)
   const canSeeCost = can('products.cost.view')
 
   const [pendingCancel, setPendingCancel] = useState<Stocktake | null>(null)
@@ -243,30 +236,6 @@ export default function StocktakingListPage() {
     [can, canSeeCost],
   )
 
-  const tiles = [
-    {
-      icon: ClipboardList,
-      label: 'Counting now',
-      value: formatNumber(summary.open),
-      meta: summary.open === 1 ? 'count in progress' : 'counts in progress',
-    },
-    {
-      icon: Target,
-      label: 'System was right',
-      value: formatPercent(summary.accuracy),
-      meta: 'of everything counted so far',
-    },
-    {
-      icon: TrendingDown,
-      label: 'Missing on the shelf',
-      value: formatNumber(summary.shortUnits),
-      meta: canSeeCost
-        ? `${summary.netValue < 0 ? '−' : ''}${formatMoney(Math.abs(summary.netValue))} net at cost`
-        : `${formatNumber(summary.surplusUnits)} found`,
-      tone: 'danger' as const,
-    },
-  ]
-
   return (
     <>
       <PageHeader
@@ -306,27 +275,6 @@ export default function StocktakingListPage() {
           </div>
         }
       />
-
-      <div className="grid gap-3 sm:grid-cols-3">
-        {tiles.map((tile) => (
-          <Card key={tile.label} className="flex items-start gap-3 p-4">
-            <span className="bg-surface-inset text-fg-muted mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full">
-              <tile.icon className="size-4" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-fg-muted text-sm">{tile.label}</p>
-              <p
-                className={`mt-0.5 text-lg font-semibold ${
-                  tile.tone === 'danger' && summary.shortUnits > 0 ? 'text-danger' : 'text-fg'
-                }`}
-              >
-                {tile.value}
-              </p>
-              <p className="text-fg-subtle text-2xs">{tile.meta}</p>
-            </div>
-          </Card>
-        ))}
-      </div>
 
       <DataTable
         storageKey="stocktakes"

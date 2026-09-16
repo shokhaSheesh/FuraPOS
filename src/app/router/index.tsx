@@ -57,7 +57,6 @@ const OnlineSaleDetailPage = lazy(() => import('@/features/onlineSales/pages/Onl
 const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage'))
 const MobileAppPage = lazy(() => import('@/features/mobileApp/pages/MobileAppPage'))
 const UrgencySettingsPage = lazy(() => import('@/features/settings/pages/UrgencySettingsPage'))
-const BillingSettingsPage = lazy(() => import('@/features/settings/pages/BillingSettingsPage'))
 const PersonalSettingsPage = lazy(() => import('@/features/settings/pages/PersonalSettingsPage'))
 const ReportsPage = lazy(() => import('@/features/reports/pages/ReportsPage'))
 const ReportBuilderPage = lazy(() => import('@/features/reports/pages/ReportBuilderPage'))
@@ -393,10 +392,6 @@ const routes: RouteObject[] = [
       {
         path: paths.settings.urgency,
         element: page(<UrgencySettingsPage />, 'settings.products.view'),
-      },
-      {
-        path: paths.settings.billing,
-        element: page(<BillingSettingsPage />, 'settings.billing.view'),
       },
       { path: paths.settings.personal, element: page(<PersonalSettingsPage />) },
 

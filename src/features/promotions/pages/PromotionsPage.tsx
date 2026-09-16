@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { Plus, Pause, Pencil, Play, Tag, Trash2, CalendarClock } from 'lucide-react'
+import { Plus, Pause, Pencil, Play, Tag, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
 import { SearchInput } from '@/shared/components/SearchInput'
@@ -8,7 +8,6 @@ import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { RowActions } from '@/shared/components/RowActions'
 import { Badge } from '@/shared/ui/Badge'
-import { Card } from '@/shared/ui/Card'
 import { Button } from '@/shared/ui/Button'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 import { toast } from '@/shared/ui/toast'
@@ -45,11 +44,6 @@ export default function PromotionsPage() {
   const { data: counts } = usePromotionCounts()
   const actions = usePromotionActions()
   const [deleting, setDeleting] = useState<PromotionRow | null>(null)
-
-  const running = data.items.filter((promotion) => promotion.status === 'running')
-  const endingSoon = running.filter(
-    (promotion) => promotion.daysLeft !== null && promotion.daysLeft <= 7,
-  )
 
   const columns = useMemo<TableColumn<PromotionRow>[]>(
     () => [
@@ -187,28 +181,6 @@ export default function PromotionsPage() {
     [can, navigate, actions],
   )
 
-  const tiles = [
-    {
-      icon: Tag,
-      label: 'Running now',
-      value: formatNumber(running.length),
-      meta: running.length ? running.map((p) => p.name).join(', ') : 'nothing on offer',
-    },
-    {
-      icon: CalendarClock,
-      label: 'Ending this week',
-      value: formatNumber(endingSoon.length),
-      meta: 'decide whether to extend them',
-      tone: endingSoon.length > 0 ? ('warning' as const) : undefined,
-    },
-    {
-      icon: CalendarClock,
-      label: 'Scheduled',
-      value: formatNumber(counts.scheduled ?? 0),
-      meta: 'set up, not started yet',
-    },
-  ]
-
   return (
     <>
       <PageHeader
@@ -240,27 +212,6 @@ export default function PromotionsPage() {
           />
         }
       />
-
-      <div className="grid gap-3 sm:grid-cols-3">
-        {tiles.map((tile) => (
-          <Card key={tile.label} className="flex items-start gap-3 p-4">
-            <span className="bg-surface-inset text-fg-muted mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full">
-              <tile.icon className="size-4" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-fg-muted text-sm">{tile.label}</p>
-              <p
-                className={`mt-0.5 text-lg font-semibold ${
-                  tile.tone === 'warning' ? 'text-warning' : 'text-fg'
-                }`}
-              >
-                {tile.value}
-              </p>
-              <p className="text-fg-subtle text-2xs truncate">{tile.meta}</p>
-            </div>
-          </Card>
-        ))}
-      </div>
 
       <DataTable
         storageKey="promotions"

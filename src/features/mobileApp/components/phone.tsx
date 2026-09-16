@@ -123,42 +123,6 @@ export function PhoneSection({
   )
 }
 
-/** The pill row used for periods and expense types. Scrolls sideways, as on a phone. */
-export function PhoneChips<T extends string>({
-  options,
-  value,
-  ariaLabel,
-}: {
-  options: { value: T; label: string }[]
-  value: T
-  ariaLabel: string
-}) {
-  return (
-    <div
-      role="group"
-      aria-label={ariaLabel}
-      className="flex gap-1.5 overflow-x-auto px-4 pb-0.5 [&::-webkit-scrollbar]:hidden"
-    >
-      {options.map((option) => {
-        const active = option.value === value
-        return (
-          <span
-            key={option.value}
-            className="shrink-0 rounded-full border px-3 py-1.5 text-[12px] font-medium whitespace-nowrap"
-            style={{
-              background: active ? M.text : M.card,
-              color: active ? M.card : M.textMuted,
-              borderColor: active ? M.text : M.border,
-            }}
-          >
-            {option.label}
-          </span>
-        )
-      })}
-    </div>
-  )
-}
-
 /** A tinted icon tile — round in lists, a squircle for the quick actions. */
 export function IconTile({
   icon: Icon,

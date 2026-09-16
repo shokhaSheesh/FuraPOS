@@ -7,10 +7,10 @@ import {
   Clock,
   Container,
   Droplets,
-  FileDown,
   Fuel,
   Gauge,
   Map,
+  Milestone,
   MoreHorizontal,
   Power,
   Receipt,
@@ -25,14 +25,7 @@ import {
 import { PageHeader } from '@/shared/components/PageHeader'
 import { cn } from '@/shared/lib/cn'
 import { M, TONES, type MobileTone } from '../components/palette'
-import {
-  IconTile,
-  Phone,
-  PhoneCard,
-  PhoneChips,
-  PhoneHeader,
-  PhoneSection,
-} from '../components/phone'
+import { IconTile, Phone, PhoneCard, PhoneHeader, PhoneSection } from '../components/phone'
 
 /*
   A mock of the fleet app's "my truck" screen — a different product from this
@@ -78,83 +71,37 @@ const QUICK_EXPENSES: { label: string; icon: LucideIcon; tone: MobileTone }[] = 
 const PERIODS = [
   { value: 'month', label: 'Этот месяц' },
   { value: 'prev', label: 'Прошлый месяц' },
-  { value: 'year', label: 'Этот год' },
-  { value: 'all', label: 'Всё время' },
 ] as const
 
-const FINANCE_PERIODS = [
-  { value: 'm1', label: 'Последний месяц' },
-  { value: 'm6', label: 'Последние 6 мес.' },
-  { value: 'y1', label: 'Последний год' },
-  { value: 'custom', label: 'Период' },
-] as const
+/** The headline figures — money first, then what the truck actually did. */
+const MONEY_STATS: { label: string; value: string; tone: MobileTone; badge: MobileTone }[] = [
+  { label: 'Доход', value: '8 400', tone: 'green', badge: 'green' },
+  { label: 'Расход', value: '3 120', tone: 'red', badge: 'red' },
+  { label: 'Прибыль', value: '5 280', tone: 'yellow', badge: 'green' },
+]
 
-const EXPENSE_TYPES = [
-  { value: 'all', label: 'Все' },
-  { value: 'fuel', label: 'Топливо' },
-  { value: 'food', label: 'Еда' },
-  { value: 'parking', label: 'Стоянка' },
-] as const
+const WORK_STATS: { label: string; value: string; unit?: string; icon: LucideIcon }[] = [
+  { label: 'Рейсы', value: '5', icon: Truck },
+  { label: 'Время ожидания', value: '2', unit: 'дня', icon: Clock },
+  { label: 'Пройденный путь', value: '7 840', unit: 'км', icon: Route },
+]
 
-const TRANSACTIONS: {
-  title: string
-  note: string
-  by: string
+/** Spending by category, which is how the design groups the truck's money. */
+const SPEND_BY_CATEGORY: {
+  label: string
+  meta: string
   amount: string
   icon: LucideIcon
   tone: MobileTone
-  voided?: boolean
 }[] = [
-  {
-    title: 'Топливо',
-    note: 'Удалено: Шохруз Сафаров, 14.09.2026',
-    by: 'Шохруз Сафаров',
-    amount: '−$1 212,00',
-    icon: Fuel,
-    tone: 'green',
-    voided: true,
-  },
-  {
-    title: 'Зарплата',
-    note: 'создано',
-    by: '09.09.2026 · Шохруз Сафаров',
-    amount: '−$652,00',
-    icon: UtensilsCrossed,
-    tone: 'orange',
-  },
-  {
-    title: 'Топливо',
-    note: 'отказ',
-    by: '09.09.2026 · Шохруз Сафаров',
-    amount: '−$1 000,00',
-    icon: Fuel,
-    tone: 'green',
-  },
-  {
-    title: 'Топливо',
-    note: '',
-    by: '09.09.2026 · Шохруз Сафаров',
-    amount: '−$10,00',
-    icon: Fuel,
-    tone: 'green',
-  },
-  {
-    title: 'Зарплата',
-    note: 'Привет',
-    by: '08.09.2026 · Шохруз Сафаров',
-    amount: '−$120,00',
-    icon: UtensilsCrossed,
-    tone: 'orange',
-  },
-  {
-    title: 'Топливо',
-    note: '',
-    by: '08.09.2026 · Шохруз Сафаров',
-    amount: '−$120,00',
-    icon: Fuel,
-    tone: 'green',
-  },
+  { label: 'Топливо', meta: 'Дизель · 1 850 л', amount: '−$1 850', icon: Fuel, tone: 'green' },
+  { label: 'Платные дороги', meta: '8 операций', amount: '−$520', icon: Milestone, tone: 'blue' },
+  { label: 'Стоянка', meta: '12 операций', amount: '−$240', icon: SquareParking, tone: 'blue' },
+  { label: 'Еда', meta: '19 операций', amount: '−$310', icon: UtensilsCrossed, tone: 'red' },
+  { label: 'Мойка', meta: '5 операций', amount: '−$200', icon: Droplets, tone: 'purple' },
 ]
+
+const SPEND_TOTAL = '$3 120'
 
 const SPEND_SPLIT = [
   { label: 'Топливо', operations: '3 операции', amount: '$1 130,00', share: 59 },
@@ -433,136 +380,170 @@ function QuickExpenses() {
 function Statistics() {
   return (
     <PhoneSection>
-      <PhoneCard>
-        <p
-          className="inline-flex items-center gap-2 text-[15px] font-bold"
-          style={{ color: M.text }}
-        >
-          <BarChart3 className="size-4" style={{ color: M.textMuted }} />
-          Статистика
-        </p>
-        <div className="-mx-3.5 mt-3">
-          <PhoneChips options={[...PERIODS]} value="month" ariaLabel="Период" />
+      <div className="px-3">
+        <Segmented options={[...PERIODS]} value="month" ariaLabel="Период" />
+      </div>
+      <PhoneCard className="mt-3">
+        <div className="flex items-center gap-2">
+          <span
+            className="grid size-8 place-items-center rounded-xl"
+            style={{ background: TONES.grey.soft }}
+          >
+            <BarChart3 className="size-4" style={{ color: M.text }} />
+          </span>
+          <p className="text-[15px] font-bold" style={{ color: M.text }}>
+            Показатели
+          </p>
         </div>
+
         <div className="mt-3 grid grid-cols-3 gap-2">
-          <Money label="Приход" value="283" tone="green" direction="down" />
-          <Money label="Расход" value="1 902" tone="red" direction="up" />
-          <Money label="Прибыль" value="-1 619" tone="red" direction="up" />
+          {MONEY_STATS.map((stat) => (
+            <div
+              key={stat.label}
+              className="rounded-2xl p-2.5"
+              style={{ background: TONES[stat.tone].soft }}
+            >
+              <span
+                className="grid size-7 place-items-center rounded-full"
+                style={{ background: M.card }}
+              >
+                <ArrowUpRight
+                  className={cn('size-3.5', stat.label === 'Доход' && 'rotate-90')}
+                  style={{ color: TONES[stat.tone].fg }}
+                />
+              </span>
+              <p className="mt-2 text-[11px]" style={{ color: M.textMuted }}>
+                {stat.label}
+              </p>
+              <p className="mt-1 flex items-center gap-1.5">
+                <span
+                  className="grid size-4 place-items-center rounded-full text-[9px] font-bold"
+                  style={{ background: TONES[stat.badge].fg, color: M.card }}
+                >
+                  $
+                </span>
+                <span className="text-[15px] font-bold" style={{ color: TONES[stat.badge].fg }}>
+                  {stat.value}
+                </span>
+              </p>
+            </div>
+          ))}
         </div>
-        <div
-          className="mt-3 grid grid-cols-3 gap-2 border-t pt-3"
-          style={{ borderColor: M.divider }}
-        >
-          <Counter icon={Route} label="Рейсы" value="4" />
-          <Counter icon={Clock} label="Время ожидания" value="0 дн." />
-          <Counter icon={Gauge} label="Пройдено" value="0 км" />
+
+        <div className="mt-2 grid grid-cols-3 gap-2">
+          {WORK_STATS.map((stat) => (
+            <div
+              key={stat.label}
+              className="rounded-2xl p-2.5"
+              style={{ background: TONES.blue.soft }}
+            >
+              <stat.icon className="size-4" style={{ color: TONES.blue.fg }} />
+              <p className="mt-2 text-[11px] leading-tight" style={{ color: M.textMuted }}>
+                {stat.label}
+              </p>
+              <p className="mt-1 text-[15px] font-bold" style={{ color: M.text }}>
+                {stat.value}
+                {stat.unit ? (
+                  <span className="ml-1 text-[11px] font-medium" style={{ color: M.textMuted }}>
+                    {stat.unit}
+                  </span>
+                ) : null}
+              </p>
+            </div>
+          ))}
         </div>
       </PhoneCard>
     </PhoneSection>
   )
 }
 
-function Money({
-  label,
+/** The two-period switch above the figures: one dark pill in a white track. */
+function Segmented<T extends string>({
+  options,
   value,
-  tone,
-  direction,
+  ariaLabel,
 }: {
-  label: string
-  value: string
-  tone: MobileTone
-  direction: 'up' | 'down'
+  options: { value: T; label: string }[]
+  value: T
+  ariaLabel: string
 }) {
   return (
-    <div className="rounded-xl p-2.5 text-center" style={{ background: TONES[tone].soft }}>
-      <ArrowUpRight
-        className={cn('mx-auto size-3.5', direction === 'down' && 'rotate-90')}
-        style={{ color: TONES[tone].fg }}
-      />
-      <p className="mt-1 text-[10px]" style={{ color: M.textMuted }}>
-        {label}
-      </p>
-      <p className="mt-0.5 text-[15px] font-bold" style={{ color: TONES[tone].fg }}>
-        ${value}
-      </p>
-    </div>
-  )
-}
-
-function Counter({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
-  return (
-    <div className="text-center">
-      <Icon className="mx-auto size-3.5" style={{ color: M.textSubtle }} />
-      <p className="mt-1 text-[14px] font-bold" style={{ color: M.text }}>
-        {value}
-      </p>
-      <p className="text-[10px] leading-tight" style={{ color: M.textSubtle }}>
-        {label}
-      </p>
+    <div
+      role="group"
+      aria-label={ariaLabel}
+      className="grid grid-cols-2 gap-1 rounded-2xl border p-1"
+      style={{ background: M.card, borderColor: M.border }}
+    >
+      {options.map((option) => {
+        const active = option.value === value
+        return (
+          <span
+            key={option.value}
+            className="rounded-xl py-2 text-center text-[13px] font-semibold"
+            style={{
+              background: active ? M.text : 'transparent',
+              color: active ? M.card : M.textMuted,
+            }}
+          >
+            {option.label}
+          </span>
+        )
+      })}
     </div>
   )
 }
 
 function Finance() {
   return (
-    <PhoneSection
-      title="Финансы машины"
-      subtitle="Расходы по этой машине"
-      action={
-        <span
-          className="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px]"
-          style={{ background: M.card, borderColor: M.border, color: M.textMuted }}
-        >
-          <FileDown className="size-3.5" />
-          Экспорт PDF
-        </span>
-      }
-    >
-      <PhoneChips options={[...FINANCE_PERIODS]} value="m1" ariaLabel="Период" />
-      <p className="mt-3 px-4 text-[11px]" style={{ color: M.textSubtle }}>
-        Тип расхода
-      </p>
-      <div className="mt-1.5">
-        <PhoneChips options={[...EXPENSE_TYPES]} value="all" ariaLabel="Тип расхода" />
-      </div>
-
-      <div
-        className="mx-3 mt-3 divide-y rounded-2xl border"
-        style={{ background: M.card, borderColor: M.border }}
-      >
-        {TRANSACTIONS.map((transaction, index) => (
-          <div key={index} className="flex items-center gap-3 px-3.5 py-3">
-            <IconTile icon={transaction.icon} tone={transaction.tone} size="sm" />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[13px] font-semibold" style={{ color: M.text }}>
-                {transaction.title}
-                {transaction.voided ? (
-                  <span className="ml-1.5 text-[10px] font-normal" style={{ color: TONES.red.fg }}>
-                    Удалено
-                  </span>
-                ) : transaction.note ? (
-                  <span className="ml-1.5 text-[11px] font-normal" style={{ color: M.textSubtle }}>
-                    {transaction.note}
-                  </span>
-                ) : null}
-              </p>
-              <p className="truncate text-[10px]" style={{ color: M.textSubtle }}>
-                {transaction.by}
-              </p>
-            </div>
-            <span
-              className={cn('text-[13px] font-bold', transaction.voided && 'line-through')}
-              style={{ color: transaction.voided ? M.textSubtle : TONES.red.fg }}
-            >
-              {transaction.amount}
-            </span>
-            <ChevronRight className="size-4 shrink-0" style={{ color: M.textSubtle }} />
+    <PhoneSection>
+      <PhoneCard padded={false}>
+        <div className="flex items-start justify-between gap-2 px-3.5 pt-3.5">
+          <div>
+            <p className="text-[15px] font-bold" style={{ color: M.text }}>
+              Финансы грузовика
+            </p>
+            <p className="text-[11px]" style={{ color: M.textSubtle }}>
+              Этот месяц
+            </p>
           </div>
-        ))}
-      </div>
-      <p className="mt-2 px-4 text-[10px]" style={{ color: M.textSubtle }}>
-        Приход записывается на рейс — здесь только расходы
-      </p>
+          <span className="inline-flex items-center text-[11px]" style={{ color: M.textMuted }}>
+            Все расходы
+            <ChevronRight className="size-3.5" />
+          </span>
+        </div>
+
+        <div className="mt-2 divide-y" style={{ borderColor: M.divider }}>
+          {SPEND_BY_CATEGORY.map((row) => (
+            <div key={row.label} className="flex items-center gap-3 px-3.5 py-2.5">
+              <IconTile icon={row.icon} tone={row.tone} size="sm" shape="square" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[13px] font-bold" style={{ color: M.text }}>
+                  {row.label}
+                </p>
+                <p className="truncate text-[11px]" style={{ color: M.textSubtle }}>
+                  {row.meta}
+                </p>
+              </div>
+              <span className="text-[13px] font-bold" style={{ color: TONES.red.fg }}>
+                {row.amount}
+              </span>
+              <ChevronRight className="size-4 shrink-0" style={{ color: M.textSubtle }} />
+            </div>
+          ))}
+        </div>
+
+        <div className="border-t px-3.5 py-3" style={{ borderColor: M.divider }}>
+          <p className="text-[12px]" style={{ color: M.textMuted }}>
+            Всего расходов
+          </p>
+          <p className="text-[20px] font-bold" style={{ color: TONES.red.fg }}>
+            {SPEND_TOTAL}
+          </p>
+          <p className="text-[10px]" style={{ color: M.textSubtle }}>
+            Удалённые расходы не учитываются
+          </p>
+        </div>
+      </PhoneCard>
     </PhoneSection>
   )
 }

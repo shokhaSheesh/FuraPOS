@@ -20,13 +20,14 @@ export const M = {
   frame: '#E3E6EB',
 } as const
 
-export type MobileTone = 'green' | 'blue' | 'orange' | 'red' | 'purple' | 'grey'
+export type MobileTone = 'green' | 'blue' | 'orange' | 'yellow' | 'red' | 'purple' | 'grey'
 
 /** Icon colour and the tint behind it, per accent. */
 export const TONES: Record<MobileTone, { fg: string; soft: string }> = {
   green: { fg: '#22C55E', soft: '#E9F9EF' },
   blue: { fg: '#2F6BFF', soft: '#EAF1FF' },
   orange: { fg: '#FF9500', soft: '#FFF3E3' },
+  yellow: { fg: '#F5A524', soft: '#FEF6E0' },
   red: { fg: '#FF3B30', soft: '#FFECEA' },
   purple: { fg: '#8B5CF6', soft: '#F1ECFE' },
   grey: { fg: '#8E8E93', soft: '#F2F2F7' },

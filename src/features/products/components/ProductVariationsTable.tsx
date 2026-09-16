@@ -97,6 +97,7 @@ export function ProductVariationsTable({
                 SKU<span className="text-danger ml-0.5">*</span>
               </th>
               <th className={th}>Barcode</th>
+              <th className={th}>Part</th>
               <FillableHeader
                 label="Cost"
                 onFill={() => fillDown('costPrice')}
@@ -108,6 +109,7 @@ export function ProductVariationsTable({
                 onFill={() => fillDown('salePrice')}
                 many={variations.length > 1}
               />
+              <th className={th}>Wholesale price</th>
               <th className={th}>Landed cost</th>
               <th className={th}>Shelf</th>
               <th className={th}>Zone</th>
@@ -178,6 +180,15 @@ export function ProductVariationsTable({
                     />
                   </td>
                   <td className={cell}>
+                    <Input
+                      className="w-28"
+                      placeholder="Left"
+                      aria-label={`Part — ${name}`}
+                      disabled={!sold}
+                      {...form.register(`variations.${index}.partSide`)}
+                    />
+                  </td>
+                  <td className={cell}>
                     <div className="flex gap-1.5">
                       <Controller
                         control={form.control}
@@ -213,22 +224,68 @@ export function ProductVariationsTable({
                     {errorText(rowError?.costPrice?.message)}
                   </td>
                   <td className={cell}>
-                    <Controller
-                      control={form.control}
-                      name={`variations.${index}.salePrice`}
-                      render={({ field }) => (
-                        <NumberField
-                          className="w-32"
-                          nullable={false}
-                          disabled={!sold}
-                          aria-label={`Sale price — ${name}`}
-                          value={field.value}
-                          onChange={(v) => field.onChange(v ?? 0)}
-                          onBlur={field.onBlur}
-                        />
-                      )}
-                    />
+                    <div className="flex gap-1.5">
+                      <Controller
+                        control={form.control}
+                        name={`variations.${index}.salePrice`}
+                        render={({ field }) => (
+                          <NumberField
+                            className="w-32"
+                            nullable={false}
+                            disabled={!sold}
+                            aria-label={`Sale price — ${name}`}
+                            value={field.value}
+                            onChange={(v) => field.onChange(v ?? 0)}
+                            onBlur={field.onBlur}
+                          />
+                        )}
+                      />
+                      <Controller
+                        control={form.control}
+                        name={`variations.${index}.saleCurrency`}
+                        render={({ field }) => (
+                          <Select
+                            value={field.value}
+                            onChange={field.onChange}
+                            options={CURRENCIES}
+                            disabled={!sold}
+                            aria-label={`Sale price currency — ${name}`}
+                            className="w-20"
+                          />
+                        )}
+                      />
+                    </div>
                     {errorText(rowError?.salePrice?.message)}
+                  </td>
+                  <td className={cell}>
+                    <div className="flex gap-1.5">
+                      <Controller
+                        control={form.control}
+                        name={`variations.${index}.wholesalePrice`}
+                        render={({ field }) => (
+                          <NumberField
+                            className="w-32"
+                            disabled={!sold}
+                            aria-label={`Wholesale price — ${name}`}
+                            {...fieldProps(field)}
+                          />
+                        )}
+                      />
+                      <Controller
+                        control={form.control}
+                        name={`variations.${index}.wholesaleCurrency`}
+                        render={({ field }) => (
+                          <Select
+                            value={field.value}
+                            onChange={field.onChange}
+                            options={CURRENCIES}
+                            disabled={!sold}
+                            aria-label={`Wholesale price currency — ${name}`}
+                            className="w-20"
+                          />
+                        )}
+                      />
+                    </div>
                   </td>
                   <td className={cell}>
                     <Controller

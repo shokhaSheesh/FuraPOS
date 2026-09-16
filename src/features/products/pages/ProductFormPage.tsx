@@ -34,7 +34,6 @@ import { ProductOptionsEditor } from '../components/ProductOptionsEditor'
 import { ProductVariationsTable } from '../components/ProductVariationsTable'
 import {
   NEW_PRODUCT_ATTRIBUTES,
-  PART_SIDES,
   PRODUCT_FLAGS,
   combinationName,
   isSideOption,
@@ -47,6 +46,11 @@ import {
   type ProductFormValues,
   type VariationMode,
 } from '../model/product'
+
+const CURRENCIES: { value: 'USD' | 'UZS'; label: string }[] = [
+  { value: 'USD', label: 'USD' },
+  { value: 'UZS', label: 'UZS' },
+]
 
 const UNITS = [
   { value: 'pcs', label: 'pcs' },
@@ -61,16 +65,9 @@ const MODES: { value: VariationMode; label: string }[] = [
   { value: 'multiple', label: 'Multiple variations' },
 ]
 
-/** Maps a "Side" option's value onto the catalogue's typed `partSide` field. */
+/** A "Side" option answers the Part field directly, so it is never asked twice. */
 const sideValue = (optionValues: OptionValue[], optionId: string) =>
-  PART_SIDES.find(
-    (side) =>
-      side.label.toLowerCase() ===
-      optionValues
-        .find((v) => v.optionId === optionId)
-        ?.value.trim()
-        .toLowerCase(),
-  )?.value ?? null
+  optionValues.find((v) => v.optionId === optionId)?.value.trim() || null
 
 /**
  * Every location gets a row whether or not it is currently picked, so that
@@ -99,6 +96,9 @@ const emptyVariation = (
   costPrice: 0,
   costCurrency: 'USD' as const,
   salePrice: 0,
+  saleCurrency: 'UZS' as const,
+  wholesalePrice: null,
+  wholesaleCurrency: 'UZS' as const,
   discountPrice: null,
   lowStockThreshold: null,
   shelfAddress: null,
@@ -224,6 +224,9 @@ export function ProductForm({
                 costPrice: v.costPrice,
                 costCurrency: v.costCurrency,
                 salePrice: v.salePrice,
+                saleCurrency: v.saleCurrency,
+                wholesalePrice: v.wholesalePrice,
+                wholesaleCurrency: v.wholesaleCurrency,
                 discountPrice: v.discountPrice,
                 lowStockThreshold: v.lowStockThreshold,
                 shelfAddress: v.shelfAddress,
@@ -686,10 +689,7 @@ export function ProductForm({
                           <Select
                             value={f.value}
                             onChange={f.onChange}
-                            options={[
-                              { value: 'USD', label: 'USD' },
-                              { value: 'UZS', label: 'UZS' },
-                            ]}
+                            options={CURRENCIES}
                             aria-label="Cost currency"
                             className="w-24"
                           />
@@ -704,19 +704,70 @@ export function ProductForm({
                   error={form.formState.errors.variations?.[0]?.salePrice?.message}
                 >
                   {(p) => (
-                    <Controller
-                      control={form.control}
-                      name="variations.0.salePrice"
-                      render={({ field: f }) => (
-                        <NumberField
-                          {...p}
-                          nullable={false}
-                          value={f.value}
-                          onChange={(v) => f.onChange(v ?? 0)}
-                          onBlur={f.onBlur}
-                        />
-                      )}
-                    />
+                    <div className="flex gap-1.5">
+                      <Controller
+                        control={form.control}
+                        name="variations.0.salePrice"
+                        render={({ field: f }) => (
+                          <NumberField
+                            {...p}
+                            nullable={false}
+                            value={f.value}
+                            onChange={(v) => f.onChange(v ?? 0)}
+                            onBlur={f.onBlur}
+                          />
+                        )}
+                      />
+                      <Controller
+                        control={form.control}
+                        name="variations.0.saleCurrency"
+                        render={({ field: f }) => (
+                          <Select
+                            value={f.value}
+                            onChange={f.onChange}
+                            options={CURRENCIES}
+                            aria-label="Sale price currency"
+                            className="w-24"
+                          />
+                        )}
+                      />
+                    </div>
+                  )}
+                </Field>
+                <Field label="Wholesale price" hint="What a trade customer pays">
+                  {(p) => (
+                    <div className="flex gap-1.5">
+                      <Controller
+                        control={form.control}
+                        name="variations.0.wholesalePrice"
+                        render={({ field: f }) => (
+                          <NumberField
+                            {...p}
+                            value={f.value}
+                            onChange={f.onChange}
+                            onBlur={f.onBlur}
+                          />
+                        )}
+                      />
+                      <Controller
+                        control={form.control}
+                        name="variations.0.wholesaleCurrency"
+                        render={({ field: f }) => (
+                          <Select
+                            value={f.value}
+                            onChange={f.onChange}
+                            options={CURRENCIES}
+                            aria-label="Wholesale price currency"
+                            className="w-24"
+                          />
+                        )}
+                      />
+                    </div>
+                  )}
+                </Field>
+                <Field label="Part" hint="Which part of the vehicle it fits">
+                  {(p) => (
+                    <Input {...p} placeholder="Left" {...form.register('variations.0.partSide')} />
                   )}
                 </Field>
                 <Field label="Shelf">

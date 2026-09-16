@@ -13,14 +13,12 @@ export type UnitOfMeasure = 'pcs' | 'kg' | 'l' | 'm' | 'pack'
  */
 export type CostCurrency = 'USD' | 'UZS'
 
-/** Which side of the vehicle a part fits. The main variation axis here. */
-export type PartSide = 'left' | 'right' | 'both'
-
-export const PART_SIDES: { value: PartSide; label: string }[] = [
-  { value: 'left', label: 'Left' },
-  { value: 'right', label: 'Right' },
-  { value: 'both', label: 'Universal' },
-]
+/**
+ * Which part of the vehicle it fits — OX's `Часть`, and free text on purpose.
+ * It was a fixed left/right/universal list, but the catalogue uses it for more
+ * than sides ("передний", "нижний", "L"), and a closed list turned those into
+ * "Universal".
+ */
 
 /**
  * An axis a product varies along — "Side" with values Left / Right, "Colour"
@@ -78,11 +76,21 @@ export interface ProductVariation {
   optionValues: OptionValue[]
   sku: string
   barcode: string | null
-  partSide: PartSide | null
+  /** Free text, e.g. "Left" or "Передний". */
+  partSide: string | null
 
   costPrice: number
   costCurrency: CostCurrency
   salePrice: number
+  /**
+   * What the sale price is quoted in. Usually UZS — a shop's shelf price — but
+   * some lines are priced in USD and converted at the till, so the currency
+   * travels with the number rather than being assumed.
+   */
+  saleCurrency: CostCurrency
+  /** What a trade customer pays, when that differs from the shelf price. */
+  wholesalePrice: number | null
+  wholesaleCurrency: CostCurrency
   /** Promotional price when set; null means it sells at salePrice. */
   discountPrice: number | null
 
@@ -267,12 +275,24 @@ export const costInUzs = (
   usdRate: number,
 ) => (v.costCurrency === 'USD' ? v.costPrice * usdRate : v.costPrice)
 
+/** The same for what it sells at, since the sale price carries its own currency. */
+export const inUzs = (amount: number, currency: CostCurrency, usdRate: number) =>
+  currency === 'USD' ? amount * usdRate : amount
+
+export const saleInUzs = (
+  v: Pick<ProductVariation, 'salePrice' | 'discountPrice' | 'saleCurrency'>,
+  usdRate: number,
+) => inUzs(effectivePrice(v), v.saleCurrency, usdRate)
+
 /** Derived, never stored — margin must always follow live prices. */
 export function marginRatio(
-  v: Pick<ProductVariation, 'costPrice' | 'costCurrency' | 'salePrice' | 'discountPrice'>,
+  v: Pick<
+    ProductVariation,
+    'costPrice' | 'costCurrency' | 'salePrice' | 'discountPrice' | 'saleCurrency'
+  >,
   usdRate: number,
 ): number {
-  const price = effectivePrice(v)
+  const price = saleInUzs(v, usdRate)
   if (price === 0) return 0
   return (price - costInUzs(v, usdRate)) / price
 }
@@ -462,10 +482,13 @@ export const variationFormSchema = z.object({
   // Required only when the combination is sold — see the refinement below.
   sku: z.string(),
   barcode: z.string().nullable(),
-  partSide: z.enum(['left', 'right', 'both']).nullable(),
+  partSide: z.string().nullable(),
   costPrice: z.number().nonnegative(),
   costCurrency: z.enum(['USD', 'UZS']),
   salePrice: z.number().nonnegative(),
+  saleCurrency: z.enum(['USD', 'UZS']),
+  wholesalePrice: z.number().nonnegative().nullable(),
+  wholesaleCurrency: z.enum(['USD', 'UZS']),
   discountPrice: z.number().nonnegative().nullable(),
   lowStockThreshold: z.number().int().nonnegative().nullable(),
   shelfAddress: z.string().nullable(),

@@ -18,7 +18,6 @@ import {
   costInUzs,
   effectivePrice,
   marginRatio,
-  PART_SIDES,
   productStock,
   type Product,
   type ProductVariation,
@@ -162,9 +161,7 @@ function VariationsTable({ product }: { product: Product }) {
                 </td>
                 <td className="text-2xs px-3 py-2 font-mono">{v.sku}</td>
                 <td className="text-2xs px-3 py-2 font-mono">{v.barcode ?? <Empty />}</td>
-                <td className="px-3 py-2">
-                  {PART_SIDES.find((s) => s.value === v.partSide)?.label ?? <Empty />}
-                </td>
+                <td className="px-3 py-2">{v.partSide ?? <Empty />}</td>
                 <td className="px-3 py-2">{v.shelfAddress ?? <Empty />}</td>
                 <td className="px-3 py-2 text-right tabular-nums">
                   {v.costCurrency === 'USD'

@@ -10,9 +10,8 @@ import { formatMoney, formatNumber, formatPercent } from '@/shared/lib/format'
 import {
   costInUzs,
   discountAmount,
-  effectivePrice,
   marginRatio,
-  PART_SIDES,
+  saleInUzs,
   PRODUCT_FLAGS,
   type ProductFlag,
   type VariationRow,
@@ -20,9 +19,11 @@ import {
 
 const Empty = () => <span className="text-fg-subtle">—</span>
 
-/** Cost may be quoted in USD, so it is always shown with its currency. */
-const cost = (v: VariationRow) =>
-  v.costCurrency === 'USD' ? `${formatNumber(v.costPrice)} USD` : formatMoney(v.costPrice)
+/** Any price may be quoted in USD, so it is always shown with its currency. */
+const money = (amount: number, currency: VariationRow['costCurrency']) =>
+  currency === 'USD' ? `${formatNumber(amount)} USD` : formatMoney(amount)
+
+const cost = (v: VariationRow) => money(v.costPrice, v.costCurrency)
 
 const text = (value: string | null) => value ?? <Empty />
 
@@ -213,14 +214,26 @@ export function buildProductColumns({
       accessorKey: 'salePrice',
       header: 'Sale price per unit',
       meta: { align: 'right' },
-      cell: ({ row }) => formatMoney(row.original.salePrice),
+      cell: ({ row }) => money(row.original.salePrice, row.original.saleCurrency),
+    },
+    // Ours: what a trade customer pays, in its own currency
+    {
+      accessorKey: 'wholesalePrice',
+      header: 'Wholesale price',
+      meta: { align: 'right' },
+      cell: ({ row }) =>
+        row.original.wholesalePrice === null ? (
+          <Empty />
+        ) : (
+          money(row.original.wholesalePrice, row.original.wholesaleCurrency)
+        ),
     },
     // Общая сумма продажи
     {
       id: 'saleValue',
       header: 'Total sale value',
       meta: { align: 'right' },
-      cell: ({ row }) => formatMoney(effectivePrice(row.original) * row.original.stock),
+      cell: ({ row }) => formatMoney(saleInUzs(row.original, usdRate) * row.original.stock),
     },
     // Со скидкой
     {
@@ -229,7 +242,9 @@ export function buildProductColumns({
       meta: { align: 'right' },
       cell: ({ row }) =>
         row.original.discountPrice ? (
-          <span className="text-warning">{formatMoney(row.original.discountPrice)}</span>
+          <span className="text-warning">
+            {money(row.original.discountPrice, row.original.saleCurrency)}
+          </span>
         ) : (
           <Empty />
         ),
@@ -241,7 +256,11 @@ export function buildProductColumns({
       meta: { align: 'right' },
       cell: ({ row }) => {
         const off = discountAmount(row.original)
-        return off > 0 ? <span className="text-warning">− {formatMoney(off)}</span> : <Empty />
+        return off > 0 ? (
+          <span className="text-warning">− {money(off, row.original.saleCurrency)}</span>
+        ) : (
+          <Empty />
+        )
       },
     },
     ...costOnly([
@@ -321,8 +340,7 @@ export function buildProductColumns({
     {
       accessorKey: 'partSide',
       header: 'Part',
-      cell: ({ row }) =>
-        PART_SIDES.find((s) => s.value === row.original.partSide)?.label ?? <Empty />,
+      cell: ({ row }) => text(row.original.partSide),
     },
     // OEM
     {
@@ -430,6 +448,7 @@ export const PRODUCT_COLUMNS_HIDDEN_BY_DEFAULT = [
   'mobileSku',
   'mobileName',
   'partSide',
+  'wholesalePrice',
   'oem',
   'partType',
   'vehicleModels',

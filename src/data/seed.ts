@@ -2,12 +2,7 @@
  * Deterministic seed data. Shapes here are the contract the real API must
  * meet — when the backend lands, these files are the spec to hand over.
  */
-import type {
-  CostCurrency,
-  PartSide,
-  Product,
-  VariationRow,
-} from '@/features/products/model/product'
+import type { CostCurrency, Product, VariationRow } from '@/features/products/model/product'
 import { productAttributes } from '@/features/products/model/product'
 import type { CustomFieldValues, ProductField } from '@/shared/types/productFields'
 import type { Sale } from '@/features/sales/model/sale'
@@ -240,10 +235,10 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
   const options = sided
     ? [{ id: `opt-${productId}-side`, name: 'Side', values: ['Left', 'Right'] }]
     : []
-  const specs: { name: string; side: PartSide | null }[] = sided
+  const specs: { name: string; side: string | null }[] = sided
     ? [
-        { name: 'Left', side: 'left' },
-        { name: 'Right', side: 'right' },
+        { name: 'Left', side: 'Left' },
+        { name: 'Right', side: 'Right' },
       ]
     : [{ name: 'Standard', side: null }]
 
@@ -273,6 +268,10 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
       costPrice,
       costCurrency: costCurrency as CostCurrency,
       salePrice,
+      saleCurrency: 'UZS' as CostCurrency,
+      // A trade price on part of the range, positionally so the dataset does not shift.
+      wholesalePrice: index % 3 === 0 ? Math.round(salePrice * 0.86) : null,
+      wholesaleCurrency: 'UZS' as CostCurrency,
       discountPrice: random() > 0.85 ? Math.round(salePrice * 0.9) : null,
       stock: stockByLocation.reduce((sum, row) => sum + row.quantity, 0),
       stockByLocation,
@@ -361,7 +360,7 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
   a different category. Both by position, so the links are stable and never
   point at the variation itself.
 */
-const sameSide = (other: Product, side: PartSide | null) =>
+const sameSide = (other: Product, side: string | null) =>
   other.variations.find((v) => v.partSide === side) ?? other.variations[0]!
 for (const product of products) {
   const analogues = products.filter(

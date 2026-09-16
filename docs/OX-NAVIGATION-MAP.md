@@ -349,10 +349,23 @@ still.
    (a popover: cost price currency — UZS or the supplier's; show cost price by — actual or expected
    quantity) and **Post receipt** (`Оприходовать`).
 
-Not built: OX's spreadsheet import sub-wizard (`Выбор Excel файла` → `Настройка колонок` →
-`Загрузка файла`), where each spreadsheet column is mapped to a product field. The menu entry is
-there and says so. It is a real feature and a large one — worth building once the client confirms
-the column set it should map onto.
+**Spreadsheet import is built**, in OX's three steps: choose the file → match the columns → import.
+Shared with Orders, so both read identically.
+
+- **Formats**: `.xlsx` and `.csv`, the latter with comma, semicolon or tab — a Russian or Uzbek
+  Windows locale writes CSV with semicolons because the comma is its decimal separator, and
+  guessing wrong puts the whole row in one column. `12 500,50` and `12,500.50` are both read as the
+  same number.
+- **No dependency.** `.xlsx` is a ZIP of XML, and the platform can do both halves —
+  `DecompressionStream` inflates the entries, `DOMParser` reads them. SheetJS is the obvious
+  alternative and is published on npm only as a version with advisories against it; that is a poor
+  trade for parsing a file the user chose themselves. See `src/shared/lib/spreadsheet.ts`.
+- **Columns are guessed from their headings**, in Russian as well as English (`Штрих-код`,
+  `Артикул`, `Кол-во`, `Цена`, `Валюта`), and every guess is a select the user can correct. Mapping
+  twelve columns by hand every time is how a feature like this stops being used.
+- **Nothing is created.** A row matching no product we carry is listed by its row number and
+  skipped. A delivery note is not where a catalogue should grow, and a typo in a supplier's barcode
+  column would otherwise leave a product nobody can find again.
 
 **`Реализовано` was the real find.** A progress bar per delivery: how much of it has sold. It says
 whether a container was a _good buy_, not merely that it arrived — nothing else in either product

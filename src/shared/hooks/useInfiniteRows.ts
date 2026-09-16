@@ -15,7 +15,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
  * how many are drawn. Filtering therefore stays exact: a search matches rows
  * that have not been rendered yet, because it runs before this does.
  */
-export function useInfiniteRows<T>(rows: T[], { step = 40 }: { step?: number } = {}) {
+export function useInfiniteRows<T>(rows: T[], { step = 10 }: { step?: number } = {}) {
   const [limit, setLimit] = useState(step)
   /*
     The sentinel is held in state, not a ref, so the observer attaches the

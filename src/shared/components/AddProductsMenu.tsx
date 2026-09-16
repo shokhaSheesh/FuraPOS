@@ -2,7 +2,6 @@ import { useNavigate } from 'react-router'
 import { DropdownMenu } from 'radix-ui'
 import { ChevronDown, Plus, Search, Upload } from 'lucide-react'
 import { Button } from '@/shared/ui/Button'
-import { toast } from '@/shared/ui/toast'
 import { paths } from '@/shared/config/paths'
 
 /**
@@ -20,9 +19,11 @@ import { paths } from '@/shared/config/paths'
  */
 export function AddProductsMenu({
   onPickFromCatalogue,
+  onUploadSpreadsheet,
   label = 'Add products',
 }: {
   onPickFromCatalogue: () => void
+  onUploadSpreadsheet: () => void
   label?: string
 }) {
   const navigate = useNavigate()
@@ -38,7 +39,7 @@ export function AddProductsMenu({
       icon: Upload,
       label: 'Upload a spreadsheet',
       hint: 'A supplier’s own list, mapped to our fields',
-      onSelect: () => toast.info('Spreadsheet upload is not wired up in this build'),
+      onSelect: onUploadSpreadsheet,
     },
     {
       icon: Plus,

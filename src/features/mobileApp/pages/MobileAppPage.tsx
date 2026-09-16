@@ -100,21 +100,6 @@ const WORK_STATS: { label: string; value: string; unit?: string; icon: LucideIco
   { label: 'Пройденный путь', value: '7 840', unit: 'км', icon: Route },
 ]
 
-/** Spending by category, which is how the design groups the truck's money. */
-const SPEND_BY_CATEGORY: {
-  label: string
-  meta: string
-  amount: string
-  icon: LucideIcon
-  tone: MobileTone
-}[] = [
-  { label: 'Топливо', meta: 'Дизель · 1 850 л', amount: '−$1 850', icon: Fuel, tone: 'green' },
-  { label: 'Платные дороги', meta: '8 операций', amount: '−$520', icon: Milestone, tone: 'blue' },
-  { label: 'Стоянка', meta: '12 операций', amount: '−$240', icon: SquareParking, tone: 'blue' },
-  { label: 'Еда', meta: '19 операций', amount: '−$310', icon: UtensilsCrossed, tone: 'red' },
-  { label: 'Мойка', meta: '5 операций', amount: '−$200', icon: Droplets, tone: 'purple' },
-]
-
 /**
  * Individual entries, newest first. `state` is what opens when one is tapped:
  * a record as entered, one that was deleted, or one that was edited — the
@@ -291,8 +276,7 @@ export default function MobileAppPage() {
           <Status />
           <QuickExpenses />
           <Statistics />
-          <Finance />
-          <Operations onOpen={setOpen} />
+          <Finance onOpen={setOpen} />
           <SpendSplit />
           <Trips />
           <Mileage />
@@ -590,7 +574,7 @@ function Segmented<T extends string>({
   )
 }
 
-function Finance() {
+function Finance({ onOpen }: { onOpen: (state: OperationState) => void }) {
   return (
     <PhoneSection>
       <PhoneCard padded={false}>
@@ -609,35 +593,6 @@ function Finance() {
           </span>
         </div>
 
-        <div className="mt-2 divide-y" style={{ borderColor: M.divider }}>
-          {SPEND_BY_CATEGORY.map((row) => (
-            <div key={row.label} className="flex items-center gap-3 px-3.5 py-2.5">
-              <IconTile icon={row.icon} tone={row.tone} size="sm" shape="square" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[13px] font-bold" style={{ color: M.text }}>
-                  {row.label}
-                </p>
-                <p className="truncate text-[11px]" style={{ color: M.textSubtle }}>
-                  {row.meta}
-                </p>
-              </div>
-              <span className="text-[13px] font-bold" style={{ color: TONES.red.fg }}>
-                {row.amount}
-              </span>
-              <ChevronRight className="size-4 shrink-0" style={{ color: M.textSubtle }} />
-            </div>
-          ))}
-        </div>
-      </PhoneCard>
-    </PhoneSection>
-  )
-}
-
-/** Each entry on its own row — tapping one opens the sheets shown beside this screen. */
-function Operations({ onOpen }: { onOpen: (state: OperationState) => void }) {
-  return (
-    <PhoneSection title="Операции" subtitle="Этот месяц">
-      <PhoneCard padded={false}>
         <div className="divide-y" style={{ borderColor: M.divider }}>
           {OPERATIONS.map((operation, index) => (
             <button

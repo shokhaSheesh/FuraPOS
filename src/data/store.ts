@@ -511,9 +511,7 @@ export type ProductInput = Omit<
   | 'id'
   | 'categoryName'
   | 'categoryPath'
-  | 'brandId'
   | 'brandName'
-  | 'brandNames'
   | 'createdAt'
   | 'updatedAt'
   | 'variations'
@@ -547,21 +545,6 @@ function resolveStock(
   return { stockByLocation, stock: stockByLocation.reduce((sum, r) => sum + r.quantity, 0) }
 }
 
-/**
- * Names for the brands a product is carried by, with the first kept as the
- * single answer everything downstream — a sale line, a label, a report — asks
- * for.
- */
-function resolveBrands(brandIds: string[], brands: readonly { id: string; name: string }[]) {
-  const named = brandIds.flatMap((id) => brands.find((brand) => brand.id === id) ?? [])
-  return {
-    brandIds: named.map((brand) => brand.id),
-    brandNames: named.map((brand) => brand.name),
-    brandId: named[0]?.id ?? null,
-    brandName: named[0]?.name ?? null,
-  }
-}
-
 /** Keeps the flat sellable list in step with a product's variations. */
 function flatten(product: Product): VariationRow[] {
   return product.variations.map((variation) => ({
@@ -574,13 +557,11 @@ function flatten(product: Product): VariationRow[] {
     categoryId: product.categoryId,
     categoryName: product.categoryName,
     categoryPath: product.categoryPath,
-    brandIds: product.brandIds,
-    brandNames: product.brandNames,
     brandId: product.brandId,
     brandName: product.brandName,
     manufacturer: product.manufacturer,
     unit: product.unit,
-    vehicleMake: product.vehicleMake,
+    vehicleMakes: product.vehicleMakes,
     vehicleModels: product.vehicleModels,
   }))
 }
@@ -829,7 +810,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       id,
       categoryName: category?.name ?? '—',
       categoryPath: category?.path ?? '—',
-      ...resolveBrands(input.brandIds, get().brands),
+      brandName: get().brands.find((b) => b.id === input.brandId)?.name ?? null,
       variations: input.variations.map((variation, index) => ({
         ...variation,
         id: variation.id ?? `var-${id}-${index + 1}`,
@@ -860,7 +841,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       id,
       categoryName: category?.name ?? existing.categoryName,
       categoryPath: category?.path ?? existing.categoryPath,
-      ...resolveBrands(input.brandIds, get().brands),
+      brandName: get().brands.find((b) => b.id === input.brandId)?.name ?? existing.brandName,
       variations: input.variations.map((variation, index) => {
         const previous = existing.variations.find((v) => v.id === variation.id)
         return {
@@ -1558,8 +1539,14 @@ export const useDataStore = create<CatalogState>((set, get) => ({
     // the old spelling lingers everywhere it was used.
     set({
       vehicleMakes: get().vehicleMakes.map((m) => (m.id === id ? { ...m, name } : m)),
-      products: get().products.map((p) => ({ ...p, vehicleMake: fix(p.vehicleMake) })),
-      variations: get().variations.map((v) => ({ ...v, vehicleMake: fix(v.vehicleMake) })),
+      products: get().products.map((p) => ({
+        ...p,
+        vehicleMakes: p.vehicleMakes.map((m) => fix(m) ?? m),
+      })),
+      variations: get().variations.map((v) => ({
+        ...v,
+        vehicleMakes: v.vehicleMakes.map((m) => fix(m) ?? m),
+      })),
       drivers: get().drivers.map((d) => ({
         ...d,
         ownTrucks: d.ownTrucks.map(fixTruck),
@@ -1623,10 +1610,10 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       ),
       // Only products of this make: "FH16" under Volvo is not "FH16" under anyone else.
       products: get().products.map((p) =>
-        ofMake(p.vehicleMake) ? { ...p, vehicleModels: fixList(p.vehicleModels) } : p,
+        p.vehicleMakes.some(ofMake) ? { ...p, vehicleModels: fixList(p.vehicleModels) } : p,
       ),
       variations: get().variations.map((v) =>
-        ofMake(v.vehicleMake) ? { ...v, vehicleModels: fixList(v.vehicleModels) } : v,
+        v.vehicleMakes.some(ofMake) ? { ...v, vehicleModels: fixList(v.vehicleModels) } : v,
       ),
       drivers: get().drivers.map((d) => ({
         ...d,

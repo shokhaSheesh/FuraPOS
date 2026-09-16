@@ -82,9 +82,9 @@ export default function ProductDetailPage() {
             <Badge tone={product.status === 'active' ? 'success' : 'neutral'}>
               {product.status === 'active' ? 'Active' : 'Archived'}
             </Badge>
-            {product.vehicleMake ? (
+            {product.vehicleMakes.length ? (
               <Badge tone="info">
-                {product.vehicleMake}
+                {product.vehicleMakes.join(', ')}
                 {product.vehicleModels.length ? ` · ${product.vehicleModels.join(', ')}` : ''}
               </Badge>
             ) : null}
@@ -202,7 +202,7 @@ function VariationsTable({ product }: { product: Product }) {
 function Details({ product }: { product: Product }) {
   const rows: [string, React.ReactNode][] = [
     ['Category', product.categoryPath],
-    ['Supplier', product.brandNames.join(', ') || <Empty />],
+    ['Supplier', product.brandName ?? <Empty />],
     ['Product brand', product.manufacturer ?? <Empty />],
     [
       'Description',
@@ -217,7 +217,7 @@ function Details({ product }: { product: Product }) {
       ),
     ],
     ['Unit', product.unit],
-    ['Vehicle make', product.vehicleMake ?? <Empty />],
+    ['Truck brands', product.vehicleMakes.join(', ') || <Empty />],
     ['Vehicle models', product.vehicleModels.join(', ') || <Empty />],
     ['Created', formatDate(product.createdAt)],
     ['Updated', formatDate(product.updatedAt)],

@@ -56,7 +56,7 @@ export function PrintSheetModal({
         brand: variation.brandName ?? '—',
         category: variation.categoryName,
         vehicle:
-          [variation.vehicleMake, ...variation.vehicleModels].filter(Boolean).join(' ') || '—',
+          [...variation.vehicleMakes, ...variation.vehicleModels].filter(Boolean).join(' ') || '—',
         shelf: variation.shelfAddress ?? '—',
         price: formatMoney(variation.salePrice),
         company: company.name,

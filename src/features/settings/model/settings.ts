@@ -146,13 +146,12 @@ interface TruckLike {
 export function vehicleUsage(
   make: string,
   model: string | null,
-  products: { vehicleMake: string | null; vehicleModels: string[] }[],
+  products: { vehicleMakes: string[]; vehicleModels: string[] }[],
   trucks: TruckLike[],
 ): VehicleUsage {
   const productCount = products.filter(
     (product) =>
-      product.vehicleMake !== null &&
-      sameName(product.vehicleMake, make) &&
+      product.vehicleMakes.some((productMake) => sameName(productMake, make)) &&
       (model === null || product.vehicleModels.some((m) => sameName(m, model))),
   ).length
   const truckCount = trucks.filter(

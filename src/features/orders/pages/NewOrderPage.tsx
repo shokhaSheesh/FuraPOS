@@ -589,7 +589,7 @@ export default function NewOrderPage() {
                           entry.variation?.barcode,
                           entry.variation?.sku,
                           entry.variation?.oem,
-                          entry.variation?.vehicleMake,
+                          ...(entry.variation?.vehicleMakes ?? []),
                         ],
                         wanted,
                       ),

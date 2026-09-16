@@ -70,6 +70,51 @@ export function useModelsOf(make: string | null) {
   )
 }
 
+/**
+ * The models of every brand picked, labelled by brand so "XF 105" from DAF and
+ * a same-named model of another make are still told apart.
+ */
+export function useModelsOfMany(picked: string[]) {
+  const makes = useDataStore((s) => s.vehicleMakes)
+  return useMemo(
+    () =>
+      makes
+        .filter((make) => picked.includes(make.name))
+        .flatMap((make) => make.models.map((model) => ({ make: make.name, model: model.name })))
+        .sort((a, b) => a.model.localeCompare(b.model, undefined, { numeric: true })),
+    [makes, picked],
+  )
+}
+
+/** Truck brands, several at a time — a part rarely fits only one lorry. */
+export function VehicleMakesMultiSelect({
+  value,
+  onChange,
+  id,
+}: {
+  value: string[]
+  onChange: (makes: string[]) => void
+  id?: string
+}) {
+  const makes = useDataStore((s) => s.vehicleMakes)
+  const options = [...new Set([...makes.map((m) => m.name), ...value])]
+    .sort((a, b) => a.localeCompare(b))
+    .map((name) => ({ value: name, label: name }))
+  return (
+    <div id={id}>
+      <MultiSelect
+        aria-label="Truck brands"
+        className="w-full"
+        placeholder="Any brand"
+        searchPlaceholder="Search truck brands…"
+        value={value}
+        onChange={onChange}
+        options={options}
+      />
+    </div>
+  )
+}
+
 export function VehicleModelSelect({
   make,
   value,
@@ -102,24 +147,30 @@ export function VehicleModelSelect({
   )
 }
 
+/** Every model of every brand picked, so one control covers all of them. */
 export function VehicleModelsMultiSelect({
-  make,
+  makes,
   value,
   onChange,
 }: {
-  make: string | null
+  makes: string[]
   value: string[]
   onChange: (models: string[]) => void
 }) {
-  const models = useModelsOf(make)
-  const options = [...new Set([...models, ...value])].map((n) => ({ value: n, label: n }))
+  const models = useModelsOfMany(makes)
+  const known = new Map(models.map((entry) => [entry.model, entry.make]))
+  const options = [...new Set([...models.map((entry) => entry.model), ...value])].map((name) => ({
+    value: name,
+    label: name,
+    meta: known.get(name),
+  }))
   return (
     <MultiSelect
       aria-label="Models it fits"
       className="w-full"
-      disabled={!make}
-      placeholder={make ? 'All models, or pick some' : 'Pick the brand first'}
-      searchPlaceholder={`Search ${make ?? ''} models…`}
+      disabled={makes.length === 0}
+      placeholder={makes.length ? 'All models, or pick some' : 'Pick a brand first'}
+      searchPlaceholder="Search models…"
       value={value}
       onChange={onChange}
       options={options}

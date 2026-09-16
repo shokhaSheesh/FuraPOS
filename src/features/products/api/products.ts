@@ -78,7 +78,15 @@ function filterVariations(all: VariationRow[], query: ListQuery) {
       }
     }
     return matches(
-      [v.fullName, v.sku, v.barcode, v.brandName, v.oem, plainText(v.description), v.vehicleMake],
+      [
+        v.fullName,
+        v.sku,
+        v.barcode,
+        v.brandName,
+        v.oem,
+        plainText(v.description),
+        ...v.vehicleMakes,
+      ],
       query.search,
     )
   })
@@ -110,7 +118,10 @@ export function useProducts(query: ListQuery, options: { enabled?: boolean } = {
       ) {
         return false
       }
-      return matches([p.name, plainText(p.description), p.brandName, p.vehicleMake], query.search)
+      return matches(
+        [p.name, plainText(p.description), p.brandName, ...p.vehicleMakes],
+        query.search,
+      )
     })
     return paginate(filtered, query)
   }, [products, query, options.enabled])

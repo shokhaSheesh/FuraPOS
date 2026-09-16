@@ -3,7 +3,10 @@ import { Link, useNavigate, useParams } from 'react-router'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowLeft } from 'lucide-react'
-import { VehicleMakeSelect, VehicleModelsMultiSelect } from '@/shared/components/VehicleSelects'
+import {
+  VehicleMakesMultiSelect,
+  VehicleModelsMultiSelect,
+} from '@/shared/components/VehicleSelects'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { Steps } from '@/shared/components/Steps'
 import { Field } from '@/shared/components/Field'
@@ -12,12 +15,12 @@ import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
 import { Button } from '@/shared/ui/Button'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 import { Input } from '@/shared/ui/Input'
-import { MultiSelect } from '@/shared/ui/MultiSelect'
 import { ImageField } from '@/shared/components/ImageField'
 import { RichTextEditor } from '@/shared/ui/RichTextEditor'
 import { Select } from '@/shared/ui/Select'
 import { toast } from '@/shared/ui/toast'
 import { paths } from '@/shared/config/paths'
+import { useDataStore } from '@/data/store'
 import {
   useBrands,
   useCategories,
@@ -177,6 +180,17 @@ export function ProductForm({
   */
   const [step, setStep] = useState<1 | 2 | 3>(1)
 
+  /** Which models belong to which truck brand, for keeping the two in step. */
+  const vehicleMakeSettings = useDataStore((s) => s.vehicleMakes)
+  const modelsByMake = useMemo(
+    () =>
+      vehicleMakeSettings.map((make) => ({
+        make: make.name,
+        models: make.models.map((model) => model.name),
+      })),
+    [vehicleMakeSettings],
+  )
+
   const defaults = useMemo<ProductFormValues>(
     () =>
       existing
@@ -184,10 +198,10 @@ export function ProductForm({
             name: existing.name,
             description: existing.description,
             categoryId: existing.categoryId,
-            brandIds: existing.brandIds,
+            brandId: existing.brandId,
             manufacturer: existing.manufacturer,
             unit: existing.unit,
-            vehicleMake: existing.vehicleMake,
+            vehicleMakes: existing.vehicleMakes,
             vehicleModels: existing.vehicleModels,
             status: existing.status,
             variationMode: existing.options.length ? 'multiple' : 'single',
@@ -241,10 +255,10 @@ export function ProductForm({
             name: '',
             description: null,
             categoryId: '',
-            brandIds: [],
+            brandId: null,
             manufacturer: null,
             unit: 'pcs',
-            vehicleMake: null,
+            vehicleMakes: [],
             vehicleModels: [],
             status: 'active',
             variationMode: 'single',
@@ -547,23 +561,22 @@ export function ProductForm({
                     <CardTitle>Where it belongs</CardTitle>
                   </CardHeader>
                   <CardBody>
-                    <Field label="Brands" hint="Who we buy it from — one or more">
-                      {() => (
+                    <Field label="Supplier" hint="Who we buy it from">
+                      {(p) => (
                         <Controller
                           control={form.control}
-                          name="brandIds"
+                          name="brandId"
                           render={({ field: f }) => (
-                            <MultiSelect
-                              aria-label="Brands"
+                            <Select
+                              {...p}
                               className="w-full"
-                              value={f.value}
+                              value={f.value ?? undefined}
                               onChange={f.onChange}
                               options={(brands?.items ?? []).map((b) => ({
                                 value: b.id,
                                 label: b.name,
                               }))}
                               placeholder="None"
-                              searchPlaceholder="Search brands…"
                             />
                           )}
                         />
@@ -708,19 +721,29 @@ export function ProductForm({
                 </Field>
                 {/* Picked from Settings → Brands → Truck brands, so one model is
                     never spelled three ways across the catalogue. */}
-                <Field label="Truck brand" hint="The lorry this part fits">
+                <Field label="Truck brands" hint="The lorries this part fits">
                   {(p) => (
                     <Controller
                       control={form.control}
-                      name="vehicleMake"
+                      name="vehicleMakes"
                       render={({ field: f }) => (
-                        <VehicleMakeSelect
+                        <VehicleMakesMultiSelect
                           id={p.id}
                           value={f.value}
-                          onChange={(make) => {
-                            // Models belong to one brand; switching brand drops them.
-                            if (make !== f.value) form.setValue('vehicleModels', [])
-                            f.onChange(make)
+                          onChange={(makes) => {
+                            // A model belongs to one brand: dropping a brand drops
+                            // the models that came with it, and keeps the rest.
+                            const kept = new Set(
+                              makes.flatMap(
+                                (make) =>
+                                  modelsByMake.find((entry) => entry.make === make)?.models ?? [],
+                              ),
+                            )
+                            form.setValue(
+                              'vehicleModels',
+                              form.getValues('vehicleModels').filter((model) => kept.has(model)),
+                            )
+                            f.onChange(makes)
                           }}
                         />
                       )}
@@ -734,7 +757,7 @@ export function ProductForm({
                       name="vehicleModels"
                       render={({ field: f }) => (
                         <VehicleModelsMultiSelect
-                          make={form.watch('vehicleMake')}
+                          makes={form.watch('vehicleMakes')}
                           value={f.value}
                           onChange={f.onChange}
                         />

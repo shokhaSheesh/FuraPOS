@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { ArrowDownToLine } from 'lucide-react'
 import { Controller, type UseFormReturn } from 'react-hook-form'
 import { NumberField } from '@/shared/components/NumberField'
-import { Button } from '@/shared/ui/Button'
 import { Checkbox } from '@/shared/ui/Checkbox'
 import { Input } from '@/shared/ui/Input'
 import { ImageField } from '@/shared/components/ImageField'
@@ -52,21 +50,6 @@ export function ProductVariationsTable({
       form.setValue(`variations.${index}.enabled`, next, { shouldDirty: true }),
     )
 
-  /** Copies the first sold row down onto the others; skips what is not sold. */
-  const fillDown = (field: 'costPrice' | 'salePrice') => {
-    const source = variations.findIndex((v) => v.enabled)
-    if (source === -1) return
-    const value = form.getValues(`variations.${source}.${field}`)
-    const currency = form.getValues(`variations.${source}.costCurrency`)
-    variations.forEach((variation, index) => {
-      if (index === source || !variation.enabled) return
-      form.setValue(`variations.${index}.${field}`, value, { shouldDirty: true })
-      if (field === 'costPrice') {
-        form.setValue(`variations.${index}.costCurrency`, currency, { shouldDirty: true })
-      }
-    })
-  }
-
   const cell = 'p-0 align-middle'
   const th = 'px-2.5 py-2 text-left font-semibold whitespace-nowrap'
   const pinned = 'bg-surface sticky z-10'
@@ -88,25 +71,18 @@ export function ProductVariationsTable({
               <th className={cn(th, 'bg-canvas border-border sticky left-10 z-10 border-r')}>
                 Variation
               </th>
+              <th className={th}>Picture</th>
               <th className={th}>Variation name</th>
               <th className={th}>
                 SKU<span className="text-danger ml-0.5">*</span>
               </th>
               <th className={th}>Barcode</th>
-              <th className={th}>Picture</th>
               <th className={th}>Part</th>
               <th className={th}>OEM</th>
-              <FillableHeader
-                label="Cost"
-                onFill={() => fillDown('costPrice')}
-                many={variations.length > 1}
-              />
-              <FillableHeader
-                label="Sale price"
-                required
-                onFill={() => fillDown('salePrice')}
-                many={variations.length > 1}
-              />
+              <th className={th}>Cost</th>
+              <th className={th}>
+                Sale price<span className="text-danger ml-0.5">*</span>
+              </th>
               <th className={th}>Wholesale price</th>
               <th className={th}>Cargo weight</th>
               <th className={th}>Cargo size</th>
@@ -153,6 +129,18 @@ export function ProductVariationsTable({
                     </span>
                   </td>
 
+                  {/* The picture leads the row: it is what tells two variations apart
+                      at a glance, and it is a control rather than a cell to open. */}
+                  <td className={cn(cell, 'px-2 py-1.5')}>
+                    <Controller
+                      control={form.control}
+                      name={`variations.${index}.imageUrl`}
+                      render={({ field }) => (
+                        <ImageField size="sm" value={field.value} onChange={field.onChange} />
+                      )}
+                    />
+                  </td>
+
                   <Cell
                     value={value.name}
                     sold={sold}
@@ -195,17 +183,6 @@ export function ProductVariationsTable({
                       />
                     )}
                   </Cell>
-
-                  {/* A picture is not text: it stays a control rather than a cell to open. */}
-                  <td className={cn(cell, 'px-2 py-1.5')}>
-                    <Controller
-                      control={form.control}
-                      name={`variations.${index}.imageUrl`}
-                      render={({ field }) => (
-                        <ImageField size="sm" value={field.value} onChange={field.onChange} />
-                      )}
-                    />
-                  </td>
 
                   <Cell value={value.partSide} sold={sold} width="w-28" label={`Part — ${name}`}>
                     {() => (
@@ -512,39 +489,5 @@ function Cell({
         </button>
       )}
     </td>
-  )
-}
-
-function FillableHeader({
-  label,
-  required,
-  onFill,
-  many,
-}: {
-  label: string
-  required?: boolean
-  onFill: () => void
-  many: boolean
-}) {
-  return (
-    <th className="px-2.5 py-2 text-left font-semibold whitespace-nowrap">
-      <span className="inline-flex items-center gap-1.5">
-        {label}
-        {required ? <span className="text-danger">*</span> : null}
-        {many ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-5"
-            aria-label={`Copy the first ${label.toLowerCase()} to every variation`}
-            title="Fill down from the first row"
-            onClick={onFill}
-          >
-            <ArrowDownToLine className="size-3.5" />
-          </Button>
-        ) : null}
-      </span>
-    </th>
   )
 }

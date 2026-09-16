@@ -86,15 +86,7 @@ export function buildProductColumns({
     {
       accessorKey: 'brandName',
       header: 'Supplier',
-      cell: ({ row }) => {
-        const names = row.original.brandNames
-        if (!names.length) return <Empty />
-        return (
-          <span className="block truncate" title={names.join(', ')}>
-            {names.join(', ')}
-          </span>
-        )
-      },
+      cell: ({ row }) => text(row.original.brandName),
     },
     // Название продукта
     {
@@ -214,9 +206,10 @@ export function buildProductColumns({
     },
     // Марка
     {
-      accessorKey: 'vehicleMake',
+      accessorKey: 'vehicleMakes',
       header: 'Make',
-      cell: ({ row }) => text(row.original.vehicleMake),
+      cell: ({ row }) =>
+        row.original.vehicleMakes.length ? row.original.vehicleMakes.join(', ') : <Empty />,
     },
     // Модель
     {
@@ -306,7 +299,7 @@ export const PRODUCT_COLUMN_ORDER = [
   'categoryPath',
   'partSide',
   'oem',
-  'vehicleMake',
+  'vehicleMakes',
   'vehicleModels',
   'manufacturer',
   'categoryName',

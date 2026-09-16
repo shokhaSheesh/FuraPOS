@@ -134,7 +134,7 @@ export default function ProductsPage() {
         p.fullName,
         p.brandName,
         p.categoryPath,
-        p.vehicleMake,
+        p.vehicleMakes.join(' / '),
         p.vehicleModels.join(' / '),
         p.stockByLocation.map((at) => at.locationName).join(' / '),
         p.stock,

@@ -132,21 +132,26 @@ export function ProductStockSection({
                   </td>
                   {locations.map((location, locationIndex) =>
                     locationIds.includes(location.id) ? (
+                      // The field sits under its own heading: a right-aligned
+                      // column heading with a left-aligned box below it reads as
+                      // two different columns.
                       <td key={location.id} className="px-2 py-1.5">
-                        <Controller
-                          control={form.control}
-                          name={`variations.${index}.stockByLocation.${locationIndex}.quantity`}
-                          render={({ field }) => (
-                            <NumberField
-                              className="w-24"
-                              nullable={false}
-                              aria-label={`Quantity at ${location.name}`}
-                              value={field.value}
-                              onChange={(v) => field.onChange(v ?? 0)}
-                              onBlur={field.onBlur}
-                            />
-                          )}
-                        />
+                        <div className="flex justify-end">
+                          <Controller
+                            control={form.control}
+                            name={`variations.${index}.stockByLocation.${locationIndex}.quantity`}
+                            render={({ field }) => (
+                              <NumberField
+                                className="w-24"
+                                nullable={false}
+                                aria-label={`Quantity at ${location.name}`}
+                                value={field.value}
+                                onChange={(v) => field.onChange(v ?? 0)}
+                                onBlur={field.onBlur}
+                              />
+                            )}
+                          />
+                        </div>
                       </td>
                     ) : null,
                   )}

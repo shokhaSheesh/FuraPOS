@@ -115,14 +115,8 @@ export interface Product {
   categoryName: string
   /** Full hierarchy, e.g. "Chassis > Brakes". */
   categoryPath: string
-  /**
-   * Who we buy it from. A part is often carried by more than one, so this is a
-   * set; `brandId`/`brandName` keep the first of them, because a sale line, a
-   * report or a label needs one answer, not a list.
-   */
-  brandIds: Id[]
-  brandNames: string[]
   brandId: Id | null
+  /** Who we buy from — "AKCHAEV INC" in the reference data. */
   brandName: string | null
   /**
    * Who made the part — "Space" in the reference data. OX keeps these as two
@@ -132,8 +126,12 @@ export interface Product {
   manufacturer: string | null
   unit: UnitOfMeasure
 
-  /** Which vehicles it fits — how an auto-parts catalogue is searched. */
-  vehicleMake: string | null
+  /**
+   * Which lorries it fits — how an auto-parts catalogue is searched. A part
+   * often fits several makes, and the models listed are the models of all of
+   * them.
+   */
+  vehicleMakes: string[]
   vehicleModels: string[]
 
   /** The axes this product varies along. Empty when it is sold one way. */
@@ -156,13 +154,11 @@ export interface VariationRow extends ProductVariation {
   categoryId: Id
   categoryName: string
   categoryPath: string
-  brandIds: Id[]
-  brandNames: string[]
   brandId: Id | null
   brandName: string | null
   manufacturer: string | null
   unit: UnitOfMeasure
-  vehicleMake: string | null
+  vehicleMakes: string[]
   vehicleModels: string[]
   options: ProductOption[]
 }
@@ -415,10 +411,10 @@ export const productFormSchema = z
     name: z.string().min(2, 'Name is required'),
     description: z.string().nullable(),
     categoryId: z.string().min(1, 'Pick a category'),
-    brandIds: z.array(z.string()),
+    brandId: z.string().nullable(),
     manufacturer: z.string().nullable(),
     unit: z.enum(['pcs', 'kg', 'l', 'm', 'pack']),
-    vehicleMake: z.string().nullable(),
+    vehicleMakes: z.array(z.string()),
     vehicleModels: z.array(z.string()),
     status: z.enum(['active', 'archived', 'draft']),
     variationMode: z.enum(['single', 'multiple']),

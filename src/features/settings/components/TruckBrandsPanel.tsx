@@ -109,7 +109,7 @@ function ModelChips({
   trucks,
 }: {
   make: VehicleMake
-  products: { vehicleMake: string | null; vehicleModels: string[] }[]
+  products: { vehicleMakes: string[]; vehicleModels: string[] }[]
   trucks: { make: string | null; model: string | null }[]
 }) {
   const { can } = useSession()

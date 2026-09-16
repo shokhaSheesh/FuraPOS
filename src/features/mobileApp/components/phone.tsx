@@ -18,10 +18,13 @@ export function Phone({
   children,
   header,
   tabBar,
+  sheet,
 }: {
   children: ReactNode
   header?: ReactNode
   tabBar?: ReactNode
+  /** A bottom sheet over this screen, with the screen dimmed behind it. */
+  sheet?: ReactNode
 }) {
   return (
     <div
@@ -40,7 +43,128 @@ export function Phone({
         <div className="flex-1 overflow-y-auto overscroll-contain pb-4">{children}</div>
         {tabBar}
       </div>
+      {sheet ? (
+        <div className="absolute inset-0 flex flex-col justify-end">
+          <div className="absolute inset-0" style={{ background: 'rgba(15, 23, 42, 0.45)' }} />
+          {sheet}
+        </div>
+      ) : null}
     </div>
+  )
+}
+
+/**
+ * A bottom sheet, as the design has it: a grabber, a title with an optional
+ * state badge, scrolling content, and buttons pinned at the bottom.
+ */
+export function PhoneSheet({
+  title,
+  badge,
+  children,
+  footer,
+  onCloseIcon = true,
+}: {
+  title: ReactNode
+  badge?: ReactNode
+  children: ReactNode
+  footer?: ReactNode
+  onCloseIcon?: boolean
+}) {
+  return (
+    <div
+      className="relative max-h-[86%] overflow-hidden rounded-t-3xl"
+      style={{ background: M.card }}
+    >
+      <div className="flex justify-center pt-2.5">
+        <span className="h-1 w-10 rounded-full" style={{ background: '#D9DDE3' }} />
+      </div>
+      <div className="flex items-center gap-2 px-4 pt-2.5 pb-1">
+        <p className="text-[16px] font-bold" style={{ color: M.text }}>
+          {title}
+        </p>
+        {badge}
+        {onCloseIcon ? (
+          <span className="ml-auto text-[18px] leading-none" style={{ color: M.textMuted }}>
+            ✕
+          </span>
+        ) : null}
+      </div>
+      <div className="max-h-[520px] overflow-y-auto px-4 pb-2">{children}</div>
+      {footer ? (
+        <div className="border-t px-4 pt-3 pb-5" style={{ borderColor: M.divider }}>
+          {footer}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+/** A small state pill — "Удалено", "Изменено", "Текущая". */
+export function SheetBadge({ label, tone }: { label: string; tone: MobileTone }) {
+  return (
+    <span
+      className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+      style={{ background: TONES[tone].soft, color: TONES[tone].fg }}
+    >
+      {label}
+    </span>
+  )
+}
+
+/** The grey note box the sheets use for "only the current version counts". */
+export function SheetNote({ children }: { children: ReactNode }) {
+  return (
+    <div
+      className="mt-3 flex items-start gap-2 rounded-xl px-3 py-2.5 text-[11px]"
+      style={{ background: M.screen, color: M.textMuted }}
+    >
+      <span
+        className="grid size-4 shrink-0 place-items-center rounded-full border text-[9px] font-bold"
+        style={{ borderColor: M.textSubtle, color: M.textSubtle }}
+      >
+        i
+      </span>
+      <span>{children}</span>
+    </div>
+  )
+}
+
+/** The dark primary and the outlined destructive button, side by side. */
+export function SheetButtons({
+  primary,
+  danger,
+  note,
+}: {
+  primary?: ReactNode
+  danger?: ReactNode
+  note?: string
+}) {
+  return (
+    <>
+      <div className={cn('grid gap-2', primary && danger ? 'grid-cols-2' : 'grid-cols-1')}>
+        {primary ? (
+          <span
+            className="grid h-11 place-items-center rounded-2xl text-[13px] font-semibold"
+            style={{ background: M.text, color: M.card }}
+          >
+            {primary}
+          </span>
+        ) : null}
+        {danger ? (
+          <span
+            className="grid h-11 place-items-center rounded-2xl border text-[13px] font-semibold"
+            style={{ borderColor: TONES.red.fg, color: TONES.red.fg, background: M.card }}
+          >
+            {danger}
+          </span>
+        ) : null}
+      </div>
+      {note ? (
+        <p className="mt-2 text-center text-[10px]" style={{ color: M.textSubtle }}>
+          {note}
+        </p>
+      ) : null}
+    </>
   )
 }
 

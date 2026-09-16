@@ -5,6 +5,7 @@ import {
   Calendar,
   ChevronRight,
   Clock,
+  Coins,
   Container,
   Droplets,
   Fuel,
@@ -26,6 +27,11 @@ import { PageHeader } from '@/shared/components/PageHeader'
 import { cn } from '@/shared/lib/cn'
 import { M, TONES, type MobileTone } from '../components/palette'
 import { IconTile, Phone, PhoneCard, PhoneHeader, PhoneSection } from '../components/phone'
+import {
+  DeletedOperationSheet,
+  EditedOperationSheet,
+  OperationSheet,
+} from '../components/OperationSheets'
 
 /*
   A mock of the fleet app's "my truck" screen — a different product from this
@@ -101,7 +107,57 @@ const SPEND_BY_CATEGORY: {
   { label: 'Мойка', meta: '5 операций', amount: '−$200', icon: Droplets, tone: 'purple' },
 ]
 
-const SPEND_TOTAL = '$3 120'
+/** Individual entries, newest first — what "Все расходы" opens onto. */
+const OPERATIONS: {
+  title: string
+  note: string
+  by: string
+  amount: string
+  icon: LucideIcon
+  tone: MobileTone
+  voided?: boolean
+}[] = [
+  {
+    title: 'Зарплата',
+    note: 'создано',
+    by: '09.09.2026 · Шохруз Сафаров',
+    amount: '−$652,00',
+    icon: Coins,
+    tone: 'yellow',
+  },
+  {
+    title: 'Топливо',
+    note: 'отказ',
+    by: '09.09.2026 · Шохруз Сафаров',
+    amount: '−$1 000,00',
+    icon: Fuel,
+    tone: 'green',
+  },
+  {
+    title: 'Топливо',
+    note: '',
+    by: '08.09.2026 · Шохруз Сафаров',
+    amount: '−$10,00',
+    icon: Fuel,
+    tone: 'green',
+  },
+  {
+    title: 'Зарплата',
+    note: 'Привет',
+    by: '08.09.2026 · Шохруз Сафаров',
+    amount: '−$120,00',
+    icon: Coins,
+    tone: 'yellow',
+  },
+  {
+    title: 'Топливо',
+    note: '',
+    by: '08.09.2026 · Шохруз Сафаров',
+    amount: '−$120,00',
+    icon: Fuel,
+    tone: 'green',
+  },
+]
 
 const SPEND_SPLIT = [
   { label: 'Топливо', operations: '3 операции', amount: '$1 130,00', share: 59 },
@@ -180,37 +236,55 @@ export default function MobileAppPage() {
         description="A design mock of the fleet app — a separate product from this back office. The driver's own truck screen; the screens behind each action follow."
       />
 
-      <div className="mt-4 flex justify-center pb-10">
-        <Phone
-          tabBar={<TabBar />}
-          header={
-            <PhoneHeader
-              title="Моя машина"
-              left={
-                <span
-                  className="grid size-9 place-items-center rounded-xl border"
-                  style={{ borderColor: M.border, background: M.card }}
-                >
-                  <ArrowLeft className="size-4" style={{ color: M.text }} />
-                </span>
-              }
-            />
-          }
-        >
-          <div className="pt-3" />
-          <TruckCard />
-          <Status />
-          <QuickExpenses />
-          <Statistics />
-          <Finance />
-          <SpendSplit />
-          <Trips />
-          <Mileage />
-          <AssignmentHistory />
-          <Documents />
-        </Phone>
+      <div className="mt-4 flex flex-wrap justify-center gap-6 pb-10">
+        <Screen caption="Моя машина" />
+        <Screen caption="Операция" sheet={<OperationSheet />} />
+        <Screen caption="Удалённая операция" sheet={<DeletedOperationSheet />} />
+        <Screen caption="Изменённая операция" sheet={<EditedOperationSheet />} />
       </div>
     </>
+  )
+}
+
+/**
+ * One phone. The three sheet states are shown as their own phones rather than
+ * behind a tap, so a review can see all of them at once.
+ */
+function Screen({ caption, sheet }: { caption: string; sheet?: React.ReactNode }) {
+  return (
+    <figure className="m-0">
+      <Phone
+        tabBar={<TabBar />}
+        sheet={sheet}
+        header={
+          <PhoneHeader
+            title="Моя машина"
+            left={
+              <span
+                className="grid size-9 place-items-center rounded-xl border"
+                style={{ borderColor: M.border, background: M.card }}
+              >
+                <ArrowLeft className="size-4" style={{ color: M.text }} />
+              </span>
+            }
+          />
+        }
+      >
+        <div className="pt-3" />
+        <TruckCard />
+        <Status />
+        <QuickExpenses />
+        <Statistics />
+        <Finance />
+        <Operations />
+        <SpendSplit />
+        <Trips />
+        <Mileage />
+        <AssignmentHistory />
+        <Documents />
+      </Phone>
+      <figcaption className="text-fg-muted mt-2 text-center text-xs">{caption}</figcaption>
+    </figure>
   )
 }
 
@@ -531,19 +605,55 @@ function Finance() {
             </div>
           ))}
         </div>
+      </PhoneCard>
+    </PhoneSection>
+  )
+}
 
-        <div className="border-t px-3.5 py-3" style={{ borderColor: M.divider }}>
-          <p className="text-[12px]" style={{ color: M.textMuted }}>
-            Всего расходов
-          </p>
-          <p className="text-[20px] font-bold" style={{ color: TONES.red.fg }}>
-            {SPEND_TOTAL}
-          </p>
-          <p className="text-[10px]" style={{ color: M.textSubtle }}>
-            Удалённые расходы не учитываются
-          </p>
+/** Each entry on its own row — tapping one opens the sheets shown beside this screen. */
+function Operations() {
+  return (
+    <PhoneSection title="Операции" subtitle="Этот месяц">
+      <PhoneCard padded={false}>
+        <div className="divide-y" style={{ borderColor: M.divider }}>
+          {OPERATIONS.map((operation, index) => (
+            <div key={index} className="flex items-center gap-3 px-3.5 py-3">
+              <IconTile icon={operation.icon} tone={operation.tone} size="sm" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[14px] font-bold" style={{ color: M.text }}>
+                  {operation.title}
+                </p>
+                {operation.note ? (
+                  <p className="truncate text-[13px]" style={{ color: M.textMuted }}>
+                    {operation.note}
+                  </p>
+                ) : null}
+                <p className="truncate text-[12px]" style={{ color: M.textSubtle }}>
+                  {operation.by}
+                </p>
+              </div>
+              <span className="text-[14px] font-bold" style={{ color: TONES.red.fg }}>
+                {operation.amount}
+              </span>
+              <ChevronRight className="size-4 shrink-0" style={{ color: M.textSubtle }} />
+            </div>
+          ))}
         </div>
       </PhoneCard>
+      <div className="px-3">
+        <div
+          className="mt-2 flex items-center gap-2 rounded-xl px-3 py-2.5 text-[12px]"
+          style={{ background: M.screen, color: M.textMuted }}
+        >
+          <span
+            className="grid size-4 shrink-0 place-items-center rounded-full border text-[9px] font-bold"
+            style={{ borderColor: M.textSubtle, color: M.textSubtle }}
+          >
+            i
+          </span>
+          Приход записывается на рейс — здесь только расходы.
+        </div>
+      </div>
     </PhoneSection>
   )
 }

@@ -7,6 +7,12 @@ import { Modal } from '@/shared/ui/Modal'
 import { Input } from '@/shared/ui/Input'
 import { Select } from '@/shared/ui/Select'
 import { SegmentedControl } from '@/shared/ui/SegmentedControl'
+import {
+  boughtFromLabel,
+  boughtFromPlaceholder,
+  hasSupplierRecord,
+  PROCUREMENT_KINDS,
+} from '@/shared/types'
 import { useDataStore } from '@/data/store'
 import { USD_RATE } from '@/data/seed'
 import { newReceiptSchema, type NewReceiptDraft } from '../model/receipt'
@@ -39,12 +45,13 @@ export function NewReceiptDialog({
   const form = useForm<NewReceiptDraft>({
     resolver: zodResolver(newReceiptSchema),
     defaultValues: {
+      kind: 'supplier',
       zone: '',
       locationId: '',
       usdRate: USD_RATE,
       stocktakeOnPost: false,
       supplierId: null,
-      distributeByTransfer: false,
+      boughtFrom: '',
       comment: '',
     },
   })
@@ -54,7 +61,7 @@ export function NewReceiptDialog({
     if (open) form.reset()
   }, [open, form])
 
-  const supplierId = form.watch('supplierId')
+  const kind = form.watch('kind')
 
   return (
     <Modal
@@ -70,6 +77,28 @@ export function NewReceiptDialog({
         className="space-y-4"
         onSubmit={form.handleSubmit((values) => onCreate(values))}
       >
+        <Field label="Where these goods came from" required>
+          {() => (
+            <Controller
+              control={form.control}
+              name="kind"
+              render={({ field }) => (
+                <div className="space-y-1">
+                  <SegmentedControl
+                    aria-label="Where these goods came from"
+                    value={field.value}
+                    onChange={field.onChange}
+                    options={PROCUREMENT_KINDS.map(({ value, label }) => ({ value, label }))}
+                  />
+                  <p className="text-fg-subtle text-2xs">
+                    {PROCUREMENT_KINDS.find((k) => k.value === field.value)?.hint}
+                  </p>
+                </div>
+              )}
+            />
+          )}
+        </Field>
+
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Zone" required error={form.formState.errors.zone?.message}>
             {(p) => (
@@ -166,63 +195,56 @@ export function NewReceiptDialog({
             )}
           </Field>
 
-          <Field label="Supplier" className="sm:col-span-2">
-            {(p) => (
-              <Controller
-                control={form.control}
-                name="supplierId"
-                render={({ field }) => (
-                  <Select
-                    {...p}
-                    className="w-full"
-                    value={field.value ?? undefined}
-                    onChange={field.onChange}
-                    placeholder="Supplier of your choice"
-                    options={suppliers.items.map((s) => ({ value: s.id, label: s.name }))}
-                  />
-                )}
-              />
-            )}
-          </Field>
-        </div>
-
-        {/* Boxed apart, as the reference does: it is not a property of the
-            delivery but a decision about what happens after it lands. */}
-        <div className="rounded-card border-border border p-4">
-          <Field
-            label="Spread the goods across locations with a transfer?"
-            required
-            hint="Everything lands at one location first, then moves on"
-          >
-            {() => (
-              <Controller
-                control={form.control}
-                name="distributeByTransfer"
-                render={({ field }) => (
-                  <SegmentedControl
-                    aria-label="Spread the goods across locations"
-                    value={field.value ? 'yes' : 'no'}
-                    onChange={(v) => field.onChange(v === 'yes')}
-                    options={[
-                      { value: 'yes', label: 'Yes' },
-                      { value: 'no', label: 'No' },
-                    ]}
-                  />
-                )}
-              />
-            )}
-          </Field>
+          {/* One question, two different answers: a supplier is a record we
+              hold, the bazaar and a factory are a name somebody types. */}
+          {hasSupplierRecord(kind) ? (
+            <Field
+              label="Supplier"
+              required
+              error={form.formState.errors.supplierId?.message}
+              className="sm:col-span-2"
+            >
+              {(p) => (
+                <Controller
+                  control={form.control}
+                  name="supplierId"
+                  render={({ field }) => (
+                    <Select
+                      {...p}
+                      className="w-full"
+                      value={field.value ?? undefined}
+                      onChange={field.onChange}
+                      placeholder="Supplier of your choice"
+                      options={suppliers.items.map((s) => ({ value: s.id, label: s.name }))}
+                    />
+                  )}
+                />
+              )}
+            </Field>
+          ) : (
+            <Field
+              label={boughtFromLabel(kind)}
+              required
+              error={form.formState.errors.boughtFrom?.message}
+              className="sm:col-span-2"
+              hint="There is no account to build a debt against — a market buy is paid on the spot"
+            >
+              {(p) => (
+                <Input
+                  {...p}
+                  placeholder={boughtFromPlaceholder(kind)}
+                  {...form.register('boughtFrom')}
+                />
+              )}
+            </Field>
+          )}
         </div>
 
         <Field label="Note">
           {(p) => (
             <Input
               {...p}
-              placeholder={
-                supplierId
-                  ? 'Container 3, air freight — anything worth knowing later'
-                  : 'Anything worth knowing when this is queried later'
-              }
+              placeholder="Container 3, air freight — anything worth knowing later"
               {...form.register('comment')}
             />
           )}

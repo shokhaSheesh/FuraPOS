@@ -279,9 +279,25 @@ summary band here, and the uplift figure it replaced is now on the receipt itsel
 ##### Creating one — `Новый приход`
 
 A modal, not a page, and it is a **gate**: it creates an empty receipt and opens it, and products
-are added afterwards. Fields, in OX's order and layout: Zone\*, Location\*, Supplier price rate\*
-(`1 USD = … UZS`), Count the shelf when posting these products?\* (Yes/No), Supplier, then — boxed
-apart, as OX boxes it — Spread the goods across locations with a transfer?\* (Yes/No), and Note.
+are added afterwards. Fields: **Where these goods came from**\*, Zone\*, Location\*, Supplier price
+rate\* (`1 USD = … UZS`), Count the shelf when posting these products?\* (Yes/No), then either
+Supplier\* or Bought from\*, and Note.
+
+Two departures from OX here, both at the client's request:
+
+- **Dropped**: OX's `Распределить товары по локациям с помощью перемещения?` (spread the goods
+  across locations with a transfer). Cut with the field, not merely hidden.
+- **Added**: the source kind, the same three Procurement asks about — supplier, market, China. It
+  decides what the next field is: a supplier is a record we hold and a debt is built against it, the
+  bazaar and a factory are a name somebody types and no debt is carried. `ProcurementKind` in
+  `src/shared/types` is shared with the order module on purpose — an order placed with the bazaar
+  has to arrive as a receipt from the bazaar, or the two halves of one purchase describe different
+  transactions.
+
+**Not yet wired**: `Провести инвентаризацию при оприходовании продуктов?` is asked and stored on the
+receipt, but posting does not act on it — it posts the counted quantities either way. Making it real
+means posting through the stocktaking path instead, so the shelf is set to what was counted rather
+than incremented by it. Worth doing when the client confirms they use it.
 
 The rate is **frozen on the document**. A receipt posted in March must not re-price itself when the
 rate moves in April, which is why it is asked here rather than read live.

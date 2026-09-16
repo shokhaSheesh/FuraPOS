@@ -1,5 +1,6 @@
 import { z } from 'zod'
-import type { Id, IsoDate } from '@/shared/types'
+import { procurementSource } from '@/shared/types'
+import type { Id, IsoDate, ProcurementKind } from '@/shared/types'
 
 /**
  * Goods arriving from a supplier — the only way stock legitimately enters the
@@ -102,8 +103,19 @@ export interface GoodsReceipt {
   id: Id
   number: string
   status: ReceiptStatus
+  /**
+   * Where the goods came from, the same three the order module asks about:
+   * a supplier we hold an account with, the bazaar, or a factory in China.
+   * An order placed with one has to arrive as a receipt from the same one.
+   */
+  kind: ProcurementKind
   supplierId: Id | null
   supplierName: string | null
+  /**
+   * Who it was, when there is no supplier record to point at — "Jomiy bozori,
+   * row 4". Null for a supplier receipt, where `supplierName` says it.
+   */
+  boughtFrom: string | null
   /** The purchase order this delivery came against, when there was one. */
   orderId: Id | null
   orderNumber: string | null
@@ -125,8 +137,6 @@ export interface GoodsReceipt {
   usdRate: number
   /** Count the shelf as part of posting, rather than trusting the paperwork. */
   stocktakeOnPost: boolean
-  /** Land everything at one location, then move it on with a transfer. */
-  distributeByTransfer: boolean
   lines: ReceiptLine[]
   additionalCosts: AdditionalCost[]
   payments: ReceiptPayment[]
@@ -329,6 +339,11 @@ export function soldThrough(
   return { received, sold, ratio: received === 0 ? 0 : sold / received }
 }
 
+/** Who this delivery is with, in one phrase, whichever kind it is. */
+export const receiptSource = (
+  receipt: Pick<GoodsReceipt, 'kind' | 'supplierName' | 'boughtFrom'>,
+) => procurementSource(receipt)
+
 /** The one step a receipt can take from where it is. */
 export function nextStep(status: ReceiptStatus): { to: ReceiptStatus; label: string } | null {
   return status === 'draft' ? { to: 'received', label: 'Post receipt' } : null
@@ -385,14 +400,26 @@ export type ReceiptDraft = z.infer<typeof receiptDraftSchema>
  * Answering them creates an empty, unfinished receipt; products are added to
  * it afterwards, on its own screen.
  */
-export const newReceiptSchema = z.object({
-  zone: z.string().min(1, 'Where are the goods coming from?'),
-  locationId: z.string().min(1, 'Pick where the goods land'),
-  usdRate: z.number().positive('Enter the rate agreed for this delivery'),
-  stocktakeOnPost: z.boolean(),
-  supplierId: z.string().nullable(),
-  distributeByTransfer: z.boolean(),
-  comment: z.string(),
-})
+export const newReceiptSchema = z
+  .object({
+    kind: z.enum(['supplier', 'market', 'china']),
+    zone: z.string().min(1, 'Where are the goods coming from?'),
+    locationId: z.string().min(1, 'Pick where the goods land'),
+    usdRate: z.number().positive('Enter the rate agreed for this delivery'),
+    stocktakeOnPost: z.boolean(),
+    supplierId: z.string().nullable(),
+    boughtFrom: z.string(),
+    comment: z.string(),
+  })
+  .superRefine((values, ctx) => {
+    // Only a supplier receipt has a record to point at; the other two are a
+    // name somebody types, and a delivery from nowhere is not worth recording.
+    if (values.kind === 'supplier' && !values.supplierId) {
+      ctx.addIssue({ code: 'custom', path: ['supplierId'], message: 'Pick who this came from' })
+    }
+    if (values.kind !== 'supplier' && !values.boughtFrom.trim()) {
+      ctx.addIssue({ code: 'custom', path: ['boughtFrom'], message: 'Say where it came from' })
+    }
+  })
 
 export type NewReceiptDraft = z.infer<typeof newReceiptSchema>

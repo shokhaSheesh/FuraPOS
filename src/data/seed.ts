@@ -1171,8 +1171,13 @@ export const receipts: GoodsReceipt[] = Array.from({ length: 46 }, (_, index) =>
     id: `gr-${sequence}`,
     number: `GR-${String(sequence).padStart(5, '0')}`,
     status,
+    // Every seeded delivery came from a supplier on file. Market and China
+    // receipts exist in the model but not in the seed: they arrive as somebody
+    // types them, and inventing a bazaar run adds noise to every total.
+    kind: 'supplier' as const,
     supplierId: supplier.id,
     supplierName: supplier.name,
+    boughtFrom: null,
     orderId: null,
     orderNumber: null,
     invoiceNumber: random() > 0.2 ? `INV-${between(10_000, 99_999)}` : null,
@@ -1183,7 +1188,6 @@ export const receipts: GoodsReceipt[] = Array.from({ length: 46 }, (_, index) =>
     zone: supplier.zone,
     usdRate: USD_RATE,
     stocktakeOnPost: false,
-    distributeByTransfer: false,
     lines,
     additionalCosts,
     /*

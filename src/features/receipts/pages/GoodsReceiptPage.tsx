@@ -44,6 +44,7 @@ import {
   landedUnitCostOn,
   paidTotal,
   receiptDebt,
+  receiptSource,
   receiptStatusLabel,
   receiptStatusTone,
   supplierInvoicedTotal,
@@ -597,9 +598,7 @@ function PaymentStep({ receipt }: { receipt: GoodsReceipt }) {
     <>
       <Card className="max-w-3xl">
         <CardHeader className="items-start justify-between gap-3">
-          <CardTitle>
-            Invoice for goods from {receipt.supplierName ?? 'an unnamed supplier'}
-          </CardTitle>
+          <CardTitle>Invoice for goods from {receiptSource(receipt)}</CardTitle>
           {canPay ? (
             <Button variant="secondary" size="sm" onClick={() => setPaying((v) => !v)}>
               <Plus />

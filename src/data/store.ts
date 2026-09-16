@@ -70,6 +70,7 @@ import {
   type ReceiptPayment,
   type ReceiptStatus,
 } from '@/features/receipts/model/receipt'
+import type { ProcurementKind } from '@/shared/types'
 import type { Sale, SaleLine, SaleStatus } from '@/features/sales/model/sale'
 import {
   brands,
@@ -186,7 +187,8 @@ interface CatalogState {
         | 'usdRate'
         | 'supplierId'
         | 'stocktakeOnPost'
-        | 'distributeByTransfer'
+        | 'kind'
+        | 'boughtFrom'
         | 'costSettings'
         | 'invoiceNumber'
       >
@@ -373,7 +375,9 @@ export interface CreateReceiptInput {
   zone?: string | null
   usdRate?: number
   stocktakeOnPost?: boolean
-  distributeByTransfer?: boolean
+  kind?: ProcurementKind
+  /** Who it was, when there is no supplier record — market and China buys. */
+  boughtFrom?: string | null
   lines: ReceiptLine[]
   additionalCosts: AdditionalCost[]
   /** Draft to keep working on it, received to post it straight away. */
@@ -1078,7 +1082,8 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       zone: input.zone ?? get().suppliers.find((s) => s.id === input.supplierId)?.zone ?? null,
       usdRate: input.usdRate ?? USD_RATE,
       stocktakeOnPost: input.stocktakeOnPost ?? false,
-      distributeByTransfer: input.distributeByTransfer ?? false,
+      kind: input.kind ?? 'supplier',
+      boughtFrom: input.boughtFrom ?? null,
       lines: input.lines,
       additionalCosts: input.additionalCosts,
       payments: [],

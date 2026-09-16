@@ -1,5 +1,6 @@
 import { z } from 'zod'
-import type { Id, IsoDate } from '@/shared/types'
+import type { Id, IsoDate, ProcurementKind } from '@/shared/types'
+import { procurementSource } from '@/shared/types'
 
 /**
  * A purchase order: what we asked a supplier to send, before it arrives.
@@ -14,6 +15,8 @@ export type OrderStatus = 'draft' | 'sent' | 'confirmed' | 'partial' | 'received
 
 /**
  * Where the goods come from, which decides how the order is put together.
+ * Shared with goods receipt — see `ProcurementKind` — because an order placed
+ * with the bazaar has to arrive as a receipt from the bazaar.
  *
  *   - **supplier** — a company we trade with. The order is built from *their*
  *     catalogue and sent to them.
@@ -25,8 +28,9 @@ export type OrderStatus = 'draft' | 'sent' | 'confirmed' | 'partial' | 'received
  *     catalogue, but each line carries how urgently it is needed, and the whole
  *     order is handed over as a PDF the factory can work from.
  */
-export type OrderKind = 'supplier' | 'market' | 'china'
+export type OrderKind = ProcurementKind
 
+/** The order module's own wording for the three; the values are shared. */
 export const ORDER_KINDS: { value: OrderKind; label: string; hint: string }[] = [
   {
     value: 'supplier',
@@ -117,15 +121,7 @@ export interface PurchaseOrder {
 
 /** Who the order is with, in one phrase, whichever kind it is. */
 export const orderSource = (order: Pick<PurchaseOrder, 'kind' | 'supplierName' | 'boughtFrom'>) =>
-  order.kind === 'market'
-    ? order.boughtFrom
-      ? `Market · ${order.boughtFrom}`
-      : 'Market'
-    : order.kind === 'china'
-      ? order.boughtFrom
-        ? `China · ${order.boughtFrom}`
-        : 'China'
-      : (order.supplierName ?? '—')
+  procurementSource(order)
 
 /* --- what is still coming ------------------------------------------------ */
 

@@ -8,6 +8,7 @@ import {
   landedTotal,
   receiptOrdered,
   receiptReceived,
+  receiptSource,
   receiptStatusLabel,
   receiptStatusTone,
   retailValue,
@@ -118,12 +119,9 @@ export function buildReceiptColumns({
       accessorKey: 'supplierName',
       header: 'Suppliers',
       enableHiding: false,
-      cell: ({ row }) =>
-        row.original.supplierName ? (
-          <Badge tone="neutral">{row.original.supplierName}</Badge>
-        ) : (
-          <Empty />
-        ),
+      // A market or China buy has no supplier record, so the source phrase
+      // stands in — an unlabelled dash would read as "we don't know".
+      cell: ({ row }) => <Badge tone="neutral">{receiptSource(row.original)}</Badge>,
     },
     {
       accessorKey: 'comment',

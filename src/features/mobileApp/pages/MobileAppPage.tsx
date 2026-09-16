@@ -118,13 +118,6 @@ const CATEGORY_FILTERS: { value: SpendCategory | 'all'; label: string; icon?: Lu
   { value: 'toll', label: 'Платные дороги', icon: Milestone },
 ]
 
-const FINANCE_PERIODS = [
-  { value: 'm1', label: 'Последний месяц', icon: Calendar },
-  { value: 'm6', label: 'Последние 6 мес.', icon: Calendar },
-  { value: 'y1', label: 'Последний год', icon: Calendar },
-  { value: 'custom', label: 'Период', icon: Calendar },
-] as const
-
 const OPERATIONS: {
   title: string
   note: string
@@ -654,7 +647,6 @@ function Segmented<T extends string>({
 }
 
 function Finance({ onOpen }: { onOpen: (state: OperationState) => void }) {
-  const [period, setPeriod] = useState<(typeof FINANCE_PERIODS)[number]['value']>('m1')
   const [category, setCategory] = useState<SpendCategory | 'all'>('all')
   const shown = OPERATIONS.filter((o) => category === 'all' || o.category === category)
 
@@ -676,15 +668,7 @@ function Finance({ onOpen }: { onOpen: (state: OperationState) => void }) {
           </span>
         </div>
 
-        <div className="mt-3">
-          <PhoneChips
-            options={[...FINANCE_PERIODS]}
-            value={period}
-            onChange={setPeriod}
-            ariaLabel="Период"
-          />
-        </div>
-        <p className="mt-2 px-3.5 text-[12px]" style={{ color: M.textSubtle }}>
+        <p className="mt-3 px-3.5 text-[12px]" style={{ color: M.textSubtle }}>
           Тип расхода
         </p>
         <div className="mt-1.5">

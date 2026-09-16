@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { Plus, Truck, Clock, PackageOpen } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
 import { SearchInput } from '@/shared/components/SearchInput'
@@ -8,7 +8,6 @@ import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { FilterSelect } from '@/shared/components/FilterSelect'
 import { Badge } from '@/shared/ui/Badge'
-import { Card } from '@/shared/ui/Card'
 import { Button } from '@/shared/ui/Button'
 import { useListQuery } from '@/shared/hooks/useListQuery'
 import { useSession } from '@/app/providers/SessionProvider'
@@ -17,7 +16,7 @@ import { formatDate, formatMoney, formatNumber } from '@/shared/lib/format'
 import type { TableColumn } from '@/shared/components/table/features'
 import { useDataStore } from '@/data/store'
 import { USD_RATE } from '@/data/seed'
-import { useCreateOrder, useOrderStatusCounts, useOrders, useOrdersSummary } from '../api/orders'
+import { useCreateOrder, useOrderStatusCounts, useOrders } from '../api/orders'
 import { NewOrderDialog } from '../components/NewOrderDialog'
 import {
   daysLate,
@@ -52,7 +51,6 @@ export default function OrdersListPage() {
   const scope = { search: query.search, supplier: query.supplier, location: query.location }
   const { data, isLoading } = useOrders(query)
   const { data: counts } = useOrderStatusCounts(scope)
-  const summary = useOrdersSummary(scope)
   const canSeeCost = can('products.cost.view')
 
   const columns = useMemo<TableColumn<PurchaseOrder>[]>(
@@ -171,32 +169,6 @@ export default function OrdersListPage() {
     [canSeeCost],
   )
 
-  const tiles = [
-    {
-      icon: Truck,
-      label: 'Still coming',
-      value: formatNumber(summary.awaitingUnits),
-      meta: canSeeCost
-        ? `${formatMoney(Math.round(summary.openValue))} across ${formatNumber(summary.open)} open orders`
-        : `${formatNumber(summary.open)} open orders`,
-    },
-    {
-      icon: Clock,
-      label: 'Late',
-      value: formatNumber(summary.late),
-      meta: canSeeCost
-        ? `${formatMoney(Math.round(summary.lateValue))} promised and not here`
-        : 'past the promised date',
-      tone: summary.late > 0 ? ('danger' as const) : undefined,
-    },
-    {
-      icon: PackageOpen,
-      label: 'Open orders',
-      value: formatNumber(summary.open),
-      meta: 'sent, confirmed or part delivered',
-    },
-  ]
-
   return (
     <>
       <PageHeader
@@ -242,27 +214,6 @@ export default function OrdersListPage() {
           </div>
         }
       />
-
-      <div className="grid gap-3 sm:grid-cols-3">
-        {tiles.map((tile) => (
-          <Card key={tile.label} className="flex items-start gap-3 p-4">
-            <span className="bg-surface-inset text-fg-muted mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full">
-              <tile.icon className="size-4" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-fg-muted text-sm">{tile.label}</p>
-              <p
-                className={`mt-0.5 text-lg font-semibold ${
-                  tile.tone === 'danger' ? 'text-danger' : 'text-fg'
-                }`}
-              >
-                {tile.value}
-              </p>
-              <p className="text-fg-subtle text-2xs">{tile.meta}</p>
-            </div>
-          </Card>
-        ))}
-      </div>
 
       <DataTable
         storageKey="orders"

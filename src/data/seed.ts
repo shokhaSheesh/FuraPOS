@@ -1721,7 +1721,6 @@ for (const order of orders) {
   order.receiptIds = [delivery.id]
 }
 
-
 /**
  * Starter reports.
  *

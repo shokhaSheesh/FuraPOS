@@ -16,7 +16,6 @@ import { EmptyState } from '@/shared/components/EmptyState'
 import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
 import { AddProductsMenu } from '@/shared/components/AddProductsMenu'
-import { ImportProductsDialog } from '@/shared/components/ImportProductsDialog'
 import { ProductPicker } from '@/shared/components/ProductPicker'
 import { ProductThumb } from '@/shared/components/ProductThumb'
 import { ScrollSentinel } from '@/shared/components/ScrollSentinel'
@@ -226,6 +225,7 @@ function useOrderRows(order: PurchaseOrder): OrderRow[] {
 /* --- step 1: add products ----------------------------------------------- */
 
 function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boolean }) {
+  const navigate = useNavigate()
   const { can } = useSession()
   const canSeeCost = can('products.cost.view')
   const update = useUpdateOrder(order.id)
@@ -247,7 +247,6 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
   const [search, setSearch] = useState('')
   const [suggesting, setSuggesting] = useState(false)
   const [adding, setAdding] = useState(false)
-  const [importing, setImporting] = useState(false)
 
   /** Whether their catalogue is already the table, so nothing needs adding. */
   const fromCatalogue = order.kind === 'supplier' && order.status === 'draft'
@@ -400,7 +399,7 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
             {editable && !fromCatalogue ? (
               <AddProductsMenu
                 onPickFromCatalogue={() => setAdding(true)}
-                onUploadSpreadsheet={() => setImporting(true)}
+                onUploadSpreadsheet={() => navigate(paths.procurement.orderImport(order.id))}
               />
             ) : null}
           </div>
@@ -445,34 +444,6 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
             }
           />
         }
-      />
-
-      <ImportProductsDialog
-        open={importing}
-        onOpenChange={setImporting}
-        quantityLabel="Ordering"
-        onImport={(imported) => {
-          // Tops up what is already on the order rather than replacing it.
-          const byVariation = new Map(order.lines.map((line) => [line.variationId, line]))
-          for (const row of imported) {
-            const existing = byVariation.get(row.variation.id)
-            byVariation.set(row.variation.id, {
-              id: existing?.id ?? `pol-${order.id}-${row.variation.id}`,
-              variationId: row.variation.id,
-              productId: row.variation.productId,
-              sku: row.variation.sku,
-              name: row.variation.fullName,
-              imageUrl: row.variation.imageUrl,
-              unit: row.variation.unit,
-              orderedQuantity: row.quantity,
-              receivedQuantity: existing?.receivedQuantity ?? 0,
-              unitCost: row.unitCost ?? existing?.unitCost ?? row.variation.costPrice,
-              costCurrency: row.currency ?? existing?.costCurrency ?? row.variation.costCurrency,
-            })
-          }
-          writeLines([...byVariation.values()])
-          toast.success(`${imported.length} products added from the spreadsheet`)
-        }}
       />
 
       <GenerateOrderModal

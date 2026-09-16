@@ -220,7 +220,6 @@ interface CatalogState {
     invoiceNumber: string,
   ) => { ok: true; receiptId: string } | { ok: false; error: string }
 
-
   updateCompany: (input: Partial<CompanySettings>) => void
 
   createBrand: (input: Omit<Brand, 'id'>) => Brand
@@ -434,7 +433,6 @@ export interface EmployeeInput {
   salary: number | null
   comment: string | null
 }
-
 
 /*
  * `passwordSetAt` and `lastSignedInAt` stay out of the form's payload: the
@@ -1486,7 +1484,6 @@ export const useDataStore = create<CatalogState>((set, get) => ({
     })
     return { ok: true, receiptId: receipt.id }
   },
-
 
   updateCompany: (input) =>
     set({ company: { ...get().company, ...input, updatedAt: new Date().toISOString() } }),

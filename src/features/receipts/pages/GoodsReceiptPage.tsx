@@ -17,7 +17,6 @@ import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
 import { ProductPicker } from '@/shared/components/ProductPicker'
 import { AddProductsMenu } from '@/shared/components/AddProductsMenu'
-import { ImportProductsDialog } from '@/shared/components/ImportProductsDialog'
 import { ScrollSentinel } from '@/shared/components/ScrollSentinel'
 import { SearchInput } from '@/shared/components/SearchInput'
 import { useInfiniteRows } from '@/shared/hooks/useInfiniteRows'
@@ -257,13 +256,13 @@ function useLineRows(receipt: GoodsReceipt): { rows: LineRow[]; fromCatalogue: b
 /* --- step 1: add products ----------------------------------------------- */
 
 function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: boolean }) {
+  const navigate = useNavigate()
   const { can } = useSession()
   const canSeeCost = can('products.cost.view')
   const update = useUpdateReceipt(receipt.id)
   const { rows: all, fromCatalogue } = useLineRows(receipt)
   const [cards, setCards] = useState(false)
   const [adding, setAdding] = useState(false)
-  const [importing, setImporting] = useState(false)
   const [search, setSearch] = useState('')
 
   // Filtering only what is drawn, never what is stored: the index on each row
@@ -437,7 +436,7 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
             {editable && !fromCatalogue ? (
               <AddProductsMenu
                 onPickFromCatalogue={() => setAdding(true)}
-                onUploadSpreadsheet={() => setImporting(true)}
+                onUploadSpreadsheet={() => navigate(paths.products.goodsReceiptImport(receipt.id))}
               />
             ) : null}
           </div>
@@ -478,37 +477,6 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
             />
           )
         }
-      />
-      <ImportProductsDialog
-        open={importing}
-        onOpenChange={setImporting}
-        quantityLabel="Actual quantity"
-        onImport={(imported) => {
-          /*
-            A spreadsheet tops up what is already on the receipt rather than
-            replacing it: half a delivery is often typed in before somebody
-            remembers the supplier sent a file for the rest.
-          */
-          const byVariation = new Map(receipt.lines.map((line) => [line.variationId, line]))
-          for (const row of imported) {
-            const existing = byVariation.get(row.variation.id)
-            byVariation.set(row.variation.id, {
-              id: existing?.id ?? `grl-${receipt.id}-${row.variation.id}`,
-              variationId: row.variation.id,
-              productId: row.variation.productId,
-              sku: row.variation.sku,
-              name: row.variation.fullName,
-              imageUrl: row.variation.imageUrl,
-              unit: row.variation.unit,
-              orderedQuantity: existing?.orderedQuantity ?? 0,
-              receivedQuantity: row.quantity,
-              unitCost: row.unitCost ?? existing?.unitCost ?? row.variation.costPrice,
-              costCurrency: row.currency ?? existing?.costCurrency ?? row.variation.costCurrency,
-            })
-          }
-          writeLines([...byVariation.values()])
-          toast.success(`${imported.length} products added from the spreadsheet`)
-        }}
       />
     </>
   )

@@ -51,6 +51,7 @@ export const paths = {
     stocktakeDetail: (id = ':stocktakeId') => `/products/stocktaking/${id}`,
     goodsReceipt: '/products/goods-receipt', // OX: /app/products/imports
     goodsReceiptDetail: (id = ':receiptId') => `/products/goods-receipt/${id}`,
+    goodsReceiptImport: (id = ':receiptId') => `/products/goods-receipt/${id}/import`,
     repricing: '/products/repricing', // OX: /app/products/reprices
     newRepricing: '/products/repricing/new',
     repricingDetail: (id = ':repricingId') => `/products/repricing/${id}`,
@@ -67,6 +68,7 @@ export const paths = {
     root: '/procurement',
     orders: '/procurement/orders', // OX: /app/procurement/orders
     orderDetail: (id = ':orderId') => `/procurement/orders/${id}`,
+    orderImport: (id = ':orderId') => `/procurement/orders/${id}/import`,
     /** The printable document for an order — outside the app shell, for saving as PDF. */
     orderDocument: (id = ':orderId') => `/procurement/orders/${id}/document`,
   },

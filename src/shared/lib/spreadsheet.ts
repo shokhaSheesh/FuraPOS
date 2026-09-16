@@ -206,13 +206,62 @@ export async function unzip(buffer: ArrayBuffer): Promise<Map<string, Uint8Array
   return files
 }
 
+/* --- encodings ------------------------------------------------------------ */
+
+/**
+ * The encodings a CSV from this part of the world actually arrives in.
+ *
+ * Excel on a Russian Windows saves CSV as windows-1251 unless told otherwise,
+ * and read as UTF-8 that file is a column of question marks — which looks like
+ * a broken export rather than a setting somebody can change.
+ */
+export const ENCODINGS = ['utf-8', 'windows-1251', 'utf-16le'] as const
+export type Encoding = (typeof ENCODINGS)[number]
+
+/**
+ * Guesses the encoding, with a confidence the screen can show.
+ *
+ * A UTF-8 BOM or a UTF-16 BOM settles it outright. Failing that, the test is
+ * whether decoding as UTF-8 produces replacement characters: it is a strict
+ * enough encoding that almost nothing else decodes cleanly by accident.
+ */
+export function detectEncoding(bytes: Uint8Array): { encoding: Encoding; confidence: number } {
+  if (bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) {
+    return { encoding: 'utf-8', confidence: 1 }
+  }
+  if (bytes[0] === 0xff && bytes[1] === 0xfe) return { encoding: 'utf-16le', confidence: 1 }
+
+  const asUtf8 = new TextDecoder('utf-8').decode(bytes)
+  const broken = (asUtf8.match(/\ufffd/g) ?? []).length
+  if (broken === 0) return { encoding: 'utf-8', confidence: 0.99 }
+
+  // Bytes in the Cyrillic range of windows-1251 are what a mis-saved Russian
+  // export is made of, so a file full of them is almost certainly that.
+  const cyrillic = [...bytes].filter((b) => b >= 0xc0).length
+  return { encoding: 'windows-1251', confidence: cyrillic / bytes.length > 0.1 ? 0.95 : 0.6 }
+}
+
 /* --- the one function screens call --------------------------------------- */
 
-/** Reads the first sheet of an .xlsx, or the whole of a .csv, as a grid. */
-export async function readSpreadsheet(file: File): Promise<Grid> {
+/**
+ * Reads the first sheet of an .xlsx, or the whole of a .csv, as a grid — plus
+ * what it had to guess, so the screen can offer to correct it.
+ */
+export async function readSpreadsheet(
+  file: File,
+  encoding?: Encoding,
+): Promise<{ grid: Grid; encoding: Encoding; confidence: number; isCsv: boolean }> {
   if (/\.csv$/i.test(file.name) || file.type === 'text/csv') {
-    const body = await file.text()
-    return parseCsv(body, sniffDelimiter(body))
+    const bytes = new Uint8Array(await file.arrayBuffer())
+    const guess = detectEncoding(bytes)
+    const used = encoding ?? guess.encoding
+    const body = new TextDecoder(used).decode(bytes)
+    return {
+      grid: parseCsv(body, sniffDelimiter(body)),
+      encoding: used,
+      confidence: encoding ? 1 : guess.confidence,
+      isCsv: true,
+    }
   }
 
   const files = await unzip(await file.arrayBuffer())
@@ -226,5 +275,11 @@ export async function readSpreadsheet(file: File): Promise<Grid> {
     .sort()[0]
   if (!sheetName) throw new Error('That spreadsheet has no sheets we can read')
 
-  return parseSheetXml(decode(sheetName), parseSharedStrings(decode('xl/sharedStrings.xml')))
+  return {
+    // An xlsx carries its own encoding inside the XML; nothing to guess.
+    grid: parseSheetXml(decode(sheetName), parseSharedStrings(decode('xl/sharedStrings.xml'))),
+    encoding: 'utf-8',
+    confidence: 1,
+    isCsv: false,
+  }
 }

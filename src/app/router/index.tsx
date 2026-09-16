@@ -29,6 +29,7 @@ const CorrectionDetailPage = lazy(() => import('@/features/corrections/pages/Cor
 const NewCorrectionPage = lazy(() => import('@/features/corrections/pages/NewCorrectionPage'))
 const GoodsReceiptListPage = lazy(() => import('@/features/receipts/pages/GoodsReceiptListPage'))
 const GoodsReceiptPage = lazy(() => import('@/features/receipts/pages/GoodsReceiptPage'))
+const ReceiptImportPage = lazy(() => import('@/features/receipts/pages/ReceiptImportPage'))
 const StocktakingListPage = lazy(() => import('@/features/stocktaking/pages/StocktakingListPage'))
 const StocktakeDetailPage = lazy(() => import('@/features/stocktaking/pages/StocktakeDetailPage'))
 const NewStocktakePage = lazy(() => import('@/features/stocktaking/pages/NewStocktakePage'))
@@ -69,6 +70,7 @@ const EmployeeDetailPage = lazy(() => import('@/features/employees/pages/Employe
 const EmployeeFormPage = lazy(() => import('@/features/employees/pages/EmployeeFormPage'))
 const OrdersListPage = lazy(() => import('@/features/orders/pages/OrdersListPage'))
 const OrderPage = lazy(() => import('@/features/orders/pages/OrderPage'))
+const OrderImportPage = lazy(() => import('@/features/orders/pages/OrderImportPage'))
 const NewSalePage = lazy(() => import('@/features/sales/pages/NewSalePage'))
 const AllSalesPage = lazy(() => import('@/features/sales/pages/SalesListPage'))
 const SaleDetailPage = lazy(() => import('@/features/sales/pages/SaleDetailPage'))
@@ -193,6 +195,10 @@ const routes: RouteObject[] = [
         element: page(<GoodsReceiptPage />, 'products.goodsReceipt.view'),
       },
       {
+        path: paths.products.goodsReceiptImport(),
+        element: page(<ReceiptImportPage />, 'products.goodsReceipt.create'),
+      },
+      {
         path: paths.products.repricing,
         element: page(<RepricingListPage />, 'products.repricing.view'),
       },
@@ -262,6 +268,10 @@ const routes: RouteObject[] = [
       {
         path: paths.procurement.orderDetail(),
         element: page(<OrderPage />, 'procurement.orders.view'),
+      },
+      {
+        path: paths.procurement.orderImport(),
+        element: page(<OrderImportPage />, 'procurement.orders.edit'),
       },
 
       // --- Personnel management -------------------------------------------

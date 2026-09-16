@@ -349,13 +349,29 @@ still.
    (a popover: cost price currency — UZS or the supplier's; show cost price by — actual or expected
    quantity) and **Post receipt** (`Оприходовать`).
 
-**Spreadsheet import is built**, in OX's three steps: choose the file → match the columns → import.
-Shared with Orders, so both read identically.
+**Spreadsheet import is built**, as **its own page** in OX's three steps: choose the file → match
+the columns → import. Shared with Orders, so both read identically.
+
+A page rather than a dialog because of step 2. A supplier's export runs to twenty-odd columns and
+every one needs a decision; inside a modal that is a strip of selects scrolling sideways in a box,
+which is exactly the screen where somebody most needs to see the whole thing at once. OX puts it on
+a page for the same reason.
+
+Step 1 follows OX's layout: a Settings card (supplier price currency, a downloadable template, the
+encoding once a CSV is chosen, then the drop zone with the chosen file named under it), and a
+separate "Spreadsheet settings" card for the first-row-is-a-heading switch. **OX's other two
+switches — auto-generate a barcode, auto-generate an SKU — are absent on purpose**: they exist
+because OX's import _creates_ products. Ours matches against ones we already carry, so there is
+nothing to generate. Worth revisiting if the client wants products created from a delivery note.
 
 - **Formats**: `.xlsx` and `.csv`, the latter with comma, semicolon or tab — a Russian or Uzbek
   Windows locale writes CSV with semicolons because the comma is its decimal separator, and
   guessing wrong puts the whole row in one column. `12 500,50` and `12,500.50` are both read as the
   same number.
+- **Encoding**, as OX asks it: UTF-8, windows-1251 or UTF-16, guessed with a confidence the screen
+  shows and overridable. Excel on a Russian Windows saves CSV as windows-1251, and read as UTF-8
+  that file is a column of question marks — which looks like a broken export rather than a setting
+  somebody can change.
 - **No dependency.** `.xlsx` is a ZIP of XML, and the platform can do both halves —
   `DecompressionStream` inflates the entries, `DOMParser` reads them. SheetJS is the obvious
   alternative and is published on npm only as a version with advisories against it; that is a poor

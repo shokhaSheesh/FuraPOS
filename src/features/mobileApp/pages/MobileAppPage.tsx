@@ -61,7 +61,6 @@ import {
 const TRUCK = {
   make: 'Mercedes-Benz',
   model: 'Actros MP3',
-  state: 'В рейсе',
   region: '60',
   plate: 'W 999 AA',
   year: '2013',
@@ -70,18 +69,19 @@ const TRUCK = {
   trailer: { model: 'WIELTON', plate: '60 W 286 AA', kind: 'Рефрижератор' },
 }
 
-const STATUSES: {
+const STATUSES = [
+  { label: 'Офлайн', hint: 'Геолокация отключена', icon: Power, tone: 'grey' },
+  { label: 'Ремонт', hint: 'Геолокация отключена', icon: Wrench, tone: 'blue' },
+  { label: 'Ожидание', hint: 'Геолокация включена', icon: Clock, tone: 'orange' },
+  { label: 'В рейсе', hint: 'Геолокация включена', icon: Truck, tone: 'green' },
+] as const satisfies readonly {
   label: string
   hint: string
   icon: LucideIcon
   tone: MobileTone
-  active?: boolean
-}[] = [
-  { label: 'Офлайн', hint: 'Геолокация отключена', icon: Power, tone: 'grey' },
-  { label: 'Ремонт', hint: 'Геолокация отключена', icon: Wrench, tone: 'blue' },
-  { label: 'Ожидание', hint: 'Геолокация включена', icon: Clock, tone: 'orange' },
-  { label: 'В рейсе', hint: 'Геолокация включена', icon: Truck, tone: 'green', active: true },
-]
+}[]
+
+type TruckStatus = (typeof STATUSES)[number]['label']
 
 const QUICK_EXPENSES: { label: string; icon: LucideIcon; tone: MobileTone }[] = [
   { label: 'Топливо', icon: Fuel, tone: 'green' },
@@ -378,8 +378,10 @@ const TABS: { label: string; icon: LucideIcon; active?: boolean }[] = [
  * behind the taps come next.
  */
 export default function MobileAppPage() {
-  /** Which operation's sheet is open, if any — the only state on the mock. */
+  /** Which operation's sheet is open, if any. */
   const [open, setOpen] = useState<OperationState | null>(null)
+  /** The truck's status. Only "В рейсе" has a trip under way to show. */
+  const [status, setStatus] = useState<TruckStatus>('В рейсе')
 
   return (
     <>
@@ -408,12 +410,12 @@ export default function MobileAppPage() {
           }
         >
           <div className="pt-3" />
-          <TruckCard />
-          <Status />
+          <TruckCard status={status} />
+          <Status value={status} onChange={setStatus} />
           <QuickExpenses />
           <NewTrip />
           <CaptureOdometer />
-          <CurrentTrip />
+          {status === 'В рейсе' ? <CurrentTrip /> : null}
           <Statistics />
           <Finance onOpen={setOpen} />
           <SpendSplit />
@@ -433,7 +435,9 @@ const SHEETS: Record<OperationState, (props: { onClose: () => void }) => React.R
   edited: EditedOperationSheet,
 }
 
-function TruckCard() {
+function TruckCard({ status }: { status: TruckStatus }) {
+  const tone = STATUSES.find((entry) => entry.label === status)!.tone
+
   return (
     <PhoneCard padded={false}>
       <div className="flex gap-3 p-3">
@@ -451,10 +455,10 @@ function TruckCard() {
             </p>
             <span
               className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
-              style={{ background: TONES.green.soft, color: TONES.green.fg }}
+              style={{ background: TONES[tone].soft, color: TONES[tone].fg }}
             >
-              <span className="size-1.5 rounded-full" style={{ background: TONES.green.fg }} />
-              {TRUCK.state}
+              <span className="size-1.5 rounded-full" style={{ background: TONES[tone].fg }} />
+              {status}
             </span>
           </div>
           <Plate />
@@ -529,7 +533,13 @@ function Spec({ icon: Icon, value, label }: { icon: LucideIcon; value: string; l
   )
 }
 
-function Status() {
+function Status({
+  value,
+  onChange,
+}: {
+  value: TruckStatus
+  onChange: (status: TruckStatus) => void
+}) {
   return (
     <PhoneSection>
       <PhoneCard>
@@ -537,27 +547,33 @@ function Status() {
           Статус
         </p>
         <div className="mt-2.5 grid grid-cols-4 gap-2">
-          {STATUSES.map((status) => (
-            <div
-              key={status.label}
-              className="rounded-2xl border p-2 text-center"
-              style={{
-                background: TONES[status.tone].soft,
-                borderColor: status.active ? TONES[status.tone].fg : 'transparent',
-              }}
-            >
-              <status.icon className="mx-auto size-5" style={{ color: TONES[status.tone].fg }} />
-              <p className="mt-1.5 text-[11px] font-bold" style={{ color: M.text }}>
-                {status.label}
-              </p>
-              <p
-                className="mt-0.5 text-[9px] leading-tight"
-                style={{ color: TONES[status.tone].fg }}
+          {STATUSES.map((status) => {
+            const active = status.label === value
+            return (
+              <button
+                type="button"
+                key={status.label}
+                onClick={() => onChange(status.label)}
+                aria-pressed={active}
+                className="rounded-2xl border p-2 text-center"
+                style={{
+                  background: TONES[status.tone].soft,
+                  borderColor: active ? TONES[status.tone].fg : 'transparent',
+                }}
               >
-                {status.hint}
-              </p>
-            </div>
-          ))}
+                <status.icon className="mx-auto size-5" style={{ color: TONES[status.tone].fg }} />
+                <p className="mt-1.5 text-[11px] font-bold" style={{ color: M.text }}>
+                  {status.label}
+                </p>
+                <p
+                  className="mt-0.5 text-[9px] leading-tight"
+                  style={{ color: TONES[status.tone].fg }}
+                >
+                  {status.hint}
+                </p>
+              </button>
+            )
+          })}
         </div>
       </PhoneCard>
     </PhoneSection>
@@ -596,9 +612,6 @@ function QuickExpenses() {
 
 /** The trip under way: where it goes, how far along it is, and where the truck is now. */
 function CurrentTrip() {
-  const inTrip = STATUSES.find((status) => status.active)?.label === 'В рейсе'
-  if (!inTrip) return null
-
   return (
     <PhoneSection>
       <div className="mb-2 flex items-center gap-2 px-4">

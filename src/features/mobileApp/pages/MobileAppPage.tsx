@@ -4,6 +4,7 @@ import {
   ArrowUpRight,
   BarChart3,
   Calendar,
+  Camera,
   ChevronRight,
   Clock,
   Coins,
@@ -383,11 +384,11 @@ export default function MobileAppPage() {
           <TruckCard />
           <Status />
           <QuickExpenses />
+          <CaptureOdometer />
           <Statistics />
           <Finance onOpen={setOpen} />
           <SpendSplit />
           <Trips />
-          <Mileage />
           <AssignmentHistory />
           <Documents />
         </Phone>
@@ -561,6 +562,33 @@ function QuickExpenses() {
             </div>
           ))}
         </div>
+      </PhoneCard>
+    </PhoneSection>
+  )
+}
+
+/** Photograph the odometer — the one thing only the driver in the cab can do. */
+function CaptureOdometer() {
+  return (
+    <PhoneSection>
+      <PhoneCard>
+        <button type="button" className="flex w-full items-center gap-3 text-left">
+          <span
+            className="grid size-12 shrink-0 place-items-center rounded-2xl"
+            style={{ background: `linear-gradient(135deg, ${TONES.orange.fg}, #FFD54A)` }}
+          >
+            <Camera className="size-5" style={{ color: '#FFFFFF' }} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[15px] font-bold" style={{ color: M.text }}>
+              Зафиксировать пробег
+            </span>
+            <span className="block text-[13px]" style={{ color: M.textSubtle }}>
+              Последний: {TRUCK.odometer}
+            </span>
+          </span>
+          <ChevronRight className="size-5 shrink-0" style={{ color: M.textSubtle }} />
+        </button>
       </PhoneCard>
     </PhoneSection>
   )
@@ -985,60 +1013,10 @@ function Place({ country, city }: { country: Country; city: string }) {
       className="inline-flex min-w-0 items-center gap-1 text-[12.5px] whitespace-nowrap"
       style={{ color: M.text }}
     >
-      <Flag country={country} />
       <span style={{ color: M.textMuted }}>{country}</span>
       <span style={{ color: M.textSubtle }}>·</span>
       <span className="truncate font-semibold">{city}</span>
     </span>
-  )
-}
-
-/** Drawn rather than an emoji, so every flag is the same size on every platform. */
-function Flag({ country }: { country: Country }) {
-  const stripes: Record<Country, string[]> = {
-    UZ: ['#0099B5', '#FFFFFF', '#1EB53A'],
-    DE: ['#000000', '#DD0000', '#FFCE00'],
-    KZ: ['#00AFCA', '#00AFCA', '#00AFCA'],
-  }
-  return (
-    <span
-      className="relative flex h-3.5 w-5 shrink-0 flex-col overflow-hidden rounded-[3px] border"
-      style={{ borderColor: M.border }}
-    >
-      {stripes[country].map((colour, index) => (
-        <span key={index} className="flex-1" style={{ background: colour }} />
-      ))}
-      {country === 'KZ' ? (
-        <span
-          className="absolute top-1/2 left-1/2 size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
-          style={{ background: '#FEC50C' }}
-        />
-      ) : null}
-    </span>
-  )
-}
-
-function Mileage() {
-  return (
-    <PhoneSection title="История пробега">
-      <PhoneCard>
-        <div className="flex items-center gap-2">
-          <Gauge className="size-4" style={{ color: M.textSubtle }} />
-          <span className="flex-1 text-[12px]" style={{ color: M.textMuted }}>
-            Текущий пробег
-          </span>
-          <span className="text-[13px] font-bold" style={{ color: M.text }}>
-            200 000 км
-          </span>
-        </div>
-        <p
-          className="mt-3 border-t pt-3 text-center text-[11px]"
-          style={{ borderColor: M.divider, color: M.textSubtle }}
-        >
-          История пробега пока пуста
-        </p>
-      </PhoneCard>
-    </PhoneSection>
   )
 }
 

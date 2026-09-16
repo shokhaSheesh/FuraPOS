@@ -229,6 +229,10 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
           i === index ? { ...line, receivedQuantity: quantity } : line,
         ),
       ),
+    onCostChange: (index, unitCost) =>
+      writeLines(receipt.lines.map((line, i) => (i === index ? { ...line, unitCost } : line))),
+    onCurrencyChange: (index, costCurrency) =>
+      writeLines(receipt.lines.map((line, i) => (i === index ? { ...line, costCurrency } : line))),
     onRemove: (index) => writeLines(receipt.lines.filter((_, i) => i !== index)),
   })
 

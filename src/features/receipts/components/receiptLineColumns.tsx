@@ -3,13 +3,19 @@ import { NumberField } from '@/shared/components/NumberField'
 import { ProductThumb } from '@/shared/components/ProductThumb'
 import type { TableColumn } from '@/shared/components/table/features'
 import { Button } from '@/shared/ui/Button'
+import { Select } from '@/shared/ui/Select'
 import { formatMoney, formatNumber } from '@/shared/lib/format'
 import {
   buildProductFieldColumns,
   PRODUCT_FIELD_COLUMN_IDS,
 } from '@/features/products/components/productFieldColumns'
 import type { VariationRow } from '@/features/products/model/product'
-import type { ReceiptLine } from '../model/receipt'
+import type { Currency, ReceiptLine } from '../model/receipt'
+
+const CURRENCIES = [
+  { value: 'USD', label: 'USD' },
+  { value: 'UZS', label: 'UZS' },
+]
 
 export interface LineRow extends ReceiptLine {
   /** Where the row sits, so an edit knows which line it changed. */
@@ -95,6 +101,8 @@ export function buildReceiptLineColumns({
   canSeeCost,
   cards,
   onQuantityChange,
+  onCostChange,
+  onCurrencyChange,
   onRemove,
 }: {
   editable: boolean
@@ -102,6 +110,8 @@ export function buildReceiptLineColumns({
   /** Collapses the identity columns into one rich cell, as OX's grid view does. */
   cards: boolean
   onQuantityChange: (index: number, quantity: number) => void
+  onCostChange: (index: number, unitCost: number) => void
+  onCurrencyChange: (index: number, currency: Currency) => void
   onRemove: (index: number) => void
 }): TableColumn<LineRow>[] {
   const { identity, rest } = split(
@@ -158,19 +168,48 @@ export function buildReceiptLineColumns({
           formatNumber(row.original.receivedQuantity ?? row.original.orderedQuantity)
         ),
     },
+    /*
+      What the supplier charged for *this* delivery — not the catalogue's last
+      known cost, which is only what it is pre-filled from. It is the one
+      figure a receipt exists to capture: everything downstream, the landed
+      cost and the debt and the margin on every screen after it, is built on
+      this number, and the number it starts as is the one most likely to be
+      stale.
+    */
     ...(canSeeCost
       ? ([
           {
             id: 'lineCost',
             header: 'Invoiced price',
+            enableHiding: false,
             meta: { align: 'right' as const },
-            cell: ({ row }) => (
-              <span className="tabular-nums">
-                {row.original.costCurrency === 'USD'
-                  ? `${row.original.unitCost.toFixed(2)} USD`
-                  : formatMoney(row.original.unitCost)}
-              </span>
-            ),
+            cell: ({ row }) =>
+              editable ? (
+                <div className="flex items-center justify-end gap-1.5">
+                  <NumberField
+                    className="w-28"
+                    nullable={false}
+                    min={0}
+                    step="any"
+                    aria-label={`Invoiced price of ${row.original.name}`}
+                    value={row.original.unitCost}
+                    onChange={(v) => onCostChange(row.original.index, v ?? 0)}
+                  />
+                  <Select
+                    className="w-20"
+                    aria-label={`Invoiced currency of ${row.original.name}`}
+                    value={row.original.costCurrency}
+                    onChange={(v) => onCurrencyChange(row.original.index, v as Currency)}
+                    options={CURRENCIES}
+                  />
+                </div>
+              ) : (
+                <span className="tabular-nums">
+                  {row.original.costCurrency === 'USD'
+                    ? `${row.original.unitCost.toFixed(2)} USD`
+                    : formatMoney(row.original.unitCost)}
+                </span>
+              ),
           },
         ] as TableColumn<LineRow>[])
       : []),

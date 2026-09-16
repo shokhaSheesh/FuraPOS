@@ -5,6 +5,7 @@ import {
   basisQuantity,
   landedTotal,
   landedUnitCost,
+  invoicedQuantity,
   landedUnitCostOn,
   paidTotal,
   receiptDebt,
@@ -397,6 +398,22 @@ describe('what is still owed on a delivery', () => {
     // the supplier, so the debt does not quietly shrink by it.
     const short = line({ orderedQuantity: 10, receivedQuantity: 8, unitCost: 100 })
     expect(receiptDebt({ lines: [short], payments: [] }, USD_RATE)).toBe(1000)
+  })
+
+  it('invoices a line nobody ordered at what turned up', () => {
+    // A line typed straight onto the receipt has no expected quantity: it was
+    // never ordered. Reading that zero as "nothing was invoiced" left the
+    // whole delivery owing nothing, which is how a supplier stops being paid.
+    const walkUp = line({ orderedQuantity: 0, receivedQuantity: 3, unitCost: 100 })
+    expect(invoicedQuantity(walkUp)).toBe(3)
+    expect(receiptDebt({ lines: [walkUp], payments: [] }, USD_RATE)).toBe(300)
+  })
+
+  it('still invoices an ordered line at what was ordered', () => {
+    // The fallback must not reach a line that *was* ordered, or every short
+    // delivery quietly forgives itself.
+    const ordered = line({ orderedQuantity: 10, receivedQuantity: 8, unitCost: 100 })
+    expect(invoicedQuantity(ordered)).toBe(10)
   })
 
   it('never goes below zero when more was paid than invoiced', () => {

@@ -156,6 +156,19 @@ export const supplierTotal = (receipt: Pick<GoodsReceipt, 'lines'>, usdRate: num
   receipt.lines.reduce((sum, line) => sum + lineSupplierValue(line, usdRate), 0)
 
 /**
+ * How many the supplier's paperwork says they sent.
+ *
+ * Expected, when a purchase order stands behind the delivery and says what was
+ * ordered — then a short delivery is visible as the gap between this and what
+ * was counted. **Zero means nothing was expected**, not that nothing was
+ * invoiced: a line typed straight onto the receipt was never ordered, so what
+ * turned up *is* what is being charged for, and falling back to it is the only
+ * reading that does not invoice the delivery at nothing.
+ */
+export const invoicedQuantity = (line: ReceiptLine) =>
+  line.orderedQuantity > 0 ? line.orderedQuantity : (line.receivedQuantity ?? 0)
+
+/**
  * What the supplier *invoiced*, whatever turned up — the figure a debt is built
  * from.
  *
@@ -166,7 +179,7 @@ export const supplierTotal = (receipt: Pick<GoodsReceipt, 'lines'>, usdRate: num
  */
 export const supplierInvoicedTotal = (receipt: Pick<GoodsReceipt, 'lines'>, usdRate: number) =>
   receipt.lines.reduce(
-    (sum, line) => sum + line.orderedQuantity * toUzs(line.unitCost, line.costCurrency, usdRate),
+    (sum, line) => sum + invoicedQuantity(line) * toUzs(line.unitCost, line.costCurrency, usdRate),
     0,
   )
 

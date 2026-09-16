@@ -4,6 +4,7 @@ import { DropdownMenu } from 'radix-ui'
 import {
   ArrowLeft,
   ChevronDown,
+  FileText,
   LayoutGrid,
   List,
   PackageCheck,
@@ -118,6 +119,16 @@ export default function GoodsReceiptPage() {
           Receipt {receipt.number} — {receipt.locationName}
         </h1>
         <Badge tone={receiptStatusTone(receipt.status)}>{receiptStatusLabel(receipt.status)}</Badge>
+        {/* What this delivery was checked against. Without it the expected
+            quantities on the review step come from nowhere a reader can see. */}
+        {receipt.orderId && receipt.orderNumber ? (
+          <Button variant="link" size="sm" className="h-auto px-0" asChild>
+            <Link to={paths.procurement.orderDetail(receipt.orderId)}>
+              <FileText />
+              Against order {receipt.orderNumber}
+            </Link>
+          </Button>
+        ) : null}
       </div>
 
       <Steps steps={STEPS} current={step} onSelect={setStep} selectable wide />
@@ -191,8 +202,14 @@ function useLineRows(receipt: GoodsReceipt): { rows: LineRow[]; fromCatalogue: b
       }
     }
 
+    /*
+      Only while the receipt is still being built. Once it is posted the
+      delivery is a fact, and the question changes from "how many of each of
+      these arrived" to "what was in it" — showing everything the supplier
+      sells alongside eight received lines answers neither.
+    */
     const catalogue =
-      receipt.kind === 'supplier' && receipt.supplierId
+      receipt.status === 'draft' && receipt.kind === 'supplier' && receipt.supplierId
         ? catalogueFor(supplierProducts, variations, receipt.supplierId)
         : []
 
@@ -226,7 +243,15 @@ function useLineRows(receipt: GoodsReceipt): { rows: LineRow[]; fromCatalogue: b
     )
 
     return { rows, fromCatalogue: true }
-  }, [receipt.lines, receipt.kind, receipt.supplierId, variations, locations, supplierProducts])
+  }, [
+    receipt.lines,
+    receipt.kind,
+    receipt.status,
+    receipt.supplierId,
+    variations,
+    locations,
+    supplierProducts,
+  ])
 }
 
 /* --- step 1: add products ----------------------------------------------- */

@@ -318,9 +318,11 @@ still.
    code in a "Their code" column and their asking price beside it. Typing a quantity is what puts a
    row on the receipt; clearing it takes it off. Nobody searches for anything, because that is not
    how a delivery is checked in — their invoice is in one hand and their catalogue is on the screen.
-   Lines they list but we have never stocked show as "new to us" and cannot be received: there is no
-   product to add the stock to, and inventing one from a delivery note is how a catalogue fills with
-   duplicates. A line already received that they have since dropped from their price list stays on
+   It is the **unfinished** receipt that works this way: once posted, the delivery is a fact and the
+   question changes from "how many of each of these arrived" to "what was in it", so a completed
+   receipt shows only its own lines. Lines they list but we have never stocked show as "new to us"
+   and cannot be received: there is no product to add the stock to, and inventing one from a
+   delivery note is how a catalogue fills with duplicates. A line already received that they have since dropped from their price list stays on
    screen, at the top — stock has moved against it, and a row nobody can see is a row nobody can
    correct. Market and China receipts have no catalogue of ours to start from, so they keep the
    empty screen and the Add products menu. OX's picker turns the same grid into a

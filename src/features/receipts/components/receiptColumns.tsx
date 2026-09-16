@@ -1,7 +1,10 @@
+import { Link } from 'react-router'
 import { Ban, Download } from 'lucide-react'
 import { Badge } from '@/shared/ui/Badge'
 import { RowActions } from '@/shared/components/RowActions'
 import type { TableColumn } from '@/shared/components/table/features'
+import { paths } from '@/shared/config/paths'
+import { PROCUREMENT_KINDS } from '@/shared/types'
 import { formatDateTime, formatMoney, formatNumber, formatPercent } from '@/shared/lib/format'
 import {
   canCancel,
@@ -116,12 +119,42 @@ export function buildReceiptColumns({
       ),
     },
     {
+      accessorKey: 'kind',
+      header: 'Type',
+      cell: ({ row }) => (
+        <Badge tone="neutral">
+          {PROCUREMENT_KINDS.find((k) => k.value === row.original.kind)?.label ?? row.original.kind}
+        </Badge>
+      ),
+    },
+    {
       accessorKey: 'supplierName',
       header: 'Suppliers',
       enableHiding: false,
       // A market or China buy has no supplier record, so the source phrase
       // stands in — an unlabelled dash would read as "we don't know".
       cell: ({ row }) => <Badge tone="neutral">{receiptSource(row.original)}</Badge>,
+    },
+    /*
+      Which order this delivery came against, when one did. A receipt with no
+      order behind it is the ordinary case — goods turn up and somebody books
+      them in — so an empty cell here is not a gap in the data.
+    */
+    {
+      accessorKey: 'orderNumber',
+      header: 'Order',
+      cell: ({ row }) =>
+        row.original.orderId && row.original.orderNumber ? (
+          <Link
+            to={paths.procurement.orderDetail(row.original.orderId)}
+            onClick={(event) => event.stopPropagation()}
+            className="text-primary text-2xs font-mono hover:underline"
+          >
+            {row.original.orderNumber}
+          </Link>
+        ) : (
+          <Empty />
+        ),
     },
     {
       accessorKey: 'comment',

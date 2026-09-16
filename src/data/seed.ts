@@ -1696,6 +1696,33 @@ export const orders: PurchaseOrder[] = Array.from({ length: 11 }, (_, index) => 
   } satisfies PurchaseOrder
 })
 
+/*
+  Tie some seeded deliveries back to the orders they could plausibly have come
+  against, so both halves of a purchase exist in the demo: an order that was
+  delivered, and a receipt that knows what it was checked against.
+
+  A post-pass rather than part of either generator, because each was built
+  without knowing about the other, and it consumes no `random()` draws —
+  matching is by supplier and position. The RNG stream is shared across the
+  whole seed, so a draw here would shift every value generated after it.
+
+  Only orders that actually took a delivery are linked. A `sent` order claiming
+  a receipt would be lying about its own status.
+*/
+for (const order of orders) {
+  if (order.status !== 'partial' && order.status !== 'received') continue
+  const delivery = receipts.find(
+    (receipt) =>
+      receipt.orderId === null &&
+      receipt.status === 'received' &&
+      receipt.supplierId === order.supplierId,
+  )
+  if (!delivery) continue
+  delivery.orderId = order.id
+  delivery.orderNumber = order.number
+  order.receiptIds = [delivery.id]
+}
+
 /**
  * Reorder schedules.
  *

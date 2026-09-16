@@ -196,18 +196,6 @@ export function buildReceiptLineColumns({
     : identity
 
   const own: TableColumn<LineRow>[] = [
-    // Their code, not ours: it is what their invoice is written in, and
-    // matching a delivery against paperwork means reading their column.
-    {
-      id: 'supplierSku',
-      header: 'Their code',
-      cell: ({ row }) =>
-        row.original.supplierSku ? (
-          <span className="text-2xs font-mono">{row.original.supplierSku}</span>
-        ) : (
-          <span className="text-fg-subtle">—</span>
-        ),
-    },
     {
       id: 'count',
       header: 'Actual quantity',

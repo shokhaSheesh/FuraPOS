@@ -156,22 +156,27 @@ export function IconTile({
   icon: Icon,
   tone = 'neutral',
   size = 'md',
+  shape = 'circle',
 }: {
   icon: React.ComponentType<{ className?: string }>
-  tone?: 'neutral' | 'success' | 'warning' | 'danger' | 'info'
+  tone?: 'neutral' | 'success' | 'warning' | 'danger' | 'info' | 'primary'
   size?: 'sm' | 'md'
+  /** The quick actions are squircles, the transaction list is round. */
+  shape?: 'circle' | 'square'
 }) {
   const tones = {
     neutral: 'bg-surface-muted text-fg-muted',
     success: 'bg-success-soft text-success',
     warning: 'bg-warning-soft text-warning',
     danger: 'bg-danger-soft text-danger',
-    info: 'bg-primary-soft text-primary',
+    info: 'bg-info-soft text-info',
+    primary: 'bg-primary-soft text-primary',
   }
   return (
     <span
       className={cn(
-        'grid place-items-center rounded-full',
+        'grid place-items-center',
+        shape === 'circle' ? 'rounded-full' : 'rounded-2xl',
         size === 'sm' ? 'size-9' : 'size-12',
         tones[tone],
       )}

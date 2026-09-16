@@ -15,6 +15,7 @@ import {
   Gauge,
   Map,
   Milestone,
+  Plus,
   MoreHorizontal,
   Power,
   Receipt,
@@ -384,6 +385,7 @@ export default function MobileAppPage() {
           <TruckCard />
           <Status />
           <QuickExpenses />
+          <NewTrip />
           <CaptureOdometer />
           <Statistics />
           <Finance onOpen={setOpen} />
@@ -562,6 +564,27 @@ function QuickExpenses() {
             </div>
           ))}
         </div>
+      </PhoneCard>
+    </PhoneSection>
+  )
+}
+
+/** Starting a trip is the driver's other big action, so it gets the yellow. */
+function NewTrip() {
+  return (
+    <PhoneSection>
+      <PhoneCard>
+        <p className="text-[15px] font-bold" style={{ color: M.text }}>
+          Рейсы
+        </p>
+        <button
+          type="button"
+          className="mt-2.5 flex h-12 w-full items-center justify-center gap-2 rounded-2xl text-[15px] font-bold"
+          style={{ background: M.cta, color: M.text }}
+        >
+          <Plus className="size-4" />
+          Новый рейс
+        </button>
       </PhoneCard>
     </PhoneSection>
   )

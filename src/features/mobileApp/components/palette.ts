@@ -18,6 +18,8 @@ export const M = {
   textMuted: '#6B7280',
   textSubtle: '#9CA3AF',
   frame: '#E3E6EB',
+  /** The app's call-to-action yellow, which carries black text. */
+  cta: '#F5E14B',
 } as const
 
 export type MobileTone = 'green' | 'blue' | 'orange' | 'yellow' | 'red' | 'purple' | 'grey'

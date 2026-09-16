@@ -1,4 +1,4 @@
-import { useRef, useState, type PointerEvent, type ReactNode } from 'react'
+import { useMemo, useRef, useState, type PointerEvent, type ReactNode } from 'react'
 import {
   useTable,
   type ColumnVisibilityState,
@@ -70,6 +70,47 @@ function readStoredVisibility(
   }
 }
 
+/** The order the user dragged columns into, as column ids. Unknown ids are ignored. */
+type ColumnOrder = string[]
+
+function readStoredOrder(storageKey: string | undefined): ColumnOrder {
+  if (!storageKey) return []
+  try {
+    return (JSON.parse(localStorage.getItem(`order:${storageKey}`) ?? 'null') as ColumnOrder) ?? []
+  } catch {
+    return []
+  }
+}
+
+/** A column's stable id: its own, or the field it reads. */
+const columnId = <T extends RowData>(column: TableColumn<T>): string =>
+  (column.id ?? (column as { accessorKey?: string }).accessorKey ?? '') as string
+
+/**
+ * Applies a stored order: columns the user has arranged first, in their order,
+ * then anything added since, in the order the screen declared it. The actions
+ * column is always last — it is not a column of data and cannot be dragged.
+ */
+function applyOrder<T extends RowData>(
+  columns: TableColumn<T>[],
+  order: ColumnOrder,
+): TableColumn<T>[] {
+  if (order.length === 0) return columns
+  const byId = new Map(columns.map((column) => [columnId(column), column]))
+  const arranged = order.flatMap((id) => {
+    const column = byId.get(id)
+    if (!column) return []
+    byId.delete(id)
+    return [column]
+  })
+  const rest = columns.filter((column) => byId.has(columnId(column)))
+  const all = [...arranged, ...rest]
+  const actions = all.filter((column) => columnId(column) === 'actions')
+  return actions.length
+    ? [...all.filter((column) => columnId(column) !== 'actions'), ...actions]
+    : all
+}
+
 /** Widths the user dragged, per column id, in pixels. Absent means "fit the content". */
 type ColumnWidths = Record<string, number>
 
@@ -118,6 +159,31 @@ export function DataTable<T extends RowData>({
     content, as before; a double-click on the edge puts it back to that.
   */
   const [widths, setWidths] = useState<ColumnWidths>(() => readStoredWidths(storageKey))
+  /*
+    Columns can also be dragged into a different order by their heading, which
+    is remembered beside the widths. A table nobody has rearranged keeps the
+    order the screen declared.
+  */
+  const [order, setOrder] = useState<ColumnOrder>(() => readStoredOrder(storageKey))
+  const [dragging, setDragging] = useState<string | null>(null)
+  const [dropTarget, setDropTarget] = useState<string | null>(null)
+
+  const ordered = useMemo(() => applyOrder(columns, order), [columns, order])
+
+  const moveColumn = (from: string, to: string) => {
+    if (from === to) return
+    const ids = ordered.map(columnId).filter((id) => id !== 'actions')
+    const next = ids.filter((id) => id !== from)
+    next.splice(next.indexOf(to), 0, from)
+    setOrder(next)
+    if (storageKey) {
+      try {
+        localStorage.setItem(`order:${storageKey}`, JSON.stringify(next))
+      } catch {
+        // Storage can be unavailable; the order still applies for this visit.
+      }
+    }
+  }
   const drag = useRef<{ id: string; startX: number; startWidth: number } | null>(null)
 
   const saveWidths = (next: ColumnWidths) => {
@@ -174,7 +240,7 @@ export function DataTable<T extends RowData>({
   const table = useTable({
     features: tableFeatureSet,
     data,
-    columns,
+    columns: ordered,
     getRowId,
     manualSorting: true,
     state: { sorting, columnVisibility },
@@ -249,15 +315,47 @@ export function DataTable<T extends RowData>({
                   const sorted = header.column.getIsSorted()
                   const alignRight = header.column.columnDef.meta?.align === 'right'
                   const resizable = header.column.id !== 'actions'
+                  const draggable = header.column.id !== 'actions'
                   return (
                     <th
                       key={header.id}
                       scope="col"
+                      draggable={draggable}
+                      onDragStart={(event) => {
+                        setDragging(header.column.id)
+                        event.dataTransfer.effectAllowed = 'move'
+                        // Firefox needs data set for a drag to start at all.
+                        event.dataTransfer.setData('text/plain', header.column.id)
+                      }}
+                      onDragOver={(event) => {
+                        if (!dragging || !draggable) return
+                        event.preventDefault()
+                        setDropTarget(header.column.id)
+                      }}
+                      onDragLeave={() =>
+                        setDropTarget((current) => (current === header.column.id ? null : current))
+                      }
+                      onDrop={(event) => {
+                        event.preventDefault()
+                        if (dragging && draggable) moveColumn(dragging, header.column.id)
+                        setDragging(null)
+                        setDropTarget(null)
+                      }}
+                      onDragEnd={() => {
+                        setDragging(null)
+                        setDropTarget(null)
+                      }}
+                      title={draggable ? 'Drag to move this column' : undefined}
                       style={widthStyle(widths[header.column.id])}
                       className={cn(
                         'text-2xs text-fg-muted group/th relative h-10 px-3 font-semibold tracking-wide whitespace-nowrap uppercase',
                         widths[header.column.id] !== undefined && 'overflow-hidden text-ellipsis',
                         alignRight ? 'text-right' : 'text-left',
+                        draggable && 'cursor-grab active:cursor-grabbing',
+                        dragging === header.column.id && 'opacity-50',
+                        dropTarget === header.column.id &&
+                          dragging !== header.column.id &&
+                          'border-primary border-l-2',
                       )}
                     >
                       {header.isPlaceholder ? null : canSort ? (

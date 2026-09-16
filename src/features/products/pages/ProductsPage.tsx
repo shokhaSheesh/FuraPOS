@@ -290,11 +290,6 @@ export default function ProductsPage() {
         }
         pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
         onPaginationChange={({ page, pageSize }) => setQuery({ page, pageSize })}
-        sorting={query.sort ? [{ id: String(query.sort), desc: query.order === 'desc' }] : []}
-        onSortingChange={(sorting) => {
-          const next = sorting[0]
-          setQuery({ sort: next?.id ?? null, order: next ? (next.desc ? 'desc' : 'asc') : null })
-        }}
         onRowClick={(variation) => navigate(paths.products.detail(variation.productId))}
         emptyState={
           isFiltered ? (

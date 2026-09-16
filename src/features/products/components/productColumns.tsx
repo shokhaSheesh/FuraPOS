@@ -1,6 +1,7 @@
 import { Pencil, Trash2 } from 'lucide-react'
 import { Badge } from '@/shared/ui/Badge'
 import { RowActions } from '@/shared/components/RowActions'
+import { ProductThumb } from '@/shared/components/ProductThumb'
 import type { TableColumn } from '@/shared/components/table/features'
 import { formatMoney, formatNumber } from '@/shared/lib/format'
 import { plainText } from '@/shared/ui/RichTextEditor'
@@ -38,6 +39,13 @@ export function buildProductColumns({
   stockColumnsFor?: readonly { id: string; name: string }[]
 }): TableColumn<VariationRow>[] {
   return [
+    // Рисунок
+    {
+      id: 'image',
+      header: 'Image',
+      enableSorting: false,
+      cell: ({ row }) => <ProductThumb src={row.original.imageUrl} size="sm" />,
+    },
     // Штрих-код
     {
       accessorKey: 'barcode',

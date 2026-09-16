@@ -36,12 +36,21 @@ Do not rename a nav item or invent a screen without updating that map first.
    KPIs are added (sales, average check, gross margin), and OX's welcome banner is replaced by a
    "Needs attention" list. Widget-by-widget correspondence is in the Dashboard section of
    docs/OX-NAVIGATION-MAP.md.
-2. **Sales** — one ledger plus **New sale**, the manual sale-entry screen. The lifecycle views are
+2. **Sales** — **Offline sales** (the ledger, plus **New sale** for entering one by hand),
+   **Online sales** (the e-commerce feed, read-only), **Partner orders** and **Cash shifts**.
+
+   **Partner orders** are orders another business has placed _with us_ — the mirror of
+   Procurement → Orders. They place it, we accept it and ship it in as many loads as it takes, and
+   they tell us what arrived. It is a module rather than a sale status because a sale is an event
+   and this has a life; see `src/features/partnerOrders/model/partnerOrder.ts`.
+
+   The ledger: The lifecycle views are
    counted filter chips on the ledger (`/sales/orders?status=open`), not separate nav entries. The status
    set is OX's, verbatim: open / new / processed / delivering / delivered / completed / postponed /
    deleted — a fulfilment lifecycle, not POS leftovers. Deleted sales are excluded from All sales
    and its totals, so a cancelled sale never counts toward revenue.
    Field-by-field correspondence with OX is in docs/OX-NAVIGATION-MAP.md.
+
 3. **Products / Services** — product list, transfers, corrections, stocktaking, goods receipt,
    repricing, print templates, and **suppliers** (which OX keeps here, not under Procurement).
    **The sellable unit is a variation, not a product.** A product says what a part is; a variation

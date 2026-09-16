@@ -58,8 +58,13 @@ export const navigation: NavSection[] = [
     label: 'Sales',
     icon: ShoppingCart,
     items: [
-      { label: 'All sales', to: paths.sales.orders, permission: 'sales.orders.view' },
+      { label: 'Offline sales', to: paths.sales.orders, permission: 'sales.orders.view' },
       { label: 'Online sales', to: paths.sales.online, permission: 'sales.online.view' },
+      {
+        label: 'Partner orders',
+        to: paths.sales.partnerOrders,
+        permission: 'sales.partnerOrders.view',
+      },
       { label: 'Cash shifts', to: paths.sales.shifts, permission: 'sales.cashShifts.view' },
     ],
   },

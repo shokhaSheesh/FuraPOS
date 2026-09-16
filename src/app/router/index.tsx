@@ -48,6 +48,10 @@ const CategoriesSettingsPage = lazy(
   () => import('@/features/settings/pages/CategoriesSettingsPage'),
 )
 const OrderDocumentPage = lazy(() => import('@/features/orders/pages/OrderDocumentPage'))
+const PartnerOrdersListPage = lazy(
+  () => import('@/features/partnerOrders/pages/PartnerOrdersListPage'),
+)
+const PartnerOrderPage = lazy(() => import('@/features/partnerOrders/pages/PartnerOrderPage'))
 const OnlineSalesListPage = lazy(() => import('@/features/onlineSales/pages/OnlineSalesListPage'))
 const OnlineSaleDetailPage = lazy(() => import('@/features/onlineSales/pages/OnlineSaleDetailPage'))
 const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage'))
@@ -135,6 +139,14 @@ const routes: RouteObject[] = [
       { path: paths.sales.newSale, element: page(<NewSalePage />, 'sales.orders.create') },
       { path: paths.sales.orders, element: page(<AllSalesPage />, 'sales.orders.view') },
       { path: paths.sales.orderDetail(), element: page(<SaleDetailPage />, 'sales.orders.view') },
+      {
+        path: paths.sales.partnerOrders,
+        element: page(<PartnerOrdersListPage />, 'sales.partnerOrders.view'),
+      },
+      {
+        path: paths.sales.partnerOrderDetail(),
+        element: page(<PartnerOrderPage />, 'sales.partnerOrders.view'),
+      },
       {
         path: paths.sales.online,
         element: page(<OnlineSalesListPage />, 'sales.online.view'),

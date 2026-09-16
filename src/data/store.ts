@@ -68,6 +68,11 @@ import {
   type ReceiptStatus,
 } from '@/features/receipts/model/receipt'
 import type { ProcurementKind } from '@/shared/types'
+import {
+  statusAfterShipping,
+  type PartnerOrder,
+  type PartnerOrderLine,
+} from '@/features/partnerOrders/model/partnerOrder'
 import type { Sale, SaleLine, SaleStatus } from '@/features/sales/model/sale'
 import {
   brands,
@@ -79,6 +84,7 @@ import {
   USD_RATE,
   corrections as seedCorrections,
   receipts as seedReceipts,
+  partnerOrders as seedPartnerOrders,
   repricings as seedRepricings,
   stocktakes as seedStocktakes,
   orders as seedOrders,
@@ -113,6 +119,8 @@ interface CatalogState {
   transfers: Transfer[]
   corrections: Correction[]
   receipts: GoodsReceipt[]
+  /** Orders other businesses have placed with us. */
+  partnerOrders: PartnerOrder[]
   stocktakes: Stocktake[]
   repricings: Repricing[]
   suppliers: Supplier[]
@@ -203,6 +211,24 @@ interface CatalogState {
   ) => { ok: true } | { ok: false; error: string }
 
   /** Prepares a price change: works out every new price but changes nothing yet. */
+  /** We accept an order somebody placed with us. */
+  confirmPartnerOrder: (id: string) => { ok: true } | { ok: false; error: string }
+  /**
+   * Records a lorry-load going out: takes the stock off our shelf and moves
+   * the order on. Called once per shipment, as many times as it takes.
+   */
+  shipPartnerOrder: (
+    id: string,
+    quantities: Record<string, number>,
+    note: string,
+  ) => { ok: true; shipmentId: string } | { ok: false; error: string }
+  /** What the other end says arrived. Closes the order. */
+  confirmPartnerDelivery: (
+    id: string,
+    quantities: Record<string, number>,
+  ) => { ok: true } | { ok: false; error: string }
+  cancelPartnerOrder: (id: string) => { ok: true } | { ok: false; error: string }
+
   createOrder: (input: CreateOrderInput) => PurchaseOrder
   /** Replaces an order's editable body while it has not been sent. */
   updateOrder: (
@@ -699,6 +725,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
   transfers: seedTransfers,
   corrections: seedCorrections,
   receipts: seedReceipts,
+  partnerOrders: seedPartnerOrders,
   stocktakes: seedStocktakes,
   repricings: seedRepricings,
   clients,
@@ -1306,6 +1333,142 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       })
     }
 
+    return { ok: true }
+  },
+
+  confirmPartnerOrder: (id) => {
+    const order = get().partnerOrders.find((o) => o.id === id)
+    if (!order) return { ok: false, error: 'That order no longer exists' }
+    if (order.status !== 'new') return { ok: false, error: 'It has already been answered' }
+
+    const now = new Date().toISOString()
+    set({
+      partnerOrders: get().partnerOrders.map((o) =>
+        o.id === id ? { ...o, status: 'confirmed', confirmedAt: now, updatedAt: now } : o,
+      ),
+    })
+    return { ok: true }
+  },
+
+  shipPartnerOrder: (id, quantities, note) => {
+    const order = get().partnerOrders.find((o) => o.id === id)
+    if (!order) return { ok: false, error: 'That order no longer exists' }
+    if (order.status === 'new') return { ok: false, error: 'Accept the order before shipping it' }
+    if (order.status === 'cancelled' || order.status === 'completed') {
+      return { ok: false, error: 'This order is closed' }
+    }
+
+    /*
+      Never more than is still outstanding. Sending more than was asked for is
+      not this order's business — it is a new one, and quietly inflating this
+      one would leave the other end with goods no document explains.
+    */
+    const going = order.lines
+      .map((line) => {
+        const outstanding = Math.max(0, line.orderedQuantity - line.shippedQuantity)
+        return { line, quantity: Math.min(Math.max(0, quantities[line.id] ?? 0), outstanding) }
+      })
+      .filter((entry) => entry.quantity > 0)
+
+    if (going.length === 0) {
+      return { ok: false, error: 'Nothing to ship — every line is zero or already sent' }
+    }
+
+    // Their goods leave our shelf, so the shelf has to be able to give them.
+    const short = going.find(({ line, quantity }) => {
+      const row = get().variations.find((v) => v.id === line.variationId)
+      return quantityAt(row?.stockByLocation ?? [], order.locationId) < quantity
+    })
+    if (short) {
+      return {
+        ok: false,
+        error: `${short.line.name} — ${order.locationName} does not hold that many`,
+      }
+    }
+
+    const now = new Date().toISOString()
+    const lines: PartnerOrderLine[] = order.lines.map((line) => {
+      const sent = going.find((entry) => entry.line.id === line.id)?.quantity ?? 0
+      return sent > 0 ? { ...line, shippedQuantity: line.shippedQuantity + sent } : line
+    })
+
+    const deltas = new Map<string, number>()
+    for (const { line, quantity } of going) {
+      deltas.set(line.variationId, (deltas.get(line.variationId) ?? 0) - quantity)
+    }
+
+    const shipment = {
+      id: `psh-${id}-${order.shipments.length + 1}`,
+      number: `SH-${String(order.shipments.length + 1).padStart(3, '0')}`,
+      shippedAt: now,
+      shippedBy: 'Akhmet Dauletmuratov',
+      quantities: Object.fromEntries(going.map(({ line, quantity }) => [line.id, quantity])),
+      note: note.trim() || null,
+    }
+
+    set({
+      partnerOrders: get().partnerOrders.map((o) =>
+        o.id === id
+          ? {
+              ...o,
+              lines,
+              shipments: [...o.shipments, shipment],
+              status: statusAfterShipping({ lines }),
+              updatedAt: now,
+            }
+          : o,
+      ),
+      ...commitDeltas(get(), deltas, order.locationId, order.locationName),
+    })
+    return { ok: true, shipmentId: shipment.id }
+  },
+
+  confirmPartnerDelivery: (id, quantities) => {
+    const order = get().partnerOrders.find((o) => o.id === id)
+    if (!order) return { ok: false, error: 'That order no longer exists' }
+    if (order.shipments.length === 0) {
+      return { ok: false, error: 'Nothing has been sent yet' }
+    }
+
+    const now = new Date().toISOString()
+    set({
+      partnerOrders: get().partnerOrders.map((o) =>
+        o.id === id
+          ? {
+              ...o,
+              lines: o.lines.map((line) => ({
+                ...line,
+                // Never more than we sent: a claim for more than left the
+                // building is a different conversation.
+                receivedQuantity: Math.min(
+                  line.shippedQuantity,
+                  Math.max(0, quantities[line.id] ?? line.shippedQuantity),
+                ),
+              })),
+              status: 'completed',
+              closedAt: now,
+              updatedAt: now,
+            }
+          : o,
+      ),
+    })
+    return { ok: true }
+  },
+
+  cancelPartnerOrder: (id) => {
+    const order = get().partnerOrders.find((o) => o.id === id)
+    if (!order) return { ok: false, error: 'That order no longer exists' }
+    if (order.shipments.length > 0) {
+      // Part of it is already on their shelf; cancelling would leave goods
+      // with no document behind them.
+      return { ok: false, error: 'Part of this order has already gone — it cannot be cancelled' }
+    }
+    const now = new Date().toISOString()
+    set({
+      partnerOrders: get().partnerOrders.map((o) =>
+        o.id === id ? { ...o, status: 'cancelled', closedAt: now, updatedAt: now } : o,
+      ),
+    })
     return { ok: true }
   },
 

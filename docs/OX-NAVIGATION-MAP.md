@@ -712,6 +712,41 @@ than ids, so a rename is written through to every product and truck, and a make 
 use cannot be deleted. The starting list is gathered from what products and trucks already said,
 which is how it surfaced a real duplicate in the data: **Mercedes** and **Mercedes-Benz**.
 
+### Partner orders — «no OX equivalent», built at the client's request
+
+Orders another business has placed **with us**. The mirror of `Procurement → Orders`, and the half
+that was missing: that module is us ordering from a supplier, this is a garage, fleet or reseller
+ordering from us.
+
+**Why it is not a sale.** A sale is a single event — it happens, stock leaves, money is owed.
+An order placed with us has a life: it arrives, we accept it, we ship it (often in parts, often
+short), and the other end counts what turned up and tells us. Neither existing screen holds that:
+Offline sales is typed in by us at the counter, and Online sales is a read-only feed from the
+e-commerce app we are not allowed to act on.
+
+**The flow**, in three steps on one document:
+
+1. **The order** — what they asked for, with Accept or Decline.
+2. **Shipments** — every load that has gone, and "Record a shipment" to send another. Shipping
+   **takes the stock off the shelf it ships from** and is refused if that shelf cannot cover it.
+3. **What arrived** — what they counted, and the gap. Only countable once something has been sent.
+
+**Three quantities per line, because three different people counted**: what they asked for, what we
+put on the lorry, what they found in the box. Collapsing any pair loses the only thing worth
+knowing — a shortfall, and which end of the journey it happened at.
+
+Shipping is deliberately not a status, for the same reason receiving is not one on a purchase
+order: it is an event that happens as many times as it takes. `partial` and `shipped` are _derived_
+from what has gone.
+
+**The honest limit.** Step 3 should be filled in by the other end, in their own back office, when
+they book our delivery in — that is exactly what our goods receipt does for a delivery from
+AKCHAEV. There is no second tenant in this build, so it is entered on their behalf, and the screen
+says so rather than pretending otherwise.
+
+**Nav renamed with it**, at the client's request: `All sales` → **Offline sales**, `Online sales`
+unchanged, **Partner orders** added.
+
 ### Orders — three kinds, at the client's request
 
 «Закуп 3 ta type bo'ladi». One order screen with a switch at the top, rather than three screens,

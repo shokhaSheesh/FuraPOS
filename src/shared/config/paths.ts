@@ -28,6 +28,9 @@ export const paths = {
     orderDetail: (id = ':orderId') => `/sales/orders/${id}`,
     /** Cash shifts — OX: «Кассовые смены», /app/sells/cash-shifts. */
     shifts: '/sales/shifts',
+    /** Orders another business placed with us. No OX equivalent. */
+    partnerOrders: '/sales/partner-orders',
+    partnerOrderDetail: (id = ':partnerOrderId') => `/sales/partner-orders/${id}`,
     /** Orders from the e-commerce app — view only. No OX equivalent. */
     online: '/sales/online',
     onlineDetail: (id = ':onlineSaleId') => `/sales/online/${id}`,

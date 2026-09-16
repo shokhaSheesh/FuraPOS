@@ -34,6 +34,7 @@ export const permissionTree: readonly PermissionNode[] = [
     children: [
       { key: 'sales.orders', label: 'Sales', actions: crudExport },
       // View only: these are placed and run in the e-commerce app, not here.
+      { key: 'sales.partnerOrders', label: 'Partner orders', actions: ['view', 'edit'] },
       { key: 'sales.online', label: 'Online sales', actions: readExport },
       { key: 'sales.cashShifts', label: 'Cash shifts', actions: crud },
     ],

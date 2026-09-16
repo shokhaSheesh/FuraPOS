@@ -6,6 +6,7 @@ import { useDataStore } from '@/data/store'
 import { ProductThumb } from '@/shared/components/ProductThumb'
 import type { TableColumn } from '@/shared/components/table/features'
 import { displayFieldValue, type ProductField } from '@/shared/types/productFields'
+import { plainText } from '@/shared/ui/RichTextEditor'
 import { formatMoney, formatNumber, formatPercent } from '@/shared/lib/format'
 import {
   costInUzs,
@@ -122,7 +123,10 @@ export function buildProductColumns({
     {
       accessorKey: 'description',
       header: 'Description',
-      cell: ({ row }) => text(row.original.description),
+      cell: ({ row }) => {
+        const words = plainText(row.original.description)
+        return words ? <span title={words}>{words}</span> : <Empty />
+      },
     },
     // Теги
     {

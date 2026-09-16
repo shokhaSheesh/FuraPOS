@@ -12,6 +12,7 @@ import { cn } from '@/shared/lib/cn'
 import { formatDate, formatMoney, formatNumber, formatPercent } from '@/shared/lib/format'
 import { USD_RATE } from '@/data/seed'
 import { useProduct, useProductFields } from '../api/products'
+import { sanitizeHtml } from '@/shared/ui/RichTextEditor'
 import { displayFieldValue } from '@/shared/types/productFields'
 import {
   PRODUCT_FLAGS,
@@ -201,7 +202,18 @@ function Details({ product }: { product: Product }) {
     ['Supplier brand', product.brandName ?? <Empty />],
     ['Manufacturer', product.manufacturer ?? <Empty />],
     ['OEM', product.oem ?? <Empty />],
-    ['Description', product.description ?? <Empty />],
+    [
+      'Description',
+      product.description ? (
+        <div
+          className="[&_a]:text-primary text-right [&_a]:underline [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+          // The value is sanitised on the way in — see RichTextEditor.
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(product.description) }}
+        />
+      ) : (
+        <Empty />
+      ),
+    ],
     ['Type', product.partType ?? <Empty />],
     ['Unit', product.unit],
     ['Vehicle make', product.vehicleMake ?? <Empty />],

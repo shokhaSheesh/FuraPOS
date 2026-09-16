@@ -11,6 +11,7 @@ import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
 import { Button } from '@/shared/ui/Button'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 import { Input } from '@/shared/ui/Input'
+import { RichTextEditor } from '@/shared/ui/RichTextEditor'
 import { MultiSelect } from '@/shared/ui/MultiSelect'
 import { Select } from '@/shared/ui/Select'
 import { Switch } from '@/shared/ui/Switch'
@@ -555,8 +556,20 @@ export function ProductForm({
                 )}
               </Field>
             ))}
-            <Field label="Description" className="sm:col-span-2 lg:col-span-3">
-              {(p) => <Input {...p} {...form.register('description')} />}
+            <Field
+              label="Description"
+              hint="Shown to customers online — headings, lists and links are kept"
+              className="sm:col-span-2 lg:col-span-3"
+            >
+              {(p) => (
+                <Controller
+                  control={form.control}
+                  name="description"
+                  render={({ field: f }) => (
+                    <RichTextEditor id={p.id} value={f.value} onChange={f.onChange} />
+                  )}
+                />
+              )}
             </Field>
             <Field label="Tags" className="sm:col-span-2 lg:col-span-3">
               {(p) => (

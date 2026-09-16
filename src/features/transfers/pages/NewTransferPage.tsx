@@ -2,14 +2,16 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { useFieldArray, useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, ArrowRight, Pencil, Truck, Wand2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, LayoutGrid, List, Pencil, Truck, Wand2 } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
+import { DataTable } from '@/shared/components/DataTable'
+import { EmptyState } from '@/shared/components/EmptyState'
+import { ScrollSentinel } from '@/shared/components/ScrollSentinel'
+import { SearchInput } from '@/shared/components/SearchInput'
+import { useInfiniteRows } from '@/shared/hooks/useInfiniteRows'
 import { Steps } from '@/shared/components/Steps'
+import { buildTransferLineColumns, type TransferRow } from '../components/transferLineColumns'
 import { Field } from '@/shared/components/Field'
-import { NumberField } from '@/shared/components/NumberField'
-import { searchVariations, variationDetails } from '@/shared/lib/catalogueSearch'
-import { LineItemsTable, type LineRow } from '@/shared/components/LineItemsTable'
-import type { TableColumn } from '@/shared/components/table/features'
 import { GenerateTransferModal } from '../components/GenerateTransferModal'
 import type { TransferSuggestion } from '../model/suggest'
 import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
@@ -19,12 +21,12 @@ import { Select } from '@/shared/ui/Select'
 import { SegmentedControl } from '@/shared/ui/SegmentedControl'
 import { toast } from '@/shared/ui/toast'
 import { paths } from '@/shared/config/paths'
-import { formatMoney, formatNumber } from '@/shared/lib/format'
+import { formatNumber } from '@/shared/lib/format'
+import { useSession } from '@/app/providers/SessionProvider'
 import { useDataStore } from '@/data/store'
 import { useCreateTransfer } from '../api/transfers'
 import { TRANSFER_KINDS, transferDraftSchema, type TransferDraft } from '../model/transfer'
 import { demandAt, hasStalled } from '@/shared/lib/demand'
-import type { VariationRow } from '@/features/products/model/product'
 
 /**
  * Build a transfer.
@@ -55,7 +57,7 @@ export default function NewTransferPage() {
     },
   })
 
-  const { fields, append, remove } = useFieldArray({ control: form.control, name: 'lines' })
+  const { append, remove } = useFieldArray({ control: form.control, name: 'lines' })
   const lines = form.watch('lines')
   const fromLocationId = form.watch('fromLocationId')
   const kind = form.watch('kind')
@@ -83,6 +85,10 @@ export default function NewTransferPage() {
   )
 
   const [generating, setGenerating] = useState(false)
+  const { can } = useSession()
+  const canSeeCost = can('products.cost.view')
+  const [search, setSearch] = useState('')
+  const [cards, setCards] = useState(false)
   /** Route and note first, products second — the reference product's two-page create. */
   const [step, setStep] = useState<1 | 2>(1)
 
@@ -167,28 +173,76 @@ export default function NewTransferPage() {
   const demandLocationId = requesting ? toLocationId : fromLocationId
   const demandLocation = requesting ? to : from
 
-  /** Put a catalogue row on the transfer, or one more of a line already there. */
-  const addVariation = (variation: VariationRow) => {
-    const current = form.getValues('lines')
-    const existing = current.findIndex((line) => line.variationId === variation.id)
-    if (existing > -1) {
-      // Adding the same part twice means "one more", not a second row.
-      form.setValue(
-        `lines.${existing}.requestedQuantity`,
-        (current[existing]?.requestedQuantity ?? 0) + 1,
-        { shouldDirty: true },
+  const allRows: TransferRow[] = useMemo(() => {
+    if (!fromLocationId) return []
+    const indexOf = new Map(lines.map((line, index) => [line.variationId, index] as const))
+
+    return variations
+      .filter((variation) => variation.status === 'active' && availableAt(variation.id) > 0)
+      .map((variation) => {
+        const index = indexOf.get(variation.id) ?? -1
+        const demand = demandLocationId
+          ? demandAt(sales, variation.id, demandLocationId)
+          : { 3: 0, 6: 0 }
+        return {
+          key: variation.id,
+          variation,
+          index,
+          quantity: index > -1 ? (lines[index]?.requestedQuantity ?? 0) : 0,
+          atSource: availableAt(variation.id),
+          atDestination: toLocationId ? stockAt(variation.id, toLocationId) : 0,
+          demand,
+          stalled: hasStalled(demand),
+        }
+      })
+  }, [
+    variations,
+    lines,
+    fromLocationId,
+    toLocationId,
+    demandLocationId,
+    sales,
+    availableAt,
+    stockAt,
+  ])
+
+  const matching = search.trim()
+    ? allRows.filter((row) =>
+        [
+          row.variation.barcode,
+          row.variation.sku,
+          row.variation.fullName,
+          row.variation.productName,
+        ]
+          .filter((field): field is string => Boolean(field))
+          .some((field) => field.toLowerCase().includes(search.trim().toLowerCase())),
       )
+    : allRows
+
+  const { visible: rows, hasMore, shown, total, sentinel, showMore } = useInfiniteRows(matching)
+
+  /** Change how many of a row are moving, whether or not it is on the transfer. */
+  const setQuantity = (row: TransferRow, quantity: number) => {
+    if (row.index > -1) {
+      if (quantity > 0) {
+        form.setValue(`lines.${row.index}.requestedQuantity`, quantity, { shouldDirty: true })
+      } else {
+        remove(row.index)
+      }
       return
     }
+    if (quantity <= 0) return
+
+    const variation = row.variation
     append({
-      id: `line-${Date.now()}`,
+      id: `line-${variation.id}`,
       variationId: variation.id,
       productId: variation.productId,
       sku: variation.sku,
       name: variation.fullName,
       imageUrl: variation.imageUrl,
       unit: variation.unit,
-      requestedQuantity: 1,
+      requestedQuantity: quantity,
       // Filled in at dispatch and at receipt, when reality is known.
       sentQuantity: null,
       receivedQuantity: null,
@@ -199,95 +253,17 @@ export default function NewTransferPage() {
     })
   }
 
-  const lineRows: LineRow[] = fields.map((field, index) => ({
-    key: field.id,
-    index,
-    variationId: lines[index]?.variationId ?? '',
-    quantity: Number.isFinite(lines[index]?.requestedQuantity)
-      ? (lines[index]?.requestedQuantity ?? 0)
-      : 0,
-  }))
+  const lineColumns = buildTransferLineColumns({
+    canSeeCost,
+    cards,
+    fromName: from?.name ?? 'source',
+    toName: to?.name ?? 'destination',
+    demandName: demandLocation?.name ?? (requesting ? 'here' : 'source'),
+    onQuantityChange: setQuantity,
+    onRemove: (row) => remove(row.index),
+  })
 
-  /*
-   * The transfer's own columns, after the product name. Both ends are named
-   * rather than "source" and "destination" — nobody should have to remember
-   * which is which — and the sales column follows whoever receives the goods.
-   */
-  const lineColumns: TableColumn<LineRow>[] = [
-    {
-      id: 'atFrom',
-      header: `At ${from?.name ?? 'source'}`,
-      meta: { align: 'right' },
-      cell: ({ row }) => (
-        <span className="text-fg-muted tabular-nums">
-          {formatNumber(availableAt(row.original.variationId))}
-        </span>
-      ),
-    },
-    {
-      id: 'atTo',
-      header: `At ${to?.name ?? 'destination'}`,
-      meta: { align: 'right' },
-      cell: ({ row }) =>
-        toLocationId ? (
-          <span className="text-fg-muted tabular-nums">
-            {formatNumber(stockAt(row.original.variationId, toLocationId))}
-          </span>
-        ) : (
-          <span className="text-fg-subtle">—</span>
-        ),
-    },
-    {
-      id: 'sold',
-      header: `Sold at ${demandLocation?.name ?? (requesting ? 'here' : 'source')}`,
-      meta: { align: 'right' },
-      cell: ({ row }) => {
-        if (!demandLocationId) return <span className="text-fg-subtle">—</span>
-        const demand = demandAt(sales, row.original.variationId, demandLocationId)
-        return (
-          <div className="leading-tight">
-            <p className="text-fg tabular-nums">{formatNumber(demand[3])} in 3 months</p>
-            <p className="text-fg-subtle text-2xs tabular-nums">
-              {formatNumber(demand[6])} in 6 months
-            </p>
-            {hasStalled(demand) ? (
-              <p className="text-warning text-2xs">not selling lately</p>
-            ) : null}
-          </div>
-        )
-      },
-    },
-    {
-      id: 'move',
-      header: 'Move',
-      enableHiding: false,
-      meta: { align: 'right' },
-      cell: ({ row }) => {
-        const error = form.formState.errors.lines?.[row.original.index]?.requestedQuantity?.message
-        return (
-          <div className="flex flex-col items-end">
-            <Controller
-              control={form.control}
-              name={`lines.${row.original.index}.requestedQuantity`}
-              render={({ field: f }) => (
-                <NumberField
-                  className="w-24"
-                  nullable={false}
-                  min={1}
-                  aria-invalid={error ? true : undefined}
-                  aria-label="Quantity to move"
-                  value={f.value}
-                  onChange={(v) => f.onChange(v ?? 0)}
-                  onBlur={f.onBlur}
-                />
-              )}
-            />
-            {error ? <p className="text-danger text-2xs mt-0.5">{error}</p> : null}
-          </div>
-        )
-      },
-    },
-  ]
+  const movingUnits = lines.reduce((sum, line) => sum + (line.requestedQuantity || 0), 0)
 
   return (
     <form>
@@ -481,55 +457,82 @@ export default function NewTransferPage() {
                 Edit details
               </Button>
             </Card>
-            <LineItemsTable
-              storageKey="transfer-lines"
-              rows={lineRows}
+            <DataTable
+              storageKey={cards ? 'transfer-lines-cards' : 'transfer-lines'}
               columns={lineColumns}
-              error={form.formState.errors.lines?.root?.message}
-              emptyDescription={
-                requesting
-                  ? 'Use “Add products” to pick what to ask for, or let the system suggest it.'
-                  : 'Use “Add products” to pick what to send.'
+              data={rows}
+              total={rows.length}
+              getRowId={(row) => row.key}
+              toolbar={
+                <div className="flex flex-1 flex-wrap items-center gap-2">
+                  <SearchInput
+                    value={search}
+                    onChange={setSearch}
+                    placeholder="Search by barcode, SKU, variation or product name…"
+                  />
+                  <div className="flex-1" />
+                  <div className="border-border rounded-control flex items-center border p-0.5">
+                    <Button
+                      type="button"
+                      variant={cards ? 'ghost' : 'secondary'}
+                      size="icon"
+                      aria-label="Show one column per field"
+                      aria-pressed={!cards}
+                      onClick={() => setCards(false)}
+                    >
+                      <List />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={cards ? 'secondary' : 'ghost'}
+                      size="icon"
+                      aria-label="Show each product as a card"
+                      aria-pressed={cards}
+                      onClick={() => setCards(true)}
+                    >
+                      <LayoutGrid />
+                    </Button>
+                  </div>
+                  {requesting ? (
+                    <Button type="button" variant="primary" onClick={() => setGenerating(true)}>
+                      <Wand2 />
+                      Suggest
+                    </Button>
+                  ) : null}
+                </div>
               }
-              onRemove={(row) => remove(row.index)}
-              catalogue={{
-                label: 'the catalogue',
-                search: (term) =>
-                  searchVariations(variations, term).map((v) => {
-                    const here = availableAt(v.id)
-                    return {
-                      id: v.id,
-                      name: v.fullName,
-                      imageUrl: v.imageUrl,
-                      codes: [v.barcode, v.sku].filter(Boolean) as string[],
-                      details: variationDetails(v),
-                      price: formatMoney(v.salePrice),
-                      // What the sending side holds, since that caps the move.
-                      note: {
-                        text: `${formatNumber(here)} at ${from?.name ?? 'source'}`,
-                        tone: here > 0 ? ('muted' as const) : ('danger' as const),
-                      },
-                    }
-                  }),
-                onPick: (id) => {
-                  const variation = variations.find((v) => v.id === id)
-                  if (!variation) return null
-                  addVariation(variation)
-                  return variation.id
-                },
-              }}
-              addActions={[
-                ...(requesting
-                  ? [
-                      {
-                        label: 'Suggest what to ask for',
-                        hint: 'From what sold here and what the other side can spare',
-                        icon: Wand2,
-                        onSelect: () => setGenerating(true),
-                      },
-                    ]
-                  : []),
-              ]}
+              footer={
+                <>
+                  <ScrollSentinel
+                    ref={sentinel}
+                    hasMore={hasMore}
+                    shown={shown}
+                    total={total}
+                    onShowMore={showMore}
+                  />
+                  <div className="border-border text-fg-muted flex flex-wrap items-center gap-x-8 gap-y-1 border-t px-4 py-3 text-sm">
+                    <span>
+                      Moving:{' '}
+                      <strong className="text-fg font-medium">{formatNumber(movingUnits)}</strong>
+                    </span>
+                    <span>
+                      Products:{' '}
+                      <strong className="text-fg font-medium">{formatNumber(lines.length)}</strong>
+                    </span>
+                    {form.formState.errors.lines?.root?.message ? (
+                      <span className="text-danger">
+                        {form.formState.errors.lines.root.message}
+                      </span>
+                    ) : null}
+                  </div>
+                </>
+              }
+              emptyState={
+                <EmptyState
+                  title={`${from?.name ?? 'That location'} holds nothing`}
+                  description="A transfer can only move what the sending shelf actually has."
+                />
+              }
             />
           </>
         )}

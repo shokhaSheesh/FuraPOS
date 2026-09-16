@@ -774,6 +774,31 @@ because all three end the same way — an order that is received against when th
   the browser's own print dialog like Print templates — no PDF library. It is in English with
   unambiguous dates, since a factory reads it, and lists lines most urgent first.
 
+### Transfers — picking from the sending shelf
+
+The product step **is the source's shelf** (client request), the same shape a goods receipt and a
+purchase order use: everything that location holds is a row from the moment the route is chosen,
+waiting for a quantity. Typing one puts the row on the transfer; clearing it takes the row off.
+
+Which catalogue is the obvious one here and it is not ours: a transfer can only move what the
+sending shelf actually has. So a part the source is out of is **not on the screen at all**, rather
+than something you can add, be warned about, and send anyway — the warning that used to do that job
+is now unnecessary, and the quantity is capped at what the shelf holds as you type it.
+
+The transfer's own four columns — `At <source>`, `At <destination>`, `Sold at <whoever receives>`
+and `Move` — sit straight after the row's identity, with the rest of the product list's fields after
+them. Both ends are named rather than called "source" and "destination", because nobody should have
+to remember which is which, and the sales column follows whoever _receives_ the goods since that is
+whose demand justifies the move.
+
+Ten rows at a time, growing as you scroll. `Suggest what to ask for` stays on the toolbar for a
+requested transfer.
+
+**Not done:** merging New transfer and the transfer detail page into one stepped document, the way
+Goods receipt and Orders now are. A transfer has the same life — drafted, sent, counted in at the
+far end by somebody else days later — so it is the obvious next step, along with Corrections and
+Stocktaking, which have the same split.
+
 ### Suggesting what to reorder — the low-stock gate
 
 `Suggest` on an order, and `Suggest what to ask for` on a requested transfer, both run the same

@@ -1,20 +1,19 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/shared/lib/cn'
+import { M, TONES, type MobileTone } from './palette'
 
 /**
  * The pieces every screen of the mobile mock is built from.
  *
- * This is a **mock of a different product** — the driver/fleet phone app, not
- * this back office — kept here so it can be looked at without a second repo.
- * Nothing here reads the store or shares components with the back office on
- * purpose: the two are not the same product and should not drift into each
- * other. Sizes are phone sizes (a 390 px screen), not our desktop scale.
+ * This is a **mock of a different product** — the driver's fleet phone app,
+ * not this back office — kept here so it can be looked at without a second
+ * repo. It deliberately shares nothing with the back office: its own palette
+ * (see palette.ts), its own phone-sized type, and no store. Colours are
+ * applied inline from that palette so the mock looks the same whichever theme
+ * the surrounding app is in, which is what "1:1 with the design" means.
  */
 
-/**
- * The device: a 390 × 844 screen, its own scroll, with the screen's top bar and
- * the tab bar pinned outside it — as on a phone, where neither scrolls away.
- */
+/** The device: a 390 × 844 screen, its own scroll, top and tab bars pinned. */
 export function Phone({
   children,
   header,
@@ -25,11 +24,17 @@ export function Phone({
   tabBar?: ReactNode
 }) {
   return (
-    <div className="border-fg/20 bg-surface shadow-card relative h-[844px] w-[390px] shrink-0 overflow-hidden rounded-[2.75rem] border-[10px]">
-      <div className="bg-canvas flex h-full flex-col">
-        {/* The status-bar strip a phone keeps above the screen's own header. */}
-        <div className="bg-surface relative h-7 shrink-0">
-          <div className="bg-fg/20 absolute top-2 left-1/2 h-1.5 w-28 -translate-x-1/2 rounded-full" />
+    <div
+      className="relative h-[844px] w-[390px] shrink-0 overflow-hidden rounded-[2.75rem] border-[10px] shadow-lg"
+      style={{ borderColor: M.frame, background: M.card }}
+    >
+      <div className="flex h-full flex-col" style={{ background: M.screen }}>
+        {/* The strip a phone keeps above the screen's own header. */}
+        <div className="relative h-7 shrink-0" style={{ background: M.card }}>
+          <div
+            className="absolute top-2 left-1/2 h-1.5 w-28 -translate-x-1/2 rounded-full"
+            style={{ background: '#D9DDE3' }}
+          />
         </div>
         {header}
         <div className="flex-1 overflow-y-auto overscroll-contain pb-4">{children}</div>
@@ -39,7 +44,7 @@ export function Phone({
   )
 }
 
-/** The screen's own top bar: back, title, one action. */
+/** The screen's own top bar: back, title, an optional action. */
 export function PhoneHeader({
   title,
   left,
@@ -50,10 +55,15 @@ export function PhoneHeader({
   right?: ReactNode
 }) {
   return (
-    <div className="bg-surface border-border flex h-12 shrink-0 items-center gap-2 border-b px-3">
-      <div className="text-fg-muted flex size-8 items-center justify-center">{left}</div>
-      <p className="text-fg flex-1 text-center text-[15px] font-semibold">{title}</p>
-      <div className="text-fg-muted flex size-8 items-center justify-center">{right}</div>
+    <div
+      className="flex h-14 shrink-0 items-center gap-2 border-b px-3"
+      style={{ background: M.card, borderColor: M.border }}
+    >
+      <div className="flex size-9 items-center justify-center">{left}</div>
+      <p className="flex-1 text-center text-[16px] font-bold" style={{ color: M.text }}>
+        {title}
+      </p>
+      <div className="flex size-9 items-center justify-center">{right}</div>
     </div>
   )
 }
@@ -69,11 +79,8 @@ export function PhoneCard({
 }) {
   return (
     <div
-      className={cn(
-        'bg-surface border-border mx-3 rounded-2xl border',
-        padded && 'p-3.5',
-        className,
-      )}
+      className={cn('mx-3 rounded-2xl border', padded && 'p-3.5', className)}
+      style={{ background: M.card, borderColor: M.border }}
     >
       {children}
     </div>
@@ -95,12 +102,18 @@ export function PhoneSection({
   className?: string
 }) {
   return (
-    <section className={cn('mt-5', className)}>
+    <section className={cn('mt-4', className)}>
       {title ? (
         <div className="mb-2 flex items-end justify-between gap-2 px-4">
           <div>
-            <h2 className="text-fg text-[15px] font-semibold">{title}</h2>
-            {subtitle ? <p className="text-fg-subtle text-[11px]">{subtitle}</p> : null}
+            <h2 className="text-[15px] font-bold" style={{ color: M.text }}>
+              {title}
+            </h2>
+            {subtitle ? (
+              <p className="text-[11px]" style={{ color: M.textSubtle }}>
+                {subtitle}
+              </p>
+            ) : null}
           </div>
           {action}
         </div>
@@ -124,64 +137,50 @@ export function PhoneChips<T extends string>({
     <div
       role="group"
       aria-label={ariaLabel}
-      className="flex scrollbar-none gap-1.5 overflow-x-auto px-4 pb-0.5"
+      className="flex gap-1.5 overflow-x-auto px-4 pb-0.5 [&::-webkit-scrollbar]:hidden"
     >
-      {options.map((option) => (
-        <span
-          key={option.value}
-          className={cn(
-            'shrink-0 rounded-full px-3 py-1.5 text-[12px] font-medium whitespace-nowrap',
-            option.value === value
-              ? 'bg-fg text-surface'
-              : 'bg-surface border-border text-fg-muted border',
-          )}
-        >
-          {option.label}
-        </span>
-      ))}
+      {options.map((option) => {
+        const active = option.value === value
+        return (
+          <span
+            key={option.value}
+            className="shrink-0 rounded-full border px-3 py-1.5 text-[12px] font-medium whitespace-nowrap"
+            style={{
+              background: active ? M.text : M.card,
+              color: active ? M.card : M.textMuted,
+              borderColor: active ? M.text : M.border,
+            }}
+          >
+            {option.label}
+          </span>
+        )
+      })}
     </div>
   )
 }
 
-export function PhoneRow({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <div className={cn('border-border flex items-center gap-3 px-3.5 py-3', className)}>
-      {children}
-    </div>
-  )
-}
-
-/** A soft round icon tile — the quick actions and the transaction list use it. */
+/** A tinted icon tile — round in lists, a squircle for the quick actions. */
 export function IconTile({
   icon: Icon,
-  tone = 'neutral',
+  tone = 'grey',
   size = 'md',
   shape = 'circle',
 }: {
-  icon: React.ComponentType<{ className?: string }>
-  tone?: 'neutral' | 'success' | 'warning' | 'danger' | 'info' | 'primary'
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>
+  tone?: MobileTone
   size?: 'sm' | 'md'
-  /** The quick actions are squircles, the transaction list is round. */
   shape?: 'circle' | 'square'
 }) {
-  const tones = {
-    neutral: 'bg-surface-muted text-fg-muted',
-    success: 'bg-success-soft text-success',
-    warning: 'bg-warning-soft text-warning',
-    danger: 'bg-danger-soft text-danger',
-    info: 'bg-info-soft text-info',
-    primary: 'bg-primary-soft text-primary',
-  }
   return (
     <span
       className={cn(
         'grid place-items-center',
         shape === 'circle' ? 'rounded-full' : 'rounded-2xl',
         size === 'sm' ? 'size-9' : 'size-12',
-        tones[tone],
       )}
+      style={{ background: TONES[tone].soft }}
     >
-      <Icon className={size === 'sm' ? 'size-4' : 'size-5'} />
+      <Icon className={size === 'sm' ? 'size-4' : 'size-5'} style={{ color: TONES[tone].fg }} />
     </span>
   )
 }

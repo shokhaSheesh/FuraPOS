@@ -337,7 +337,13 @@ export function DataTable<T extends RowData>({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-sm">
+        {/*
+          `min-w-max` is what makes the scroll real. Without it the table is
+          only ever as wide as its container, so a table with more columns than
+          fit squeezes every one of them and hides the overflow behind an
+          ellipsis instead of letting the user scroll to it.
+        */}
+        <table className="w-full min-w-max border-collapse text-sm">
           <thead className="bg-surface-muted">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>

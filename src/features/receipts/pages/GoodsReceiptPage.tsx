@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
+import { DropdownMenu } from 'radix-ui'
 import {
   ArrowLeft,
   ChevronDown,
@@ -8,6 +9,7 @@ import {
   PackageCheck,
   Plus,
   Printer,
+  Search,
   Sliders,
   Trash2,
   Upload,
@@ -229,7 +231,6 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
         ),
       ),
     onRemove: (index) => writeLines(receipt.lines.filter((_, i) => i !== index)),
-    onPrint: (row) => toast.success(`Label for ${row.name} sent to the printer`),
   })
 
   const units = receipt.lines.reduce(
@@ -302,7 +303,7 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
           </div>
         }
         footer={
-          <div className="text-fg-muted flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
+          <div className="border-border text-fg-muted flex flex-wrap items-center gap-x-8 gap-y-1 border-t px-4 py-3 text-sm">
             <span>
               Total quantity: <strong className="text-fg font-medium">{formatNumber(units)}</strong>
             </span>
@@ -323,56 +324,70 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
   )
 }
 
-/** The three ways the reference product lets products onto a receipt. */
+/**
+ * The three ways the reference product lets products onto a receipt.
+ *
+ * Each one says what it is *for* under its name, because "create a new
+ * product" and "pick from the catalogue" both sound like the same thing to
+ * somebody standing in front of an open box for the first time.
+ */
 function AddProductsMenu({ onPickFromCatalogue }: { onPickFromCatalogue: () => void }) {
-  const [open, setOpen] = useState(false)
-  const item =
-    'text-fg hover:bg-surface-muted flex w-full items-center gap-2 rounded-control px-2 py-1.5 text-left text-sm'
+  const navigate = useNavigate()
+
+  const options = [
+    {
+      icon: Search,
+      label: 'Pick from the catalogue',
+      hint: 'Search or scan what you already stock',
+      onSelect: onPickFromCatalogue,
+    },
+    {
+      icon: Upload,
+      label: 'Upload a spreadsheet',
+      hint: "The supplier's own list, mapped to our fields",
+      onSelect: () => toast.info('Spreadsheet upload is not wired up in this build'),
+    },
+    {
+      icon: Plus,
+      label: 'Create a new product',
+      hint: 'For something we have never carried before',
+      onSelect: () => navigate(paths.products.new),
+    },
+  ]
 
   return (
-    <Popover
-      open={open}
-      onOpenChange={setOpen}
-      align="end"
-      trigger={
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger asChild>
         <Button variant="primary">
           <Plus />
           Add products
           <ChevronDown />
         </Button>
-      }
-    >
-      <div className="w-56 space-y-0.5">
-        <Button variant="ghost" className={item} asChild>
-          <Link to={paths.products.new} onClick={() => setOpen(false)}>
-            <Plus className="size-4" />
-            Create a new product
-          </Link>
-        </Button>
-        <button
-          type="button"
-          className={item}
-          onClick={() => {
-            setOpen(false)
-            toast.info('Spreadsheet upload is not wired up in this build')
-          }}
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content
+          align="end"
+          sideOffset={4}
+          className="rounded-control border-border bg-surface shadow-popover z-50 w-72 border p-1"
         >
-          <Upload className="size-4" />
-          Upload a spreadsheet
-        </button>
-        <button
-          type="button"
-          className={item}
-          onClick={() => {
-            setOpen(false)
-            onPickFromCatalogue()
-          }}
-        >
-          <List className="size-4" />
-          Pick from the catalogue
-        </button>
-      </div>
-    </Popover>
+          {options.map((option) => (
+            <DropdownMenu.Item
+              key={option.label}
+              onSelect={option.onSelect}
+              className="rounded-control data-[highlighted]:bg-surface-muted flex cursor-pointer items-start gap-3 px-2 py-2 outline-none"
+            >
+              <span className="bg-surface-inset text-fg-muted mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full">
+                <option.icon className="size-4" />
+              </span>
+              <span className="min-w-0">
+                <span className="text-fg block text-sm font-medium">{option.label}</span>
+                <span className="text-fg-subtle text-2xs block">{option.hint}</span>
+              </span>
+            </DropdownMenu.Item>
+          ))}
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
   )
 }
 
@@ -817,7 +832,7 @@ function ReviewStep({
           </div>
         }
         footer={
-          <div className="text-fg-muted flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
+          <div className="border-border text-fg-muted flex flex-wrap items-center gap-x-8 gap-y-1 border-t px-4 py-3 text-sm">
             <span>
               Total quantity: <strong className="text-fg font-medium">{formatNumber(units)}</strong>
             </span>

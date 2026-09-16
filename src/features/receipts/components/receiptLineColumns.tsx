@@ -1,7 +1,7 @@
-import { Info, Printer, Trash2 } from 'lucide-react'
+import { Info, Trash2 } from 'lucide-react'
 import { NumberField } from '@/shared/components/NumberField'
 import { ProductThumb } from '@/shared/components/ProductThumb'
-import { RowActions } from '@/shared/components/RowActions'
+import { Button } from '@/shared/ui/Button'
 import type { TableColumn } from '@/shared/components/table/features'
 import { formatMoney, formatNumber } from '@/shared/lib/format'
 import type { ReceiptLine } from '../model/receipt'
@@ -57,16 +57,17 @@ export function buildReceiptLineColumns({
   editable,
   onQuantityChange,
   onRemove,
-  onPrint,
   cards,
 }: {
   editable: boolean
   onQuantityChange: (index: number, quantity: number) => void
   onRemove: (index: number) => void
-  onPrint: (row: LineRow) => void
   /** Collapses the product columns into one rich cell, as OX's grid view does. */
   cards: boolean
 }): TableColumn<LineRow>[] {
+  // Last, not first: removing a line is the least likely thing anyone does to
+  // it, and a destructive control in the leading column is the one you hit by
+  // accident on the way to the row.
   const actions: TableColumn<LineRow>[] = editable
     ? [
         {
@@ -74,17 +75,18 @@ export function buildReceiptLineColumns({
           header: '',
           enableHiding: false,
           cell: ({ row }) => (
-            <RowActions
-              actions={[
-                { label: 'Print a label', icon: Printer, onSelect: () => onPrint(row.original) },
-                {
-                  label: 'Remove from this receipt',
-                  icon: Trash2,
-                  destructive: true,
-                  onSelect: () => onRemove(row.original.index),
-                },
-              ]}
-            />
+            <div className="flex justify-end">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`Remove ${row.original.name} from this receipt`}
+                title="Remove from this receipt"
+                className="hover:text-danger"
+                onClick={() => onRemove(row.original.index)}
+              >
+                <Trash2 />
+              </Button>
+            </div>
           ),
         },
       ]
@@ -140,7 +142,6 @@ export function buildReceiptLineColumns({
 
   if (cards) {
     return [
-      ...actions,
       {
         id: 'product',
         header: 'Product',
@@ -166,11 +167,11 @@ export function buildReceiptLineColumns({
         ),
       },
       ...quantity,
+      ...actions,
     ]
   }
 
   return [
-    ...actions,
     {
       id: 'id',
       header: 'ID',
@@ -203,6 +204,7 @@ export function buildReceiptLineColumns({
       cell: ({ row }) => row.original.productName,
     },
     ...quantity,
+    ...actions,
   ]
 }
 

@@ -53,6 +53,7 @@ const OrderDocumentPage = lazy(() => import('@/features/orders/pages/OrderDocume
 const OnlineSalesListPage = lazy(() => import('@/features/onlineSales/pages/OnlineSalesListPage'))
 const OnlineSaleDetailPage = lazy(() => import('@/features/onlineSales/pages/OnlineSaleDetailPage'))
 const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage'))
+const MobileAppPage = lazy(() => import('@/features/mobileApp/pages/MobileAppPage'))
 const UrgencySettingsPage = lazy(() => import('@/features/settings/pages/UrgencySettingsPage'))
 const ProductColumnsSettingsPage = lazy(
   () => import('@/features/settings/pages/ProductColumnsSettingsPage'),
@@ -366,6 +367,7 @@ const routes: RouteObject[] = [
       },
 
       // --- Standalone sections ------------------------------------------------
+      { path: paths.mobileApp, element: page(<MobileAppPage />) },
       { path: paths.activityLog, element: todo('Activity log') },
 
       // --- Settings -------------------------------------------------------------

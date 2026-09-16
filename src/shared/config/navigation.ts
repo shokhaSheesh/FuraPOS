@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   Megaphone,
   Settings,
+  Smartphone,
   ShoppingCart,
   Truck,
   Users,
@@ -151,6 +152,14 @@ export const navigation: NavSection[] = [
         permission: 'analytics.customers.view',
       },
     ],
+  },
+  {
+    // A design mock of the fleet phone app, parked here for review. It is a
+    // different product: no permission gates it and it reads nothing.
+    id: 'mobileApp',
+    label: 'Mobile app',
+    icon: Smartphone,
+    to: paths.mobileApp,
   },
   {
     id: 'settings',

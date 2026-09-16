@@ -122,6 +122,9 @@ export const paths = {
     personal: '/settings/personal', // OX: Личные данные
   },
 
+  /** A mock of a different product — the fleet phone app. Not part of the back office. */
+  mobileApp: '/mobile-app',
+
   activityLog: '/activity-log',
   notFound: '*',
 } as const

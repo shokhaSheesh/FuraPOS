@@ -30,6 +30,9 @@ export type OrderStatus = 'draft' | 'sent' | 'confirmed' | 'partial' | 'received
  */
 export type OrderKind = ProcurementKind
 
+/** Prices are agreed in USD as often as in UZS, so a line carries its own. */
+export type Currency = 'USD' | 'UZS'
+
 /** The order module's own wording for the three; the values are shared. */
 export const ORDER_KINDS: { value: OrderKind; label: string; hint: string }[] = [
   {

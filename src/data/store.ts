@@ -209,6 +209,11 @@ interface CatalogState {
 
   /** Prepares a price change: works out every new price but changes nothing yet. */
   createOrder: (input: CreateOrderInput) => PurchaseOrder
+  /** Replaces an order's editable body while it has not been sent. */
+  updateOrder: (
+    id: string,
+    patch: Partial<Pick<PurchaseOrder, 'lines' | 'comment' | 'expectedAt'>>,
+  ) => { ok: true } | { ok: false; error: string }
   setOrderStatus: (id: string, to: OrderStatus) => { ok: true } | { ok: false; error: string }
   /**
    * Books a delivery against an order: creates the goods receipt, posts it, and
@@ -1362,6 +1367,25 @@ export const useDataStore = create<CatalogState>((set, get) => ({
 
     set({ orders: [...get().orders, order] })
     return order
+  },
+
+  updateOrder: (id, patch) => {
+    const order = get().orders.find((o) => o.id === id)
+    if (!order) return { ok: false, error: 'That order no longer exists' }
+    /*
+      Only a draft. Once it has gone to the supplier, the order is a document
+      they are working from — editing it here would leave us checking their
+      delivery against something they were never sent.
+    */
+    if (order.status !== 'draft') {
+      return { ok: false, error: 'This order has already been sent — it can no longer be edited' }
+    }
+    set({
+      orders: get().orders.map((o) =>
+        o.id === id ? { ...o, ...patch, updatedAt: new Date().toISOString() } : o,
+      ),
+    })
+    return { ok: true }
   },
 
   setOrderStatus: (id, to) => {

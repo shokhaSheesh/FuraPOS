@@ -715,11 +715,37 @@ typed what was in the box, with nothing to check it against. An order is the oth
 commitment made weeks earlier. It is what makes _where is it_ and _is it late_ answerable, and what
 turns a receipt from a recording into a check.
 
+**Shaped like a goods receipt** (client request): a modal gate, then one document with four steps —
+Add products · Extra data · Review and send · Deliveries — freely clickable, replacing the old
+separate create and detail pages.
+
+The steps are the order's own life rather than the receipt's: it is built, given its dates and note,
+sent, and then delivered against, often weeks apart and by different people. **Payment is
+deliberately not a step.** A supplier debt is built when a delivery is posted, not when an order is
+raised, and a second place to record money against the same supplier is how a balance stops being
+explainable. Prepayments are worth adding later as a fifth step if the client wants them; they would
+need to offset the receipt's debt when the goods arrive, which is real work rather than a form.
+
+**The product step is the catalogue**, exactly as the receipt's is: the supplier's own while the
+order is a draft, ours for a market run or a factory order, where there is no catalogue of theirs
+and the buyer walks the bazaar with our list in hand. Typing a quantity puts a line on the order;
+clearing it takes the line off. Once sent, the catalogue goes away and only the order's own lines
+remain — the supplier is working from that document, and editing it afterwards would leave us
+checking their delivery against something they were never sent.
+
+**Dropped in the rebuild**, both at the client's request:
+
+- **Creating a product inline** from the order (the full product form in a dialog). Adding something
+  we have never carried now means going to the product list first.
+- **Urgency per line on a China order.** The factory PDF still sorts by it and still has the column,
+  so on orders raised from now on that column reads "Not set" throughout. Worth either restoring the
+  field or taking urgency off the PDF — flagged rather than silently left broken.
+
 **The decisions worth keeping:**
 
 - **Receiving is not a status.** `draft → sent → confirmed` are steps a person takes; a delivery is
-  an event that can happen as many times as the supplier ships. So the detail page offers exactly
-  one "next step" button, and "Book a delivery" sits beside it rather than in the sequence.
+  an event that can happen as many times as the supplier ships. So the Review step offers exactly
+  one "next step" button, and "Book a delivery" lives on its own step rather than in the sequence.
   `partial` and `received` are then _derived_ from what has arrived, never picked from a menu.
 - **A delivery is a real goods receipt.** `receiveAgainstOrder` builds one and posts it through the
   same path as any other, so stock, landed cost and the adjustment ledger behave identically

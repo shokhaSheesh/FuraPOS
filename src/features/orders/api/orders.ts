@@ -127,6 +127,21 @@ export function useCreateOrder() {
   }
 }
 
+export function useUpdateOrder(id: string) {
+  const update = useDataStore((s) => s.updateOrder)
+  return {
+    isPending: false,
+    mutate: (
+      patch: Parameters<typeof update>[1],
+      opts?: { onSuccess?: () => void; onError?: (message: string) => void },
+    ) => {
+      const result = update(id, patch)
+      if (result.ok) opts?.onSuccess?.()
+      else opts?.onError?.(result.error)
+    },
+  }
+}
+
 export function useOrderActions(id: string) {
   const setStatus = useDataStore((s) => s.setOrderStatus)
   const receive = useDataStore((s) => s.receiveAgainstOrder)

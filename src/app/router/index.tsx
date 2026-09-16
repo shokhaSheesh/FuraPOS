@@ -69,8 +69,7 @@ const EmployeeDetailPage = lazy(() => import('@/features/employees/pages/Employe
 const EmployeeFormPage = lazy(() => import('@/features/employees/pages/EmployeeFormPage'))
 const SchedulesPage = lazy(() => import('@/features/schedules/pages/SchedulesPage'))
 const OrdersListPage = lazy(() => import('@/features/orders/pages/OrdersListPage'))
-const OrderDetailPage = lazy(() => import('@/features/orders/pages/OrderDetailPage'))
-const NewOrderPage = lazy(() => import('@/features/orders/pages/NewOrderPage'))
+const OrderPage = lazy(() => import('@/features/orders/pages/OrderPage'))
 const NewSalePage = lazy(() => import('@/features/sales/pages/NewSalePage'))
 const AllSalesPage = lazy(() => import('@/features/sales/pages/SalesListPage'))
 const SaleDetailPage = lazy(() => import('@/features/sales/pages/SaleDetailPage'))
@@ -262,12 +261,8 @@ const routes: RouteObject[] = [
         element: page(<OrdersListPage />, 'procurement.orders.view'),
       },
       {
-        path: paths.procurement.newOrder,
-        element: page(<NewOrderPage />, 'procurement.orders.create'),
-      },
-      {
         path: paths.procurement.orderDetail(),
-        element: page(<OrderDetailPage />, 'procurement.orders.view'),
+        element: page(<OrderPage />, 'procurement.orders.view'),
       },
       {
         path: paths.procurement.schedules,

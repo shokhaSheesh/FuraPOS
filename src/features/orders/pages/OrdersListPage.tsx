@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router'
 import { Plus, Truck, Clock, PackageOpen } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
@@ -17,7 +17,8 @@ import { formatDate, formatMoney, formatNumber } from '@/shared/lib/format'
 import type { TableColumn } from '@/shared/components/table/features'
 import { useDataStore } from '@/data/store'
 import { USD_RATE } from '@/data/seed'
-import { useOrderStatusCounts, useOrders, useOrdersSummary } from '../api/orders'
+import { useCreateOrder, useOrderStatusCounts, useOrders, useOrdersSummary } from '../api/orders'
+import { NewOrderDialog } from '../components/NewOrderDialog'
 import {
   daysLate,
   deliveredRatio,
@@ -41,6 +42,8 @@ import {
  */
 export default function OrdersListPage() {
   const navigate = useNavigate()
+  const createOrder = useCreateOrder()
+  const [creating, setCreating] = useState(false)
   const { can } = useSession()
   const { query, setQuery } = useListQuery()
   const suppliers = useDataStore((s) => s.suppliers)
@@ -201,11 +204,9 @@ export default function OrdersListPage() {
         description="What has been ordered from suppliers and has not arrived yet. Deliveries are booked against an order, which is how a goods receipt gets checked rather than just recorded."
         action={
           can('procurement.orders.create') ? (
-            <Button variant="primary" asChild>
-              <Link to={paths.procurement.newOrder}>
-                <Plus />
-                New order
-              </Link>
+            <Button variant="primary" onClick={() => setCreating(true)}>
+              <Plus />
+              Add
             </Button>
           ) : null
         }
@@ -289,15 +290,37 @@ export default function OrdersListPage() {
               description="An order records what you asked a supplier for, so a delivery can be checked against it instead of taken on trust."
               action={
                 can('procurement.orders.create') ? (
-                  <Button variant="primary" asChild>
-                    <Link to={paths.procurement.newOrder}>
-                      <Plus />
-                      New order
-                    </Link>
+                  <Button variant="primary" onClick={() => setCreating(true)}>
+                    <Plus />
+                    Add
                   </Button>
                 ) : null
               }
             />
+          )
+        }
+      />
+      <NewOrderDialog
+        open={creating}
+        onOpenChange={setCreating}
+        onCreate={(draft) =>
+          createOrder.mutate(
+            {
+              kind: draft.kind,
+              supplierId: draft.supplierId ?? '',
+              boughtFrom: draft.boughtFrom,
+              locationId: draft.locationId,
+              expectedAt: draft.expectedAt,
+              comment: draft.comment,
+              lines: [],
+              status: 'draft',
+            },
+            {
+              onSuccess: (created) => {
+                setCreating(false)
+                navigate(paths.procurement.orderDetail(created.id))
+              },
+            },
           )
         }
       />

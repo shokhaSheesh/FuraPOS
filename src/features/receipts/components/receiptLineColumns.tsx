@@ -17,11 +17,40 @@ const CURRENCIES = [
   { value: 'UZS', label: 'UZS' },
 ]
 
-export interface LineRow extends ReceiptLine {
-  /** Where the row sits, so an edit knows which line it changed. */
+/**
+ * A row on the product step.
+ *
+ * It is **not** always a line of the receipt. When the delivery is from a
+ * supplier we hold a catalogue for, every one of their products is a row from
+ * the moment the receipt is created, waiting for a quantity — typing one is
+ * what puts it on the receipt, and clearing it is what takes it off. That is
+ * how a delivery is actually checked in: their invoice is in one hand and
+ * their catalogue is on the screen, in their order, not ours.
+ */
+export interface LineRow {
+  /** Stable across renders, so a quantity being typed keeps focus. */
+  key: string
+  /** The receipt's line, or null while this is only an offer of theirs. */
+  line: ReceiptLine | null
+  /** Where the line sits on the receipt, or -1 when it is not on it yet. */
   index: number
-  /** The catalogue row this line points at, for the product columns. */
+  /** The catalogue row this points at, for the product columns. */
   variation: VariationRow | undefined
+  name: string
+  /** What is being received. Zero means the row is not on the receipt. */
+  quantity: number
+  /** What was expected, from the order behind the delivery. */
+  expected: number
+  unitCost: number
+  costCurrency: Currency
+  /** Their code for it, which is what their invoice says — not our SKU. */
+  supplierSku: string | null
+  /**
+   * They list it and we have never stocked it. It cannot be received: there is
+   * no product to add the stock to, and inventing one from a delivery note is
+   * how a catalogue fills up with duplicates.
+   */
+  newToUs: boolean
   /** What is on the shelf right now, per location — the reference's tooltip. */
   stockHere: { locationName: string; quantity: number }[]
 }
@@ -67,14 +96,34 @@ function StockCell({ row }: { row: LineRow }) {
  * front of an open box.
  */
 function withStockBreakdown(fields: TableColumn<LineRow>[]) {
-  return fields.map((column) =>
-    column.id === 'stock'
-      ? {
-          ...column,
-          cell: ({ row }: { row: { original: LineRow } }) => <StockCell row={row.original} />,
-        }
-      : column,
-  )
+  return fields.map((column) => {
+    if (column.id === 'stock') {
+      return {
+        ...column,
+        cell: ({ row }: { row: { original: LineRow } }) => <StockCell row={row.original} />,
+      }
+    }
+    /*
+      A supplier lists things we have never carried, and those rows have no
+      variation behind them. The catalogue's own fallback reads "Removed
+      product", which is the opposite of true here — nothing was removed, it
+      was never ours. Their name for it is all there is, so that is what shows.
+    */
+    if (column.id === 'productName') {
+      return {
+        ...column,
+        cell: ({ row }: { row: { original: LineRow } }) =>
+          row.original.variation ? (
+            <span className="font-medium">{row.original.variation.productName}</span>
+          ) : (
+            <span className="text-fg-muted" title="Their listing — we have never stocked this">
+              {row.original.name}
+            </span>
+          ),
+      }
+    }
+    return column
+  })
 }
 
 /** Splits the catalogue's columns either side of the document's own. */
@@ -109,10 +158,10 @@ export function buildReceiptLineColumns({
   canSeeCost: boolean
   /** Collapses the identity columns into one rich cell, as OX's grid view does. */
   cards: boolean
-  onQuantityChange: (index: number, quantity: number) => void
-  onCostChange: (index: number, unitCost: number) => void
-  onCurrencyChange: (index: number, currency: Currency) => void
-  onRemove: (index: number) => void
+  onQuantityChange: (row: LineRow, quantity: number) => void
+  onCostChange: (row: LineRow, unitCost: number) => void
+  onCurrencyChange: (row: LineRow, currency: Currency) => void
+  onRemove: (row: LineRow) => void
 }): TableColumn<LineRow>[] {
   const { identity, rest } = split(
     withStockBreakdown(buildProductFieldColumns<LineRow>({ variationOf, canSeeCost })),
@@ -147,26 +196,49 @@ export function buildReceiptLineColumns({
     : identity
 
   const own: TableColumn<LineRow>[] = [
+    // Their code, not ours: it is what their invoice is written in, and
+    // matching a delivery against paperwork means reading their column.
+    {
+      id: 'supplierSku',
+      header: 'Their code',
+      cell: ({ row }) =>
+        row.original.supplierSku ? (
+          <span className="text-2xs font-mono">{row.original.supplierSku}</span>
+        ) : (
+          <span className="text-fg-subtle">—</span>
+        ),
+    },
     {
       id: 'count',
       header: 'Actual quantity',
       enableHiding: false,
       meta: { align: 'right' },
-      cell: ({ row }) =>
-        editable ? (
+      cell: ({ row }) => {
+        if (row.original.newToUs) {
+          return (
+            <span
+              className="text-fg-subtle text-2xs"
+              title="They list it, we have never stocked it — add it to the catalogue before receiving any"
+            >
+              new to us
+            </span>
+          )
+        }
+        return editable ? (
           <div className="flex justify-end">
             <NumberField
               className="w-20"
               nullable={false}
               min={0}
               aria-label={`Actual quantity of ${row.original.name}`}
-              value={row.original.receivedQuantity ?? row.original.orderedQuantity}
-              onChange={(v) => onQuantityChange(row.original.index, v ?? 0)}
+              value={row.original.quantity}
+              onChange={(v) => onQuantityChange(row.original, v ?? 0)}
             />
           </div>
         ) : (
-          formatNumber(row.original.receivedQuantity ?? row.original.orderedQuantity)
-        ),
+          formatNumber(row.original.quantity)
+        )
+      },
     },
     /*
       What the supplier charged for *this* delivery — not the catalogue's last
@@ -184,7 +256,10 @@ export function buildReceiptLineColumns({
             enableHiding: false,
             meta: { align: 'right' as const },
             cell: ({ row }) =>
-              editable ? (
+              // Only once the row is actually on the receipt. Before that the
+              // figure is the supplier's asking price, which is theirs to set
+              // and ours to disagree with only by receiving some.
+              editable && row.original.line ? (
                 <div className="flex items-center justify-end gap-1.5">
                   <NumberField
                     className="w-28"
@@ -193,13 +268,13 @@ export function buildReceiptLineColumns({
                     step="any"
                     aria-label={`Invoiced price of ${row.original.name}`}
                     value={row.original.unitCost}
-                    onChange={(v) => onCostChange(row.original.index, v ?? 0)}
+                    onChange={(v) => onCostChange(row.original, v ?? 0)}
                   />
                   <Select
                     className="w-20"
                     aria-label={`Invoiced currency of ${row.original.name}`}
                     value={row.original.costCurrency}
-                    onChange={(v) => onCurrencyChange(row.original.index, v as Currency)}
+                    onChange={(v) => onCurrencyChange(row.original, v as Currency)}
                     options={CURRENCIES}
                   />
                 </div>
@@ -224,20 +299,23 @@ export function buildReceiptLineColumns({
           id: 'rowActions',
           header: '',
           enableHiding: false,
-          cell: ({ row }) => (
-            <div className="flex justify-end">
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={`Remove ${row.original.name} from this receipt`}
-                title="Remove from this receipt"
-                className="hover:text-danger"
-                onClick={() => onRemove(row.original.index)}
-              >
-                <Trash2 />
-              </Button>
-            </div>
-          ),
+          cell: ({ row }) =>
+            // A catalogue row that is not on the receipt has nothing to remove;
+            // its quantity is already zero.
+            row.original.line ? (
+              <div className="flex justify-end">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={`Remove ${row.original.name} from this receipt`}
+                  title="Remove from this receipt"
+                  className="hover:text-danger"
+                  onClick={() => onRemove(row.original)}
+                >
+                  <Trash2 />
+                </Button>
+              </div>
+            ) : null,
         },
       ]
     : []
@@ -260,21 +338,22 @@ export function buildReceiptReviewColumns({
   landedCostOf: (row: LineRow) => string
   costLabel: string
 }): TableColumn<LineRow>[] {
-  const { identity, rest } = split(buildProductFieldColumns<LineRow>({ variationOf, canSeeCost }))
+  const { identity, rest } = split(
+    withStockBreakdown(buildProductFieldColumns<LineRow>({ variationOf, canSeeCost })),
+  )
 
   const own: TableColumn<LineRow>[] = [
     {
       id: 'count',
       header: 'Actual quantity',
       meta: { align: 'right' },
-      cell: ({ row }) =>
-        formatNumber(row.original.receivedQuantity ?? row.original.orderedQuantity),
+      cell: ({ row }) => formatNumber(row.original.quantity),
     },
     {
       id: 'expected',
       header: 'Expected quantity',
       meta: { align: 'right' },
-      cell: ({ row }) => formatNumber(row.original.orderedQuantity),
+      cell: ({ row }) => formatNumber(row.original.expected),
     },
     ...(canSeeCost
       ? ([

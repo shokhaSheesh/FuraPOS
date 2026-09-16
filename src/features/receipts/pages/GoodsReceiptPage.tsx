@@ -34,6 +34,8 @@ import { useSession } from '@/app/providers/SessionProvider'
 import { formatDateTime, formatMoney, formatNumber } from '@/shared/lib/format'
 import { useDataStore } from '@/data/store'
 import type { VariationRow } from '@/features/products/model/product'
+import { catalogueFor } from '@/features/suppliers/model/catalogue'
+import { planCatalogueRows } from '../model/lineRows'
 import {
   buildReceiptLineColumns,
   buildReceiptReviewColumns,
@@ -139,27 +141,92 @@ export default function GoodsReceiptPage() {
 
 /* --- shared ------------------------------------------------------------- */
 
-/** The receipt's lines, joined back to the catalogue the table needs to show. */
-function useLineRows(receipt: GoodsReceipt): LineRow[] {
+/**
+ * The rows of the product step.
+ *
+ * Two shapes of screen come out of one function, because they are the same
+ * screen with a different starting point:
+ *
+ *   - **From a supplier we hold a catalogue for**, every product they list is
+ *     a row from the moment the receipt exists, waiting for a quantity. Nobody
+ *     searches for anything: the invoice is in one hand and their catalogue is
+ *     on the screen, in their order, which is how a delivery is actually
+ *     checked in. Typing a quantity puts the row on the receipt; clearing it
+ *     takes it off.
+ *   - **From the market or a factory**, there is no catalogue of theirs to
+ *     show, so the screen starts empty and products are searched for out of
+ *     ours — the same way an order from those sources is built.
+ *
+ * Either way, a line already on the receipt is always a row, even when the
+ * supplier has since dropped it from their catalogue. A delivery that has been
+ * recorded does not disappear because somebody edited a price list.
+ */
+function useLineRows(receipt: GoodsReceipt): { rows: LineRow[]; fromCatalogue: boolean } {
   const variations = useDataStore((s) => s.variations)
   const locations = useDataStore((s) => s.locations)
+  const supplierProducts = useDataStore((s) => s.supplierProducts)
 
-  return useMemo(
-    () =>
-      receipt.lines.map((line, index) => {
-        const variation = variations.find((v) => v.id === line.variationId)
+  return useMemo(() => {
+    const shelvesOf = (variation: VariationRow | undefined) =>
+      (variation?.stockByLocation ?? []).map((row) => ({
+        locationName: locations.find((l) => l.id === row.locationId)?.name ?? '—',
+        quantity: row.quantity,
+      }))
+
+    const lineRow = (line: ReceiptLine, index: number, supplierSku: string | null): LineRow => {
+      const variation = variations.find((v) => v.id === line.variationId)
+      return {
+        key: line.id,
+        line,
+        index,
+        variation,
+        name: line.name,
+        quantity: line.receivedQuantity ?? line.orderedQuantity,
+        expected: line.orderedQuantity,
+        unitCost: line.unitCost,
+        costCurrency: line.costCurrency,
+        supplierSku,
+        newToUs: false,
+        stockHere: shelvesOf(variation),
+      }
+    }
+
+    const catalogue =
+      receipt.kind === 'supplier' && receipt.supplierId
+        ? catalogueFor(supplierProducts, variations, receipt.supplierId)
+        : []
+
+    if (catalogue.length === 0) {
+      return { rows: receipt.lines.map((line, i) => lineRow(line, i, null)), fromCatalogue: false }
+    }
+
+    const rows = planCatalogueRows(receipt.lines, catalogue).map(
+      ({ key, lineIndex, entry }): LineRow => {
+        const line = lineIndex > -1 ? receipt.lines[lineIndex]! : null
+        if (!entry) return { ...lineRow(line!, lineIndex, null), key }
+
+        const variation = entry.variation ?? undefined
         return {
-          ...line,
-          index,
+          key,
+          line,
+          index: lineIndex,
           variation,
-          stockHere: (variation?.stockByLocation ?? []).map((row) => ({
-            locationName: locations.find((l) => l.id === row.locationId)?.name ?? '—',
-            quantity: row.quantity,
-          })),
+          name: line?.name ?? entry.product.name,
+          quantity: line ? (line.receivedQuantity ?? line.orderedQuantity) : 0,
+          expected: line?.orderedQuantity ?? 0,
+          // Their asking price until some is actually received, at which point
+          // the line carries whatever was really invoiced.
+          unitCost: line?.unitCost ?? entry.product.price,
+          costCurrency: line?.costCurrency ?? entry.product.currency,
+          supplierSku: entry.product.supplierSku,
+          newToUs: entry.variation === null,
+          stockHere: shelvesOf(variation),
         }
-      }),
-    [receipt.lines, variations, locations],
-  )
+      },
+    )
+
+    return { rows, fromCatalogue: true }
+  }, [receipt.lines, receipt.kind, receipt.supplierId, variations, locations, supplierProducts])
 }
 
 /* --- step 1: add products ----------------------------------------------- */
@@ -168,7 +235,7 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
   const { can } = useSession()
   const canSeeCost = can('products.cost.view')
   const update = useUpdateReceipt(receipt.id)
-  const all = useLineRows(receipt)
+  const { rows: all, fromCatalogue } = useLineRows(receipt)
   const [cards, setCards] = useState(false)
   const [adding, setAdding] = useState(false)
   const [search, setSearch] = useState('')
@@ -178,7 +245,13 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
   // the right line.
   const rows = search.trim()
     ? all.filter((row) =>
-        [row.variation?.barcode, row.sku, row.name, row.variation?.productName]
+        [
+          row.variation?.barcode,
+          row.variation?.sku,
+          row.supplierSku,
+          row.name,
+          row.variation?.productName,
+        ]
           .filter((field): field is string => Boolean(field))
           .some((field) => field.toLowerCase().includes(search.trim().toLowerCase())),
       )
@@ -186,6 +259,47 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
 
   const writeLines = (lines: ReceiptLine[]) =>
     update.mutate({ lines }, { onError: (message) => toast.error(message) })
+
+  /** Change how many of a row arrived, whether or not it is on the receipt yet. */
+  const setQuantity = (row: LineRow, quantity: number) => {
+    if (row.line) {
+      // Zero is how a row leaves the receipt. On a supplier's catalogue it
+      // stays on screen as an offer of theirs; anywhere else it is gone.
+      writeLines(
+        quantity > 0
+          ? receipt.lines.map((line, i) =>
+              i === row.index ? { ...line, receivedQuantity: quantity } : line,
+            )
+          : receipt.lines.filter((_, i) => i !== row.index),
+      )
+      return
+    }
+    if (quantity <= 0 || !row.variation) return
+
+    const variation = row.variation
+    writeLines([
+      ...receipt.lines,
+      {
+        id: `grl-${receipt.id}-${Date.now()}`,
+        variationId: variation.id,
+        productId: variation.productId,
+        sku: variation.sku,
+        name: variation.fullName,
+        imageUrl: variation.imageUrl,
+        unit: variation.unit,
+        // Nothing was expected — no order stands behind this line.
+        orderedQuantity: 0,
+        receivedQuantity: quantity,
+        unitCost: row.unitCost,
+        costCurrency: row.costCurrency,
+      },
+    ])
+  }
+
+  const patchLine = (row: LineRow, patch: Partial<ReceiptLine>) => {
+    if (!row.line) return
+    writeLines(receipt.lines.map((line, i) => (i === row.index ? { ...line, ...patch } : line)))
+  }
 
   /** Put a catalogue row on the receipt, or one more of a line already there. */
   const addVariation = (variation: VariationRow) => {
@@ -224,17 +338,10 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
     editable,
     canSeeCost,
     cards,
-    onQuantityChange: (index, quantity) =>
-      writeLines(
-        receipt.lines.map((line, i) =>
-          i === index ? { ...line, receivedQuantity: quantity } : line,
-        ),
-      ),
-    onCostChange: (index, unitCost) =>
-      writeLines(receipt.lines.map((line, i) => (i === index ? { ...line, unitCost } : line))),
-    onCurrencyChange: (index, costCurrency) =>
-      writeLines(receipt.lines.map((line, i) => (i === index ? { ...line, costCurrency } : line))),
-    onRemove: (index) => writeLines(receipt.lines.filter((_, i) => i !== index)),
+    onQuantityChange: setQuantity,
+    onCostChange: (row, unitCost) => patchLine(row, { unitCost }),
+    onCurrencyChange: (row, costCurrency) => patchLine(row, { costCurrency }),
+    onRemove: (row) => writeLines(receipt.lines.filter((_, i) => i !== row.index)),
   })
 
   const units = receipt.lines.reduce(
@@ -244,7 +351,7 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
 
   return (
     <>
-      {adding ? (
+      {adding && !fromCatalogue ? (
         <Card className="p-3">
           <div className="flex items-center gap-2">
             <div className="min-w-0 flex-1">
@@ -265,7 +372,7 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
         columns={columns}
         data={rows}
         total={rows.length}
-        getRowId={(row) => row.id}
+        getRowId={(row) => row.key}
         toolbar={
           <div className="flex flex-1 flex-wrap items-center gap-2">
             <SearchInput
@@ -303,7 +410,11 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
                 <LayoutGrid />
               </Button>
             </div>
-            {editable ? <AddProductsMenu onPickFromCatalogue={() => setAdding(true)} /> : null}
+            {/* Their whole catalogue is already the table — there is nothing
+                to add, only quantities to type. */}
+            {editable && !fromCatalogue ? (
+              <AddProductsMenu onPickFromCatalogue={() => setAdding(true)} />
+            ) : null}
           </div>
         }
         footer={
@@ -318,10 +429,17 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
           </div>
         }
         emptyState={
-          <EmptyState
-            title="Nothing on this receipt yet"
-            description="Add the products that were delivered — search the catalogue, scan them in, or upload the supplier's spreadsheet."
-          />
+          fromCatalogue ? (
+            <EmptyState
+              title="This supplier lists nothing"
+              description="Their catalogue is empty, so there is nothing to receive against it."
+            />
+          ) : (
+            <EmptyState
+              title="Nothing on this receipt yet"
+              description="Add the products that were delivered — search the catalogue, scan them in, or upload the supplier's spreadsheet."
+            />
+          )
         }
       />
     </>
@@ -772,14 +890,17 @@ function ReviewStep({
   const canSeeCost = can('products.cost.view')
   const update = useUpdateReceipt(receipt.id)
   const post = useSetReceiptStatus(receipt.id)
-  const all = useLineRows(receipt)
+  // Only what is actually on the receipt. The product step may be showing a
+  // supplier's whole catalogue; a review of a delivery is not a review of
+  // everything they sell.
+  const all = useLineRows(receipt).rows.filter((row) => row.line !== null)
   const [confirming, setConfirming] = useState(false)
   const [search, setSearch] = useState('')
   const settings = receipt.costSettings
 
   const rows = search.trim()
     ? all.filter((row) =>
-        [row.variation?.barcode, row.sku, row.name, row.variation?.productName]
+        [row.variation?.barcode, row.variation?.sku, row.supplierSku, row.name]
           .filter((field): field is string => Boolean(field))
           .some((field) => field.toLowerCase().includes(search.trim().toLowerCase())),
       )
@@ -795,7 +916,7 @@ function ReviewStep({
     canSeeCost,
     costLabel: `Cost price (per unit)${settings.currency === 'uzs' ? '' : ', as invoiced'}`,
     landedCostOf: (row) => {
-      const uzs = landedUnitCostOn(row, receipt, receipt.usdRate, settings.basis)
+      const uzs = landedUnitCostOn(row.line!, receipt, receipt.usdRate, settings.basis)
       if (settings.currency === 'uzs') return formatMoney(Math.round(uzs))
       // "As invoiced" means the supplier's own currency, so a buyer can check
       // the figure against the invoice in front of them without doing the
@@ -818,7 +939,7 @@ function ReviewStep({
         columns={columns}
         data={rows}
         total={rows.length}
-        getRowId={(row) => row.id}
+        getRowId={(row) => row.key}
         toolbar={
           <div className="flex flex-1 flex-wrap items-center gap-2">
             <SearchInput

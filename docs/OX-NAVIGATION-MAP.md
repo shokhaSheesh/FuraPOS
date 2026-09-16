@@ -309,14 +309,28 @@ because all four are views of one document and a delivery is rarely entered in o
 products go on as the boxes are opened, the freight invoice arrives days later, the payment later
 still.
 
-1. **Add products.** Search, print, a list/cards view toggle, and **Add products ▾** — create a new
-   product, upload a spreadsheet, or pick from the catalogue. OX's picker turns the same grid into a
+1. **Add products.** Search, print, a list/cards view toggle, and — **only when there is no
+   supplier catalogue to show** — **Add products ▾**: create a new product, upload a spreadsheet, or
+   pick from the catalogue.
+
+   **From a supplier we hold a catalogue for, the screen starts full, not empty** (client request).
+   Every product they list is a row from the moment the receipt exists, in their order, with their
+   code in a "Their code" column and their asking price beside it. Typing a quantity is what puts a
+   row on the receipt; clearing it takes it off. Nobody searches for anything, because that is not
+   how a delivery is checked in — their invoice is in one hand and their catalogue is on the screen.
+   Lines they list but we have never stocked show as "new to us" and cannot be received: there is no
+   product to add the stock to, and inventing one from a delivery note is how a catalogue fills with
+   duplicates. A line already received that they have since dropped from their price list stays on
+   screen, at the top — stock has moved against it, and a row nobody can see is a row nobody can
+   correct. Market and China receipts have no catalogue of ours to start from, so they keep the
+   empty screen and the Add products menu. OX's picker turns the same grid into a
    scan mode (`search-or-scanbarcode`, closed with a red `Закрыть режим`); ours does the same with
    the shared `ProductPicker`. Columns are **ours, not OX's** (explicit client instruction): ID,
    Variation name, Barcode, SKU, Product name, Actual quantity, Current stock, Sale price, Supplier
    price. Actual quantity is the only editable cell. Current stock carries OX's per-location
    breakdown on hover. Row actions: print a label, remove. Footer: total quantity and variation
    count, as OX has it.
+
 2. **Extra data.** Freight, duty and the rest, plus the note; Cancel / Save. This is the landed-cost
    input described below.
 3. **Payment.** `Invoice for goods from <supplier>` with a Pay button, then Total quantity /

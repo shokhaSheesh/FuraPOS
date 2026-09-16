@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useDataStore } from '../store'
 import { matches, paginate } from '../query'
-import { NEW_PRODUCT_ATTRIBUTES } from '@/features/products/model/product'
 import type { SaleLine } from '@/features/sales/model/sale'
 
 const line = (over: Partial<SaleLine> = {}): SaleLine => ({
@@ -115,15 +114,12 @@ describe('data store', () => {
       categoryId: 'cat-2',
       brandId: null,
       manufacturer: null,
-      tags: [],
       unit: 'pcs',
       vehicleMake: 'DAF',
       vehicleModels: ['XF 105'],
       cargoWeightKg: null,
       cargoSize: null,
-      showOnline: false,
-      ...NEW_PRODUCT_ATTRIBUTES,
-      customFields: {},
+      oem: null,
       status: 'active',
       options: [{ id: 'opt-side', name: 'Side', values: ['Left', 'Right'] }],
       variations: [
@@ -135,19 +131,11 @@ describe('data store', () => {
           costPrice: 10,
           costCurrency: 'USD',
           salePrice: 200_000,
-          saleCurrency: 'UZS',
-          wholesalePrice: null,
-          wholesaleCurrency: 'UZS',
           discountPrice: null,
           lowStockThreshold: null,
           shelfAddress: null,
-          zone: null,
-          landedCost: null,
-          analogueIds: [],
-          boughtTogetherIds: [],
           mobileSku: null,
           mobileName: null,
-          customFields: {},
           stockByLocation: [{ locationId: 'loc-1', quantity: 4 }],
           status: 'active',
         },
@@ -159,19 +147,11 @@ describe('data store', () => {
           costPrice: 10,
           costCurrency: 'USD',
           salePrice: 200_000,
-          saleCurrency: 'UZS',
-          wholesalePrice: null,
-          wholesaleCurrency: 'UZS',
           discountPrice: null,
           lowStockThreshold: null,
           shelfAddress: null,
-          zone: null,
-          landedCost: null,
-          analogueIds: [],
-          boughtTogetherIds: [],
           mobileSku: null,
           mobileName: null,
-          customFields: {},
           stockByLocation: [
             { locationId: 'loc-1', quantity: 4 },
             { locationId: 'loc-3', quantity: 6 },
@@ -293,33 +273,5 @@ describe('booking a delivery against an order', () => {
     const receipt = useDataStore.getState().receipts.at(-1)!
     const received = receipt.lines.find((l) => l.variationId === line.variationId)!
     expect(received.receivedQuantity).toBe(outstanding)
-  })
-})
-
-describe('product columns', () => {
-  beforeEach(() => {
-    useDataStore.setState(useDataStore.getInitialState(), true)
-  })
-
-  it('adds a column the list can read, and deleting it removes every answer', () => {
-    const field = useDataStore.getState().createProductField({
-      name: '  Country of origin ',
-      type: 'text',
-      options: ['ignored for text'],
-      level: 'variation',
-    })
-    expect(field.name).toBe('Country of origin')
-    expect(field.options).toEqual([])
-
-    // The seeded Material column has answers on products and on their rows.
-    const material = 'pf-material'
-    const answered = () =>
-      useDataStore.getState().products.filter((p) => material in p.customFields).length +
-      useDataStore.getState().variations.filter((v) => material in v.customFields).length
-    expect(answered()).toBeGreaterThan(0)
-
-    useDataStore.getState().deleteProductField(material)
-    expect(useDataStore.getState().productFields.map((f) => f.id)).not.toContain(material)
-    expect(answered()).toBe(0)
   })
 })

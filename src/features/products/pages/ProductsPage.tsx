@@ -15,7 +15,6 @@ import { useListQuery } from '@/shared/hooks/useListQuery'
 import { useSession } from '@/app/providers/SessionProvider'
 import { paths } from '@/shared/config/paths'
 import { downloadCsv } from '@/shared/lib/csv'
-import { USD_RATE } from '@/data/seed'
 import {
   PRODUCT_LIST_VIEWS,
   productListView,
@@ -23,7 +22,6 @@ import {
   useCatalogSummary,
   useDeleteVariation,
   useLocations,
-  useProductFields,
   useVariations,
 } from '../api/products'
 import { SegmentedControl } from '@/shared/ui/SegmentedControl'
@@ -64,7 +62,6 @@ export default function ProductsPage() {
   const locationId = (query.location as string | null) ?? null
   const location = locationData.items.find((item) => item.id === locationId)
   const deleteVariation = useDeleteVariation()
-  const { all: customFields } = useProductFields()
 
   const [pendingDelete, setPendingDelete] = useState<VariationRow | null>(null)
   const [importing, setImporting] = useState(false)
@@ -72,8 +69,6 @@ export default function ProductsPage() {
   const columns = useMemo(
     () =>
       buildProductColumns({
-        // Suppliers invoice in USD, so margin must convert before comparing.
-        usdRate: USD_RATE,
         canSeeCost: can('products.cost.view'),
         canEdit: can('products.list.edit'),
         canDelete: can('products.list.delete'),
@@ -82,9 +77,8 @@ export default function ProductsPage() {
         // A column per location, off until picked from Columns. Pointless once
         // the list is split or filtered by location: Quantity already is that.
         stockColumnsFor: view === 'variations' && !locationId ? locationData.items : [],
-        customFields,
       }),
-    [can, navigate, view, locationId, locationData.items, customFields],
+    [can, navigate, view, locationId, locationData.items],
   )
 
   /*

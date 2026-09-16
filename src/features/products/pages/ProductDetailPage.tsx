@@ -11,11 +11,9 @@ import { paths } from '@/shared/config/paths'
 import { cn } from '@/shared/lib/cn'
 import { formatDate, formatMoney, formatNumber, formatPercent } from '@/shared/lib/format'
 import { USD_RATE } from '@/data/seed'
-import { useProduct, useProductFields } from '../api/products'
+import { useProduct } from '../api/products'
 import { sanitizeHtml } from '@/shared/ui/RichTextEditor'
-import { displayFieldValue } from '@/shared/types/productFields'
 import {
-  PRODUCT_FLAGS,
   costInUzs,
   effectivePrice,
   marginRatio,
@@ -89,10 +87,6 @@ export default function ProductDetailPage() {
                 {product.vehicleModels.length ? ` · ${product.vehicleModels.join(', ')}` : ''}
               </Badge>
             ) : null}
-            {product.showOnline ? <Badge>Online</Badge> : null}
-            {product.tags.map((tag) => (
-              <Badge key={tag}>{tag}</Badge>
-            ))}
           </div>
         }
       />
@@ -195,11 +189,10 @@ function VariationsTable({ product }: { product: Product }) {
 }
 
 function Details({ product }: { product: Product }) {
-  const { product: productFields } = useProductFields()
   const rows: [string, React.ReactNode][] = [
     ['Category', product.categoryPath],
-    ['Supplier brand', product.brandName ?? <Empty />],
-    ['Manufacturer', product.manufacturer ?? <Empty />],
+    ['Supplier', product.brandName ?? <Empty />],
+    ['Product brand', product.manufacturer ?? <Empty />],
     ['OEM', product.oem ?? <Empty />],
     [
       'Description',
@@ -213,20 +206,11 @@ function Details({ product }: { product: Product }) {
         <Empty />
       ),
     ],
-    ['Type', product.partType ?? <Empty />],
     ['Unit', product.unit],
     ['Vehicle make', product.vehicleMake ?? <Empty />],
     ['Vehicle models', product.vehicleModels.join(', ') || <Empty />],
     ['Cargo weight', product.cargoWeightKg ? `${product.cargoWeightKg} kg` : <Empty />],
     ['Cargo size', product.cargoSize ?? <Empty />],
-    ...PRODUCT_FLAGS.map((flag): [string, React.ReactNode] => [
-      flag.label,
-      product[flag.key] ? 'Yes' : 'No',
-    ]),
-    ...productFields.map((field): [string, React.ReactNode] => [
-      field.name,
-      displayFieldValue(field, product.customFields[field.id]) ?? <Empty />,
-    ]),
     ['Created', formatDate(product.createdAt)],
     ['Updated', formatDate(product.updatedAt)],
   ]

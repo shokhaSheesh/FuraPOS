@@ -1,95 +1,43 @@
 import { Pencil, Trash2 } from 'lucide-react'
 import { Badge } from '@/shared/ui/Badge'
 import { RowActions } from '@/shared/components/RowActions'
-import { Switch } from '@/shared/ui/Switch'
-import { useDataStore } from '@/data/store'
-import { ProductThumb } from '@/shared/components/ProductThumb'
 import type { TableColumn } from '@/shared/components/table/features'
-import { displayFieldValue, type ProductField } from '@/shared/types/productFields'
+import { formatMoney, formatNumber } from '@/shared/lib/format'
 import { plainText } from '@/shared/ui/RichTextEditor'
-import { formatMoney, formatNumber, formatPercent } from '@/shared/lib/format'
-import {
-  costInUzs,
-  discountAmount,
-  marginRatio,
-  saleInUzs,
-  PRODUCT_FLAGS,
-  type ProductFlag,
-  type VariationRow,
-} from '../model/product'
+import type { VariationRow } from '../model/product'
 
 const Empty = () => <span className="text-fg-subtle">—</span>
 
-/** Any price may be quoted in USD, so it is always shown with its currency. */
-const money = (amount: number, currency: VariationRow['costCurrency']) =>
-  currency === 'USD' ? `${formatNumber(amount)} USD` : formatMoney(amount)
-
-const cost = (v: VariationRow) => money(v.costPrice, v.costCurrency)
-
 const text = (value: string | null) => value ?? <Empty />
 
+/** Cost is invoiced in USD as often as in UZS, so it always carries its currency. */
+const cost = (v: VariationRow) =>
+  v.costCurrency === 'USD' ? `${formatNumber(v.costPrice)} USD` : formatMoney(v.costPrice)
+
 /**
- * Every column OX's Вариации list offers, in OX's own order, and nothing taken
- * away — the brief is parity first, pruning after. The Russian name of each is
- * beside it so the two lists can be read against each other; the mapping is
- * also in docs/OX-NAVIGATION-MAP.md. Margin and Status are ours and sit after
- * OX's last column.
+ * The catalogue's columns — the twenty the business asked for, in its own
+ * order, and nothing else. Status and the row actions are not fields: they are
+ * how a row is worked with, so they sit at the end.
  *
- * Cost columns still need `products.cost.view`: parity with OX's column list
- * does not mean showing a seller what we paid.
+ * The mapping to OX's Russian headings is in docs/OX-NAVIGATION-MAP.md.
  */
 export function buildProductColumns({
-  usdRate,
   onEdit,
   onDelete,
   canEdit,
   canDelete,
   canSeeCost,
   stockColumnsFor = [],
-  customFields = [],
 }: {
-  /** The business's own columns, from Settings → Product columns, after OX's last one. */
-  customFields?: ProductField[]
-  /** One quantity column per location, placed right after Quantity. Empty for none. */
-  stockColumnsFor?: readonly { id: string; name: string }[]
-  usdRate: number
   onEdit: (row: VariationRow) => void
   onDelete: (row: VariationRow) => void
   canEdit: boolean
   canDelete: boolean
   canSeeCost: boolean
+  /** One quantity column per location, placed right after Quantity. Empty for none. */
+  stockColumnsFor?: readonly { id: string; name: string }[]
 }): TableColumn<VariationRow>[] {
-  const costOnly = (columns: TableColumn<VariationRow>[]) => (canSeeCost ? columns : [])
-
   return [
-    // Рисунок
-    {
-      id: 'image',
-      header: 'Image',
-      cell: ({ row }) => <ProductThumb src={row.original.imageUrl} size="sm" />,
-    },
-    // ID Вариации
-    {
-      accessorKey: 'id',
-      header: 'Variation ID',
-      cell: ({ row }) => (
-        <span className="text-fg-muted text-2xs font-mono">{row.original.id}</span>
-      ),
-    },
-    // Названия вариации
-    {
-      accessorKey: 'fullName',
-      header: 'Variation name',
-      cell: ({ row }) => (
-        <div className="min-w-0">
-          <span className="font-medium">{row.original.productName}</span>
-          {row.original.name !== 'Standard' ? (
-            <span className="text-fg-muted"> · {row.original.name}</span>
-          ) : null}
-        </div>
-      ),
-      enableHiding: false,
-    },
     // Штрих-код
     {
       accessorKey: 'barcode',
@@ -105,223 +53,8 @@ export function buildProductColumns({
     {
       accessorKey: 'sku',
       header: 'SKU',
+      enableHiding: false,
       cell: ({ row }) => <span className="text-2xs font-mono">{row.original.sku}</span>,
-    },
-    // Категории
-    {
-      accessorKey: 'categoryPath',
-      header: 'Categories',
-      cell: ({ row }) => row.original.categoryPath,
-    },
-    // Бренд
-    {
-      accessorKey: 'brandName',
-      header: 'Brand',
-      cell: ({ row }) => text(row.original.brandName),
-    },
-    // Описание
-    {
-      accessorKey: 'description',
-      header: 'Description',
-      cell: ({ row }) => {
-        const words = plainText(row.original.description)
-        return words ? <span title={words}>{words}</span> : <Empty />
-      },
-    },
-    // Теги
-    {
-      accessorKey: 'tags',
-      header: 'Tags',
-      cell: ({ row }) => <Chips values={row.original.tags} />,
-    },
-    // С этим вместе покупают
-    {
-      id: 'boughtTogetherIds',
-      header: 'Frequently bought together',
-      cell: ({ row }) => <LinkedProducts ids={row.original.boughtTogetherIds} />,
-    },
-    // Аналоги
-    {
-      id: 'analogueIds',
-      header: 'Analogues',
-      cell: ({ row }) => <LinkedProducts ids={row.original.analogueIds} />,
-    },
-    // Отгружаемый … Весовой — switched in place, as OX does
-    ...PRODUCT_FLAGS.map((flag): TableColumn<VariationRow> => ({
-      accessorKey: flag.key,
-      header: flag.label,
-      cell: ({ row }) => <FlagToggle row={row.original} flag={flag.key} label={flag.label} />,
-    })),
-    // Зона
-    {
-      accessorKey: 'zone',
-      header: 'Zone',
-      cell: ({ row }) => text(row.original.zone),
-    },
-    // Локация
-    {
-      id: 'location',
-      header: 'Location',
-      cell: ({ row }) => {
-        const at = row.original.stockByLocation
-        if (!at.length) return <Empty />
-        // One location reads as itself; several read as a count, with the
-        // breakdown on hover rather than a cell nobody can fit.
-        return at.length === 1 ? (
-          at[0]!.locationName
-        ) : (
-          <span title={at.map((s) => `${s.locationName}: ${s.quantity}`).join('\n')}>
-            {at.length} locations
-          </span>
-        )
-      },
-    },
-    // Кол-во
-    {
-      accessorKey: 'stock',
-      header: 'Quantity',
-      meta: { align: 'right' },
-      cell: ({ row }) => {
-        const { stock, lowStockThreshold, unit } = row.original
-        // Low stock is "needs attention" (warning), out of stock is a problem
-        // (danger). Neither is blue — blue is the brand.
-        const low = lowStockThreshold !== null && stock <= lowStockThreshold
-        const out = stock === 0
-        return (
-          <span
-            className={
-              out ? 'text-danger font-medium' : low ? 'text-warning font-medium' : undefined
-            }
-          >
-            {formatNumber(stock)} {unit}
-          </span>
-        )
-      },
-    },
-    ...stockColumnsFor.map((location): TableColumn<VariationRow> => ({
-      id: `stockAt:${location.id}`,
-      header: location.name,
-      enableSorting: false,
-      meta: { align: 'right' },
-      cell: ({ row }) => {
-        const at = row.original.stockByLocation.find((s) => s.locationId === location.id)
-        if (!at) return <Empty />
-        return (
-          <span className={at.quantity === 0 ? 'text-danger font-medium' : undefined}>
-            {formatNumber(at.quantity)}
-          </span>
-        )
-      },
-    })),
-    // Цена продажи за ед.
-    {
-      accessorKey: 'salePrice',
-      header: 'Sale price per unit',
-      meta: { align: 'right' },
-      cell: ({ row }) => money(row.original.salePrice, row.original.saleCurrency),
-    },
-    // Ours: what a trade customer pays, in its own currency
-    {
-      accessorKey: 'wholesalePrice',
-      header: 'Wholesale price',
-      meta: { align: 'right' },
-      cell: ({ row }) =>
-        row.original.wholesalePrice === null ? (
-          <Empty />
-        ) : (
-          money(row.original.wholesalePrice, row.original.wholesaleCurrency)
-        ),
-    },
-    // Общая сумма продажи
-    {
-      id: 'saleValue',
-      header: 'Total sale value',
-      meta: { align: 'right' },
-      cell: ({ row }) => formatMoney(saleInUzs(row.original, usdRate) * row.original.stock),
-    },
-    // Со скидкой
-    {
-      accessorKey: 'discountPrice',
-      header: 'Discounted',
-      meta: { align: 'right' },
-      cell: ({ row }) =>
-        row.original.discountPrice ? (
-          <span className="text-warning">
-            {money(row.original.discountPrice, row.original.saleCurrency)}
-          </span>
-        ) : (
-          <Empty />
-        ),
-    },
-    // Скидка
-    {
-      id: 'discount',
-      header: 'Discount',
-      meta: { align: 'right' },
-      cell: ({ row }) => {
-        const off = discountAmount(row.original)
-        return off > 0 ? (
-          <span className="text-warning">− {money(off, row.original.saleCurrency)}</span>
-        ) : (
-          <Empty />
-        )
-      },
-    },
-    ...costOnly([
-      // Цена поставщика за ед.
-      {
-        accessorKey: 'costPrice',
-        header: 'Supplier price per unit',
-        meta: { align: 'right' },
-        cell: ({ row }) => cost(row.original),
-      },
-      // Общая сумма поставщ.
-      {
-        id: 'costValue',
-        header: 'Total supplier value',
-        meta: { align: 'right' },
-        cell: ({ row }) => formatMoney(costInUzs(row.original, usdRate) * row.original.stock),
-      },
-      // Себестоимость
-      {
-        accessorKey: 'landedCost',
-        header: 'Landed cost',
-        meta: { align: 'right' },
-        cell: ({ row }) =>
-          row.original.landedCost === null ? <Empty /> : formatMoney(row.original.landedCost),
-      },
-    ]),
-    // Марка
-    {
-      accessorKey: 'vehicleMake',
-      header: 'Make',
-      cell: ({ row }) => text(row.original.vehicleMake),
-    },
-    // Вес карго
-    {
-      accessorKey: 'cargoWeightKg',
-      header: 'Cargo weight',
-      meta: { align: 'right' },
-      cell: ({ row }) =>
-        row.original.cargoWeightKg ? `${formatNumber(row.original.cargoWeightKg)} kg` : <Empty />,
-    },
-    // Размер карго
-    {
-      accessorKey: 'cargoSize',
-      header: 'Cargo size',
-      cell: ({ row }) => text(row.original.cargoSize),
-    },
-    // Категория конечное
-    {
-      accessorKey: 'categoryName',
-      header: 'End category',
-      cell: ({ row }) => row.original.categoryName,
-    },
-    // Бренд товара
-    {
-      accessorKey: 'manufacturer',
-      header: 'Product brand',
-      cell: ({ row }) => text(row.original.manufacturer),
     },
     // Артикул моб
     {
@@ -333,6 +66,43 @@ export function buildProductColumns({
         ) : (
           <Empty />
         ),
+    },
+    // Продажная цена
+    {
+      accessorKey: 'salePrice',
+      header: 'Sale price',
+      meta: { align: 'right' },
+      cell: ({ row }) => formatMoney(row.original.salePrice),
+    },
+    // Цена поставщика — only for roles allowed to see what we pay
+    ...(canSeeCost
+      ? ([
+          {
+            accessorKey: 'costPrice',
+            header: 'Supplier price',
+            meta: { align: 'right' },
+            cell: ({ row }) => cost(row.original),
+          },
+        ] as TableColumn<VariationRow>[])
+      : []),
+    // Поставщик
+    {
+      accessorKey: 'brandName',
+      header: 'Supplier',
+      cell: ({ row }) => text(row.original.brandName),
+    },
+    // Название продукта
+    {
+      accessorKey: 'productName',
+      header: 'Product name',
+      enableHiding: false,
+      cell: ({ row }) => <span className="font-medium">{row.original.productName}</span>,
+    },
+    // Название вариации продукта
+    {
+      accessorKey: 'name',
+      header: 'Variation name',
+      cell: ({ row }) => text(row.original.name),
     },
     // Название продукта моб
     {
@@ -357,11 +127,77 @@ export function buildProductColumns({
           <Empty />
         ),
     },
-    // Тип
+    // Описание — written as formatted text, listed as words
     {
-      accessorKey: 'partType',
-      header: 'Type',
-      cell: ({ row }) => text(row.original.partType),
+      accessorKey: 'description',
+      header: 'Description',
+      cell: ({ row }) => {
+        const words = plainText(row.original.description)
+        return words ? <span title={words}>{words}</span> : <Empty />
+      },
+    },
+    // Фактическое кол-во
+    {
+      accessorKey: 'stock',
+      header: 'Quantity',
+      meta: { align: 'right' },
+      cell: ({ row }) => {
+        const { stock, lowStockThreshold, unit } = row.original
+        // Low stock is "needs attention" (warning), out of stock is a problem
+        // (danger). Neither is blue — blue is the brand.
+        const low = lowStockThreshold !== null && stock <= lowStockThreshold
+        const out = stock === 0
+        return (
+          <span
+            className={
+              out ? 'text-danger font-medium' : low ? 'text-warning font-medium' : undefined
+            }
+          >
+            {formatNumber(stock)} {unit}
+          </span>
+        )
+      },
+    },
+    ...stockColumnsFor.map((location): TableColumn<VariationRow> => ({
+      id: `stockAt:${location.id}`,
+      header: `Qty · ${location.name}`,
+      enableSorting: false,
+      meta: { align: 'right' },
+      cell: ({ row }) => {
+        const at = row.original.stockByLocation.find((s) => s.locationId === location.id)
+        if (!at) return <Empty />
+        return (
+          <span className={at.quantity === 0 ? 'text-danger font-medium' : undefined}>
+            {formatNumber(at.quantity)}
+          </span>
+        )
+      },
+    })),
+    // Категория
+    {
+      accessorKey: 'categoryPath',
+      header: 'Category',
+      cell: ({ row }) => row.original.categoryPath,
+    },
+    // Вес карго
+    {
+      accessorKey: 'cargoWeightKg',
+      header: 'Cargo weight',
+      meta: { align: 'right' },
+      cell: ({ row }) =>
+        row.original.cargoWeightKg ? `${formatNumber(row.original.cargoWeightKg)} kg` : <Empty />,
+    },
+    // Размер карго
+    {
+      accessorKey: 'cargoSize',
+      header: 'Cargo size',
+      cell: ({ row }) => text(row.original.cargoSize),
+    },
+    // Марка
+    {
+      accessorKey: 'vehicleMake',
+      header: 'Make',
+      cell: ({ row }) => text(row.original.vehicleMake),
     },
     // Модель
     {
@@ -370,31 +206,19 @@ export function buildProductColumns({
       cell: ({ row }) =>
         row.original.vehicleModels.length ? row.original.vehicleModels.join(', ') : <Empty />,
     },
-    // Адрес товара
+    // Категория конечное
     {
-      accessorKey: 'shelfAddress',
-      header: 'Product address',
-      cell: ({ row }) => text(row.original.shelfAddress),
+      accessorKey: 'categoryName',
+      header: 'End category',
+      cell: ({ row }) => row.original.categoryName,
     },
-    // Added by the business itself
-    ...customFields.map((field): TableColumn<VariationRow> => ({
-      id: `custom:${field.id}`,
-      header: field.name,
-      enableSorting: false,
-      meta: field.type === 'number' ? { align: 'right' } : undefined,
-      cell: ({ row }) => text(displayFieldValue(field, row.original.customFields[field.id])),
-    })),
-    // Ours, not OX's
-    ...costOnly([
-      {
-        id: 'margin',
-        header: 'Margin',
-        meta: { align: 'right' },
-        cell: ({ row }) => (
-          <span className="text-fg-muted">{formatPercent(marginRatio(row.original, usdRate))}</span>
-        ),
-      },
-    ]),
+    // Бренд товара
+    {
+      accessorKey: 'manufacturer',
+      header: 'Product brand',
+      cell: ({ row }) => text(row.original.manufacturer),
+    },
+    // Not fields: how a row is worked with.
     {
       accessorKey: 'status',
       header: 'Status',
@@ -430,72 +254,16 @@ export function buildProductColumns({
   ]
 }
 
-/** Hidden on first open; the list starts with what it always showed, now in OX's order. */
+/**
+ * Hidden on first open. The list is now short enough to show nearly all of it;
+ * only the second name columns and the cargo pair start off.
+ */
 export const PRODUCT_COLUMNS_HIDDEN_BY_DEFAULT = [
-  'id',
-  'description',
-  'tags',
-  'boughtTogetherIds',
-  'analogueIds',
-  ...PRODUCT_FLAGS.map((flag) => flag.key),
-  'zone',
-  'location',
-  'saleValue',
-  'discountPrice',
-  'discount',
-  'costValue',
-  'landedCost',
+  'mobileSku',
+  'mobileName',
+  'name',
   'cargoWeightKg',
   'cargoSize',
   'categoryName',
-  'manufacturer',
-  'mobileSku',
-  'mobileName',
-  'partSide',
-  'wholesalePrice',
-  'oem',
-  'partType',
-  'vehicleModels',
-  'shelfAddress',
+  'description',
 ]
-
-function Chips({ values }: { values: string[] }) {
-  if (!values.length) return <Empty />
-  return (
-    <div className="flex gap-1">
-      {values.map((value) => (
-        <Badge key={value}>{value}</Badge>
-      ))}
-    </div>
-  )
-}
-
-/** Linked variations by name; the first is shown, the rest counted, all of them on hover. */
-function LinkedProducts({ ids }: { ids: string[] }) {
-  const variations = useDataStore((s) => s.variations)
-  // A link to a variation deleted since is not shown as a bare id.
-  const names = ids.flatMap((id) => variations.find((v) => v.id === id)?.fullName ?? [])
-  if (!names.length) return <Empty />
-  return (
-    <span title={names.join('\n')}>
-      {names[0]}
-      {names.length > 1 ? <span className="text-fg-muted"> +{names.length - 1}</span> : null}
-    </span>
-  )
-}
-
-/**
- * The yes/no columns are edited in place, as in the reference product. They
- * live on the *product*, so flipping one moves every variation of that part —
- * which is why the store updates them together rather than per row.
- */
-function FlagToggle({ row, flag, label }: { row: VariationRow; flag: ProductFlag; label: string }) {
-  const setFlag = useDataStore((s) => s.setProductFlag)
-  return (
-    <Switch
-      checked={row[flag]}
-      onCheckedChange={(value) => setFlag(row.productId, flag, value)}
-      aria-label={`${label} — ${row.fullName}`}
-    />
-  )
-}

@@ -1,6 +1,5 @@
 import { z } from 'zod'
 import type { Id, IsoDate } from '@/shared/types'
-import { customFieldValuesSchema, type CustomFieldValues } from '@/shared/types/productFields'
 
 export type ProductStatus = 'active' | 'archived' | 'draft'
 export type UnitOfMeasure = 'pcs' | 'kg' | 'l' | 'm' | 'pack'
@@ -82,15 +81,6 @@ export interface ProductVariation {
   costPrice: number
   costCurrency: CostCurrency
   salePrice: number
-  /**
-   * What the sale price is quoted in. Usually UZS — a shop's shelf price — but
-   * some lines are priced in USD and converted at the till, so the currency
-   * travels with the number rather than being assumed.
-   */
-  saleCurrency: CostCurrency
-  /** What a trade customer pays, when that differs from the shelf price. */
-  wholesalePrice: number | null
-  wholesaleCurrency: CostCurrency
   /** Promotional price when set; null means it sells at salePrice. */
   discountPrice: number | null
 
@@ -99,78 +89,22 @@ export interface ProductVariation {
   lowStockThreshold: number | null
   /** Shelf or bin reference, for picking. */
   shelfAddress: string | null
-  /** The warehouse zone the shelf sits in — OX's Зона. */
-  zone: string | null
-  /**
-   * What one unit cost us once it was on the shelf, in UZS — OX's
-   * Себестоимость. Supplier price plus freight and duty, so it is not the same
-   * number as `costPrice`, which is what the supplier invoices.
-   */
-  landedCost: number | null
 
-  /*
-    Per variation, as OX has them: the left step's analogue is another left
-    step, and the mobile app lists "left" and "right" as two things.
-  */
-  /** Variations that can stand in for this one — OX's Аналоги. */
-  analogueIds: Id[]
-  /** Variations usually bought with it — OX's С этим вместе покупают. */
-  boughtTogetherIds: Id[]
   /** The SKU and name the mobile app shows — Артикул моб, Название продукта моб. */
   mobileSku: string | null
   mobileName: string | null
-  /** Answers to the business's own variation-level columns — Settings → Product columns. */
-  customFields: CustomFieldValues
 
   imageUrl: string | null
   status: ProductStatus
 }
 
-/**
- * The rest of OX's product columns, carried over one for one — see "Product
- * list" in docs/OX-NAVIGATION-MAP.md. Kept as one group so the flat variation
- * row copies them in a single spread and cannot miss one.
- */
-export interface ProductAttributes {
-  /** OX keeps OEM as its own column, beside the free-text description. */
-  oem: string | null
-  /** Can go on a sale (Продаваемый). */
-  isSellable: boolean
-  /** Тип. */
-  partType: string | null
-}
-
-export const productAttributes = (p: ProductAttributes): ProductAttributes => ({
-  oem: p.oem,
-  isSellable: p.isSellable,
-  partType: p.partType,
-})
-
-/** What a new product starts with. Tracked, sellable, counted and taxed: the ordinary part. */
-export const NEW_PRODUCT_ATTRIBUTES: ProductAttributes = {
-  oem: null,
-  isSellable: true,
-  partType: null,
-}
-
-/**
- * The yes/nos a product carries, in OX's column order. Switched in place on
- * the list. OX has six more — shippable, tracking, countable, taxable,
- * manufactured, weighted — all dropped at the client's request: the business
- * answers them the same way for everything it sells.
- */
-export const PRODUCT_FLAGS = [
-  { key: 'showOnline', label: 'Show online', hint: 'Visible in the storefront' },
-  { key: 'isSellable', label: 'Sellable', hint: 'Can go on a sale' },
-] as const
-
-export type ProductFlag = (typeof PRODUCT_FLAGS)[number]['key']
-
-export interface Product extends ProductAttributes {
+export interface Product {
   id: Id
   name: string
-  /** Free text. The OEM number has its own field, `oem`. */
+  /** Free text, written as formatted HTML — see RichTextEditor. */
   description: string | null
+  /** OX keeps OEM as its own column, beside the description. */
+  oem: string | null
   categoryId: Id
   categoryName: string
   /** Full hierarchy, e.g. "Chassis > Brakes". */
@@ -184,7 +118,6 @@ export interface Product extends ProductAttributes {
    * genuinely different companies.
    */
   manufacturer: string | null
-  tags: string[]
   unit: UnitOfMeasure
 
   /** Which vehicles it fits — how an auto-parts catalogue is searched. */
@@ -194,11 +127,6 @@ export interface Product extends ProductAttributes {
   cargoWeightKg: number | null
   /** Free text, e.g. "120*60*30". */
   cargoSize: string | null
-
-  showOnline: boolean
-
-  /** Answers to the business's own product-level columns — Settings → Product columns. */
-  customFields: CustomFieldValues
 
   /** The axes this product varies along. Empty when it is sold one way. */
   options: ProductOption[]
@@ -212,29 +140,23 @@ export interface Product extends ProductAttributes {
  * A variation flattened with the parent fields needed to display or search it.
  * This is what the catalogue lists and what a sale line points at.
  */
-export interface VariationRow extends ProductVariation, ProductAttributes {
-  /**
-   * The product's and the variation's own custom answers together — each
-   * field has one level, so the two never share a key.
-   */
-  customFields: CustomFieldValues
+export interface VariationRow extends ProductVariation {
   productName: string
   /** Product name and variation together, e.g. "Brake disc — Left". */
   fullName: string
   description: string | null
+  oem: string | null
   categoryId: Id
   categoryName: string
   categoryPath: string
   brandId: Id | null
   brandName: string | null
   manufacturer: string | null
-  tags: string[]
   unit: UnitOfMeasure
   vehicleMake: string | null
   vehicleModels: string[]
   cargoWeightKg: number | null
   cargoSize: string | null
-  showOnline: boolean
   options: ProductOption[]
 }
 
@@ -252,24 +174,12 @@ export const costInUzs = (
   usdRate: number,
 ) => (v.costCurrency === 'USD' ? v.costPrice * usdRate : v.costPrice)
 
-/** The same for what it sells at, since the sale price carries its own currency. */
-export const inUzs = (amount: number, currency: CostCurrency, usdRate: number) =>
-  currency === 'USD' ? amount * usdRate : amount
-
-export const saleInUzs = (
-  v: Pick<ProductVariation, 'salePrice' | 'discountPrice' | 'saleCurrency'>,
-  usdRate: number,
-) => inUzs(effectivePrice(v), v.saleCurrency, usdRate)
-
 /** Derived, never stored — margin must always follow live prices. */
 export function marginRatio(
-  v: Pick<
-    ProductVariation,
-    'costPrice' | 'costCurrency' | 'salePrice' | 'discountPrice' | 'saleCurrency'
-  >,
+  v: Pick<ProductVariation, 'costPrice' | 'costCurrency' | 'salePrice' | 'discountPrice'>,
   usdRate: number,
 ): number {
-  const price = saleInUzs(v, usdRate)
+  const price = effectivePrice(v)
   if (price === 0) return 0
   return (price - costInUzs(v, usdRate)) / price
 }
@@ -463,19 +373,11 @@ export const variationFormSchema = z.object({
   costPrice: z.number().nonnegative(),
   costCurrency: z.enum(['USD', 'UZS']),
   salePrice: z.number().nonnegative(),
-  saleCurrency: z.enum(['USD', 'UZS']),
-  wholesalePrice: z.number().nonnegative().nullable(),
-  wholesaleCurrency: z.enum(['USD', 'UZS']),
   discountPrice: z.number().nonnegative().nullable(),
   lowStockThreshold: z.number().int().nonnegative().nullable(),
   shelfAddress: z.string().nullable(),
-  zone: z.string().nullable(),
-  landedCost: z.number().nonnegative().nullable(),
-  analogueIds: z.array(z.string()),
-  boughtTogetherIds: z.array(z.string()),
   mobileSku: z.string().nullable(),
   mobileName: z.string().nullable(),
-  customFields: customFieldValuesSchema,
   status: z.enum(['active', 'archived', 'draft']),
   stockByLocation: z.array(stockAtLocationFormSchema),
   optionValues: z.array(z.object({ optionId: z.string(), value: z.string() })),
@@ -488,17 +390,12 @@ export const productFormSchema = z
     categoryId: z.string().min(1, 'Pick a category'),
     brandId: z.string().nullable(),
     manufacturer: z.string().nullable(),
-    tags: z.array(z.string()),
     unit: z.enum(['pcs', 'kg', 'l', 'm', 'pack']),
     vehicleMake: z.string().nullable(),
     vehicleModels: z.array(z.string()),
     cargoWeightKg: z.number().nonnegative().nullable(),
     cargoSize: z.string().nullable(),
-    showOnline: z.boolean(),
     oem: z.string().nullable(),
-    isSellable: z.boolean(),
-    partType: z.string().nullable(),
-    customFields: customFieldValuesSchema,
     status: z.enum(['active', 'archived', 'draft']),
     variationMode: z.enum(['single', 'multiple']),
     options: z.array(optionFormSchema).max(MAX_OPTIONS),

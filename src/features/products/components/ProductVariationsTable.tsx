@@ -4,12 +4,9 @@ import { NumberField } from '@/shared/components/NumberField'
 import { Button } from '@/shared/ui/Button'
 import { Checkbox } from '@/shared/ui/Checkbox'
 import { Input } from '@/shared/ui/Input'
-import { MultiSelect, type MultiSelectOption } from '@/shared/ui/MultiSelect'
 import { Select } from '@/shared/ui/Select'
 import { cn } from '@/shared/lib/cn'
-import type { ProductField } from '@/shared/types/productFields'
 import { combinationName, type ProductFormValues } from '../model/product'
-import { CustomFieldInput } from './CustomFieldInput'
 
 const CURRENCIES = [
   { value: 'USD', label: 'USD' },
@@ -32,15 +29,9 @@ const CURRENCIES = [
 export function ProductVariationsTable({
   form,
   productName,
-  variationChoices,
-  customFields,
 }: {
   form: UseFormReturn<ProductFormValues>
   productName: string
-  /** What analogues and bought-together can point at. */
-  variationChoices: MultiSelectOption<string>[]
-  /** The business's own variation-level columns, one table column each. */
-  customFields: ProductField[]
 }) {
   const variations = form.watch('variations')
   const errors = form.formState.errors.variations
@@ -109,19 +100,8 @@ export function ProductVariationsTable({
                 onFill={() => fillDown('salePrice')}
                 many={variations.length > 1}
               />
-              <th className={th}>Wholesale price</th>
-              <th className={th}>Landed cost</th>
-              <th className={th}>Shelf</th>
-              <th className={th}>Zone</th>
               <th className={th}>Mobile SKU</th>
               <th className={th}>Mobile product name</th>
-              <th className={th}>Analogues</th>
-              <th className={th}>Frequently bought together</th>
-              {customFields.map((field) => (
-                <th key={field.id} className={th}>
-                  {field.name}
-                </th>
-              ))}
               <th className={th}>Status</th>
             </tr>
           </thead>
@@ -224,101 +204,22 @@ export function ProductVariationsTable({
                     {errorText(rowError?.costPrice?.message)}
                   </td>
                   <td className={cell}>
-                    <div className="flex gap-1.5">
-                      <Controller
-                        control={form.control}
-                        name={`variations.${index}.salePrice`}
-                        render={({ field }) => (
-                          <NumberField
-                            className="w-32"
-                            nullable={false}
-                            disabled={!sold}
-                            aria-label={`Sale price — ${name}`}
-                            value={field.value}
-                            onChange={(v) => field.onChange(v ?? 0)}
-                            onBlur={field.onBlur}
-                          />
-                        )}
-                      />
-                      <Controller
-                        control={form.control}
-                        name={`variations.${index}.saleCurrency`}
-                        render={({ field }) => (
-                          <Select
-                            value={field.value}
-                            onChange={field.onChange}
-                            options={CURRENCIES}
-                            disabled={!sold}
-                            aria-label={`Sale price currency — ${name}`}
-                            className="w-20"
-                          />
-                        )}
-                      />
-                    </div>
-                    {errorText(rowError?.salePrice?.message)}
-                  </td>
-                  <td className={cell}>
-                    <div className="flex gap-1.5">
-                      <Controller
-                        control={form.control}
-                        name={`variations.${index}.wholesalePrice`}
-                        render={({ field }) => (
-                          <NumberField
-                            className="w-32"
-                            disabled={!sold}
-                            aria-label={`Wholesale price — ${name}`}
-                            {...fieldProps(field)}
-                          />
-                        )}
-                      />
-                      <Controller
-                        control={form.control}
-                        name={`variations.${index}.wholesaleCurrency`}
-                        render={({ field }) => (
-                          <Select
-                            value={field.value}
-                            onChange={field.onChange}
-                            options={CURRENCIES}
-                            disabled={!sold}
-                            aria-label={`Wholesale price currency — ${name}`}
-                            className="w-20"
-                          />
-                        )}
-                      />
-                    </div>
-                  </td>
-                  <td className={cell}>
                     <Controller
                       control={form.control}
-                      name={`variations.${index}.landedCost`}
+                      name={`variations.${index}.salePrice`}
                       render={({ field }) => (
                         <NumberField
                           className="w-32"
+                          nullable={false}
                           disabled={!sold}
-                          aria-label={`Landed cost — ${name}`}
-                          {...fieldProps(field)}
+                          aria-label={`Sale price — ${name}`}
+                          value={field.value}
+                          onChange={(v) => field.onChange(v ?? 0)}
+                          onBlur={field.onBlur}
                         />
                       )}
                     />
-                    {errorText(rowError?.landedCost?.message)}
-                  </td>
-                  <td className={cell}>
-                    <Input
-                      className="w-28"
-                      placeholder="A-12-3"
-                      aria-label={`Shelf — ${name}`}
-                      disabled={!sold}
-                      {...form.register(`variations.${index}.shelfAddress`)}
-                    />
-                  </td>
-                  <td className={cell}>
-                    <Input
-                      className="w-28"
-                      placeholder="Zone A"
-                      aria-label={`Zone — ${name}`}
-                      disabled={!sold}
-                      {...form.register(`variations.${index}.zone`)}
-                    />
+                    {errorText(rowError?.salePrice?.message)}
                   </td>
                   <td className={cell}>
                     <Input
@@ -336,52 +237,6 @@ export function ProductVariationsTable({
                       {...form.register(`variations.${index}.mobileName`)}
                     />
                   </td>
-                  <td className={cell}>
-                    <Controller
-                      control={form.control}
-                      name={`variations.${index}.analogueIds`}
-                      render={({ field }) => (
-                        <MultiSelect
-                          aria-label={`Analogues — ${name}`}
-                          className="w-48"
-                          disabled={!sold}
-                          value={field.value}
-                          onChange={field.onChange}
-                          options={variationChoices}
-                          placeholder="None"
-                        />
-                      )}
-                    />
-                  </td>
-                  <td className={cell}>
-                    <Controller
-                      control={form.control}
-                      name={`variations.${index}.boughtTogetherIds`}
-                      render={({ field }) => (
-                        <MultiSelect
-                          aria-label={`Frequently bought together — ${name}`}
-                          className="w-48"
-                          disabled={!sold}
-                          value={field.value}
-                          onChange={field.onChange}
-                          options={variationChoices}
-                          placeholder="None"
-                        />
-                      )}
-                    />
-                  </td>
-                  {customFields.map((field) => (
-                    <td key={field.id} className={cell}>
-                      <CustomFieldInput
-                        form={form}
-                        field={field}
-                        name={`variations.${index}.customFields.${field.id}`}
-                        className="w-36"
-                        disabled={!sold}
-                        label={`${field.name} — ${name}`}
-                      />
-                    </td>
-                  ))}
                   <td className={cell}>
                     <Controller
                       control={form.control}
@@ -410,13 +265,6 @@ export function ProductVariationsTable({
     </div>
   )
 }
-
-/** Wires a Controller field onto NumberField without repeating four lines. */
-const fieldProps = (field: {
-  value: number | null
-  onChange: (value: number | null) => void
-  onBlur: () => void
-}) => ({ value: field.value, onChange: field.onChange, onBlur: field.onBlur })
 
 function FillableHeader({
   label,

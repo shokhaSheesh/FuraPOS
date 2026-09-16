@@ -3,8 +3,6 @@
  * meet — when the backend lands, these files are the spec to hand over.
  */
 import type { CostCurrency, Product, VariationRow } from '@/features/products/model/product'
-import { productAttributes } from '@/features/products/model/product'
-import type { CustomFieldValues, ProductField } from '@/shared/types/productFields'
 import type { Sale } from '@/features/sales/model/sale'
 import type { Transfer } from '@/features/transfers/model/transfer'
 import type { Correction, CorrectionReason } from '@/features/corrections/model/correction'
@@ -262,34 +260,21 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
       productId,
       name: spec.name,
       optionValues: options.map((option) => ({ optionId: option.id, value: spec.name })),
-      sku: `SKU-${String(index + 1).padStart(5, '0')}${sided ? `-${spec.side === 'left' ? 'L' : 'R'}` : ''}`,
+      sku: `SKU-${String(index + 1).padStart(5, '0')}${sided ? `-${spec.side === 'Left' ? 'L' : 'R'}` : ''}`,
       barcode: random() > 0.3 ? String(4_600_000_000_000 + index * 10 + vIndex) : null,
       partSide: spec.side,
       costPrice,
       costCurrency: costCurrency as CostCurrency,
       salePrice,
-      saleCurrency: 'UZS' as CostCurrency,
-      // A trade price on part of the range, positionally so the dataset does not shift.
-      wholesalePrice: index % 3 === 0 ? Math.round(salePrice * 0.86) : null,
-      wholesaleCurrency: 'UZS' as CostCurrency,
       discountPrice: random() > 0.85 ? Math.round(salePrice * 0.9) : null,
       stock: stockByLocation.reduce((sum, row) => sum + row.quantity, 0),
       stockByLocation,
       lowStockThreshold: random() > 0.5 ? between(5, 30) : null,
       shelfAddress:
         random() > 0.4 ? `${pick(['A', 'B', 'C'])}-${between(1, 20)}-${between(1, 9)}` : null,
-      zone: null as string | null,
-      // Freight and duty on top of what the supplier invoiced.
-      landedCost: Math.round(costUzs * (costCurrency === 'USD' ? 1.12 : 1.03)) as number | null,
-      // Linked once every product exists — see below.
-      analogueIds: [] as string[],
-      boughtTogetherIds: [] as string[],
-      customFields: (index % 4 === 0
-        ? { 'pf-warranty': 6 + (vIndex % 2) * 6 }
-        : {}) as CustomFieldValues,
       mobileSku:
         index % 2 === 0
-          ? `M-${String(index + 1).padStart(5, '0')}${sided ? `-${spec.side === 'left' ? 'L' : 'R'}` : ''}`
+          ? `M-${String(index + 1).padStart(5, '0')}${sided ? `-${spec.side === 'Left' ? 'L' : 'R'}` : ''}`
           : null,
       mobileName:
         index % 2 === 0
@@ -305,12 +290,10 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
   })
 
   const oem = random() > 0.4 ? String(between(1_000_000, 9_999_999)) : null
-  for (const variation of variations) {
-    variation.zone = variation.shelfAddress ? `Zone ${variation.shelfAddress[0]}` : null
-  }
   // Drawn here, in the order the object below used to draw them.
   const manufacturer = random() > 0.3 ? pick(['Space', 'Sampa', 'Febi', 'Dinex']) : null
-  const tags = random() > 0.6 ? [pick(['bestseller', 'import', 'oem', 'clearance'])] : []
+  // The tags draw stays for the same reason, though the field itself has gone.
+  if (random() > 0.6) pick(['bestseller', 'import', 'oem', 'clearance'])
   const unit = pick(['pcs', 'pcs', 'pcs', 'l', 'kg'] as const)
 
   return {
@@ -321,63 +304,24 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
         ? null
         : `${category.name} for ${vehicle.make}, ${attrPick(['original', 'aftermarket', 'OEM-equivalent'])} quality`,
     oem,
-    // Linked after every product exists — see below.
-    isSellable: (index + 1) % 23 !== 0,
-    partType: attrPick(['Original', 'Aftermarket', 'Aftermarket', null]),
     categoryId: category.id,
     categoryName: category.name,
     categoryPath: category.path,
     brandId: brand?.id ?? null,
     brandName: brand?.name ?? null,
     manufacturer,
-    tags,
     unit,
     vehicleMake: vehicle.make,
     vehicleModels: [...vehicle.models].slice(0, between(1, vehicle.models.length)),
     cargoWeightKg: random() > 0.5 ? between(1, 60) : null,
     cargoSize: random() > 0.5 ? `${between(20, 160)}*${between(20, 90)}*${between(10, 60)}` : null,
-    // The shippable flag drew here before it was dropped; the draw stays so the
-    // rest of the dataset does not shift.
-    showOnline: (() => {
-      random()
-      return random() > 0.35
-    })(),
     options,
     variations,
-    customFields: (index % 3 === 0
-      ? { 'pf-material': index % 2 === 0 ? 'Aluminium' : 'Steel' }
-      : {}) as CustomFieldValues,
     status: random() > 0.92 ? 'archived' : 'active',
     createdAt,
     updatedAt: createdAt,
   } satisfies Product
 })
-
-/*
-  Analogues are the matching variation (same side) of parts in the same
-  category for the same truck brand; what gets bought together is a part from
-  a different category. Both by position, so the links are stable and never
-  point at the variation itself.
-*/
-const sameSide = (other: Product, side: string | null) =>
-  other.variations.find((v) => v.partSide === side) ?? other.variations[0]!
-for (const product of products) {
-  const analogues = products.filter(
-    (other) =>
-      other.id !== product.id &&
-      other.categoryId === product.categoryId &&
-      other.vehicleMake === product.vehicleMake,
-  )
-  const together = products
-    .filter((other) => other.categoryId !== product.categoryId)
-    .filter((_, i) => i % 41 === Number(product.id.slice(4)) % 41)
-  for (const variation of product.variations) {
-    variation.analogueIds = analogues
-      .slice(0, 2)
-      .map((other) => sameSide(other, variation.partSide).id)
-    variation.boughtTogetherIds = together.slice(0, 2).map((other) => other.variations[0]!.id)
-  }
-}
 
 /** The flat, sellable list: what the catalogue shows and what a sale points at. */
 export const variations: VariationRow[] = products.flatMap((product) =>
@@ -394,15 +338,12 @@ export const variations: VariationRow[] = products.flatMap((product) =>
     brandId: product.brandId,
     brandName: product.brandName,
     manufacturer: product.manufacturer,
-    tags: product.tags,
     unit: product.unit,
     vehicleMake: product.vehicleMake,
     vehicleModels: product.vehicleModels,
     cargoWeightKg: product.cargoWeightKg,
     cargoSize: product.cargoSize,
-    showOnline: product.showOnline,
-    ...productAttributes(product),
-    customFields: { ...product.customFields, ...variation.customFields },
+    oem: product.oem,
     options: product.options,
   })),
 )
@@ -2402,29 +2343,6 @@ export const brandSettings: Brand[] = brands.map((brand, index) => ({
   zone: ['Germany', 'Japan', 'Germany', 'United Kingdom'][index] ?? null,
   active: true,
 }))
-
-/**
- * Two example columns the business added itself, so the directory and the
- * list show what one looks like. Editable in Settings → Product columns.
- */
-export const productFields: ProductField[] = [
-  {
-    id: 'pf-material',
-    name: 'Material',
-    type: 'select',
-    options: ['Steel', 'Aluminium', 'Rubber', 'Plastic'],
-    level: 'product',
-    createdAt: '2026-06-02T09:00:00.000Z',
-  },
-  {
-    id: 'pf-warranty',
-    name: 'Warranty (months)',
-    type: 'number',
-    options: [],
-    level: 'variation',
-    createdAt: '2026-06-02T09:05:00.000Z',
-  },
-]
 
 /** The levels a China order line can carry. Editable in Settings. */
 export const urgencyLevels: UrgencyLevel[] = [

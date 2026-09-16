@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import { useForm, Controller, type Control } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowLeft } from 'lucide-react'
 import { VehicleMakeSelect, VehicleModelsMultiSelect } from '@/shared/components/VehicleSelects'
@@ -12,10 +12,7 @@ import { Button } from '@/shared/ui/Button'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 import { Input } from '@/shared/ui/Input'
 import { RichTextEditor } from '@/shared/ui/RichTextEditor'
-import { MultiSelect } from '@/shared/ui/MultiSelect'
 import { Select } from '@/shared/ui/Select'
-import { Switch } from '@/shared/ui/Switch'
-import { TagsInput } from '@/shared/ui/TagsInput'
 import { toast } from '@/shared/ui/toast'
 import { paths } from '@/shared/config/paths'
 import {
@@ -24,26 +21,19 @@ import {
   useCreateProduct,
   useLocations,
   useProduct,
-  useProductFields,
   useUpdateProduct,
-  useVariationChoices,
 } from '../api/products'
-import { CustomFieldInput } from '../components/CustomFieldInput'
 import { SegmentedControl } from '@/shared/ui/SegmentedControl'
 import { ProductStockSection } from '../components/ProductStockSection'
 import { ProductOptionsEditor } from '../components/ProductOptionsEditor'
 import { ProductVariationsTable } from '../components/ProductVariationsTable'
 import {
-  NEW_PRODUCT_ATTRIBUTES,
-  PRODUCT_FLAGS,
   combinationName,
   isSideOption,
-  productAttributes,
   productFormSchema,
   reconcileVariations,
   usableOptions,
   type OptionValue,
-  type ProductFlag,
   type ProductFormValues,
   type VariationMode,
 } from '../model/product'
@@ -97,19 +87,11 @@ const emptyVariation = (
   costPrice: 0,
   costCurrency: 'USD' as const,
   salePrice: 0,
-  saleCurrency: 'UZS' as const,
-  wholesalePrice: null,
-  wholesaleCurrency: 'UZS' as const,
   discountPrice: null,
   lowStockThreshold: null,
   shelfAddress: null,
-  zone: null,
-  landedCost: null,
-  analogueIds: [],
-  boughtTogetherIds: [],
   mobileSku: null,
   mobileName: null,
-  customFields: {},
   status: 'active' as const,
   stockByLocation: stockRows(locations),
 })
@@ -168,8 +150,6 @@ export function ProductForm({
   const { data: categories } = useCategories()
   const { data: brands } = useBrands()
   const { data: locationData } = useLocations()
-  const variationChoices = useVariationChoices(editing ? productId : undefined)
-  const customFields = useProductFields()
   const locations = locationData.items
   const create = useCreateProduct()
   const update = useUpdateProduct(productId ?? '')
@@ -183,18 +163,15 @@ export function ProductForm({
         ? {
             name: existing.name,
             description: existing.description,
+            oem: existing.oem,
             categoryId: existing.categoryId,
             brandId: existing.brandId,
             manufacturer: existing.manufacturer,
-            tags: existing.tags,
             unit: existing.unit,
             vehicleMake: existing.vehicleMake,
             vehicleModels: existing.vehicleModels,
             cargoWeightKg: existing.cargoWeightKg,
             cargoSize: existing.cargoSize,
-            showOnline: existing.showOnline,
-            ...productAttributes(existing),
-            customFields: existing.customFields,
             status: existing.status,
             variationMode: existing.options.length ? 'multiple' : 'single',
             options: existing.options.map((option) => ({ ...option, values: [...option.values] })),
@@ -224,19 +201,11 @@ export function ProductForm({
                 costPrice: v.costPrice,
                 costCurrency: v.costCurrency,
                 salePrice: v.salePrice,
-                saleCurrency: v.saleCurrency,
-                wholesalePrice: v.wholesalePrice,
-                wholesaleCurrency: v.wholesaleCurrency,
                 discountPrice: v.discountPrice,
                 lowStockThreshold: v.lowStockThreshold,
                 shelfAddress: v.shelfAddress,
-                zone: v.zone,
-                landedCost: v.landedCost,
-                analogueIds: v.analogueIds,
-                boughtTogetherIds: v.boughtTogetherIds,
                 mobileSku: v.mobileSku,
                 mobileName: v.mobileName,
-                customFields: v.customFields,
                 status: v.status,
                 stockByLocation: stockRows(locations, v.stockByLocation),
               })),
@@ -247,18 +216,15 @@ export function ProductForm({
         : {
             name: '',
             description: null,
+            oem: null,
             categoryId: '',
             brandId: null,
             manufacturer: null,
-            tags: [],
             unit: 'pcs',
             vehicleMake: null,
             vehicleModels: [],
             cargoWeightKg: null,
             cargoSize: null,
-            showOnline: false,
-            ...NEW_PRODUCT_ATTRIBUTES,
-            customFields: {},
             status: 'active',
             variationMode: 'single',
             options: [],
@@ -497,7 +463,7 @@ export function ProductForm({
                 />
               )}
             </Field>
-            <Field label="Supplier brand" hint="Who we buy it from">
+            <Field label="Supplier" hint="Who we buy it from">
               {(p) => (
                 <Controller
                   control={form.control}
@@ -515,7 +481,7 @@ export function ProductForm({
                 />
               )}
             </Field>
-            <Field label="Manufacturer" hint="Who made the part">
+            <Field label="Product brand" hint="Who made the part">
               {(p) => <Input {...p} {...form.register('manufacturer')} />}
             </Field>
             <Field label="Unit">
@@ -535,25 +501,6 @@ export function ProductForm({
                 />
               )}
             </Field>
-            <Field label="Type">
-              {(p) => (
-                <Input {...p} placeholder="Original, aftermarket…" {...form.register('partType')} />
-              )}
-            </Field>
-            {/* The business's own product-level columns, after the built-in ones. */}
-            {customFields.product.map((field) => (
-              <Field key={field.id} label={field.name}>
-                {(p) => (
-                  <CustomFieldInput
-                    form={form}
-                    field={field}
-                    name={`customFields.${field.id}`}
-                    id={p.id}
-                    className="w-full"
-                  />
-                )}
-              </Field>
-            ))}
             <Field
               label="Description"
               hint="Shown to customers online — headings, lists and links are kept"
@@ -565,17 +512,6 @@ export function ProductForm({
                   name="description"
                   render={({ field: f }) => (
                     <RichTextEditor id={p.id} value={f.value} onChange={f.onChange} />
-                  )}
-                />
-              )}
-            </Field>
-            <Field label="Tags" className="sm:col-span-2 lg:col-span-3">
-              {(p) => (
-                <Controller
-                  control={form.control}
-                  name="tags"
-                  render={({ field: f }) => (
-                    <TagsInput id={p.id} value={f.value} onChange={f.onChange} />
                   )}
                 />
               )}
@@ -715,104 +651,24 @@ export function ProductForm({
                   error={form.formState.errors.variations?.[0]?.salePrice?.message}
                 >
                   {(p) => (
-                    <div className="flex gap-1.5">
-                      <Controller
-                        control={form.control}
-                        name="variations.0.salePrice"
-                        render={({ field: f }) => (
-                          <NumberField
-                            {...p}
-                            nullable={false}
-                            value={f.value}
-                            onChange={(v) => f.onChange(v ?? 0)}
-                            onBlur={f.onBlur}
-                          />
-                        )}
-                      />
-                      <Controller
-                        control={form.control}
-                        name="variations.0.saleCurrency"
-                        render={({ field: f }) => (
-                          <Select
-                            value={f.value}
-                            onChange={f.onChange}
-                            options={CURRENCIES}
-                            aria-label="Sale price currency"
-                            className="w-24"
-                          />
-                        )}
-                      />
-                    </div>
-                  )}
-                </Field>
-                <Field label="Wholesale price" hint="What a trade customer pays">
-                  {(p) => (
-                    <div className="flex gap-1.5">
-                      <Controller
-                        control={form.control}
-                        name="variations.0.wholesalePrice"
-                        render={({ field: f }) => (
-                          <NumberField
-                            {...p}
-                            value={f.value}
-                            onChange={f.onChange}
-                            onBlur={f.onBlur}
-                          />
-                        )}
-                      />
-                      <Controller
-                        control={form.control}
-                        name="variations.0.wholesaleCurrency"
-                        render={({ field: f }) => (
-                          <Select
-                            value={f.value}
-                            onChange={f.onChange}
-                            options={CURRENCIES}
-                            aria-label="Wholesale price currency"
-                            className="w-24"
-                          />
-                        )}
-                      />
-                    </div>
+                    <Controller
+                      control={form.control}
+                      name="variations.0.salePrice"
+                      render={({ field: f }) => (
+                        <NumberField
+                          {...p}
+                          nullable={false}
+                          value={f.value}
+                          onChange={(v) => f.onChange(v ?? 0)}
+                          onBlur={f.onBlur}
+                        />
+                      )}
+                    />
                   )}
                 </Field>
                 <Field label="Part" hint="Which part of the vehicle it fits">
                   {(p) => (
                     <Input {...p} placeholder="Left" {...form.register('variations.0.partSide')} />
-                  )}
-                </Field>
-                <Field label="Shelf">
-                  {(p) => (
-                    <Input
-                      {...p}
-                      placeholder="A-12-3"
-                      {...form.register('variations.0.shelfAddress')}
-                    />
-                  )}
-                </Field>
-                <Field label="Zone" hint="Warehouse zone">
-                  {(p) => (
-                    <Input {...p} placeholder="Zone A" {...form.register('variations.0.zone')} />
-                  )}
-                </Field>
-                <Field
-                  label="Landed cost"
-                  hint="Per unit in UZS, with freight and duty"
-                  error={form.formState.errors.variations?.[0]?.landedCost?.message}
-                >
-                  {(p) => (
-                    <Controller
-                      control={form.control}
-                      name="variations.0.landedCost"
-                      render={({ field: f }) => (
-                        <NumberField
-                          {...p}
-                          value={f.value}
-                          onChange={f.onChange}
-                          onBlur={f.onBlur}
-                        />
-                      )}
-                    />
                   )}
                 </Field>
                 {/*
@@ -826,76 +682,12 @@ export function ProductForm({
                 <Field label="Mobile product name">
                   {(p) => <Input {...p} {...form.register('variations.0.mobileName')} />}
                 </Field>
-                <Field
-                  label="Analogues"
-                  hint="Parts that can stand in for this one"
-                  className="sm:col-span-2"
-                >
-                  {() => (
-                    <Controller
-                      control={form.control}
-                      name="variations.0.analogueIds"
-                      render={({ field: f }) => (
-                        <MultiSelect
-                          aria-label="Analogues"
-                          className="w-full"
-                          value={f.value}
-                          onChange={f.onChange}
-                          options={variationChoices}
-                          placeholder="None"
-                          searchPlaceholder="Search by name or OEM…"
-                        />
-                      )}
-                    />
-                  )}
-                </Field>
-                <Field
-                  label="Frequently bought together"
-                  hint="Offered beside it on a sale"
-                  className="sm:col-span-2"
-                >
-                  {() => (
-                    <Controller
-                      control={form.control}
-                      name="variations.0.boughtTogetherIds"
-                      render={({ field: f }) => (
-                        <MultiSelect
-                          aria-label="Frequently bought together"
-                          className="w-full"
-                          value={f.value}
-                          onChange={f.onChange}
-                          options={variationChoices}
-                          placeholder="None"
-                          searchPlaceholder="Search by name or OEM…"
-                        />
-                      )}
-                    />
-                  )}
-                </Field>
-                {customFields.variation.map((field) => (
-                  <Field key={field.id} label={field.name}>
-                    {(p) => (
-                      <CustomFieldInput
-                        form={form}
-                        field={field}
-                        name={`variations.0.customFields.${field.id}`}
-                        id={p.id}
-                        className="w-full"
-                      />
-                    )}
-                  </Field>
-                ))}
               </div>
             ) : (
               <>
                 <ProductOptionsEditor form={form} options={options} onChange={applyOptions} />
                 {variations.length ? (
-                  <ProductVariationsTable
-                    form={form}
-                    productName={productName.trim()}
-                    variationChoices={variationChoices}
-                    customFields={customFields.variation}
-                  />
+                  <ProductVariationsTable form={form} productName={productName.trim()} />
                 ) : (
                   <p className="text-fg-subtle text-sm">
                     Name an option and give it values — the variations appear here.
@@ -909,18 +701,9 @@ export function ProductForm({
 
         <Card>
           <CardHeader>
-            <CardTitle>Availability</CardTitle>
+            <CardTitle>Status</CardTitle>
           </CardHeader>
-          <CardBody className="grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {PRODUCT_FLAGS.map((flag) => (
-              <ToggleRow
-                key={flag.key}
-                control={form.control}
-                name={flag.key}
-                label={flag.label}
-                hint={flag.hint}
-              />
-            ))}
+          <CardBody className="grid gap-3 sm:grid-cols-3">
             <Field label="Status">
               {(p) => (
                 <Controller
@@ -958,35 +741,5 @@ export function ProductForm({
         onConfirm={collapseToSingle}
       />
     </form>
-  )
-}
-
-function ToggleRow({
-  control,
-  name,
-  label,
-  hint,
-}: {
-  control: Control<ProductFormValues>
-  name: ProductFlag
-  label: string
-  hint: string
-}) {
-  return (
-    <Controller
-      control={control}
-      name={name}
-      render={({ field }) => (
-        // Boxed, because side by side in a grid a bare label and a far-right
-        // switch read as belonging to different rows.
-        <div className="border-border rounded-control flex items-center justify-between gap-3 border px-3 py-2">
-          <div>
-            <p className="text-fg text-sm">{label}</p>
-            <p className="text-fg-subtle text-2xs">{hint}</p>
-          </div>
-          <Switch checked={field.value} onCheckedChange={field.onChange} aria-label={label} />
-        </div>
-      )}
-    />
   )
 }

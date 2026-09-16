@@ -1557,89 +1557,49 @@ decoration; it should arrive with the actions that need it.
 
 ---
 
-## Product list — every column, in OX's order
+## Product list — the twenty columns the business asked for
 
-Captured from the column menu of `/app/products/management/variations` (Вариации). **Parity first,
-pruning after:** every column OX offers is built, in OX's order, and nothing is left out. Which ones
-to drop is the client's call once they have seen them all. Most start hidden in the column menu.
+The full OX column set was built first, then cut back by the client to the list below. These are the
+**only** fields a product carries now; everything OX shows beyond them was removed from the list, the
+create/edit form and the data. Status and the row actions remain because they are how a row is worked
+with, not fields.
 
-| #   | OX                         | Ours                       | Field                                   |
-| --- | -------------------------- | -------------------------- | --------------------------------------- |
-| 1   | Рисунок                    | Image                      | `imageUrl`                              |
-| 2   | ID Вариации                | Variation ID               | `id`                                    |
-| 3   | Названия вариации          | Variation name             | `fullName`                              |
-| 4   | Штрих-код                  | Barcode                    | `barcode`                               |
-| 5   | Артикул                    | SKU                        | `sku`                                   |
-| 6   | MOQ                        | MOQ                        | **Removed** at the client's request     |
-| 7   | Категории                  | Categories                 | `categoryPath`                          |
-| 8   | Бренд                      | Brand                      | `brandName`                             |
-| 9   | Описание                   | Description                | `description`                           |
-| 10  | Теги                       | Tags                       | `tags`                                  |
-| 11  | С этим вместе покупают     | Frequently bought together | `boughtTogetherIds` — per variation     |
-| 12  | Модификаторы               | Modifiers                  | **Removed** at the client's request     |
-| 13  | Аналоги                    | Analogues                  | `analogueIds` — per variation           |
-| 14  | Отгружаемый                | Shippable                  | `isShippable`                           |
-| 15  | Показать в онлайн-магазине | Show online                | `showOnline`                            |
-| 16  | Отслеживание               | Tracking                   | `isTracked`                             |
-| 17  | Продаваемый                | Sellable                   | `isSellable`                            |
-| 18  | Исчисляемый                | Countable                  | `isCountable`                           |
-| 19  | Облагаемый налогом         | Taxable                    | `isTaxable`                             |
-| 20  | Изготовляемый              | Manufactured               | `isManufactured`                        |
-| 21  | Весовой                    | Weighted                   | `isWeighted`                            |
-| 22  | Видео                      | Video                      | `videoUrl`                              |
-| 23  | Зона                       | Zone                       | `zone` (per variation)                  |
-| 24  | Локация                    | Location                   | `stockByLocation`                       |
-| 25  | Кол-во                     | Quantity                   | `stock`                                 |
-| 26  | Цена продажи за ед.        | Sale price per unit        | `salePrice`                             |
-| 27  | Общая сумма продажи        | Total sale value           | derived                                 |
-| 28  | Со скидкой                 | Discounted                 | `discountPrice`                         |
-| 29  | Скидка                     | Discount                   | derived                                 |
-| 30  | Цена поставщика за ед.     | Supplier price per unit    | `costPrice` + `costCurrency`            |
-| 31  | Общая сумма поставщ.       | Total supplier value       | derived                                 |
-| 32  | Себестоимость              | Landed cost                | `landedCost` (per variation, UZS)       |
-| 33  | Марка                      | Make                       | `vehicleMake`                           |
-| 34  | Вес карго                  | Cargo weight               | `cargoWeightKg`                         |
-| 35  | Размер карго               | Cargo size                 | `cargoSize`                             |
-| 36  | Категория конечное         | End category               | `categoryName` (the leaf of the path)   |
-| 37  | Бренд товара               | Product brand              | `manufacturer`                          |
-| 38  | Артикул моб                | Mobile SKU                 | `mobileSku` — per variation             |
-| 39  | Название продукта моб      | Mobile product name        | `mobileName` — per variation            |
-| 40  | Часть                      | Part                       | `partSide`                              |
-| 41  | OEM                        | OEM                        | `oem` — no longer kept in `description` |
-| 42  | Тип                        | Type                       | `partType`                              |
-| 43  | Пол                        | Gender                     | `gender`                                |
-| 44  | Сезон                      | Season                     | `season`                                |
-| 45  | Модель                     | Model                      | `vehicleModels`                         |
-| 46  | Адрес товара               | Product address            | `shelfAddress`                          |
-| 47  | Аналог                     | Analogue                   | **Removed** at the client's request     |
-| 48  | Вместе покупает            | Buys together              | **Removed** at the client's request     |
+| #   | OX                         | Ours                | Field                                     |
+| --- | -------------------------- | ------------------- | ----------------------------------------- |
+| 1   | Штрих-код                  | Barcode             | `barcode` (variation)                     |
+| 2   | Артикул                    | SKU                 | `sku` (variation)                         |
+| 3   | Артикул моб                | Mobile SKU          | `mobileSku` (variation)                   |
+| 4   | Продажная цена             | Sale price          | `salePrice` (variation, UZS)              |
+| 5   | Цена поставщика            | Supplier price      | `costPrice` + `costCurrency`              |
+| 6   | Поставщик                  | Supplier            | `brandId` / `brandName` — who we buy from |
+| 7   | Название продукта          | Product name        | `name` (product)                          |
+| 8   | Название вариации продукта | Variation name      | `name` (variation)                        |
+| 9   | Название продукта моб      | Mobile product name | `mobileName` (variation)                  |
+| 10  | Часть                      | Part                | `partSide` — free text                    |
+| 11  | OEM                        | OEM                 | `oem` (product)                           |
+| 12  | Описание                   | Description         | `description` — formatted text            |
+| 13  | Фактическое кол-во         | Quantity            | `stock`, summed from `stockByLocation`    |
+| 14  | Категория                  | Category            | `categoryPath`                            |
+| 15  | Вес карго                  | Cargo weight        | `cargoWeightKg`                           |
+| 16  | Размер карго               | Cargo size          | `cargoSize`                               |
+| 17  | Марка                      | Make                | `vehicleMake`                             |
+| 18  | Модель                     | Model               | `vehicleModels`                           |
+| 19  | Категория конечное         | End category        | `categoryName` — the leaf of the path     |
+| 20  | Бренд товара               | Product brand       | `manufacturer`                            |
 
-Removed after review (client's call): the yes/no columns **Отгружаемый**, **Отслеживание**,
-**Исчисляемый**, **Облагаемый налогом**, **Изготовляемый** and **Весовой** — only
-**Показать в онлайн-магазине** and **Продаваемый** remain, since the business answers the rest the
-same way for everything it sells. Also: **MOQ** (the minimum lives on the supplier's catalogue line,
-where it belongs — so reorder schedules no longer round to it), **Модификаторы**, and the typed
-**Аналог** codes, keeping the linked **Аналоги** as the one analogue field; and **Вместе покупает**, the typed note.
-Аналоги, С этим вместе покупают, Артикул моб and Название продукта моб sit on the **variation**, as
-in OX's own form — the left step's analogue is another left step.
+**Removed with everything else** (all at the client's request, over several rounds): Рисунок, ID
+Вариации, MOQ, Теги, С этим вместе покупают, Модификаторы, Аналоги, Аналог, Вместе покупает, the
+yes/no columns (Отгружаемый, Показать в онлайн-магазине, Отслеживание, Продаваемый, Исчисляемый,
+Облагаемый налогом, Изготовляемый, Весовой), Видео, Зона, Локация, Общая сумма продажи, Со скидкой,
+Скидка, Общая сумма поставщ., Себестоимость, Адрес товара, Тип, Пол, Сезон, our own Margin column,
+the wholesale price, the sale-price currency, and the business's own product columns — the
+Settings → Product columns page went with them.
 
-Also removed at the client's request: **Видео**, **Пол**, **Сезон** (fields and columns), and from the
-form only the Side input, Reorder point and Discounted price — the data behind the last two stays,
-since the low-stock filter and promotions still read it.
+Two fields stay in the data without being asked for on the form: `discountPrice`, which Repricing
+sets, and `shelfAddress`, which Stocktaking and the label templates read.
 
-**Own columns — Settings → Product columns** (OX: «Настройка полей» on the product form, and
-«+ Пользовательскую колонку»). A directory of every column: the built-in ones read-only, plus the
-business's own — text, number, list or yes/no, answered per product or per variation. An added column
-appears on the product list (after the last built-in one) and on the create/edit form; its type and
-level are fixed once created, and deleting it deletes its answers.
-
-The list has two views: **By variation** and **By location** (a variation once per location it is
-stocked at). A quantity column per location is available on By variation from Columns, off by
-default. Every column is resizable by dragging the edge of its heading; double-click fits it again.
-
-After OX's last column come two of ours: **Margin** and **Status**. OX's first menu entry, Добавить,
-is the row-expand control rather than a column. The three cost columns (30–32) still need
-`products.cost.view`. The create and edit form asks for every one of these fields.
+The list still offers **By variation / By location** views and optional per-location quantity
+columns, and every column is resizable by dragging the edge of its heading.
 
 ### What reading the real data changed
 

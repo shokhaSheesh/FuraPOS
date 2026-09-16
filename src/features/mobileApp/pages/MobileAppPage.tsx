@@ -1,5 +1,6 @@
 import {
   ArrowLeft,
+  ArrowRight,
   ArrowUpRight,
   BarChart3,
   Calendar,
@@ -8,6 +9,7 @@ import {
   Coins,
   Container,
   Droplets,
+  FileText,
   Fuel,
   Gauge,
   Map,
@@ -16,6 +18,7 @@ import {
   Power,
   Receipt,
   Route,
+  ShieldCheck,
   SquareParking,
   Truck,
   User,
@@ -250,49 +253,82 @@ const SPEND_SPLIT: {
 const SPEND_TOTAL = { amount: '$3 120', operations: '49 операций' }
 
 const TRIPS: {
-  from: string
-  to: string
-  fromAddress: string
-  toAddress: string
+  from: { country: Country; city: string }
+  to: { country: Country; city: string }
   meta: string
   amount: string
-  status: 'Завершён' | 'Отменён'
+  status: 'В дороге' | 'Завершён'
 }[] = [
   {
-    from: 'Ташкент',
-    to: 'Ташкент',
-    fromAddress: 'Чиланзарский район…',
-    toAddress: 'улица Шериат Боғи',
-    meta: '11.09.2026 · 2 км · 5 мин · Расход: $0,00',
-    amount: '$12,00',
+    from: { country: 'UZ', city: 'Ташкент' },
+    to: { country: 'DE', city: 'Берлин' },
+    meta: '09.09.2026 · 4 600 км · 4 дня · Расход: $2 150',
+    amount: '$5 800',
+    status: 'В дороге',
+  },
+  {
+    from: { country: 'UZ', city: 'Ташкент' },
+    to: { country: 'KZ', city: 'Шымкент' },
+    meta: '04.09.2026 · 153 км · 2 ч 52 мин · Расход: $180',
+    amount: '$620',
     status: 'Завершён',
   },
   {
-    from: 'Ташкент',
-    to: 'Ташкент',
-    fromAddress: 'Чиланзарский район…',
-    toAddress: 'улица Самарканд…',
-    meta: '09.09.2026 · 3 км · 5 мин · Расход: $0,00',
-    amount: '$0,00',
-    status: 'Отменён',
-  },
-  {
-    from: 'Ташкент',
-    to: 'Ташкентс…',
-    fromAddress: 'Чиланзарский район…',
-    toAddress: 'махаллинский сход п…',
-    meta: '09.09.2026 · 5 км · 9 мин · Расход: $0,00',
-    amount: '$121,00',
+    from: { country: 'KZ', city: 'Алматы' },
+    to: { country: 'UZ', city: 'Ташкент' },
+    meta: '01.09.2026 · 810 км · 13 ч · Расход: $540',
+    amount: '$1 450',
     status: 'Завершён',
   },
   {
-    from: 'Ташкент',
-    to: 'Ташкент',
-    fromAddress: 'Шайхантахурский рай…',
-    toAddress: 'Юнусабадский райо…',
-    meta: '08.09.2026 · 6 км · 9 мин · Расход: $10,00',
-    amount: '$150,00',
+    from: { country: 'UZ', city: 'Ташкент' },
+    to: { country: 'UZ', city: 'Самарканд' },
+    meta: '29.08.2026 · 305 км · 5 ч · Расход: $250',
+    amount: '$530',
     status: 'Завершён',
+  },
+]
+
+/** Which trailer was on the truck, and when. */
+const TRAILER_HISTORY = [
+  {
+    title: 'WIELTON · 60 W 286 AA',
+    kind: 'Рефрижератор',
+    period: '08.09.2026 — сейчас',
+    current: true,
+  },
+  { title: 'KOGEL · 01 980 ABB', kind: 'Тент', period: '02.08.2026 — 08.09.2026' },
+  { title: 'KOGEL · 01 980 ABB', kind: 'Тент', period: '14.07.2026 — 02.08.2026' },
+]
+
+/** The papers that have to be in the cab, and how long each is good for. */
+const DOCUMENTS: {
+  title: string
+  number: string
+  icon: LucideIcon
+  status: 'Действует' | 'Скоро истекает'
+  until: string
+}[] = [
+  {
+    title: 'Свидетельство о регистрации',
+    number: '№ 01 AA 234567',
+    icon: FileText,
+    status: 'Действует',
+    until: 'Бессрочно',
+  },
+  {
+    title: 'Страховой полис',
+    number: 'POL-009872',
+    icon: ShieldCheck,
+    status: 'Действует',
+    until: 'до 12.03.2027',
+  },
+  {
+    title: 'Техосмотр',
+    number: 'ТО-2026-144',
+    icon: Wrench,
+    status: 'Скоро истекает',
+    until: 'до 20.10.2026',
   },
 ]
 
@@ -892,71 +928,95 @@ function Donut() {
 
 function Trips() {
   return (
-    <PhoneSection
-      title="Последние рейсы"
-      action={
-        <span className="inline-flex items-center text-[11px]" style={{ color: M.textMuted }}>
-          Показать все
-          <ChevronRight className="size-3.5" />
-        </span>
-      }
-    >
-      <div
-        className="mx-3 divide-y rounded-2xl border"
-        style={{ background: M.card, borderColor: M.border }}
-      >
-        {TRIPS.map((trip, index) => (
-          <div key={index} className="px-3.5 py-3">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p
-                  className="flex items-center gap-1.5 text-[12px] font-semibold"
-                  style={{ color: M.text }}
-                >
-                  <Flag />
-                  {trip.from}
-                  <ChevronRight className="size-3" style={{ color: M.textSubtle }} />
-                  <Flag />
-                  {trip.to}
-                </p>
-                <p className="mt-1 truncate text-[10px]" style={{ color: M.textSubtle }}>
-                  {trip.fromAddress} → {trip.toAddress}
-                </p>
-                <p className="mt-0.5 text-[10px]" style={{ color: M.textSubtle }}>
+    <PhoneSection>
+      <PhoneCard padded={false}>
+        <p className="px-3.5 pt-3.5 text-[15px] font-bold" style={{ color: M.text }}>
+          Последние рейсы
+        </p>
+        <div className="mt-1 divide-y" style={{ borderColor: M.divider }}>
+          {TRIPS.map((trip, index) => (
+            <div key={index} className="px-3.5 py-3">
+              <div className="flex items-center gap-2">
+                <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                  <Place country={trip.from.country} city={trip.from.city} />
+                  <ArrowRight className="size-3 shrink-0" style={{ color: M.textSubtle }} />
+                  <Place country={trip.to.country} city={trip.to.city} />
+                </div>
+                <span className="shrink-0 text-[14px] font-bold" style={{ color: M.text }}>
+                  {trip.amount}
+                </span>
+                <ChevronRight className="size-4 shrink-0" style={{ color: M.textSubtle }} />
+              </div>
+              <div className="mt-1 flex items-center gap-2">
+                <p className="min-w-0 flex-1 truncate text-[11px]" style={{ color: M.textSubtle }}>
                   {trip.meta}
                 </p>
-              </div>
-              <div className="shrink-0 text-right">
-                <p className="text-[13px] font-bold" style={{ color: M.text }}>
-                  {trip.amount}
-                </p>
                 <span
-                  className="mt-1 inline-block rounded-full px-2 py-0.5 text-[10px]"
+                  className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
                   style={
                     trip.status === 'Завершён'
                       ? { background: TONES.green.soft, color: TONES.green.fg }
-                      : { background: TONES.red.soft, color: TONES.red.fg }
+                      : { background: TONES.orange.soft, color: TONES.orange.fg }
                   }
                 >
+                  <span
+                    className="size-1.5 rounded-full"
+                    style={{
+                      background: trip.status === 'Завершён' ? TONES.green.fg : TONES.orange.fg,
+                    }}
+                  />
                   {trip.status}
                 </span>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      </PhoneCard>
     </PhoneSection>
   )
 }
 
-const Flag = () => (
-  <span
-    className="rounded px-1 py-px text-[9px] font-semibold"
-    style={{ background: TONES.grey.soft, color: M.textMuted }}
-  >
-    UZ
-  </span>
-)
+type Country = 'UZ' | 'KZ' | 'DE'
+
+/** The flag and where it is, as the design writes a leg: 🇺🇿 UZ · Ташкент. */
+function Place({ country, city }: { country: Country; city: string }) {
+  return (
+    <span
+      className="inline-flex min-w-0 items-center gap-1 text-[12.5px] whitespace-nowrap"
+      style={{ color: M.text }}
+    >
+      <Flag country={country} />
+      <span style={{ color: M.textMuted }}>{country}</span>
+      <span style={{ color: M.textSubtle }}>·</span>
+      <span className="truncate font-semibold">{city}</span>
+    </span>
+  )
+}
+
+/** Drawn rather than an emoji, so every flag is the same size on every platform. */
+function Flag({ country }: { country: Country }) {
+  const stripes: Record<Country, string[]> = {
+    UZ: ['#0099B5', '#FFFFFF', '#1EB53A'],
+    DE: ['#000000', '#DD0000', '#FFCE00'],
+    KZ: ['#00AFCA', '#00AFCA', '#00AFCA'],
+  }
+  return (
+    <span
+      className="relative flex h-3.5 w-5 shrink-0 flex-col overflow-hidden rounded-[3px] border"
+      style={{ borderColor: M.border }}
+    >
+      {stripes[country].map((colour, index) => (
+        <span key={index} className="flex-1" style={{ background: colour }} />
+      ))}
+      {country === 'KZ' ? (
+        <span
+          className="absolute top-1/2 left-1/2 size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{ background: '#FEC50C' }}
+        />
+      ) : null}
+    </span>
+  )
+}
 
 function Mileage() {
   return (
@@ -984,83 +1044,108 @@ function Mileage() {
 
 function AssignmentHistory() {
   return (
-    <PhoneSection title="История прикреплений">
+    <PhoneSection>
       <PhoneCard padded={false}>
-        <p
-          className="px-3.5 pt-3 text-[10px] tracking-wide uppercase"
-          style={{ color: M.textSubtle }}
-        >
-          Прицепы
+        <p className="px-3.5 pt-3.5 text-[15px] font-bold" style={{ color: M.text }}>
+          История прикреплений
         </p>
-        <HistoryRow
-          title="WIELTON · 60 W 286 AA"
-          meta="Рефрижератор"
-          period="08.09.2026 — сейчас"
-          current
-        />
-        <HistoryRow title="KOGEL · 01 980 ABB" meta="Тент" period="02.08.2026 — 08.09.2026" />
-        <HistoryRow title="KOGEL · 01 980 ABB" meta="Тент" period="14.07.2026 — 02.08.2026" />
+        <div className="mt-1 divide-y" style={{ borderColor: M.divider }}>
+          {TRAILER_HISTORY.map((entry) => (
+            <div key={entry.period} className="flex items-center gap-3 px-3.5 py-3">
+              <IconTile icon={Container} tone="grey" size="sm" shape="square" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[14px] font-bold" style={{ color: M.text }}>
+                  {entry.title}
+                </p>
+                <p className="text-[12px]" style={{ color: M.textSubtle }}>
+                  {entry.kind}
+                </p>
+              </div>
+              <div className="text-right">
+                {entry.current ? (
+                  <span
+                    className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium"
+                    style={{ background: TONES.green.soft, color: TONES.green.fg }}
+                  >
+                    <span
+                      className="size-1.5 rounded-full"
+                      style={{ background: TONES.green.fg }}
+                    />
+                    Текущий
+                  </span>
+                ) : null}
+                <p className="mt-0.5 text-[11px]" style={{ color: M.textSubtle }}>
+                  {entry.period}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
       </PhoneCard>
     </PhoneSection>
   )
 }
 
-function HistoryRow({
-  title,
-  meta,
-  period,
-  current,
-}: {
-  title: string
-  meta: string
-  period: string
-  current?: boolean
-}) {
-  return (
-    <div className="flex items-start justify-between gap-2 px-3.5 py-2.5">
-      <div className="min-w-0">
-        <p className="text-[12px] font-semibold" style={{ color: M.text }}>
-          {title}
-        </p>
-        {meta ? (
-          <p className="text-[10px]" style={{ color: M.textSubtle }}>
-            {meta}
-          </p>
-        ) : null}
-      </div>
-      <div className="shrink-0 text-right">
-        <p className="text-[10px]" style={{ color: M.textSubtle }}>
-          {period}
-        </p>
-        {current ? (
-          <span
-            className="inline-flex items-center gap-1 text-[10px]"
-            style={{ color: TONES.green.fg }}
-          >
-            <span className="size-1.5 rounded-full" style={{ background: TONES.green.fg }} />
-            Текущий
-          </span>
-        ) : null}
-      </div>
-    </div>
-  )
-}
-
 function Documents() {
   return (
-    <PhoneSection title="Документы" className="pb-2">
-      <div className="px-3">
-        <button
-          type="button"
-          className="flex h-11 w-full items-center justify-center gap-1.5 rounded-2xl border border-dashed text-[13px] font-semibold"
-          style={{ borderColor: M.border, color: M.textMuted, background: M.card }}
-        >
-          Добавить документ
-        </button>
-        <p className="mt-3 text-center text-[11px]" style={{ color: M.textSubtle }}>
-          Документов пока нет
+    <PhoneSection className="pb-2">
+      <PhoneCard padded={false}>
+        <p className="px-3.5 pt-3.5 text-[15px] font-bold" style={{ color: M.text }}>
+          Документы машины
         </p>
-      </div>
+        <div className="mt-1 divide-y" style={{ borderColor: M.divider }}>
+          {DOCUMENTS.map((document) => (
+            <div key={document.title} className="flex items-center gap-3 px-3.5 py-3">
+              <IconTile icon={document.icon} tone="grey" size="sm" shape="square" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[14px] font-bold" style={{ color: M.text }}>
+                  {document.title}
+                </p>
+                <p className="text-[12px]" style={{ color: M.textSubtle }}>
+                  {document.number}
+                </p>
+              </div>
+              <div className="shrink-0 text-right">
+                <span
+                  className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium"
+                  style={
+                    document.status === 'Действует'
+                      ? { background: TONES.green.soft, color: TONES.green.fg }
+                      : { background: TONES.orange.soft, color: TONES.orange.fg }
+                  }
+                >
+                  <span
+                    className="size-1.5 rounded-full"
+                    style={{
+                      background:
+                        document.status === 'Действует' ? TONES.green.fg : TONES.orange.fg,
+                    }}
+                  />
+                  {document.status}
+                </span>
+                <p className="mt-0.5 text-[11px]" style={{ color: M.textSubtle }}>
+                  {document.until}
+                </p>
+              </div>
+              <ChevronRight className="size-4 shrink-0" style={{ color: M.textSubtle }} />
+            </div>
+          ))}
+        </div>
+        <div className="px-3.5 pt-2 pb-3.5">
+          <div
+            className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-[12px]"
+            style={{ background: M.screen, color: M.textMuted }}
+          >
+            <span
+              className="grid size-4 shrink-0 place-items-center rounded-full border text-[9px] font-bold"
+              style={{ borderColor: M.textSubtle, color: M.textSubtle }}
+            >
+              i
+            </span>
+            Документы добавляет и редактирует владелец автопарка.
+          </div>
+        </div>
+      </PhoneCard>
     </PhoneSection>
   )
 }

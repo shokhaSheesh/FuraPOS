@@ -266,20 +266,16 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
       costPrice,
       costCurrency: costCurrency as CostCurrency,
       salePrice,
+      saleCurrency: 'UZS' as CostCurrency,
+      // A trade price on part of the range, positionally so the dataset does not shift.
+      wholesalePrice: index % 3 === 0 ? Math.round(salePrice * 0.86) : null,
+      wholesaleCurrency: 'UZS' as CostCurrency,
       discountPrice: random() > 0.85 ? Math.round(salePrice * 0.9) : null,
       stock: stockByLocation.reduce((sum, row) => sum + row.quantity, 0),
       stockByLocation,
       lowStockThreshold: random() > 0.5 ? between(5, 30) : null,
       shelfAddress:
         random() > 0.4 ? `${pick(['A', 'B', 'C'])}-${between(1, 20)}-${between(1, 9)}` : null,
-      mobileSku:
-        index % 2 === 0
-          ? `M-${String(index + 1).padStart(5, '0')}${sided ? `-${spec.side === 'Left' ? 'L' : 'R'}` : ''}`
-          : null,
-      mobileName:
-        index % 2 === 0
-          ? `${name.split(' ').slice(0, 2).join(' ')}${sided ? ` ${spec.name}` : ''}`
-          : null,
       imageUrl: null,
       status: 'active' as const,
     }

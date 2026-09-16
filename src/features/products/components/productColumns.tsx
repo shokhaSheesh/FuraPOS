@@ -11,9 +11,9 @@ const Empty = () => <span className="text-fg-subtle">—</span>
 
 const text = (value: string | null) => value ?? <Empty />
 
-/** Cost is invoiced in USD as often as in UZS, so it always carries its currency. */
-const cost = (v: VariationRow) =>
-  v.costCurrency === 'USD' ? `${formatNumber(v.costPrice)} USD` : formatMoney(v.costPrice)
+/** Prices are invoiced in USD as often as in UZS, so they carry their currency. */
+const money = (amount: number, currency: VariationRow['costCurrency']) =>
+  currency === 'USD' ? `${formatNumber(amount)} USD` : formatMoney(amount)
 
 /**
  * The catalogue's columns — the twenty the business asked for, in its own
@@ -64,23 +64,12 @@ export function buildProductColumns({
       enableHiding: false,
       cell: ({ row }) => <span className="text-2xs font-mono">{row.original.sku}</span>,
     },
-    // Артикул моб
-    {
-      accessorKey: 'mobileSku',
-      header: 'Mobile SKU',
-      cell: ({ row }) =>
-        row.original.mobileSku ? (
-          <span className="text-2xs font-mono">{row.original.mobileSku}</span>
-        ) : (
-          <Empty />
-        ),
-    },
     // Продажная цена
     {
       accessorKey: 'salePrice',
       header: 'Sale price',
       meta: { align: 'right' },
-      cell: ({ row }) => formatMoney(row.original.salePrice),
+      cell: ({ row }) => money(row.original.salePrice, row.original.saleCurrency),
     },
     // Цена поставщика — only for roles allowed to see what we pay
     ...(canSeeCost
@@ -89,7 +78,7 @@ export function buildProductColumns({
             accessorKey: 'costPrice',
             header: 'Supplier price',
             meta: { align: 'right' },
-            cell: ({ row }) => cost(row.original),
+            cell: ({ row }) => money(row.original.costPrice, row.original.costCurrency),
           },
         ] as TableColumn<VariationRow>[])
       : []),
@@ -111,12 +100,6 @@ export function buildProductColumns({
       accessorKey: 'name',
       header: 'Variation name',
       cell: ({ row }) => text(row.original.name),
-    },
-    // Название продукта моб
-    {
-      accessorKey: 'mobileName',
-      header: 'Mobile product name',
-      cell: ({ row }) => text(row.original.mobileName),
     },
     // Часть
     {
@@ -267,8 +250,6 @@ export function buildProductColumns({
  * only the second name columns and the cargo pair start off.
  */
 export const PRODUCT_COLUMNS_HIDDEN_BY_DEFAULT = [
-  'mobileSku',
-  'mobileName',
   'name',
   'cargoWeightKg',
   'cargoSize',

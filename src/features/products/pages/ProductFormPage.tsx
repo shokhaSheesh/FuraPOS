@@ -81,12 +81,16 @@ const emptyVariation = (
 ) => ({
   optionValues,
   enabled: true,
+  name: '',
   sku: '',
   barcode: null,
   partSide: null,
   costPrice: 0,
   costCurrency: 'USD' as const,
   salePrice: 0,
+  saleCurrency: 'UZS' as const,
+  wholesalePrice: null,
+  wholesaleCurrency: 'UZS' as const,
   discountPrice: null,
   lowStockThreshold: null,
   shelfAddress: null,
@@ -193,6 +197,8 @@ export function ProductForm({
               existing.options,
               existing.variations.map((v) => ({
                 id: v.id as string | undefined,
+                // "Standard" is the placeholder the catalogue hides, not a name.
+                name: v.name === 'Standard' ? '' : v.name,
                 optionValues: v.optionValues,
                 enabled: true,
                 sku: v.sku,
@@ -201,11 +207,12 @@ export function ProductForm({
                 costPrice: v.costPrice,
                 costCurrency: v.costCurrency,
                 salePrice: v.salePrice,
+                saleCurrency: v.saleCurrency,
+                wholesalePrice: v.wholesalePrice,
+                wholesaleCurrency: v.wholesaleCurrency,
                 discountPrice: v.discountPrice,
                 lowStockThreshold: v.lowStockThreshold,
                 shelfAddress: v.shelfAddress,
-                mobileSku: v.mobileSku,
-                mobileName: v.mobileName,
                 status: v.status,
                 stockByLocation: stockRows(locations, v.stockByLocation),
               })),
@@ -599,6 +606,14 @@ export function ProductForm({
             {single ? (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <Field
+                  label="Variation name"
+                  hint="What this one is called — leave empty if it has no name"
+                >
+                  {(p) => (
+                    <Input {...p} placeholder="Standard" {...form.register('variations.0.name')} />
+                  )}
+                </Field>
+                <Field
                   label="SKU"
                   required
                   error={form.formState.errors.variations?.[0]?.sku?.message}
@@ -651,19 +666,65 @@ export function ProductForm({
                   error={form.formState.errors.variations?.[0]?.salePrice?.message}
                 >
                   {(p) => (
-                    <Controller
-                      control={form.control}
-                      name="variations.0.salePrice"
-                      render={({ field: f }) => (
-                        <NumberField
-                          {...p}
-                          nullable={false}
-                          value={f.value}
-                          onChange={(v) => f.onChange(v ?? 0)}
-                          onBlur={f.onBlur}
-                        />
-                      )}
-                    />
+                    <div className="flex gap-1.5">
+                      <Controller
+                        control={form.control}
+                        name="variations.0.salePrice"
+                        render={({ field: f }) => (
+                          <NumberField
+                            {...p}
+                            nullable={false}
+                            value={f.value}
+                            onChange={(v) => f.onChange(v ?? 0)}
+                            onBlur={f.onBlur}
+                          />
+                        )}
+                      />
+                      <Controller
+                        control={form.control}
+                        name="variations.0.saleCurrency"
+                        render={({ field: f }) => (
+                          <Select
+                            value={f.value}
+                            onChange={f.onChange}
+                            options={CURRENCIES}
+                            aria-label="Sale price currency"
+                            className="w-24"
+                          />
+                        )}
+                      />
+                    </div>
+                  )}
+                </Field>
+                <Field label="Wholesale price" hint="What a trade customer pays">
+                  {(p) => (
+                    <div className="flex gap-1.5">
+                      <Controller
+                        control={form.control}
+                        name="variations.0.wholesalePrice"
+                        render={({ field: f }) => (
+                          <NumberField
+                            {...p}
+                            value={f.value}
+                            onChange={f.onChange}
+                            onBlur={f.onBlur}
+                          />
+                        )}
+                      />
+                      <Controller
+                        control={form.control}
+                        name="variations.0.wholesaleCurrency"
+                        render={({ field: f }) => (
+                          <Select
+                            value={f.value}
+                            onChange={f.onChange}
+                            options={CURRENCIES}
+                            aria-label="Wholesale price currency"
+                            className="w-24"
+                          />
+                        )}
+                      />
+                    </div>
                   )}
                 </Field>
                 <Field label="Part" hint="Which part of the vehicle it fits">
@@ -676,12 +737,6 @@ export function ProductForm({
                   analogue is another left step — so they sit with the rest of
                   what the one variation carries. With several, each row has them.
                 */}
-                <Field label="Mobile SKU">
-                  {(p) => <Input {...p} {...form.register('variations.0.mobileSku')} />}
-                </Field>
-                <Field label="Mobile product name">
-                  {(p) => <Input {...p} {...form.register('variations.0.mobileName')} />}
-                </Field>
               </div>
             ) : (
               <>

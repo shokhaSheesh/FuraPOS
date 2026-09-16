@@ -81,6 +81,11 @@ export interface ProductVariation {
   costPrice: number
   costCurrency: CostCurrency
   salePrice: number
+  /** What the sale price is quoted in — some lines are priced in USD. */
+  saleCurrency: CostCurrency
+  /** What a trade customer pays, when that differs from the shelf price. */
+  wholesalePrice: number | null
+  wholesaleCurrency: CostCurrency
   /** Promotional price when set; null means it sells at salePrice. */
   discountPrice: number | null
 
@@ -89,10 +94,6 @@ export interface ProductVariation {
   lowStockThreshold: number | null
   /** Shelf or bin reference, for picking. */
   shelfAddress: string | null
-
-  /** The SKU and name the mobile app shows — Артикул моб, Название продукта моб. */
-  mobileSku: string | null
-  mobileName: string | null
 
   imageUrl: string | null
   status: ProductStatus
@@ -175,11 +176,20 @@ export const costInUzs = (
 ) => (v.costCurrency === 'USD' ? v.costPrice * usdRate : v.costPrice)
 
 /** Derived, never stored — margin must always follow live prices. */
+/** What it sells for, in UZS, whichever currency it is priced in. */
+export const saleInUzs = (
+  v: Pick<ProductVariation, 'salePrice' | 'discountPrice' | 'saleCurrency'>,
+  usdRate: number,
+) => (v.saleCurrency === 'USD' ? effectivePrice(v) * usdRate : effectivePrice(v))
+
 export function marginRatio(
-  v: Pick<ProductVariation, 'costPrice' | 'costCurrency' | 'salePrice' | 'discountPrice'>,
+  v: Pick<
+    ProductVariation,
+    'costPrice' | 'costCurrency' | 'salePrice' | 'discountPrice' | 'saleCurrency'
+  >,
   usdRate: number,
 ): number {
-  const price = effectivePrice(v)
+  const price = saleInUzs(v, usdRate)
   if (price === 0) return 0
   return (price - costInUzs(v, usdRate)) / price
 }
@@ -360,6 +370,11 @@ export const variationFormSchema = z.object({
   /** Present when editing an existing variation, absent for a new one. */
   id: z.string().optional(),
   /**
+   * What this variation is called. Typed only when a product is sold one way;
+   * with options it is generated from them — see `variationName` in the store.
+   */
+  name: z.string(),
+  /**
    * Whether this combination is actually sold. Options multiply out to every
    * pairing, but a catalogue rarely stocks all of them — there may be a left
    * in black and a right in red and nothing else. An unsold combination stays
@@ -373,11 +388,12 @@ export const variationFormSchema = z.object({
   costPrice: z.number().nonnegative(),
   costCurrency: z.enum(['USD', 'UZS']),
   salePrice: z.number().nonnegative(),
+  saleCurrency: z.enum(['USD', 'UZS']),
+  wholesalePrice: z.number().nonnegative().nullable(),
+  wholesaleCurrency: z.enum(['USD', 'UZS']),
   discountPrice: z.number().nonnegative().nullable(),
   lowStockThreshold: z.number().int().nonnegative().nullable(),
   shelfAddress: z.string().nullable(),
-  mobileSku: z.string().nullable(),
-  mobileName: z.string().nullable(),
   status: z.enum(['active', 'archived', 'draft']),
   stockByLocation: z.array(stockAtLocationFormSchema),
   optionValues: z.array(z.object({ optionId: z.string(), value: z.string() })),

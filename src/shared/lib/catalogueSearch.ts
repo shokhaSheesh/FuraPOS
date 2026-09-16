@@ -44,7 +44,6 @@ export function searchVariations(variations: VariationRow[], term: string): Vari
           v.sku,
           v.barcode,
           v.oem,
-          v.mobileSku,
           v.brandName,
           v.vehicleMake,
           ...v.vehicleModels,

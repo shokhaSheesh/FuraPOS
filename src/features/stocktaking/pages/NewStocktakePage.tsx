@@ -52,7 +52,7 @@ export default function NewStocktakePage() {
       variations.filter((variation) => {
         if (variation.status === 'archived') return false
         if (categoryId && variation.categoryId !== categoryId) return false
-        if (brandId && variation.brandId !== brandId) return false
+        if (brandId && !variation.brandIds.includes(brandId)) return false
         return variation.stockByLocation.some((row) => row.locationId === locationId)
       }).length,
     [variations, locationId, categoryId, brandId],

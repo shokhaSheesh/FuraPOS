@@ -69,31 +69,46 @@ export function ImageField({
         )}
       </button>
 
-      <div className="flex flex-col items-start gap-1">
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          disabled={reading}
-          onClick={() => input.current?.click()}
-        >
-          {value ? 'Replace' : 'Upload picture'}
-        </Button>
-        {value ? (
+      {/* In a table cell the tile is the whole control: a row of buttons per
+          variation is noise next to twelve other columns. */}
+      {size === 'sm' ? (
+        value ? (
+          <button
+            type="button"
+            onClick={() => onChange(null)}
+            aria-label="Remove the picture"
+            className="text-fg-subtle hover:text-danger"
+          >
+            <Trash2 className="size-3.5" />
+          </button>
+        ) : null
+      ) : (
+        <div className="flex flex-col items-start gap-1">
           <Button
             type="button"
-            variant="ghost"
+            variant="secondary"
             size="sm"
-            className="text-danger"
-            onClick={() => onChange(null)}
+            disabled={reading}
+            onClick={() => input.current?.click()}
           >
-            <Trash2 />
-            Remove
+            {value ? 'Replace' : 'Upload picture'}
           </Button>
-        ) : size === 'sm' ? null : (
-          <span className="text-fg-subtle text-2xs">JPG or PNG, up to 2 MB</span>
-        )}
-      </div>
+          {value ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-danger"
+              onClick={() => onChange(null)}
+            >
+              <Trash2 />
+              Remove
+            </Button>
+          ) : (
+            <span className="text-fg-subtle text-2xs">JPG or PNG, up to 2 MB</span>
+          )}
+        </div>
+      )}
 
       <input
         id={id}

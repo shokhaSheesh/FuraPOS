@@ -65,8 +65,9 @@ export default function ProductDetailPage() {
       <PageHeader
         title={product.name}
         description={
-          [product.categoryPath, product.oem && `OEM ${product.oem}`].filter(Boolean).join(' · ') ||
-          undefined
+          [product.categoryPath, product.variations[0]?.oem && `OEM ${product.variations[0].oem}`]
+            .filter(Boolean)
+            .join(' · ') || undefined
         }
         action={
           <Button variant="primary" asChild>
@@ -129,7 +130,7 @@ function VariationsTable({ product }: { product: Product }) {
         <table className="w-full text-sm">
           <thead className="bg-surface-muted">
             <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-              {['Variation', 'SKU', 'Barcode', 'Part'].map((h) => (
+              {['Variation', 'SKU', 'Barcode', 'Part', 'OEM'].map((h) => (
                 <th key={h} scope="col" className="h-9 px-3 text-left font-semibold">
                   {h}
                 </th>
@@ -156,6 +157,7 @@ function VariationsTable({ product }: { product: Product }) {
                 <td className="text-2xs px-3 py-2 font-mono">{v.sku}</td>
                 <td className="text-2xs px-3 py-2 font-mono">{v.barcode ?? <Empty />}</td>
                 <td className="px-3 py-2">{v.partSide ?? <Empty />}</td>
+                <td className="text-2xs px-3 py-2 font-mono">{v.oem ?? <Empty />}</td>
                 <td className="px-3 py-2 text-right tabular-nums">
                   {v.costCurrency === 'USD'
                     ? `${formatNumber(v.costPrice)} USD`
@@ -200,9 +202,8 @@ function VariationsTable({ product }: { product: Product }) {
 function Details({ product }: { product: Product }) {
   const rows: [string, React.ReactNode][] = [
     ['Category', product.categoryPath],
-    ['Supplier', product.brandName ?? <Empty />],
+    ['Supplier', product.brandNames.join(', ') || <Empty />],
     ['Product brand', product.manufacturer ?? <Empty />],
-    ['OEM', product.oem ?? <Empty />],
     [
       'Description',
       product.description ? (

@@ -263,6 +263,8 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
       sku: `SKU-${String(index + 1).padStart(5, '0')}${sided ? `-${spec.side === 'Left' ? 'L' : 'R'}` : ''}`,
       barcode: random() > 0.3 ? String(4_600_000_000_000 + index * 10 + vIndex) : null,
       partSide: spec.side,
+      // Filled in below, from the draw that used to sit on the product.
+      oem: null as string | null,
       // Filled in below, from the draws that used to sit on the product.
       cargoWeightKg: null as number | null,
       cargoSize: null as string | null,
@@ -289,6 +291,7 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
   })
 
   const oem = random() > 0.4 ? String(between(1_000_000, 9_999_999)) : null
+  for (const variation of variations) variation.oem = oem
   // Drawn here, in the order the object below used to draw them.
   const manufacturer = random() > 0.3 ? pick(['Space', 'Sampa', 'Febi', 'Dinex']) : null
   // The tags draw stays for the same reason, though the field itself has gone.
@@ -312,10 +315,11 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
       index % 3 === 0
         ? null
         : `${category.name} for ${vehicle.make}, ${attrPick(['original', 'aftermarket', 'OEM-equivalent'])} quality`,
-    oem,
     categoryId: category.id,
     categoryName: category.name,
     categoryPath: category.path,
+    brandIds: brand ? [brand.id] : [],
+    brandNames: brand ? [brand.name] : [],
     brandId: brand?.id ?? null,
     brandName: brand?.name ?? null,
     manufacturer,
@@ -342,13 +346,14 @@ export const variations: VariationRow[] = products.flatMap((product) =>
     categoryId: product.categoryId,
     categoryName: product.categoryName,
     categoryPath: product.categoryPath,
+    brandIds: product.brandIds,
+    brandNames: product.brandNames,
     brandId: product.brandId,
     brandName: product.brandName,
     manufacturer: product.manufacturer,
     unit: product.unit,
     vehicleMake: product.vehicleMake,
     vehicleModels: product.vehicleModels,
-    oem: product.oem,
     options: product.options,
   })),
 )

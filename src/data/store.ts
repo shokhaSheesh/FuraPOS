@@ -508,7 +508,15 @@ type VariationInput = Omit<
 
 export type ProductInput = Omit<
   Product,
-  'id' | 'categoryName' | 'categoryPath' | 'brandName' | 'createdAt' | 'updatedAt' | 'variations'
+  | 'id'
+  | 'categoryName'
+  | 'categoryPath'
+  | 'brandId'
+  | 'brandName'
+  | 'brandNames'
+  | 'createdAt'
+  | 'updatedAt'
+  | 'variations'
 > & {
   variations: VariationInput[]
 }
@@ -539,6 +547,21 @@ function resolveStock(
   return { stockByLocation, stock: stockByLocation.reduce((sum, r) => sum + r.quantity, 0) }
 }
 
+/**
+ * Names for the brands a product is carried by, with the first kept as the
+ * single answer everything downstream — a sale line, a label, a report — asks
+ * for.
+ */
+function resolveBrands(brandIds: string[], brands: readonly { id: string; name: string }[]) {
+  const named = brandIds.flatMap((id) => brands.find((brand) => brand.id === id) ?? [])
+  return {
+    brandIds: named.map((brand) => brand.id),
+    brandNames: named.map((brand) => brand.name),
+    brandId: named[0]?.id ?? null,
+    brandName: named[0]?.name ?? null,
+  }
+}
+
 /** Keeps the flat sellable list in step with a product's variations. */
 function flatten(product: Product): VariationRow[] {
   return product.variations.map((variation) => ({
@@ -551,13 +574,14 @@ function flatten(product: Product): VariationRow[] {
     categoryId: product.categoryId,
     categoryName: product.categoryName,
     categoryPath: product.categoryPath,
+    brandIds: product.brandIds,
+    brandNames: product.brandNames,
     brandId: product.brandId,
     brandName: product.brandName,
     manufacturer: product.manufacturer,
     unit: product.unit,
     vehicleMake: product.vehicleMake,
     vehicleModels: product.vehicleModels,
-    oem: product.oem,
   }))
 }
 
@@ -805,7 +829,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       id,
       categoryName: category?.name ?? '—',
       categoryPath: category?.path ?? '—',
-      brandName: get().brands.find((b) => b.id === input.brandId)?.name ?? null,
+      ...resolveBrands(input.brandIds, get().brands),
       variations: input.variations.map((variation, index) => ({
         ...variation,
         id: variation.id ?? `var-${id}-${index + 1}`,
@@ -836,7 +860,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       id,
       categoryName: category?.name ?? existing.categoryName,
       categoryPath: category?.path ?? existing.categoryPath,
-      brandName: get().brands.find((b) => b.id === input.brandId)?.name ?? null,
+      ...resolveBrands(input.brandIds, get().brands),
       variations: input.variations.map((variation, index) => {
         const previous = existing.variations.find((v) => v.id === variation.id)
         return {

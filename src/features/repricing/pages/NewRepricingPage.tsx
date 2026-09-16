@@ -69,7 +69,7 @@ export default function NewRepricingPage() {
       variations.filter((variation) => {
         if (variation.status === 'archived') return false
         if (categoryId && variation.categoryId !== categoryId) return false
-        if (brandId && variation.brandId !== brandId) return false
+        if (brandId && !variation.brandIds.includes(brandId)) return false
         if (locationId && !variation.stockByLocation.some((r) => r.locationId === locationId)) {
           return false
         }

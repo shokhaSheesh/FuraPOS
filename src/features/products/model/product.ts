@@ -77,6 +77,8 @@ export interface ProductVariation {
   barcode: string | null
   /** Free text, e.g. "Left" or "Передний". */
   partSide: string | null
+  /** The manufacturer's number for this one — OX's OEM, per variation. */
+  oem: string | null
 
   /** How heavy and how big this one is to ship — OX's Вес карго, Размер карго. */
   cargoWeightKg: number | null
@@ -109,14 +111,18 @@ export interface Product {
   name: string
   /** Free text, written as formatted HTML — see RichTextEditor. */
   description: string | null
-  /** OX keeps OEM as its own column, beside the description. */
-  oem: string | null
   categoryId: Id
   categoryName: string
   /** Full hierarchy, e.g. "Chassis > Brakes". */
   categoryPath: string
+  /**
+   * Who we buy it from. A part is often carried by more than one, so this is a
+   * set; `brandId`/`brandName` keep the first of them, because a sale line, a
+   * report or a label needs one answer, not a list.
+   */
+  brandIds: Id[]
+  brandNames: string[]
   brandId: Id | null
-  /** Who we buy from — "AKCHAEV INC" in the reference data. */
   brandName: string | null
   /**
    * Who made the part — "Space" in the reference data. OX keeps these as two
@@ -147,10 +153,11 @@ export interface VariationRow extends ProductVariation {
   /** Product name and variation together, e.g. "Brake disc — Left". */
   fullName: string
   description: string | null
-  oem: string | null
   categoryId: Id
   categoryName: string
   categoryPath: string
+  brandIds: Id[]
+  brandNames: string[]
   brandId: Id | null
   brandName: string | null
   manufacturer: string | null
@@ -384,6 +391,7 @@ export const variationFormSchema = z.object({
   sku: z.string(),
   barcode: z.string().nullable(),
   partSide: z.string().nullable(),
+  oem: z.string().nullable(),
   cargoWeightKg: z.number().nonnegative().nullable(),
   cargoSize: z.string().nullable(),
   costPrice: z.number().nonnegative(),
@@ -407,12 +415,11 @@ export const productFormSchema = z
     name: z.string().min(2, 'Name is required'),
     description: z.string().nullable(),
     categoryId: z.string().min(1, 'Pick a category'),
-    brandId: z.string().nullable(),
+    brandIds: z.array(z.string()),
     manufacturer: z.string().nullable(),
     unit: z.enum(['pcs', 'kg', 'l', 'm', 'pack']),
     vehicleMake: z.string().nullable(),
     vehicleModels: z.array(z.string()),
-    oem: z.string().nullable(),
     status: z.enum(['active', 'archived', 'draft']),
     variationMode: z.enum(['single', 'multiple']),
     options: z.array(optionFormSchema).max(MAX_OPTIONS),

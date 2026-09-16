@@ -86,7 +86,15 @@ export function buildProductColumns({
     {
       accessorKey: 'brandName',
       header: 'Supplier',
-      cell: ({ row }) => text(row.original.brandName),
+      cell: ({ row }) => {
+        const names = row.original.brandNames
+        if (!names.length) return <Empty />
+        return (
+          <span className="block truncate" title={names.join(', ')}>
+            {names.join(', ')}
+          </span>
+        )
+      },
     },
     // Название продукта
     {

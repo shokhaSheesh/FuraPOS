@@ -110,10 +110,7 @@ export function useProducts(query: ListQuery, options: { enabled?: boolean } = {
       ) {
         return false
       }
-      return matches(
-        [p.name, p.oem, plainText(p.description), p.brandName, p.vehicleMake],
-        query.search,
-      )
+      return matches([p.name, plainText(p.description), p.brandName, p.vehicleMake], query.search)
     })
     return paginate(filtered, query)
   }, [products, query, options.enabled])

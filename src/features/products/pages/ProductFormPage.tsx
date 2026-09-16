@@ -12,6 +12,7 @@ import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
 import { Button } from '@/shared/ui/Button'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 import { Input } from '@/shared/ui/Input'
+import { MultiSelect } from '@/shared/ui/MultiSelect'
 import { ImageField } from '@/shared/components/ImageField'
 import { RichTextEditor } from '@/shared/ui/RichTextEditor'
 import { Select } from '@/shared/ui/Select'
@@ -87,6 +88,7 @@ const emptyVariation = (
   sku: '',
   barcode: null,
   partSide: null,
+  oem: null,
   cargoWeightKg: null,
   cargoSize: null,
   costPrice: 0,
@@ -181,9 +183,8 @@ export function ProductForm({
         ? {
             name: existing.name,
             description: existing.description,
-            oem: existing.oem,
             categoryId: existing.categoryId,
-            brandId: existing.brandId,
+            brandIds: existing.brandIds,
             manufacturer: existing.manufacturer,
             unit: existing.unit,
             vehicleMake: existing.vehicleMake,
@@ -216,6 +217,7 @@ export function ProductForm({
                 sku: v.sku,
                 barcode: v.barcode,
                 partSide: v.partSide,
+                oem: v.oem,
                 cargoWeightKg: v.cargoWeightKg,
                 cargoSize: v.cargoSize,
                 costPrice: v.costPrice,
@@ -238,9 +240,8 @@ export function ProductForm({
         : {
             name: '',
             description: null,
-            oem: null,
             categoryId: '',
-            brandId: null,
+            brandIds: [],
             manufacturer: null,
             unit: 'pcs',
             vehicleMake: null,
@@ -412,11 +413,20 @@ export function ProductForm({
       )}
 
       <PageHeader
-        title={editing ? `Edit ${existing?.name ?? ''}` : 'New product'}
+        /*
+          Once the name is typed it stays at the top of every step, so the later
+          ones — a grid of variations, a table of quantities — never leave you
+          wondering which product you are filling in. The reference does the same.
+        */
+        title={productName.trim() || (editing ? `Edit ${existing?.name ?? ''}` : 'New product')}
         description={
-          single
-            ? 'One barcode, one price, one line on a sale.'
-            : 'A product describes the part. Its variations are what actually get sold.'
+          step === 1
+            ? single
+              ? 'One barcode, one price, one line on a sale.'
+              : 'A product describes the part. Its variations are what actually get sold.'
+            : editing
+              ? 'Editing'
+              : 'New product'
         }
         action={
           <div className="flex items-center gap-2">
@@ -537,22 +547,23 @@ export function ProductForm({
                     <CardTitle>Where it belongs</CardTitle>
                   </CardHeader>
                   <CardBody>
-                    <Field label="Supplier" hint="Who we buy it from">
-                      {(p) => (
+                    <Field label="Brands" hint="Who we buy it from — one or more">
+                      {() => (
                         <Controller
                           control={form.control}
-                          name="brandId"
+                          name="brandIds"
                           render={({ field: f }) => (
-                            <Select
-                              {...p}
+                            <MultiSelect
+                              aria-label="Brands"
                               className="w-full"
-                              value={f.value ?? undefined}
+                              value={f.value}
                               onChange={f.onChange}
                               options={(brands?.items ?? []).map((b) => ({
                                 value: b.id,
                                 label: b.name,
                               }))}
                               placeholder="None"
+                              searchPlaceholder="Search brands…"
                             />
                           )}
                         />
@@ -685,9 +696,13 @@ export function ProductForm({
                 <CardTitle>Attributes</CardTitle>
               </CardHeader>
               <CardBody className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                <Field label="OEM">
-                  {(p) => <Input {...p} placeholder="1234567" {...form.register('oem')} />}
-                </Field>
+                {single ? (
+                  <Field label="OEM">
+                    {(p) => (
+                      <Input {...p} placeholder="1234567" {...form.register('variations.0.oem')} />
+                    )}
+                  </Field>
+                ) : null}
                 <Field label="Product brand" hint="Who made the part">
                   {(p) => <Input {...p} {...form.register('manufacturer')} />}
                 </Field>
@@ -768,8 +783,8 @@ export function ProductForm({
                   </>
                 ) : (
                   <p className="text-fg-subtle text-sm sm:col-span-2 lg:col-span-3">
-                    Part, cargo weight and cargo size differ between variations, so they are asked
-                    for in the table above.
+                    OEM, part, cargo weight and cargo size differ between variations, so they are
+                    asked for in the table above.
                   </p>
                 )}
               </CardBody>

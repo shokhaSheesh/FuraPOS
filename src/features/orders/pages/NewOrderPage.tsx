@@ -251,7 +251,9 @@ export default function NewOrderPage() {
       : []),
     {
       id: 'quantity',
-      header: 'Quantity',
+      // Not just "Quantity": the catalogue's own stock column sits on this
+      // table too, and two columns under that heading mean neither is read.
+      header: 'Ordering',
       enableHiding: false,
       meta: { align: 'right' },
       cell: ({ row }) => (

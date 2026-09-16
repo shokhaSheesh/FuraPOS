@@ -150,11 +150,7 @@ function useLineRows(receipt: GoodsReceipt): LineRow[] {
         return {
           ...line,
           index,
-          barcode: variation?.barcode ?? '',
-          productName: variation?.productName ?? line.name,
-          brandName: variation?.brandName ?? null,
-          categoryPath: variation?.categoryPath ?? null,
-          salePrice: variation?.salePrice ?? 0,
+          variation,
           stockHere: (variation?.stockByLocation ?? []).map((row) => ({
             locationName: locations.find((l) => l.id === row.locationId)?.name ?? '—',
             quantity: row.quantity,
@@ -168,6 +164,8 @@ function useLineRows(receipt: GoodsReceipt): LineRow[] {
 /* --- step 1: add products ----------------------------------------------- */
 
 function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: boolean }) {
+  const { can } = useSession()
+  const canSeeCost = can('products.cost.view')
   const update = useUpdateReceipt(receipt.id)
   const all = useLineRows(receipt)
   const [cards, setCards] = useState(false)
@@ -179,8 +177,8 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
   // the right line.
   const rows = search.trim()
     ? all.filter((row) =>
-        [row.barcode, row.sku, row.name, row.productName]
-          .filter(Boolean)
+        [row.variation?.barcode, row.sku, row.name, row.variation?.productName]
+          .filter((field): field is string => Boolean(field))
           .some((field) => field.toLowerCase().includes(search.trim().toLowerCase())),
       )
     : all
@@ -223,6 +221,7 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
 
   const columns = buildReceiptLineColumns({
     editable,
+    canSeeCost,
     cards,
     onQuantityChange: (index, quantity) =>
       writeLines(
@@ -766,6 +765,8 @@ function ReviewStep({
   editable: boolean
   onPosted: () => void
 }) {
+  const { can } = useSession()
+  const canSeeCost = can('products.cost.view')
   const update = useUpdateReceipt(receipt.id)
   const post = useSetReceiptStatus(receipt.id)
   const all = useLineRows(receipt)
@@ -775,8 +776,8 @@ function ReviewStep({
 
   const rows = search.trim()
     ? all.filter((row) =>
-        [row.barcode, row.sku, row.name, row.productName]
-          .filter(Boolean)
+        [row.variation?.barcode, row.sku, row.name, row.variation?.productName]
+          .filter((field): field is string => Boolean(field))
           .some((field) => field.toLowerCase().includes(search.trim().toLowerCase())),
       )
     : all
@@ -788,6 +789,7 @@ function ReviewStep({
     )
 
   const columns = buildReceiptReviewColumns({
+    canSeeCost,
     costLabel: `Cost price (per unit)${settings.currency === 'uzs' ? '' : ', as invoiced'}`,
     landedCostOf: (row) => {
       const uzs = landedUnitCostOn(row, receipt, receipt.usdRate, settings.basis)

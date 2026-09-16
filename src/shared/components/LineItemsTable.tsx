@@ -21,9 +21,13 @@ import { Input } from '@/shared/ui/Input'
 import { cn } from '@/shared/lib/cn'
 import { matches } from '@/data/query'
 import { useDataStore } from '@/data/store'
-import { formatMoney, formatNumber } from '@/shared/lib/format'
+import { formatNumber } from '@/shared/lib/format'
 import type { CatalogueHit } from '@/shared/lib/catalogueSearch'
 import type { VariationRow } from '@/features/products/model/product'
+import {
+  buildProductFieldColumns,
+  PRODUCT_FIELD_COLUMN_IDS,
+} from '@/features/products/components/productFieldColumns'
 
 /**
  * The lines of a document — a transfer, an order, a goods receipt — laid out
@@ -66,7 +70,11 @@ export interface CatalogueSource {
   onPick: (hitId: string) => string | null
 }
 
-const Empty = () => <span className="text-fg-subtle">—</span>
+/** What a row *is*. The document's own columns are placed straight after these. */
+const IDENTITY_COLUMNS = PRODUCT_FIELD_COLUMN_IDS.slice(
+  0,
+  PRODUCT_FIELD_COLUMN_IDS.indexOf('stock'),
+)
 
 export function LineItemsTable<T extends LineRow>({
   rows,
@@ -79,6 +87,7 @@ export function LineItemsTable<T extends LineRow>({
   emptyDescription = 'Use “Add products” to put the first line on.',
   error,
   totals,
+  canSeeCost = true,
 }: {
   rows: T[]
   /** The document's own columns, placed after the product name. */
@@ -95,6 +104,8 @@ export function LineItemsTable<T extends LineRow>({
   error?: string
   /** Extra figures for the footer, beside the quantity — an order's value, say. */
   totals?: { label: string; value: string }[]
+  /** Hides the supplier price from roles that may not see what we pay. */
+  canSeeCost?: boolean
 }) {
   const variations = useDataStore((s) => s.variations)
   const byId = useMemo(() => new Map(variations.map((v) => [v.id, v])), [variations])
@@ -103,6 +114,20 @@ export function LineItemsTable<T extends LineRow>({
   const [lastAdded, setLastAdded] = useState<string | null>(null)
 
   const variationOf = (row: T): VariationRow | undefined => byId.get(row.variationId)
+
+  /*
+    Everything the product list shows. The document's own columns go after the
+    identity block — image, product, variation, SKU, barcode — because that is
+    where the eye is when a quantity is being typed.
+  */
+  const productFields = useMemo(
+    () =>
+      buildProductFieldColumns<T>({ variationOf: (row) => byId.get(row.variationId), canSeeCost }),
+    [byId, canSeeCost],
+  )
+  const identityCount = productFields.filter((column) =>
+    IDENTITY_COLUMNS.includes(column.id ?? ''),
+  ).length
 
   // Newest first, as OX shows them: what was just added is where the eye is.
   const shown = useMemo(
@@ -124,77 +149,15 @@ export function LineItemsTable<T extends LineRow>({
           <span className="text-2xs text-fg-muted font-mono">{row.original.variationId}</span>
         ),
       },
-      {
-        id: 'variation',
-        header: 'Variation',
-        enableHiding: false,
-        cell: ({ row }) => {
-          const v = variationOf(row.original)
-          return (
-            <div className="flex max-w-72 items-center gap-2.5">
-              <ProductThumb src={v?.imageUrl ?? null} size="sm" />
-              <span className="text-fg truncate font-medium">
-                {v?.fullName ?? 'Removed product'}
-              </span>
-            </div>
-          )
-        },
-      },
-      {
-        id: 'barcode',
-        header: 'Barcode',
-        cell: ({ row }) => {
-          const code = variationOf(row.original)?.barcode
-          return code ? <span className="text-2xs font-mono">{code}</span> : <Empty />
-        },
-      },
-      {
-        id: 'sku',
-        header: 'SKU',
-        cell: ({ row }) => (
-          <span className="text-2xs font-mono">{variationOf(row.original)?.sku ?? '—'}</span>
-        ),
-      },
-      {
-        id: 'productName',
-        header: 'Product name',
-        cell: ({ row }) => (
-          <span className="text-fg-muted block max-w-56 truncate">
-            {variationOf(row.original)?.productName ?? '—'}
-          </span>
-        ),
-      },
-      {
-        id: 'brand',
-        header: 'Brand',
-        cell: ({ row }) => variationOf(row.original)?.brandName ?? <Empty />,
-      },
-      {
-        id: 'category',
-        header: 'Category',
-        cell: ({ row }) => variationOf(row.original)?.categoryName ?? <Empty />,
-      },
+      /*
+        The catalogue's own fields, identical to the product list's — see
+        `buildProductFieldColumns`. The document's editable columns are slotted
+        in after the row's identity rather than appended, so the quantity being
+        typed sits beside the name it belongs to.
+      */
+      ...productFields.slice(0, identityCount),
       ...columns,
-      {
-        id: 'stock',
-        header: 'Current stock',
-        meta: { align: 'right' },
-        cell: ({ row }) => (
-          <span className="tabular-nums">
-            {formatNumber(variationOf(row.original)?.stock ?? 0)}
-          </span>
-        ),
-      },
-      {
-        id: 'salePrice',
-        header: 'Sale price',
-        meta: { align: 'right' },
-        cell: ({ row }) => (
-          <span className="tabular-nums">
-            {formatMoney(variationOf(row.original)?.salePrice ?? 0)}
-          </span>
-        ),
-      },
+      ...productFields.slice(identityCount),
       {
         id: 'remove',
         header: '',

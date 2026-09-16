@@ -139,6 +139,14 @@ Conventions that are load-bearing — follow them rather than inventing per-scre
   `useSession().can('module.section.action')` or `<RequirePermission>`.
 - **List screens** compose `<PageHeader>` + `<ListPage>` + `<DataTable>`, with list state in the URL
   via `useListQuery()`. `src/features/catalog/pages/ProductsPage.tsx` is the reference to copy.
+- **Wherever products are put on a document — transfers, purchase orders, goods receipt — the table
+  shows the same fields as the product list.** Client rule. Use
+  `buildProductFieldColumns` (`src/features/products/components/productFieldColumns.tsx`), never a
+  hand-picked subset: somebody receiving parts off a lorry reads the same catalogue as somebody
+  managing it, and having half the fields in one screen and half in the other is how the wrong
+  variation gets received. The document's own editable columns (counted quantity, line price) go
+  straight after the identity block, not appended at the end. A test compares the two column sets,
+  so a field added to the catalogue cannot quietly go missing from the documents.
 - **Overlays are ours.** Dropdowns, date pickers and menus all build on `shared/ui/Popover`;
   `Select`, `Calendar` (three-step days → months → years) and `DateRangePicker` are the components.
   Never a native `<select>`, never a stock library theme — see DESIGN_RULES § 11.

@@ -106,6 +106,41 @@ export function useCreateReceipt() {
   }
 }
 
+export function useUpdateReceipt(id: string) {
+  const update = useDataStore((s) => s.updateReceipt)
+  return {
+    isPending: false,
+    mutate: (
+      patch: Parameters<typeof update>[1],
+      opts?: { onSuccess?: () => void; onError?: (message: string) => void },
+    ) => {
+      const result = update(id, patch)
+      if (result.ok) opts?.onSuccess?.()
+      else opts?.onError?.(result.error)
+    },
+  }
+}
+
+export function useAddReceiptPayment(id: string) {
+  const add = useDataStore((s) => s.addReceiptPayment)
+  return {
+    isPending: false,
+    mutate: (
+      payment: Parameters<typeof add>[1],
+      opts?: { onSuccess?: () => void; onError?: (message: string) => void },
+    ) => {
+      const result = add(id, payment)
+      if (result.ok) opts?.onSuccess?.()
+      else opts?.onError?.(result.error)
+    },
+  }
+}
+
+export function useRemoveReceiptPayment(id: string) {
+  const remove = useDataStore((s) => s.removeReceiptPayment)
+  return { isPending: false, mutate: (paymentId: string) => remove(id, paymentId) }
+}
+
 export function useSetReceiptStatus(id: string) {
   const setStatus = useDataStore((s) => s.setReceiptStatus)
   return {

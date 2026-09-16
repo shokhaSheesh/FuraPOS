@@ -9,14 +9,20 @@ import type { Id, IsoDate } from '@/shared/types'
  */
 export type ReceiptStatus = 'draft' | 'received' | 'cancelled'
 
+/*
+  The reference product's three states, kept verbatim: a receipt is either
+  still being built (Не завершено), posted into stock (Завершено), or thrown
+  away (Удалено). The stored values keep their old names so nothing else in the
+  app has to change; only what the user reads is OX's.
+*/
 export const RECEIPT_STATUSES: {
   value: ReceiptStatus
   label: string
   tone: 'neutral' | 'success' | 'danger'
 }[] = [
-  { value: 'draft', label: 'Draft', tone: 'neutral' },
-  { value: 'received', label: 'Received', tone: 'success' },
-  { value: 'cancelled', label: 'Cancelled', tone: 'danger' },
+  { value: 'draft', label: 'Unfinished', tone: 'neutral' },
+  { value: 'received', label: 'Completed', tone: 'success' },
+  { value: 'cancelled', label: 'Deleted', tone: 'danger' },
 ]
 
 export const receiptStatusLabel = (status: ReceiptStatus) =>
@@ -45,6 +51,41 @@ export interface ReceiptLine {
 }
 
 /**
+ * Money handed to the supplier against this delivery.
+ *
+ * Separate from the supplier's wallet balance on purpose: the wallet answers
+ * "what do we owe them in total", this answers "what is still outstanding on
+ * *this* delivery", and the payment step of the receipt is where the second
+ * question gets asked.
+ */
+export interface ReceiptPayment {
+  id: string
+  paidAt: IsoDate
+  /** Who handed the money over — an employee, not the supplier. */
+  payerName: string
+  /** The account it left: cash desk, bank, card. */
+  accountName: string
+  amount: number
+  currency: Currency
+  note: string | null
+}
+
+/**
+ * How the landed cost on the review step is worked out. Both choices are the
+ * reference product's, and both change only what is *shown* until the receipt
+ * is posted — at which point the shown figure is the one written to the
+ * catalogue.
+ */
+export interface CostSettings {
+  /** Show it in UZS, or in whatever currency the supplier invoiced. */
+  currency: 'uzs' | 'supplier'
+  /** Spread the costs over what actually turned up, or over what was expected. */
+  basis: 'actual' | 'expected'
+}
+
+export const DEFAULT_COST_SETTINGS: CostSettings = { currency: 'supplier', basis: 'actual' }
+
+/**
  * Freight, customs duty, broker fees — everything that makes a part cost more
  * than the supplier charged for it. For an importer these are not a rounding
  * error, and a cost price that ignores them makes every margin on every screen
@@ -70,8 +111,26 @@ export interface GoodsReceipt {
   invoiceNumber: string | null
   locationId: Id
   locationName: string
+  /**
+   * The country or customs zone the goods come from, as the reference product
+   * asks for it on the very first screen. It is the supplier's zone by default
+   * but is asked separately, because a supplier can ship from more than one.
+   */
+  zone: string | null
+  /**
+   * The USD rate agreed for *this* delivery. Frozen on the document rather
+   * than read live, because a receipt posted in March must not re-price itself
+   * when the rate moves in April.
+   */
+  usdRate: number
+  /** Count the shelf as part of posting, rather than trusting the paperwork. */
+  stocktakeOnPost: boolean
+  /** Land everything at one location, then move it on with a transfer. */
+  distributeByTransfer: boolean
   lines: ReceiptLine[]
   additionalCosts: AdditionalCost[]
+  payments: ReceiptPayment[]
+  costSettings: CostSettings
   comment: string | null
   createdBy: string
   receivedBy: string | null
@@ -110,6 +169,18 @@ export const supplierInvoicedTotal = (receipt: Pick<GoodsReceipt, 'lines'>, usdR
     (sum, line) => sum + line.orderedQuantity * toUzs(line.unitCost, line.costCurrency, usdRate),
     0,
   )
+
+/** What has actually been handed over against this delivery, in UZS. */
+export const paidTotal = (receipt: Pick<GoodsReceipt, 'payments'>, usdRate: number) =>
+  receipt.payments.reduce((sum, p) => sum + toUzs(p.amount, p.currency, usdRate), 0)
+
+/**
+ * What is still owed on this delivery: invoiced less paid, never below zero.
+ * Built from the invoiced total for the reason `supplierInvoicedTotal` gives —
+ * a short delivery is a claim to settle, not a discount already agreed.
+ */
+export const receiptDebt = (receipt: Pick<GoodsReceipt, 'lines' | 'payments'>, usdRate: number) =>
+  Math.max(0, supplierInvoicedTotal(receipt, usdRate) - paidTotal(receipt, usdRate))
 
 /** Freight, duty and the rest, in UZS. */
 export const extraCostsTotal = (receipt: Pick<GoodsReceipt, 'additionalCosts'>, usdRate: number) =>
@@ -157,6 +228,36 @@ export function landedUnitCost(
   if (goods === 0) return supplierUnit
 
   const share = lineSupplierValue(line, usdRate) / goods
+  return supplierUnit + (extraCostsTotal(receipt, usdRate) * share) / quantity
+}
+
+/**
+ * The quantity the review step's cost settings say to price on: what turned up
+ * (the default) or what the paperwork expected. Spreading freight over
+ * expected quantities is what you want while a delivery is still being
+ * counted — the per-unit figure then stops jumping with every line typed.
+ */
+export const basisQuantity = (line: ReceiptLine, basis: CostSettings['basis']) =>
+  basis === 'expected' ? line.orderedQuantity : lineQuantity(line)
+
+/** `landedUnitCost`, but honouring the review step's basis. */
+export function landedUnitCostOn(
+  line: ReceiptLine,
+  receipt: Pick<GoodsReceipt, 'lines' | 'additionalCosts'>,
+  usdRate: number,
+  basis: CostSettings['basis'],
+): number {
+  if (basis === 'actual') return landedUnitCost(line, receipt, usdRate)
+
+  const quantity = line.orderedQuantity
+  if (quantity === 0) return 0
+  const supplierUnit = toUzs(line.unitCost, line.costCurrency, usdRate)
+  const goods = receipt.lines.reduce(
+    (sum, l) => sum + l.orderedQuantity * toUzs(l.unitCost, l.costCurrency, usdRate),
+    0,
+  )
+  if (goods === 0) return supplierUnit
+  const share = (quantity * supplierUnit) / goods
   return supplierUnit + (extraCostsTotal(receipt, usdRate) * share) / quantity
 }
 
@@ -245,6 +346,16 @@ export const additionalCostSchema = z.object({
   currency: z.enum(['USD', 'UZS']),
 })
 
+export const receiptPaymentSchema = z.object({
+  payerName: z.string().min(1, 'Who paid?'),
+  accountName: z.string().min(1, 'Which account did it leave?'),
+  amount: z.number().positive('Enter an amount'),
+  currency: z.enum(['USD', 'UZS']),
+  note: z.string(),
+})
+
+export type ReceiptPaymentDraft = z.infer<typeof receiptPaymentSchema>
+
 export const receiptDraftSchema = z.object({
   supplierId: z.string().nullable(),
   invoiceNumber: z.string(),
@@ -255,3 +366,20 @@ export const receiptDraftSchema = z.object({
 })
 
 export type ReceiptDraft = z.infer<typeof receiptDraftSchema>
+
+/**
+ * The questions the reference product asks before a receipt exists at all.
+ * Answering them creates an empty, unfinished receipt; products are added to
+ * it afterwards, on its own screen.
+ */
+export const newReceiptSchema = z.object({
+  zone: z.string().min(1, 'Where are the goods coming from?'),
+  locationId: z.string().min(1, 'Pick where the goods land'),
+  usdRate: z.number().positive('Enter the rate agreed for this delivery'),
+  stocktakeOnPost: z.boolean(),
+  supplierId: z.string().nullable(),
+  distributeByTransfer: z.boolean(),
+  comment: z.string(),
+})
+
+export type NewReceiptDraft = z.infer<typeof newReceiptSchema>

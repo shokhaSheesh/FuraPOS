@@ -17,6 +17,7 @@ export function Steps({
   current,
   onSelect,
   selectable = false,
+  wide = false,
 }: {
   steps: string[]
   /** 1-based. */
@@ -29,16 +30,29 @@ export function Steps({
    * turns it on and decides for itself what to do about half-filled ones.
    */
   selectable?: boolean
+  /**
+   * Stretches the steps across the full width with the connectors taking up the
+   * slack, for a document that *is* the steps rather than a form that has them.
+   */
+  wide?: boolean
 }) {
   return (
-    <ol className="flex flex-wrap items-center gap-2 text-sm" aria-label="Steps">
+    <ol
+      className={cn(
+        'flex flex-wrap items-center gap-2 text-sm',
+        wide && 'border-border w-full flex-nowrap border-b pb-3',
+      )}
+      aria-label="Steps"
+    >
       {steps.map((label, index) => {
         const number = index + 1
         const done = number < current
         const active = number === current
         return (
-          <li key={label} className="flex items-center gap-2">
-            {index > 0 ? <span className="bg-border h-px w-6" aria-hidden /> : null}
+          <li key={label} className={cn('flex items-center gap-2', wide && 'min-w-0 flex-1')}>
+            {index > 0 ? (
+              <span className={cn('bg-border h-px', wide ? 'flex-1' : 'w-6')} aria-hidden />
+            ) : null}
             <button
               type="button"
               disabled={!selectable && !done}
@@ -60,7 +74,9 @@ export function Steps({
               >
                 {done ? <Check className="size-3.5" /> : number}
               </span>
-              <span className={cn(active ? 'text-fg font-medium' : 'text-fg-muted')}>{label}</span>
+              <span className={cn('truncate', active ? 'text-fg font-medium' : 'text-fg-muted')}>
+                {label}
+              </span>
             </button>
           </li>
         )

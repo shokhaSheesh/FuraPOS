@@ -28,10 +28,7 @@ const CorrectionsListPage = lazy(() => import('@/features/corrections/pages/Corr
 const CorrectionDetailPage = lazy(() => import('@/features/corrections/pages/CorrectionDetailPage'))
 const NewCorrectionPage = lazy(() => import('@/features/corrections/pages/NewCorrectionPage'))
 const GoodsReceiptListPage = lazy(() => import('@/features/receipts/pages/GoodsReceiptListPage'))
-const GoodsReceiptDetailPage = lazy(
-  () => import('@/features/receipts/pages/GoodsReceiptDetailPage'),
-)
-const NewGoodsReceiptPage = lazy(() => import('@/features/receipts/pages/NewGoodsReceiptPage'))
+const GoodsReceiptPage = lazy(() => import('@/features/receipts/pages/GoodsReceiptPage'))
 const StocktakingListPage = lazy(() => import('@/features/stocktaking/pages/StocktakingListPage'))
 const StocktakeDetailPage = lazy(() => import('@/features/stocktaking/pages/StocktakeDetailPage'))
 const NewStocktakePage = lazy(() => import('@/features/stocktaking/pages/NewStocktakePage'))
@@ -194,12 +191,8 @@ const routes: RouteObject[] = [
         element: page(<GoodsReceiptListPage />, 'products.goodsReceipt.view'),
       },
       {
-        path: paths.products.newGoodsReceipt,
-        element: page(<NewGoodsReceiptPage />, 'products.goodsReceipt.create'),
-      },
-      {
         path: paths.products.goodsReceiptDetail(),
-        element: page(<GoodsReceiptDetailPage />, 'products.goodsReceipt.view'),
+        element: page(<GoodsReceiptPage />, 'products.goodsReceipt.view'),
       },
       {
         path: paths.products.repricing,

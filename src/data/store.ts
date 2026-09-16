@@ -61,11 +61,13 @@ import {
   type RepricingLine,
 } from '@/features/repricing/model/repricing'
 import {
+  DEFAULT_COST_SETTINGS,
   landedUnitCost,
   supplierInvoicedTotal,
   type AdditionalCost,
   type GoodsReceipt,
   type ReceiptLine,
+  type ReceiptPayment,
   type ReceiptStatus,
 } from '@/features/receipts/model/receipt'
 import type { Sale, SaleLine, SaleStatus } from '@/features/sales/model/sale'
@@ -171,6 +173,31 @@ interface CatalogState {
 
   createReceipt: (input: CreateReceiptInput) => GoodsReceipt
   /** Posts or cancels a receipt, landing or reversing the stock that goes with it. */
+  /** Replaces a receipt's editable body while it is still unfinished. */
+  updateReceipt: (
+    id: string,
+    patch: Partial<
+      Pick<
+        GoodsReceipt,
+        | 'lines'
+        | 'additionalCosts'
+        | 'comment'
+        | 'zone'
+        | 'usdRate'
+        | 'supplierId'
+        | 'stocktakeOnPost'
+        | 'distributeByTransfer'
+        | 'costSettings'
+        | 'invoiceNumber'
+      >
+    >,
+  ) => { ok: true } | { ok: false; error: string }
+  /** Records money handed over against a delivery. */
+  addReceiptPayment: (
+    id: string,
+    payment: Omit<ReceiptPayment, 'id' | 'paidAt'>,
+  ) => { ok: true } | { ok: false; error: string }
+  removeReceiptPayment: (id: string, paymentId: string) => void
   setReceiptStatus: (
     id: string,
     to: ReceiptStatus,
@@ -340,9 +367,13 @@ interface CatalogState {
 
 export interface CreateReceiptInput {
   supplierId: string | null
-  invoiceNumber: string
+  invoiceNumber?: string
   locationId: string
   comment: string
+  zone?: string | null
+  usdRate?: number
+  stocktakeOnPost?: boolean
+  distributeByTransfer?: boolean
   lines: ReceiptLine[]
   additionalCosts: AdditionalCost[]
   /** Draft to keep working on it, received to post it straight away. */
@@ -508,13 +539,7 @@ type VariationInput = Omit<
 
 export type ProductInput = Omit<
   Product,
-  | 'id'
-  | 'categoryName'
-  | 'categoryPath'
-  | 'brandName'
-  | 'createdAt'
-  | 'updatedAt'
-  | 'variations'
+  'id' | 'categoryName' | 'categoryPath' | 'brandName' | 'createdAt' | 'updatedAt' | 'variations'
 > & {
   variations: VariationInput[]
 }
@@ -1050,8 +1075,14 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       invoiceNumber: input.invoiceNumber || null,
       locationId: input.locationId,
       locationName: get().locations.find((l) => l.id === input.locationId)?.name ?? '—',
+      zone: input.zone ?? get().suppliers.find((s) => s.id === input.supplierId)?.zone ?? null,
+      usdRate: input.usdRate ?? USD_RATE,
+      stocktakeOnPost: input.stocktakeOnPost ?? false,
+      distributeByTransfer: input.distributeByTransfer ?? false,
       lines: input.lines,
       additionalCosts: input.additionalCosts,
+      payments: [],
+      costSettings: { ...DEFAULT_COST_SETTINGS },
       comment: input.comment || null,
       createdBy: 'Akhmet Dauletmuratov',
       receivedBy: null,
@@ -1065,6 +1096,66 @@ export const useDataStore = create<CatalogState>((set, get) => ({
     // the stock and cost effects exist in exactly one place.
     if (input.status === 'received') get().setReceiptStatus(receipt.id, 'received')
     return get().receipts.find((r) => r.id === receipt.id) ?? receipt
+  },
+
+  updateReceipt: (id, patch) => {
+    const receipt = get().receipts.find((r) => r.id === id)
+    if (!receipt) return { ok: false, error: 'That receipt no longer exists' }
+    // A posted receipt has already moved stock and built a debt; editing its
+    // body would leave both pointing at figures that are no longer on it.
+    if (receipt.status !== 'draft') {
+      return { ok: false, error: 'This receipt is finished — it can no longer be edited' }
+    }
+
+    const next: GoodsReceipt = {
+      ...receipt,
+      ...patch,
+      supplierName:
+        'supplierId' in patch
+          ? (get().suppliers.find((s) => s.id === patch.supplierId)?.name ?? null)
+          : receipt.supplierName,
+      updatedAt: new Date().toISOString(),
+    }
+    set({ receipts: get().receipts.map((r) => (r.id === id ? next : r)) })
+    return { ok: true }
+  },
+
+  addReceiptPayment: (id, payment) => {
+    const receipt = get().receipts.find((r) => r.id === id)
+    if (!receipt) return { ok: false, error: 'That receipt no longer exists' }
+    if (payment.amount <= 0) return { ok: false, error: 'Enter an amount to pay' }
+
+    const now = new Date().toISOString()
+    set({
+      receipts: get().receipts.map((r) =>
+        r.id === id
+          ? {
+              ...r,
+              payments: [
+                ...r.payments,
+                { ...payment, id: `grp-${r.id}-${r.payments.length + 1}`, paidAt: now },
+              ],
+              updatedAt: now,
+            }
+          : r,
+      ),
+    })
+    return { ok: true }
+  },
+
+  removeReceiptPayment: (id, paymentId) => {
+    const now = new Date().toISOString()
+    set({
+      receipts: get().receipts.map((r) =>
+        r.id === id
+          ? {
+              ...r,
+              payments: r.payments.filter((p) => p.id !== paymentId),
+              updatedAt: now,
+            }
+          : r,
+      ),
+    })
   },
 
   setReceiptStatus: (id, to, quantities) => {

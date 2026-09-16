@@ -2,15 +2,12 @@ import { Ban, Download } from 'lucide-react'
 import { Badge } from '@/shared/ui/Badge'
 import { RowActions } from '@/shared/components/RowActions'
 import type { TableColumn } from '@/shared/components/table/features'
-import { formatDate, formatMoney, formatNumber, formatPercent } from '@/shared/lib/format'
+import { formatDateTime, formatMoney, formatNumber, formatPercent } from '@/shared/lib/format'
 import {
   canCancel,
-  extraCostsTotal,
   landedTotal,
-  landedUplift,
   receiptOrdered,
   receiptReceived,
-  receiptShortfall,
   receiptStatusLabel,
   receiptStatusTone,
   retailValue,
@@ -21,6 +18,14 @@ import {
 
 const Empty = () => <span className="text-fg-subtle">—</span>
 
+/**
+ * The goods-receipt list, column for column as the reference product has it.
+ *
+ * The one that earns its place is "Sold" — how much of a delivery has moved
+ * since it landed. It is what turns a list of deliveries into a judgement about
+ * them: a container at 6% after three months was a bad buy, and no other column
+ * here says so.
+ */
 export function buildReceiptColumns({
   onCancel,
   onDownload,
@@ -42,76 +47,34 @@ export function buildReceiptColumns({
   return [
     {
       accessorKey: 'number',
-      header: 'Number',
-      cell: ({ row }) => <span className="text-2xs font-mono">{row.original.number}</span>,
+      header: 'ID',
       enableHiding: false,
+      cell: ({ row }) => <span className="text-2xs font-mono">{row.original.number}</span>,
     },
     {
       accessorKey: 'createdAt',
-      header: 'Created',
-      cell: ({ row }) => formatDate(row.original.createdAt),
+      header: 'Date',
+      cell: ({ row }) => formatDateTime(row.original.createdAt),
     },
     {
-      accessorKey: 'supplierName',
-      header: 'Supplier',
-      enableHiding: false,
-      cell: ({ row }) => row.original.supplierName ?? <Empty />,
-    },
-    {
-      accessorKey: 'invoiceNumber',
-      header: 'Invoice',
+      id: 'quantity',
+      header: 'Quantity',
+      meta: { align: 'right' },
       cell: ({ row }) =>
-        row.original.invoiceNumber ? (
-          <span className="text-2xs font-mono">{row.original.invoiceNumber}</span>
-        ) : (
-          <Empty />
+        formatNumber(
+          row.original.status === 'draft'
+            ? receiptOrdered(row.original)
+            : receiptReceived(row.original),
         ),
     },
-    {
-      accessorKey: 'locationName',
-      header: 'Landed at',
-    },
-    {
-      id: 'items',
-      header: 'Items',
-      meta: { align: 'right' },
-      cell: ({ row }) => formatNumber(row.original.lines.length),
-    },
-    {
-      id: 'ordered',
-      header: 'Invoiced',
-      meta: { align: 'right' },
-      cell: ({ row }) => formatNumber(receiptOrdered(row.original)),
-    },
-    {
-      id: 'received',
-      header: 'Received',
-      meta: { align: 'right' },
-      cell: ({ row }) => {
-        if (row.original.receivedAt === null) return <Empty />
-        const short = receiptShortfall(row.original)
-        return (
-          // Short of the invoice is a claim against the supplier, not a loss —
-          // so it is flagged, but not in the same red as stock that vanished.
-          <span className={short > 0 ? 'text-warning font-medium' : undefined}>
-            {formatNumber(receiptReceived(row.original))}
-            {short > 0 ? ` (−${formatNumber(short)})` : ''}
-          </span>
-        )
-      },
-    },
     /*
-      OX's `Реализовано`: how much of the delivery has sold through. The most
-      useful column on the screen, because it says whether a container was a
-      good buy rather than merely that it arrived. It is an estimate — see
-      `soldThrough` — so it is drawn as a bar and a rounded percentage, never as
-      a precise unit count pretending to be exact.
+      An estimate, and knowingly so — see `soldThrough`. It is drawn as a bar
+      and a rounded percentage rather than a unit count, so it never reads as a
+      figure somebody could reconcile to the penny.
     */
     {
       id: 'soldThrough',
-      // Not "sold through": that is retail jargon, and the person who has to
-      // read this column every week should not have to learn a term first.
-      header: 'Sold since arrival',
+      header: 'Sold',
       enableHiding: false,
       cell: ({ row }) => {
         const { received, sold, ratio } = soldThrough(row.original, stockAt)
@@ -134,50 +97,14 @@ export function buildReceiptColumns({
         )
       },
     },
-    ...(canSeeCost
-      ? [
-          {
-            id: 'supplierTotal',
-            header: 'Supplier total',
-            meta: { align: 'right' as const },
-            cell: ({ row }: { row: { original: GoodsReceipt } }) =>
-              formatMoney(supplierTotal(row.original, usdRate)),
-          },
-          {
-            id: 'extras',
-            header: 'Freight & duty',
-            meta: { align: 'right' as const },
-            cell: ({ row }: { row: { original: GoodsReceipt } }) => {
-              const extras = extraCostsTotal(row.original, usdRate)
-              return extras > 0 ? formatMoney(extras) : <Empty />
-            },
-          },
-          {
-            id: 'landed',
-            header: 'Landed total',
-            meta: { align: 'right' as const },
-            cell: ({ row }: { row: { original: GoodsReceipt } }) => (
-              <span className="font-medium">{formatMoney(landedTotal(row.original, usdRate))}</span>
-            ),
-          },
-          {
-            id: 'retail',
-            header: 'Value at sale',
-            meta: { align: 'right' as const },
-            cell: ({ row }: { row: { original: GoodsReceipt } }) =>
-              formatMoney(retailValue(row.original, salePriceOf)),
-          },
-          {
-            id: 'uplift',
-            header: 'Uplift',
-            meta: { align: 'right' as const },
-            cell: ({ row }: { row: { original: GoodsReceipt } }) => {
-              const uplift = landedUplift(row.original, usdRate)
-              return uplift > 0 ? formatPercent(uplift) : <Empty />
-            },
-          },
-        ]
-      : []),
+    {
+      accessorKey: 'locationName',
+      header: 'Location',
+    },
+    {
+      accessorKey: 'createdBy',
+      header: 'User',
+    },
     {
       accessorKey: 'status',
       header: 'Status',
@@ -188,25 +115,47 @@ export function buildReceiptColumns({
       ),
     },
     {
-      accessorKey: 'receivedAt',
-      header: 'Received on',
+      accessorKey: 'supplierName',
+      header: 'Suppliers',
+      enableHiding: false,
       cell: ({ row }) =>
-        row.original.receivedAt ? formatDate(row.original.receivedAt) : <Empty />,
-    },
-    {
-      accessorKey: 'createdBy',
-      header: 'Created by',
-    },
-    {
-      accessorKey: 'receivedBy',
-      header: 'Received by',
-      cell: ({ row }) => row.original.receivedBy ?? <Empty />,
+        row.original.supplierName ? (
+          <Badge tone="neutral">{row.original.supplierName}</Badge>
+        ) : (
+          <Empty />
+        ),
     },
     {
       accessorKey: 'comment',
-      header: 'Comment',
+      header: 'Note',
       cell: ({ row }) => row.original.comment ?? <Empty />,
     },
+    ...(canSeeCost
+      ? [
+          {
+            id: 'landed',
+            header: 'Cost price',
+            meta: { align: 'right' as const },
+            cell: ({ row }: { row: { original: GoodsReceipt } }) => (
+              <span className="font-medium">{formatMoney(landedTotal(row.original, usdRate))}</span>
+            ),
+          },
+          {
+            id: 'retail',
+            header: 'Sale price',
+            meta: { align: 'right' as const },
+            cell: ({ row }: { row: { original: GoodsReceipt } }) =>
+              formatMoney(retailValue(row.original, salePriceOf)),
+          },
+          {
+            id: 'supplierTotal',
+            header: 'Supply price',
+            meta: { align: 'right' as const },
+            cell: ({ row }: { row: { original: GoodsReceipt } }) =>
+              formatMoney(supplierTotal(row.original, usdRate)),
+          },
+        ]
+      : []),
     {
       id: 'actions',
       header: '',
@@ -220,7 +169,7 @@ export function buildReceiptColumns({
               onSelect: () => onDownload(row.original),
             },
             {
-              label: 'Cancel receipt',
+              label: 'Delete receipt',
               icon: Ban,
               destructive: true,
               hidden: !canCancelReceipts || !canCancel(row.original.status),
@@ -233,14 +182,8 @@ export function buildReceiptColumns({
   ]
 }
 
-/** The money is the point, so it stays; the provenance columns start hidden. */
-export const RECEIPT_COLUMNS_HIDDEN_BY_DEFAULT = [
-  'invoiceNumber',
-  'supplierTotal',
-  'extras',
-  'retail',
-  'receivedAt',
-  'createdBy',
-  'receivedBy',
-  'comment',
-]
+/**
+ * The three money columns start hidden, exactly as the reference has them: they
+ * are the ones a manager turns on for a review and nobody needs day to day.
+ */
+export const RECEIPT_COLUMNS_HIDDEN_BY_DEFAULT = ['landed', 'retail', 'supplierTotal']

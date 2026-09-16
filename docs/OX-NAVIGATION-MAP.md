@@ -245,24 +245,76 @@ total) are both real and both shown, rather than one number under two names.
 
 #### Columns, against OX's
 
-Read off OX's Приход list (13 columns). Ours was built before this screen was seen, so the
-divergence below is the honest record of building from a model rather than from the reference.
+**Rebuilt to match OX one for one** (client request, from a walk-through of the live tenant). What
+follows is the reference, screen by screen, and only the deliberate departures are called out.
 
-| OX (ru)         | Ours             | Note                                                                          |
-| --------------- | ---------------- | ----------------------------------------------------------------------------- |
-| ID              | Number           |                                                                               |
-| Дата            | Created          |                                                                               |
-| Кол-во          | Invoiced         |                                                                               |
-| **Реализовано** | **Sold through** | Added after seeing OX. See below.                                             |
-| Локация         | Landed at        |                                                                               |
-| Пользователь    | Created by       |                                                                               |
-| Статус          | Status           |                                                                               |
-| Поставщики      | Supplier         |                                                                               |
-| Заметка         | Comment          | OX uses it as the delivery's _name_ — "Export N7", "N 11 Pump clutch Starter" |
-| Себестоимость   | Landed total     |                                                                               |
-| Цена поставки   | Supplier total   |                                                                               |
-| Цена продажи    | Value at sale    | Added after seeing OX                                                         |
-| Скачать         | Download as CSV  | Added after seeing OX, as a row action                                        |
+##### The list
+
+Twelve columns, in OX's own order. The last three are OX's own hidden-by-default set and stay
+hidden here too.
+
+| OX (ru)       | Ours         | Note                                                         |
+| ------------- | ------------ | ------------------------------------------------------------ |
+| ID            | ID           |                                                              |
+| Дата          | Date         | Date **and time**, as OX shows it                            |
+| Кол-во        | Quantity     |                                                              |
+| Реализовано   | Sold         | A progress bar. An estimate — see below                      |
+| Локация       | Location     |                                                              |
+| Пользователь  | User         |                                                              |
+| Статус        | Status       | Unfinished / Completed / Deleted, OX's three                 |
+| Поставщики    | Suppliers    |                                                              |
+| Заметка       | Note         | OX uses it as the delivery's _name_ — "Export N7", "N 9 ABS" |
+| Себестоимость | Cost price   | Hidden by default                                            |
+| Цена продажи  | Sale price   | Hidden by default                                            |
+| Цена поставки | Supply price | Hidden by default                                            |
+
+Header: title, "Filter and search…", a download button, and **+ Add**. OX's filter panel is a
+field-builder (`Добавить поле` over min/max, variation name, SKU, barcode, zone, brand, locations,
+suppliers, user, status); ours keeps the counted status chips plus supplier and location selects,
+which cover the same ground in one click instead of three.
+
+Removed in the rebuild: the three KPI tiles (received units, drafts, landed uplift). OX has no
+summary band here, and the uplift figure it replaced is now on the receipt itself.
+
+##### Creating one — `Новый приход`
+
+A modal, not a page, and it is a **gate**: it creates an empty receipt and opens it, and products
+are added afterwards. Fields, in OX's order and layout: Zone\*, Location\*, Supplier price rate\*
+(`1 USD = … UZS`), Count the shelf when posting these products?\* (Yes/No), Supplier, then — boxed
+apart, as OX boxes it — Spread the goods across locations with a transfer?\* (Yes/No), and Note.
+
+The rate is **frozen on the document**. A receipt posted in March must not re-price itself when the
+rate moves in April, which is why it is asked here rather than read live.
+
+##### The receipt — four steps
+
+`Приход #N - <location>` plus its status badge, then OX's four steps. Any step opens at any time,
+because all four are views of one document and a delivery is rarely entered in one sitting: the
+products go on as the boxes are opened, the freight invoice arrives days later, the payment later
+still.
+
+1. **Add products.** Search, print, a list/cards view toggle, and **Add products ▾** — create a new
+   product, upload a spreadsheet, or pick from the catalogue. OX's picker turns the same grid into a
+   scan mode (`search-or-scanbarcode`, closed with a red `Закрыть режим`); ours does the same with
+   the shared `ProductPicker`. Columns are **ours, not OX's** (explicit client instruction): ID,
+   Variation name, Barcode, SKU, Product name, Actual quantity, Current stock, Sale price, Supplier
+   price. Actual quantity is the only editable cell. Current stock carries OX's per-location
+   breakdown on hover. Row actions: print a label, remove. Footer: total quantity and variation
+   count, as OX has it.
+2. **Extra data.** Freight, duty and the rest, plus the note; Cancel / Save. This is the landed-cost
+   input described below.
+3. **Payment.** `Invoice for goods from <supplier>` with a Pay button, then Total quantity /
+   Invoice total / Debt (to pay), and a payments table — Date and time, Payer, Account, Amount,
+   Note.
+4. **Review and finish.** ID, Barcode, Product name, SKU, Variation name, Actual quantity, Expected
+   quantity, Sale price, Cost price (per unit). Plus OX's two buttons: **Cost price settings**
+   (a popover: cost price currency — UZS or the supplier's; show cost price by — actual or expected
+   quantity) and **Post receipt** (`Оприходовать`).
+
+Not built: OX's spreadsheet import sub-wizard (`Выбор Excel файла` → `Настройка колонок` →
+`Загрузка файла`), where each spreadsheet column is mapped to a product field. The menu entry is
+there and says so. It is a real feature and a large one — worth building once the client confirms
+the column set it should map onto.
 
 **`Реализовано` was the real find.** A progress bar per delivery: how much of it has sold. It says
 whether a container was a _good buy_, not merely that it arrived — nothing else in either product
@@ -278,13 +330,12 @@ fields but Fura is not using them differently: no freight or duty is being folde
 Our landed cost is therefore an **addition to OX, not a match**, and the question for the client is
 whether it is wanted — it is the difference between a margin that is real and one that is optimistic.
 
-Three things we have that OX's screen does not, all deliberate and all worth confirming:
+Two things we have that OX's screen does not, both deliberate and both worth confirming:
 
-- **Draft → posted.** OX's statuses here are only `Завершено` / `Удалено`. Ours holds a receipt open
-  until someone counts it in.
-- **Invoiced vs received per line.** OX shows a single `Кол-во`. Ours splits them, as OX itself does
-  on transfers — a short delivery is a claim against the supplier and needs to be visible.
-- **Freight and duty as their own lines**, and the uplift percentage that follows from them.
+- **Invoiced vs received per line.** OX shows a single `Кол-во` on the first step and both
+  `Фактическое` and `Ожидаемое` on the last. Ours carries both throughout, so a short delivery is
+  visible before the review step rather than at it.
+- **Freight and duty as their own lines**, and the uplift that follows from them.
 
 Also noted from the screen: OX's Локация reads "Furasentr Erkin" on every row, so the live tenant
 appears to run a single location. Our multi-location model may be richer than the business actually

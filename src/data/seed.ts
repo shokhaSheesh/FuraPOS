@@ -6,7 +6,11 @@ import type { CostCurrency, Product, VariationRow } from '@/features/products/mo
 import type { Sale } from '@/features/sales/model/sale'
 import type { Transfer } from '@/features/transfers/model/transfer'
 import type { Correction, CorrectionReason } from '@/features/corrections/model/correction'
-import { supplierInvoicedTotal, type GoodsReceipt } from '@/features/receipts/model/receipt'
+import {
+  DEFAULT_COST_SETTINGS,
+  supplierInvoicedTotal,
+  type GoodsReceipt,
+} from '@/features/receipts/model/receipt'
 import type { Stocktake } from '@/features/stocktaking/model/stocktake'
 import type { Repricing, RuleKind } from '@/features/repricing/model/repricing'
 import type { Supplier } from '@/features/suppliers/model/supplier'
@@ -1174,8 +1178,37 @@ export const receipts: GoodsReceipt[] = Array.from({ length: 46 }, (_, index) =>
     invoiceNumber: random() > 0.2 ? `INV-${between(10_000, 99_999)}` : null,
     locationId: location.id,
     locationName: location.name,
+    // The zone is asked separately from the supplier on OX's create screen, but
+    // it is the supplier's own zone that nearly always answers it.
+    zone: supplier.zone,
+    usdRate: USD_RATE,
+    stocktakeOnPost: false,
+    distributeByTransfer: false,
     lines,
     additionalCosts,
+    /*
+      Every other posted receipt is paid off in full, so both sides of the
+      payment step — settled and outstanding — exist in the data. Chosen by
+      sequence rather than by `random()` so no draw is consumed here: the RNG
+      stream is shared across the whole seed, and an extra draw would shift
+      every dataset generated after this one.
+    */
+    payments:
+      status === 'received' && sequence % 2 === 0
+        ? [
+            {
+              id: `grp-${sequence}-1`,
+              paidAt: new Date(createdAt.getTime() + 2 * 86_400_000).toISOString(),
+              payerName: 'Mansurbek',
+              accountName: 'Cash desk',
+              amount:
+                Math.round((supplierInvoicedTotal({ lines }, USD_RATE) / USD_RATE) * 100) / 100,
+              currency: 'USD' as const,
+              note: `import ${`GR-${String(sequence).padStart(5, '0')}`}`,
+            },
+          ]
+        : [],
+    costSettings: { ...DEFAULT_COST_SETTINGS },
     comment: random() > 0.75 ? pick(['Part of container 3', 'Air freight — urgent']) : null,
     createdBy: pick(['Akhmet Dauletmuratov', 'Mansurbek']),
     receivedBy: status === 'received' ? pick(['Dilnoza', 'Sardor']) : null,

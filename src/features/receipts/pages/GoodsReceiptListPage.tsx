@@ -1,30 +1,30 @@
 import { useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router'
-import { Plus, PackagePlus, FileEdit, Percent } from 'lucide-react'
+import { useNavigate } from 'react-router'
+import { Download, Plus } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
 import { SearchInput } from '@/shared/components/SearchInput'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { FilterSelect } from '@/shared/components/FilterSelect'
-import { Card } from '@/shared/ui/Card'
 import { Button } from '@/shared/ui/Button'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 import { toast } from '@/shared/ui/toast'
 import { useListQuery } from '@/shared/hooks/useListQuery'
 import { useSession } from '@/app/providers/SessionProvider'
 import { paths } from '@/shared/config/paths'
-import { formatMoney, formatNumber, formatPercent } from '@/shared/lib/format'
+import { formatMoney } from '@/shared/lib/format'
 import { downloadCsv } from '@/shared/lib/csv'
 import { useDataStore } from '@/data/store'
 import { USD_RATE } from '@/data/seed'
 import {
+  useCreateReceipt,
   useReceiptStatusCounts,
-  useReceiptSummary,
   useReceipts,
   useSetReceiptStatus,
   useSuppliers,
 } from '../api/receipts'
+import { NewReceiptDialog } from '../components/NewReceiptDialog'
 import {
   buildReceiptColumns,
   RECEIPT_COLUMNS_HIDDEN_BY_DEFAULT,
@@ -50,8 +50,9 @@ export default function GoodsReceiptListPage() {
   const scope = { search: query.search, location: query.location, supplier: query.supplier }
   const { data, isLoading } = useReceipts(query)
   const { data: counts } = useReceiptStatusCounts(scope)
-  const summary = useReceiptSummary(scope)
   const canSeeCost = can('products.cost.view')
+  const createReceipt = useCreateReceipt()
+  const [creating, setCreating] = useState(false)
 
   const [pendingCancel, setPendingCancel] = useState<GoodsReceipt | null>(null)
   const cancelReceipt = useSetReceiptStatus(pendingCancel?.id ?? '')
@@ -102,50 +103,53 @@ export default function GoodsReceiptListPage() {
     [can, canSeeCost, stockAt, salePriceOf],
   )
 
-  const tiles = [
-    {
-      icon: PackagePlus,
-      label: 'Received',
-      value: formatNumber(summary.receivedUnits),
-      meta: canSeeCost ? `${formatMoney(summary.landedValue)} landed` : 'units',
-    },
-    {
-      icon: FileEdit,
-      label: 'Drafts',
-      value: formatNumber(summary.drafts),
-      meta: 'not posted yet',
-    },
-    {
-      icon: Percent,
-      label: 'Landed uplift',
-      value: formatPercent(summary.uplift),
-      meta: 'freight and duty add this much to every invoice',
-    },
-  ]
-
   return (
     <>
       <PageHeader
         title="Goods receipt"
         description="Every delivery from a supplier: what arrived, what it cost once freight and duty are counted, and how much of it has sold since."
         action={
-          can('products.goodsReceipt.create') ? (
-            <Button variant="primary" asChild>
-              <Link to={paths.products.newGoodsReceipt}>
-                <Plus />
-                New receipt
-              </Link>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="icon"
+              aria-label="Download this list"
+              title="Download this list"
+              onClick={() =>
+                downloadCsv(
+                  'goods-receipts.csv',
+                  ['ID', 'Date', 'Quantity', 'Location', 'User', 'Status', 'Supplier', 'Note'],
+                  (data?.items ?? []).map((r) => [
+                    r.number,
+                    r.createdAt,
+                    r.lines.reduce((sum, l) => sum + (l.receivedQuantity ?? l.orderedQuantity), 0),
+                    r.locationName,
+                    r.createdBy,
+                    r.status,
+                    r.supplierName ?? '',
+                    r.comment ?? '',
+                  ]),
+                )
+              }
+            >
+              <Download />
             </Button>
-          ) : null
+            {can('products.goodsReceipt.create') ? (
+              <Button variant="primary" onClick={() => setCreating(true)}>
+                <Plus />
+                Add
+              </Button>
+            ) : null}
+          </div>
         }
         below={
           <div className="flex flex-wrap items-center gap-2">
             <StatusChips
               options={[
                 { value: null, label: 'All' },
-                { value: 'draft', label: 'Draft' },
-                { value: 'received', label: 'Received' },
-                { value: 'cancelled', label: 'Cancelled' },
+                { value: 'draft', label: 'Unfinished' },
+                { value: 'received', label: 'Completed' },
+                { value: 'cancelled', label: 'Deleted' },
               ]}
               value={(query.status as string | null) ?? null}
               onChange={(next) => setQuery({ status: next, page: null })}
@@ -171,21 +175,6 @@ export default function GoodsReceiptListPage() {
         }
       />
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        {tiles.map((tile) => (
-          <Card key={tile.label} className="flex items-start gap-3 p-4">
-            <span className="bg-surface-inset text-fg-muted mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full">
-              <tile.icon className="size-4" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-fg-muted text-sm">{tile.label}</p>
-              <p className="text-fg mt-0.5 text-lg font-semibold">{tile.value}</p>
-              <p className="text-fg-subtle text-2xs">{tile.meta}</p>
-            </div>
-          </Card>
-        ))}
-      </div>
-
       <DataTable
         storageKey="goods-receipts"
         columns={columns}
@@ -197,7 +186,7 @@ export default function GoodsReceiptListPage() {
           <SearchInput
             value={String(query.search ?? '')}
             onChange={(search) => setQuery({ search })}
-            placeholder="Search by number, invoice, supplier, SKU or product…"
+            placeholder="Filter and search…"
           />
         }
         pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
@@ -217,11 +206,9 @@ export default function GoodsReceiptListPage() {
               description="When a supplier's delivery arrives, a receipt records what was in it and adds it to stock. It is the only way stock goes up."
               action={
                 can('products.goodsReceipt.create') ? (
-                  <Button variant="primary" asChild>
-                    <Link to={paths.products.newGoodsReceipt}>
-                      <Plus />
-                      New receipt
-                    </Link>
+                  <Button variant="primary" onClick={() => setCreating(true)}>
+                    <Plus />
+                    Add
                   </Button>
                 ) : null
               }
@@ -230,11 +217,39 @@ export default function GoodsReceiptListPage() {
         }
       />
 
+      <NewReceiptDialog
+        open={creating}
+        onOpenChange={setCreating}
+        onCreate={(draft) => {
+          const receipt = createReceipt.mutate(
+            {
+              supplierId: draft.supplierId,
+              locationId: draft.locationId,
+              comment: draft.comment,
+              zone: draft.zone,
+              usdRate: draft.usdRate,
+              stocktakeOnPost: draft.stocktakeOnPost,
+              distributeByTransfer: draft.distributeByTransfer,
+              lines: [],
+              additionalCosts: [],
+              status: 'draft',
+            },
+            {
+              onSuccess: (created) => {
+                setCreating(false)
+                navigate(paths.products.goodsReceiptDetail(created.id))
+              },
+            },
+          )
+          return receipt
+        }}
+      />
+
       <ConfirmDialog
         open={pendingCancel !== null}
         onOpenChange={(open) => !open && setPendingCancel(null)}
-        title="Cancel this receipt?"
-        confirmLabel="Cancel receipt"
+        title="Delete this receipt?"
+        confirmLabel="Delete it"
         body={
           pendingCancel ? (
             <>

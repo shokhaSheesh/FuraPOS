@@ -50,7 +50,6 @@ export const paths = {
     newStocktake: '/products/stocktaking/new',
     stocktakeDetail: (id = ':stocktakeId') => `/products/stocktaking/${id}`,
     goodsReceipt: '/products/goods-receipt', // OX: /app/products/imports
-    newGoodsReceipt: '/products/goods-receipt/new',
     goodsReceiptDetail: (id = ':receiptId') => `/products/goods-receipt/${id}`,
     repricing: '/products/repricing', // OX: /app/products/reprices
     newRepricing: '/products/repricing/new',

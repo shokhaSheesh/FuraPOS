@@ -2,8 +2,12 @@ import { describe, expect, it } from 'vitest'
 import { useDataStore } from '@/data/store'
 import { USD_RATE } from '@/data/seed'
 import {
+  basisQuantity,
   landedTotal,
   landedUnitCost,
+  landedUnitCostOn,
+  paidTotal,
+  receiptDebt,
   landedUplift,
   receiptShortfall,
   retailValue,
@@ -11,6 +15,7 @@ import {
   supplierInvoicedTotal,
   supplierTotal,
   type ReceiptLine,
+  type ReceiptPayment,
 } from './receipt'
 
 const line = (over: Partial<ReceiptLine> = {}): ReceiptLine => ({
@@ -361,5 +366,65 @@ describe('retail value', () => {
   it('prices the delivery at what we sell it for, not what we paid', () => {
     const receipt = { lines: [line({ orderedQuantity: 4 }), line({ id: 'b', orderedQuantity: 6 })] }
     expect(retailValue(receipt, () => 1_000)).toBe(10_000)
+  })
+})
+
+describe('what is still owed on a delivery', () => {
+  const payment = (over: Partial<ReceiptPayment> = {}): ReceiptPayment => ({
+    id: 'p1',
+    paidAt: '2026-01-01T00:00:00.000Z',
+    payerName: 'Mansurbek',
+    accountName: 'Cash desk',
+    amount: 100,
+    currency: 'UZS',
+    note: null,
+    ...over,
+  })
+
+  it('converts a payment made in dollars before it counts against the debt', () => {
+    const receipt = { lines: [line({ orderedQuantity: 10, unitCost: USD_RATE })], payments: [] }
+    expect(paidTotal({ payments: [payment({ amount: 1, currency: 'USD' })] }, USD_RATE)).toBe(
+      USD_RATE,
+    )
+    // Ten units at one dollar each, one dollar paid: nine dollars still owed.
+    expect(
+      receiptDebt({ ...receipt, payments: [payment({ amount: 1, currency: 'USD' })] }, USD_RATE),
+    ).toBe(9 * USD_RATE)
+  })
+
+  it('is owed on what was invoiced, not on what turned up', () => {
+    // Two short of the ten invoiced. The shortfall is a claim to settle with
+    // the supplier, so the debt does not quietly shrink by it.
+    const short = line({ orderedQuantity: 10, receivedQuantity: 8, unitCost: 100 })
+    expect(receiptDebt({ lines: [short], payments: [] }, USD_RATE)).toBe(1000)
+  })
+
+  it('never goes below zero when more was paid than invoiced', () => {
+    const receipt = {
+      lines: [line({ orderedQuantity: 1, unitCost: 100 })],
+      payments: [payment({ amount: 500 })],
+    }
+    expect(receiptDebt(receipt, USD_RATE)).toBe(0)
+  })
+})
+
+describe('the review step’s cost basis', () => {
+  // Ten invoiced, only six turned up, and a 400 freight bill to spread.
+  const receipt = {
+    lines: [line({ orderedQuantity: 10, receivedQuantity: 6, unitCost: 100 })],
+    additionalCosts: [{ id: 'c1', label: 'Freight', amount: 400, currency: 'UZS' as const }],
+  }
+
+  it('spreads freight over what arrived by default', () => {
+    expect(basisQuantity(receipt.lines[0]!, 'actual')).toBe(6)
+    // 600 of goods carrying 400 of freight: 66.67 a unit on top of the 100.
+    expect(landedUnitCostOn(receipt.lines[0]!, receipt, USD_RATE, 'actual')).toBeCloseTo(166.67, 1)
+  })
+
+  it('spreads it over what was expected when asked to', () => {
+    expect(basisQuantity(receipt.lines[0]!, 'expected')).toBe(10)
+    // The same 400 over ten units instead of six — the figure a buyer wants
+    // while the counting is still going on, because it stops moving.
+    expect(landedUnitCostOn(receipt.lines[0]!, receipt, USD_RATE, 'expected')).toBe(140)
   })
 })

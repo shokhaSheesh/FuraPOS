@@ -119,6 +119,7 @@ export const paths = {
     registers: '/settings/registers',
     locations: '/settings/locations',
     categories: '/settings/categories', // OX: /app/settings/products
+    massUpdate: '/settings/mass-update', // OX: /app/settings/products?currentTab=batch_update
     personal: '/settings/personal', // OX: Личные данные
   },
 

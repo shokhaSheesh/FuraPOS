@@ -1507,19 +1507,19 @@ cheap half of the idea; measuring campaign effectiveness was the expensive half.
 OX keeps Settings as **one page with nine tabs** at `/app/settings`; we surface them in the sidebar
 instead, as this document has always said.
 
-| OX (ru)       | OX route                  | Ours             |
-| ------------- | ------------------------- | ---------------- |
-| Основные      | `/app/settings/main`      | General          |
-| Бренды        | `/app/settings/brands`    | Brands           |
-| Оборудование  | `/app/settings/equipment` | — (removed)      |
-| Локации       | `/app/settings/location`  | Locations        |
-| Продажи       | `/app/settings/sells`     | — (removed)      |
-| Продукты      | `/app/settings/products`  | Categories       |
-| Клиенты       | `/app/settings/customers` | — (removed)      |
-| Биллинг       | `/app/settings/billing`   | Billing          |
-| Личные данные | `/app/settings/profile`   | Personal data    |
-| Webhooks      | `/app/settings/webhooks`  | — (out of scope) |
-| ИИ / MCP      | —                         | — (out of scope) |
+| OX (ru)       | OX route                  | Ours                    |
+| ------------- | ------------------------- | ----------------------- |
+| Основные      | `/app/settings/main`      | General                 |
+| Бренды        | `/app/settings/brands`    | Brands                  |
+| Оборудование  | `/app/settings/equipment` | — (removed)             |
+| Локации       | `/app/settings/location`  | Locations               |
+| Продажи       | `/app/settings/sells`     | — (removed)             |
+| Продукты      | `/app/settings/products`  | Categories, Mass update |
+| Клиенты       | `/app/settings/customers` | — (removed)             |
+| Биллинг       | `/app/settings/billing`   | Billing                 |
+| Личные данные | `/app/settings/profile`   | Personal data           |
+| Webhooks      | `/app/settings/webhooks`  | — (out of scope)        |
+| ИИ / MCP      | —                         | — (out of scope)        |
 
 **Three cut, and why:**
 
@@ -1550,6 +1550,19 @@ instead, as this document has always said.
   to delete a location with stock on it. Parts nowhere is worse than a spare row.
 - **Categories** — two levels as an indented table rather than a collapsing tree: with six
   categories a tree is ceremony, and a table can still be sorted and counted.
+- **Mass update** — OX's «Массовое обновление инф. товаров», the `batch_update` tab of Продукты
+  (`/app/settings/products?currentTab=batch_update`), given its own sidebar entry at
+  `/settings/mass-update`. Same three steps as OX: upload a CSV/Excel file; say what each column is
+  — **Don't use**, a **key** that finds the product (barcode, SKU, variation ID, product ID) or a
+  **field to update** (names, SKU, barcode, quantity at a location, shelf address, sale / wholesale /
+  cost price with a currency, supplier, category, part side, OEM, makes, models, manufacturer,
+  cargo weight and size, description); then a key check — total / found / not found, with the
+  not-found keys downloadable — before «Обновить» writes anything. Kept from OX: a field the key
+  cannot reach is not offered (a product ID finds every variation, so it cannot set one barcode),
+  empty cells change nothing, rows not found are skipped, and every run is kept in a history.
+  Changed from OX: quantities are written through a Correction per location, so a mass stock change
+  shows in the product logs like any other; and a column mapping can be saved and loaded for files
+  that arrive in the same shape. Logic and tests: `src/features/massUpdate/model/massUpdate.ts`.
 - **Billing** — the only screen about the software rather than the business, kept because the
   balance already sits in the top bar and a number with no page behind it is a dead end. "Top up"
   is honest about being a hand-off; there is no payment processing anywhere in this build.

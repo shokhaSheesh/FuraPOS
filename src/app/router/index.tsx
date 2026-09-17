@@ -43,6 +43,7 @@ const ProductLogsPage = lazy(() => import('@/features/productLogs/pages/ProductL
 const GeneralSettingsPage = lazy(() => import('@/features/settings/pages/GeneralSettingsPage'))
 const BrandsSettingsPage = lazy(() => import('@/features/settings/pages/BrandsSettingsPage'))
 const LocationsSettingsPage = lazy(() => import('@/features/settings/pages/LocationsSettingsPage'))
+const MassUpdatePage = lazy(() => import('@/features/massUpdate/pages/MassUpdatePage'))
 const CategoriesSettingsPage = lazy(
   () => import('@/features/settings/pages/CategoriesSettingsPage'),
 )
@@ -386,6 +387,10 @@ const routes: RouteObject[] = [
       {
         path: paths.settings.categories,
         element: page(<CategoriesSettingsPage />, 'settings.products.view'),
+      },
+      {
+        path: paths.settings.massUpdate,
+        element: page(<MassUpdatePage />, 'products.list.edit'),
       },
       { path: paths.settings.personal, element: page(<PersonalSettingsPage />) },
 

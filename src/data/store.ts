@@ -9,6 +9,12 @@ import type {
 } from '@/features/corrections/model/correction'
 import type { Stocktake, StocktakeLine } from '@/features/stocktaking/model/stocktake'
 import {
+  planCounts,
+  type MassUpdatePlan,
+  type MassUpdatePreset,
+  type MassUpdateRecord,
+} from '@/features/massUpdate/model/massUpdate'
+import {
   MIN_PASSWORD_LENGTH,
   type Supplier,
   type SupplierAccess,
@@ -116,6 +122,9 @@ interface CatalogState {
   receipts: GoodsReceipt[]
   /** Orders other businesses have placed with us. */
   partnerOrders: PartnerOrder[]
+  /** Runs of Settings → Mass update, newest first. */
+  massUpdates: MassUpdateRecord[]
+  massUpdatePresets: MassUpdatePreset[]
   stocktakes: Stocktake[]
   repricings: Repricing[]
   suppliers: Supplier[]
@@ -367,6 +376,17 @@ interface CatalogState {
   cancelStocktake: (id: string) => { ok: true } | { ok: false; error: string }
 
   createCorrection: (input: CreateCorrectionInput) => Correction
+  /**
+   * Writes a mass-update plan: product and variation fields in place, and any
+   * quantities as a correction per location, so the change shows in the
+   * product logs like every other stock movement. Returns the history record.
+   */
+  applyMassUpdate: (input: {
+    fileName: string
+    totalRows: number
+    plan: MassUpdatePlan
+  }) => MassUpdateRecord
+  saveMassUpdatePreset: (input: Omit<MassUpdatePreset, 'id'>) => MassUpdatePreset
   /** Reverses a correction's effect, leaving both documents in the history. */
   cancelCorrection: (id: string) => { ok: true } | { ok: false; error: string }
 }
@@ -716,6 +736,8 @@ export const useDataStore = create<CatalogState>((set, get) => ({
   corrections: seedCorrections,
   receipts: seedReceipts,
   partnerOrders: seedPartnerOrders,
+  massUpdates: [],
+  massUpdatePresets: [],
   stocktakes: seedStocktakes,
   repricings: seedRepricings,
   clients,
@@ -2736,6 +2758,92 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       ),
     })
     return { ok: true }
+  },
+
+  applyMassUpdate: ({ fileName, totalRows, plan }) => {
+    const now = new Date().toISOString()
+    const touched = new Set<string>()
+    const products = get().products.map((product) => {
+      const productPatch = plan.productPatches.get(product.id)
+      const hitsVariation = product.variations.some((v) => plan.variationPatches.has(v.id))
+      if (!productPatch && !hitsVariation) return product
+      touched.add(product.id)
+      return {
+        ...product,
+        ...productPatch,
+        variations: product.variations.map((variation) => ({
+          ...variation,
+          ...plan.variationPatches.get(variation.id),
+        })),
+        updatedAt: now,
+      }
+    })
+    // The flat catalogue rows are rebuilt from the products they belong to, so
+    // a renamed product and its variations' full names cannot disagree.
+    const rebuilt = new Map(
+      products
+        .filter((p) => touched.has(p.id))
+        .flatMap((p) => flatten(p).map((row) => [row.id, row])),
+    )
+    set({
+      products,
+      variations: get().variations.map((row) =>
+        rebuilt.has(row.id)
+          ? { ...rebuilt.get(row.id)!, stockByLocation: row.stockByLocation, stock: row.stock }
+          : row,
+      ),
+    })
+
+    const correctionNumbers: string[] = []
+    for (const [locationId, quantities] of plan.stock) {
+      const lines = [...quantities].flatMap(([variationId, quantity]) => {
+        const row = get().variations.find((v) => v.id === variationId)
+        if (!row || quantityAt(row.stockByLocation, locationId) === quantity) return []
+        return [
+          {
+            id: `mu-${variationId}`,
+            variationId,
+            productId: row.productId,
+            sku: row.sku,
+            name: row.fullName,
+            imageUrl: row.imageUrl,
+            unit: row.unit,
+            countedBefore: 0,
+            countedAfter: quantity,
+            unitCost: row.costPrice,
+            costCurrency: row.costCurrency,
+          },
+        ]
+      })
+      if (lines.length === 0) continue
+      const correction = get().createCorrection({
+        locationId,
+        reason: 'miscount',
+        comment: `Mass update · ${fileName}`,
+        lines,
+      })
+      correctionNumbers.push(correction.number)
+    }
+
+    const record: MassUpdateRecord = {
+      id: `mu-${get().massUpdates.length + 1}`,
+      createdAt: now,
+      userName: 'Akhmet Dauletmuratov',
+      fileName,
+      totalRows,
+      status: 'done',
+      result: planCounts(plan),
+      errors: plan.errors,
+      correctionNumbers,
+    }
+    set({ massUpdates: [record, ...get().massUpdates] })
+    return record
+  },
+
+  saveMassUpdatePreset: (input) => {
+    const preset: MassUpdatePreset = { ...input, id: `mup-${Date.now()}` }
+    set({ massUpdatePresets: [preset, ...get().massUpdatePresets] })
+    return preset
   },
 
   createCorrection: (input) => {

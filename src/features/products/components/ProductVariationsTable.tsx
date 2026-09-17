@@ -79,6 +79,7 @@ export function ProductVariationsTable({
               <th className={th}>Barcode</th>
               <th className={th}>Part</th>
               <th className={th}>OEM</th>
+              <th className={th}>Storage address</th>
               <th className={th}>Cost</th>
               <th className={th}>
                 Sale price<span className="text-danger ml-0.5">*</span>
@@ -202,6 +203,27 @@ export function ProductVariationsTable({
                         placeholder="1234567"
                         aria-label={`OEM — ${name}`}
                         {...form.register(`variations.${index}.oem`)}
+                      />
+                    )}
+                  </Cell>
+
+                  <Cell
+                    value={value.shelfAddress}
+                    sold={sold}
+                    width="w-32"
+                    label={`Storage address — ${name}`}
+                  >
+                    {() => (
+                      <Input
+                        className="h-8 w-32"
+                        placeholder="1-A-23-4"
+                        aria-label={`Storage address — ${name}`}
+                        {...form.register(`variations.${index}.shelfAddress`, {
+                          // Also runs on the stored value when the form loads, which is null for
+                          // a variation without an address — not only on what is typed.
+                          setValueAs: (v: string | null) =>
+                            typeof v === 'string' ? v.trim() || null : null,
+                        })}
                       />
                     )}
                   </Cell>

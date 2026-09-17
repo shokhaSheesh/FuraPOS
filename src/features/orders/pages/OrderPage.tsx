@@ -22,6 +22,7 @@ import { ScrollSentinel } from '@/shared/components/ScrollSentinel'
 import { SearchInput } from '@/shared/components/SearchInput'
 import { useInfiniteRows } from '@/shared/hooks/useInfiniteRows'
 import { Steps } from '@/shared/components/Steps'
+import { StorageAddress } from '@/shared/components/StorageAddress'
 import { Badge } from '@/shared/ui/Badge'
 import { Button } from '@/shared/ui/Button'
 import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
@@ -695,7 +696,10 @@ function LineTable({ order, canSeeCost }: { order: PurchaseOrder; canSeeCost: bo
                     <ProductThumb src={line.imageUrl} size="sm" />
                     <div className="min-w-0">
                       <p className="text-fg font-medium">{line.name}</p>
-                      <p className="text-fg-subtle text-2xs font-mono">{line.sku}</p>
+                      <p className="text-fg-subtle text-2xs font-mono">
+                        {line.sku}
+                        <StorageAddress variationId={line.variationId} />
+                      </p>
                     </div>
                   </Link>
                 </td>
@@ -875,7 +879,10 @@ function DeliveriesStep({ order }: { order: PurchaseOrder }) {
                           <ProductThumb src={line.imageUrl} size="sm" />
                           <div className="min-w-0">
                             <p className="text-fg font-medium">{line.name}</p>
-                            <p className="text-fg-subtle text-2xs font-mono">{line.sku}</p>
+                            <p className="text-fg-subtle text-2xs font-mono">
+                              {line.sku}
+                              <StorageAddress variationId={line.variationId} />
+                            </p>
                           </div>
                         </div>
                       </td>

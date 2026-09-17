@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Modal } from '@/shared/ui/Modal'
 import { NumberField } from '@/shared/components/NumberField'
 import { ProductThumb } from '@/shared/components/ProductThumb'
+import { StorageAddress } from '@/shared/components/StorageAddress'
 import { Button } from '@/shared/ui/Button'
 import { formatNumber } from '@/shared/lib/format'
 import type { Transfer } from '../model/transfer'
@@ -129,7 +130,10 @@ export function TransferQuantityDialog({
                         <ProductThumb src={line.imageUrl} size="sm" />
                         <div className="min-w-0">
                           <p className="text-fg font-medium">{line.name}</p>
-                          <p className="text-fg-subtle text-2xs font-mono">{line.sku}</p>
+                          <p className="text-fg-subtle text-2xs font-mono">
+                            {line.sku}
+                            <StorageAddress variationId={line.variationId} />
+                          </p>
                         </div>
                       </div>
                     </td>

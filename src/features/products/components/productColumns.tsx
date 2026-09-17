@@ -184,6 +184,17 @@ export function buildProductColumns({
         )
       },
     },
+    // Адрес товара — the exact bin, as a picker reads it: "1-A-23-4"
+    {
+      accessorKey: 'shelfAddress',
+      header: 'Storage address',
+      cell: ({ row }) =>
+        row.original.shelfAddress ? (
+          <span className="text-2xs font-mono">{row.original.shelfAddress}</span>
+        ) : (
+          <Empty />
+        ),
+    },
     // Категория
     {
       accessorKey: 'categoryPath',
@@ -291,6 +302,8 @@ export const PRODUCT_COLUMN_ORDER = [
   // Where it is and how many
   'stock',
   'location',
+  // Where on the shelf, right after which shelf: the two answer one question.
+  'shelfAddress',
   // What it is worth
   'salePrice',
   'costPrice',

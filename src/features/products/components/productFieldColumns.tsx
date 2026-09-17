@@ -116,6 +116,14 @@ export function buildProductFieldColumns<T extends RowData>({
       },
     },
     {
+      id: 'shelfAddress',
+      header: 'Storage address',
+      cell: ({ row }) => {
+        const address = variationOf(row.original)?.shelfAddress
+        return address ? <span className="text-2xs font-mono">{address}</span> : <Empty />
+      },
+    },
+    {
       id: 'salePrice',
       header: 'Sale price',
       meta: { align: 'right' },

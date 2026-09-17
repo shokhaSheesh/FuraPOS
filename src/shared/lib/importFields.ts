@@ -30,6 +30,7 @@ export type ImportField =
   | 'manufacturer'
   | 'cargoWeightKg'
   | 'cargoSize'
+  | 'shelfAddress'
   | 'unit'
   | 'description'
 
@@ -61,6 +62,7 @@ export const IMPORT_FIELDS: ImportFieldSpec[] = [
   { value: 'manufacturer', label: 'Product brand', creationOnly: true },
   { value: 'cargoWeightKg', label: 'Cargo weight', creationOnly: true },
   { value: 'cargoSize', label: 'Cargo size', creationOnly: true },
+  { value: 'shelfAddress', label: 'Storage address', creationOnly: true },
   { value: 'unit', label: 'Unit', creationOnly: true },
   { value: 'description', label: 'Description', creationOnly: true },
 ]
@@ -104,6 +106,10 @@ export function guessField(heading: string, sample: string): ImportField {
 
   if (has('бренд товара', 'производитель', 'manufacturer', 'product brand')) return 'manufacturer'
   if (has('поставщик', 'supplier', 'бренд')) return 'supplier'
+
+  // Before the names, for the same reason as the brands: "Адрес товара"
+  // contains "товар", and would otherwise name every product after its bin.
+  if (has('адрес', 'address', 'ячейка')) return 'shelfAddress'
 
   if (has('название вариации', 'вариация', 'variation')) return 'variationName'
   if (has('название продукта', 'наименование', 'product name', 'товар')) return 'productName'

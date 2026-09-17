@@ -717,11 +717,32 @@ export function ProductForm({
               </CardHeader>
               <CardBody className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {single ? (
-                  <Field label="OEM">
-                    {(p) => (
-                      <Input {...p} placeholder="1234567" {...form.register('variations.0.oem')} />
-                    )}
-                  </Field>
+                  <>
+                    <Field label="OEM">
+                      {(p) => (
+                        <Input
+                          {...p}
+                          placeholder="1234567"
+                          {...form.register('variations.0.oem')}
+                        />
+                      )}
+                    </Field>
+                    {/* OX's «Адрес товара»: the exact bin somebody walks to. */}
+                    <Field label="Storage address" hint="Row, rack, shelf and bin — e.g. 1-A-23-4">
+                      {(p) => (
+                        <Input
+                          {...p}
+                          placeholder="1-A-23-4"
+                          {...form.register('variations.0.shelfAddress', {
+                            // Also runs on the stored value when the form loads, which is null for
+                            // a variation without an address — not only on what is typed.
+                            setValueAs: (v: string | null) =>
+                              typeof v === 'string' ? v.trim() || null : null,
+                          })}
+                        />
+                      )}
+                    </Field>
+                  </>
                 ) : null}
                 <Field label="Product brand" hint="Who made the part">
                   {(p) => <Input {...p} {...form.register('manufacturer')} />}

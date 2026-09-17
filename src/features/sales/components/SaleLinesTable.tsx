@@ -3,6 +3,7 @@ import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { ProductThumb } from '@/shared/components/ProductThumb'
+import { StorageAddress } from '@/shared/components/StorageAddress'
 import { formatMoney } from '@/shared/lib/format'
 import { lineTotal, type SaleLine } from '../model/sale'
 
@@ -60,6 +61,7 @@ export function SaleLinesTable({ lines, onChange, onRemove }: Props) {
                     <p className="text-fg font-medium">{line.name}</p>
                     <p className="text-fg-subtle text-2xs font-mono">
                       {line.sku}
+                      <StorageAddress variationId={line.variationId} />
                       {line.brandName ? ` · ${line.brandName}` : ''}
                     </p>
                   </div>

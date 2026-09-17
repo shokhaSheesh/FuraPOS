@@ -8,6 +8,7 @@ import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
 import { ProductPicker } from '@/shared/components/ProductPicker'
 import { ProductThumb } from '@/shared/components/ProductThumb'
+import { StorageAddress } from '@/shared/components/StorageAddress'
 import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
 import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
@@ -266,7 +267,10 @@ export default function NewCorrectionPage() {
                               <ProductThumb src={line?.imageUrl ?? null} size="sm" />
                               <div className="min-w-0">
                                 <p className="font-medium">{line?.name}</p>
-                                <p className="text-fg-subtle text-2xs font-mono">{line?.sku}</p>
+                                <p className="text-fg-subtle text-2xs font-mono">
+                                  {line?.sku}
+                                  {line ? <StorageAddress variationId={line.variationId} /> : null}
+                                </p>
                               </div>
                             </div>
                           </td>

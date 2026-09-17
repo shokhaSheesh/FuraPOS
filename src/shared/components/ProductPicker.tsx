@@ -49,7 +49,10 @@ export function ProductPicker({
       .filter(
         (v) =>
           v.status === 'active' &&
-          matches([v.fullName, v.sku, v.barcode, v.brandName, v.description], debounced),
+          matches(
+            [v.fullName, v.sku, v.barcode, v.brandName, v.description, v.shelfAddress],
+            debounced,
+          ),
       )
       .slice(0, 8)
   }, [variations, debounced])
@@ -125,6 +128,15 @@ export function ProductPicker({
                       {product.sku}
                     </span>
                     <span className="text-fg min-w-0 flex-1 truncate">{product.fullName}</span>
+                    {product.shelfAddress ? (
+                      // Where to walk to for it, while it is still a search result.
+                      <span
+                        className="text-fg-subtle text-2xs shrink-0 font-mono"
+                        title="Storage address"
+                      >
+                        {product.shelfAddress}
+                      </span>
+                    ) : null}
                     <span
                       className={cn(
                         'text-2xs shrink-0',

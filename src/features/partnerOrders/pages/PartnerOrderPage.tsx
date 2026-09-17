@@ -6,6 +6,7 @@ import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
 import { ProductThumb } from '@/shared/components/ProductThumb'
 import { Steps } from '@/shared/components/Steps'
+import { StorageAddress } from '@/shared/components/StorageAddress'
 import { Badge } from '@/shared/ui/Badge'
 import { Button } from '@/shared/ui/Button'
 import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
@@ -299,7 +300,10 @@ function ShipmentsStep({ order }: { order: PartnerOrder }) {
                           <ProductThumb src={line.imageUrl} size="sm" />
                           <div className="min-w-0">
                             <p className="text-fg font-medium">{line.name}</p>
-                            <p className="text-fg-subtle text-2xs font-mono">{line.sku}</p>
+                            <p className="text-fg-subtle text-2xs font-mono">
+                              {line.sku}
+                              <StorageAddress variationId={line.variationId} />
+                            </p>
                           </div>
                         </div>
                       </td>
@@ -373,7 +377,10 @@ function LineTable({ order }: { order: PartnerOrder }) {
                     <ProductThumb src={line.imageUrl} size="sm" />
                     <div className="min-w-0">
                       <p className="text-fg font-medium">{line.name}</p>
-                      <p className="text-fg-subtle text-2xs font-mono">{line.sku}</p>
+                      <p className="text-fg-subtle text-2xs font-mono">
+                        {line.sku}
+                        <StorageAddress variationId={line.variationId} />
+                      </p>
                     </div>
                   </Link>
                 </td>

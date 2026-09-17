@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, Check, Truck } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { ProductThumb } from '@/shared/components/ProductThumb'
+import { StorageAddress } from '@/shared/components/StorageAddress'
 import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
 import { Badge } from '@/shared/ui/Badge'
 import { Button } from '@/shared/ui/Button'
@@ -222,7 +223,10 @@ export default function TransferDetailPage() {
                             <ProductThumb src={line.imageUrl} size="sm" />
                             <div className="min-w-0">
                               <p className="font-medium">{line.name}</p>
-                              <p className="text-fg-subtle text-2xs font-mono">{line.sku}</p>
+                              <p className="text-fg-subtle text-2xs font-mono">
+                                {line.sku}
+                                <StorageAddress variationId={line.variationId} />
+                              </p>
                             </div>
                           </Link>
                         </td>

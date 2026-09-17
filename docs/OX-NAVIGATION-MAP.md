@@ -1783,17 +1783,32 @@ with, not fields.
 | 18  | Модель                     | Model               | `vehicleModels`                           |
 | 19  | Категория конечное         | End category        | `categoryName` — the leaf of the path     |
 | 20  | Бренд товара               | Product brand       | `manufacturer`                            |
+| 21  | Адрес товара               | Storage address     | `shelfAddress` — restored, see below      |
 
 **Removed with everything else** (all at the client's request, over several rounds): Рисунок, ID
 Вариации, MOQ, Теги, С этим вместе покупают, Модификаторы, Аналоги, Аналог, Вместе покупает, the
 yes/no columns (Отгружаемый, Показать в онлайн-магазине, Отслеживание, Продаваемый, Исчисляемый,
 Облагаемый налогом, Изготовляемый, Весовой), Видео, Зона, Локация, Общая сумма продажи, Со скидкой,
-Скидка, Общая сумма поставщ., Себестоимость, Адрес товара, Тип, Пол, Сезон, our own Margin column,
+Скидка, Общая сумма поставщ., Себестоимость, Тип, Пол, Сезон, our own Margin column,
 the wholesale price, the sale-price currency, and the business's own product columns — the
 Settings → Product columns page went with them.
 
-Two fields stay in the data without being asked for on the form: `discountPrice`, which Repricing
-sets, and `shelfAddress`, which Stocktaking and the label templates read.
+`discountPrice` stays in the data without being asked for on the form, because Repricing sets it.
+
+**Адрес товара came back** (client request) as **Storage address**: free text per variation, in the
+client's own format — zone, row, rack, bin, e.g. `1-A-23-4`. It had never left the data, since
+Stocktaking and the label templates read it; it is now on the product list (right after Location,
+since the two answer one question), the product form (single variation and the variations
+spreadsheet), the product's detail page, and — through the shared field columns — on every document
+that picks products: goods receipt, orders and transfers. Where a line is shown as a name over a SKU
+(sales, corrections, transfer send/receive, partner-order shipping, order deliveries) it follows the
+SKU, and the product search shows it and finds by it. Those line views read the address **live**
+from the product rather than copying it onto the document, because it answers "where do I walk to
+now" — a part moved to another bin last week should send the picker to the new bin.
+
+It is one address per variation, not per location. A variation stocked in two warehouses has one
+address between them; if the client needs a bin per warehouse, that is a change to the stock rows,
+not to this field.
 
 The list still offers **By variation / By location** views and optional per-location quantity
 columns, and every column is resizable by dragging the edge of its heading.

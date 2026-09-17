@@ -263,7 +263,7 @@ export function SpreadsheetImport({
               // puts it there.
               stockByLocation: [],
               lowStockThreshold: null,
-              shelfAddress: null,
+              shelfAddress: cell(row, 'shelfAddress') || null,
               imageUrl: null,
               status: 'active',
             },

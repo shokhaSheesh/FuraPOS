@@ -130,7 +130,7 @@ function VariationsTable({ product }: { product: Product }) {
         <table className="w-full text-sm">
           <thead className="bg-surface-muted">
             <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-              {['Variation', 'SKU', 'Barcode', 'Part', 'OEM'].map((h) => (
+              {['Variation', 'SKU', 'Barcode', 'Part', 'OEM', 'Storage address'].map((h) => (
                 <th key={h} scope="col" className="h-9 px-3 text-left font-semibold">
                   {h}
                 </th>
@@ -158,6 +158,7 @@ function VariationsTable({ product }: { product: Product }) {
                 <td className="text-2xs px-3 py-2 font-mono">{v.barcode ?? <Empty />}</td>
                 <td className="px-3 py-2">{v.partSide ?? <Empty />}</td>
                 <td className="text-2xs px-3 py-2 font-mono">{v.oem ?? <Empty />}</td>
+                <td className="text-2xs px-3 py-2 font-mono">{v.shelfAddress ?? <Empty />}</td>
                 <td className="px-3 py-2 text-right tabular-nums">
                   {v.costCurrency === 'USD'
                     ? `${formatNumber(v.costPrice)} USD`

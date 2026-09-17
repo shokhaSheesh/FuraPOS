@@ -33,6 +33,15 @@ describe('guessing what a supplier’s column holds', () => {
     expect(guess('Название вариации продукта')).toBe('variationName')
   })
 
+  it('reads the OX storage address as the address, not as the product', () => {
+    // "Адрес товара" contains "товар", which is how the product-name guess
+    // recognises a heading — tested the wrong way round, every created product
+    // would be named after its bin.
+    expect(guess('Адрес товара')).toBe('shelfAddress')
+    expect(guess('Storage address')).toBe('shelfAddress')
+    expect(guess('Название продукта')).toBe('productName')
+  })
+
   it('guesses nothing from a heading it does not know', () => {
     expect(guess('Сезон')).toBe('ignore')
     expect(guess('Пол')).toBe('ignore')

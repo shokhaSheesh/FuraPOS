@@ -283,8 +283,16 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
       stock: stockByLocation.reduce((sum, row) => sum + row.quantity, 0),
       stockByLocation,
       lowStockThreshold: random() > 0.5 ? between(5, 30) : null,
+      /*
+        The client's format, 1-A-23-4: zone, row, rack, bin. The zone comes
+        from the product's position rather than a draw, so both sides of a
+        sided part sit in the same zone and — the reason it matters — the RNG
+        stream every later value is drawn from is exactly as it was.
+      */
       shelfAddress:
-        random() > 0.4 ? `${pick(['A', 'B', 'C'])}-${between(1, 20)}-${between(1, 9)}` : null,
+        random() > 0.4
+          ? `${(index % 3) + 1}-${pick(['A', 'B', 'C'])}-${between(1, 20)}-${between(1, 9)}`
+          : null,
       imageUrl: null,
       status: 'active' as const,
     }

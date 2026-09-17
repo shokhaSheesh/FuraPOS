@@ -20,7 +20,7 @@ Implementation lives in `src/styles/tokens.css` (colors) and `src/shared/ui` + `
 > | Token                    | Light                 | Dark                  | Use                                      |
 > | ------------------------ | --------------------- | --------------------- | ---------------------------------------- |
 > | `surface` / `chrome`     | `#FFFFFF`             | `#111A2B` / `#0E1729` | Cards, and the sidebar                   |
-> | `canvas`                 | `#F3F7FB`             | `#0B1220`             | Behind cards                             |
+> | `canvas`                 | `#FAFCFE`             | `#0B1220`             | Behind cards — "snow", client request    |
 > | `primary-soft`           | `#E6F3FC`             | `#12304A`             | Light blue fills: active nav, highlights |
 > | `primary` / `primary-fg` | `#0A7BC4` / `#FFFFFF` | `#4FB0EE` / `#0B1220` | The primary action, active state, focus  |
 >

@@ -37,9 +37,7 @@ Do not rename a nav item or invent a screen without updating that map first.
    "Needs attention" list. Widget-by-widget correspondence is in the Dashboard section of
    docs/OX-NAVIGATION-MAP.md.
 2. **Sales** — **Offline sales** (the ledger, plus **New sale** for entering one by hand),
-   **Online sales** (the e-commerce feed, read-only), **Partner orders**, **Cash shifts**, and the
-   customers every sale is made to: **Autoparks** and **Drivers** (moved here from Marketing at the
-   client's request; OX keeps its clients under Marketing).
+   **Online sales** (the e-commerce feed, read-only), **Partner orders** and **Cash shifts**.
 
    **Partner orders** are orders another business has placed _with us_ — the mirror of
    Procurement → Orders. They place it, we accept it and ship it in as many loads as it takes, and
@@ -65,14 +63,15 @@ Do not rename a nav item or invent a screen without updating that map first.
 4. **Procurement** `New` — orders. The AI-driven reorder pass lives on the order itself, as the
    Suggest button on its product step. OX's «Расписание подбора» (reorder schedules) was built and
    then **cut at the client's request** — see docs/OX-NAVIGATION-MAP.md.
-5. **Personnel management** — employees, seller motivation, planning, access & roles (granular
-   per-module tree, supports partial/indeterminate access, not just on/off).
+5. **Users** (OX: «Управление персоналом», renamed at the client's request) — employees,
+   **autoparks** and **drivers** (moved here from Marketing; OX keeps its clients there), and access &
+   roles (granular per-module tree, supports partial/indeterminate access, not just on/off).
 6. **Finance** `beta` — dashboard, transactions, contracts, invoices, budget, scenarios; then a
    **Reports** group (P&L, cashflow, receivables, payables, cash forecast, employee settlements)
    and a **Setup** group (accounts, categories, period lock, taxes). OX nests these behind a second
    in-module menu; we surface them directly in the sidebar under those two headings.
 7. **Marketing** — promotions. Autoparks (the CRM, with the wallet + AI-insights component) and
-   drivers live under Sales; OX's groups, cashback, SMS and digital campaigns and coupons were cut.
+   drivers live under Users; OX's groups, cashback, SMS and digital campaigns and coupons were cut.
 8. **Analytics** — report generator and product logs. The customer report was built and then
    **cut at the client's request**.
 9. **My uploads** — an async job log for bulk imports (not a file manager) — filename, user, job

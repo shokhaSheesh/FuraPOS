@@ -545,8 +545,8 @@ const roleSpecs: { id: string; name: string; keys: string[] }[] = [
       ...expand('products.supplierPortal', ['view', 'edit']),
       ...expand('products.cost', ['view']),
       ...expand('procurement.orders', ['view', 'create', 'edit', 'export']),
-      ...expand('personnel.employees', ['view']),
-      ...expand('sales.autoparks', ['view', 'create', 'edit', 'export']),
+      ...expand('users.employees', ['view']),
+      ...expand('users.autoparks', ['view', 'create', 'edit', 'export']),
       ...expand('analytics.reportBuilder', ['view', 'create', 'edit', 'export']),
     ],
   },
@@ -558,7 +558,7 @@ const roleSpecs: { id: string; name: string; keys: string[] }[] = [
       // can work out how far they are allowed to discount.
       ...expand('sales.orders', ['view', 'create', 'edit']),
       ...expand('products.list', ['view']),
-      ...expand('sales.autoparks', ['view', 'create', 'edit']),
+      ...expand('users.autoparks', ['view', 'create', 'edit']),
     ],
   },
   {
@@ -582,7 +582,7 @@ const roleSpecs: { id: string; name: string; keys: string[] }[] = [
       ...expand('sales.online', ['view']),
       ...expand('products.cost', ['view']),
       ...expand('products.suppliers', ['view']),
-      ...expand('personnel.salary', ['view']),
+      ...expand('users.salary', ['view']),
       ...expand('analytics.reportBuilder', ['view', 'create', 'edit', 'export']),
     ],
   },

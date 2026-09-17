@@ -53,7 +53,7 @@ export default function RolesPage() {
     const role = actions.create(draft)
     setCreating(false)
     toast.success(`${role.name} created — now choose what it can reach`)
-    navigate(paths.personnel.roleDetail(role.id))
+    navigate(paths.users.roleDetail(role.id))
   }
 
   const remove = (role: RoleRow) => {
@@ -149,14 +149,14 @@ export default function RolesPage() {
               {
                 label: row.original.isSystem ? 'View permissions' : 'Edit permissions',
                 icon: Pencil,
-                onSelect: () => navigate(paths.personnel.roleDetail(row.original.id)),
+                onSelect: () => navigate(paths.users.roleDetail(row.original.id)),
               },
               {
                 label: 'Delete',
                 icon: Trash2,
                 destructive: true,
                 onSelect: () => setDeleting(row.original),
-                hidden: row.original.isSystem || !can('personnel.roles.delete'),
+                hidden: row.original.isSystem || !can('users.roles.delete'),
               },
             ]}
           />
@@ -172,7 +172,7 @@ export default function RolesPage() {
         title="Access & roles"
         description="What each kind of employee can reach. Access is granted to a role, not to a person, so the fifth seller you hire inherits what the other four have and a rule change happens in one place."
         action={
-          can('personnel.roles.create') ? (
+          can('users.roles.create') ? (
             <Button variant="primary" onClick={openNew}>
               <Plus />
               Add role
@@ -189,7 +189,7 @@ export default function RolesPage() {
         isLoading={isLoading}
         pagination={{ page: 1, pageSize: 25 }}
         onPaginationChange={() => {}}
-        onRowClick={(role) => navigate(paths.personnel.roleDetail(role.id))}
+        onRowClick={(role) => navigate(paths.users.roleDetail(role.id))}
         emptyState={
           <EmptyState
             icon={ShieldCheck}

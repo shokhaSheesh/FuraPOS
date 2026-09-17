@@ -80,7 +80,7 @@ export default function EmployeeFormPage() {
         title="No such employee"
         action={
           <Button variant="secondary" asChild>
-            <Link to={paths.personnel.employees}>Back to employees</Link>
+            <Link to={paths.users.employees}>Back to employees</Link>
           </Button>
         }
       />
@@ -107,11 +107,11 @@ export default function EmployeeFormPage() {
       if (editing && existing) {
         actions.update(existing.id, input)
         toast.success('Saved')
-        navigate(paths.personnel.employeeDetail(existing.id))
+        navigate(paths.users.employeeDetail(existing.id))
       } else {
         const created = actions.create(input)
         toast.success(`${created.fullName} added as ${created.roleName}`)
-        navigate(paths.personnel.employeeDetail(created.id))
+        navigate(paths.users.employeeDetail(created.id))
       }
     },
     () => toast.error('Check the highlighted fields'),
@@ -121,11 +121,7 @@ export default function EmployeeFormPage() {
     <form onSubmit={submit}>
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
         <Link
-          to={
-            editing && existing
-              ? paths.personnel.employeeDetail(existing.id)
-              : paths.personnel.employees
-          }
+          to={editing && existing ? paths.users.employeeDetail(existing.id) : paths.users.employees}
         >
           <ArrowLeft />
           {editing && existing ? existing.fullName : 'Employees'}

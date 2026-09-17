@@ -45,7 +45,7 @@ export default function EmployeesPage() {
   }
   const { data, isLoading } = useEmployees(filters)
   const { data: counts } = useEmployeeStatusCounts(filters)
-  const canSeePay = can('personnel.employees.edit')
+  const canSeePay = can('users.employees.edit')
 
   const columns = useMemo<TableColumn<EmployeeRow>[]>(
     () => [
@@ -172,9 +172,9 @@ export default function EmployeesPage() {
         title="Employees"
         description="Everyone who works here and what they can sign in to. An account is also a sales record, so this is where you see who is carrying the shop and whose login nobody has closed."
         action={
-          can('personnel.employees.create') ? (
+          can('users.employees.create') ? (
             <Button variant="primary" asChild>
-              <Link to={paths.personnel.newEmployee}>
+              <Link to={paths.users.newEmployee}>
                 <Plus />
                 Add employee
               </Link>
@@ -233,7 +233,7 @@ export default function EmployeesPage() {
         }
         pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
         onPaginationChange={({ page, pageSize }) => setQuery({ page, pageSize })}
-        onRowClick={(employee) => navigate(paths.personnel.employeeDetail(employee.id))}
+        onRowClick={(employee) => navigate(paths.users.employeeDetail(employee.id))}
         emptyState={
           query.search || query.f || query.status || query.role || query.location ? (
             <EmptyState title="Nobody matches these filters" />
@@ -242,9 +242,9 @@ export default function EmployeesPage() {
               title="No employees yet"
               description="Add the people who work here to give them a sign-in and start attributing sales."
               action={
-                can('personnel.employees.create') ? (
+                can('users.employees.create') ? (
                   <Button variant="primary" asChild>
-                    <Link to={paths.personnel.newEmployee}>
+                    <Link to={paths.users.newEmployee}>
                       <Plus />
                       Add employee
                     </Link>

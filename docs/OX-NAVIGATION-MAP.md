@@ -15,36 +15,34 @@ it is being built.
 
 OX shows badges on two sections: **Закупки** is `New`, **Финансы** is `beta`. We mirror both.
 
-| #   | OX (ru)               | Ours (en)            | OX route                            |
-| --- | --------------------- | -------------------- | ----------------------------------- |
-| 1   | Дашборд               | Dashboard            | `/app/dashboard`                    |
-| 2   | Продажи               | Sales                | —                                   |
-| 3   | Продукты/Услуги       | Products / Services  | —                                   |
-| 4   | Закупки `New`         | Procurement `New`    | —                                   |
-| 5   | Управление персоналом | Personnel management | —                                   |
-| 6   | Финансы `beta`        | Finance `beta`       | `/app/finance`                      |
-| 7   | Маркетинг             | Marketing            | —                                   |
-| 8   | Аналитика             | Analytics            | —                                   |
-| 9   | Интеграции            | _(not in scope)_     | `/app/integration`                  |
-| 10  | Мои загрузки          | My uploads           | `/app/exports`                      |
-| 11  | Партнёрская программа | _(not in scope)_     | `boughtTogetherIds` — per variation |
-| 12  | Настройки             | Settings             | `/app/settings`                     |
-| 13  | Поддержка             | _(not in scope)_     | `analogueIds` — per variation       |
+| #   | OX (ru)               | Ours (en)           | OX route                            |
+| --- | --------------------- | ------------------- | ----------------------------------- |
+| 1   | Дашборд               | Dashboard           | `/app/dashboard`                    |
+| 2   | Продажи               | Sales               | —                                   |
+| 3   | Продукты/Услуги       | Products / Services | —                                   |
+| 4   | Закупки `New`         | Procurement `New`   | —                                   |
+| 5   | Управление персоналом | Users               | —                                   |
+| 6   | Финансы `beta`        | Finance `beta`      | `/app/finance`                      |
+| 7   | Маркетинг             | Marketing           | —                                   |
+| 8   | Аналитика             | Analytics           | —                                   |
+| 9   | Интеграции            | _(not in scope)_    | `/app/integration`                  |
+| 10  | Мои загрузки          | My uploads          | `/app/exports`                      |
+| 11  | Партнёрская программа | _(not in scope)_    | `boughtTogetherIds` — per variation |
+| 12  | Настройки             | Settings            | `/app/settings`                     |
+| 13  | Поддержка             | _(not in scope)_    | `analogueIds` — per variation       |
 
 ## 2. Продажи — Sales
 
-| OX (ru)                   | Ours (en)        | OX route                                |
-| ------------------------- | ---------------- | --------------------------------------- |
-| OX POS Касса              | _(not in scope)_ | `/app/sells/cashdesk-info`              |
-| Новая продажа             | New sale         | _(no route — navigates to Cash shifts)_ |
-| Все продажи               | All sales        | `/app/sells/orders`                     |
-| Кассовые смены            | _(not in scope)_ | `/app/sells/shifts`                     |
-| Закрытые продажи          | _(not in scope)_ | `/app/sells/closed`                     |
-| Открытые продажи          | Open sales       | `/app/sells/drafts`                     |
-| Удалённые продажи         | Deleted sales    | `/app/sells/deleted`                    |
-| Отложки                   | Postponed sales  | `/app/sells/postpones`                  |
-| Клиенты _(OX: Маркетинг)_ | Autoparks        | `/app/marketing/customers`              |
-| —                         | Drivers          | _(no OX equivalent)_                    |
+| OX (ru)           | Ours (en)        | OX route                                |
+| ----------------- | ---------------- | --------------------------------------- |
+| OX POS Касса      | _(not in scope)_ | `/app/sells/cashdesk-info`              |
+| Новая продажа     | New sale         | _(no route — navigates to Cash shifts)_ |
+| Все продажи       | All sales        | `/app/sells/orders`                     |
+| Кассовые смены    | _(not in scope)_ | `/app/sells/shifts`                     |
+| Закрытые продажи  | _(not in scope)_ | `/app/sells/closed`                     |
+| Открытые продажи  | Open sales       | `/app/sells/drafts`                     |
+| Удалённые продажи | Deleted sales    | `/app/sells/deleted`                    |
+| Отложки           | Postponed sales  | `/app/sells/postpones`                  |
 
 ## 3. Продукты/Услуги — Products / Services
 
@@ -1096,7 +1094,7 @@ The OX rows are kept here so the omission reads as a decision:
   to compute it properly, from supplier debt against agreed payment terms.
 - **The Accountant role** granted four `finance.*` keys. Stripped. The role-model test that asserts
   no role grants a key outside the tree caught them immediately, which is what it was written for.
-- **The `personnel.salary` permission** was labelled "See salary & settlements". Settlements was a
+- **The `users.salary` permission** was labelled "See salary & settlements". Settlements was a
   Finance screen; it is now just "See salary". The permission itself stays — it lives in Personnel
   and gates base pay and the wallet on the employee page.
 - **Nothing else.** Supplier debt, the employee wallet, sale payments and payment methods all live
@@ -1112,14 +1110,14 @@ wants one.
 
 Cut to one screen at the client's request. The OX rows are kept so the omissions read as decisions.
 
-**Autoparks and Drivers moved to Sales** (`/sales/autoparks`, `/sales/drivers`; permissions
-`sales.autoparks`, `sales.drivers`). OX files its customers under Marketing, but here they are who
-every sale is made to — New sale picks the autopark and scans the driver — so they sit beside the
-sales ledger rather than beside promotions.
+**Autoparks and Drivers moved to Users** (`/users/autoparks`, `/users/drivers`; permissions
+`users.autoparks`, `users.drivers`), at the client's request. OX files its customers under
+Marketing; here they sit with Employees, as the people and companies the business deals with by
+name. (They were briefly under Sales first.)
 
 | OX (ru)           | Ours (en)           | OX route                                |
 | ----------------- | ------------------- | --------------------------------------- |
-| Клиенты           | → Sales › Autoparks | `/app/marketing/customers`              |
+| Клиенты           | → Users › Autoparks | `/app/marketing/customers`              |
 | Группы            | — (removed)         | `/app/marketing/groups`                 |
 | Кэшбэк            | — (removed)         | `/app/marketing/cashbacks`              |
 | Рассылки          | — (removed)         | `/app/marketing/newsletters`            |

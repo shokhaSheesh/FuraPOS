@@ -313,7 +313,7 @@ function Overview({ sale }: { sale: Sale }) {
           <CardBody>
             {sale.clientId ? (
               <Button variant="link" size="sm" className="h-auto px-0" asChild>
-                <Link to={paths.sales.autoparkDetail(sale.clientId)}>{sale.clientName}</Link>
+                <Link to={paths.users.autoparkDetail(sale.clientId)}>{sale.clientName}</Link>
               </Button>
             ) : (
               <p className="text-fg-muted text-sm">Walk-in customer</p>

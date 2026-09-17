@@ -54,14 +54,6 @@ Fura POS  →  Back-office (web)  →  8 modules  →  screens  →  what is on 
   - Status chips (open, new, processed, delivering, delivered, completed, postponed, deleted)
   - Deleted sales excluded from the list and its totals
   - Sale detail (lines, client, payment, history, print)
-- **Autoparks** (the haulage companies under contract — contacts, purchase history; wallet: balance, debt, cashback, credit limit, AI insights)
-  - Companies only: an owner-driver is a **driver**, not an account
-- **Drivers** (who collects parts at the counter)
-  - Two sections: **Independent** (owns his truck) and **Autopark** (drives for a company) — a driver who is both appears in each
-  - Name, code (what his QR carries), phone, licence, **his own trucks** (several is normal), his autopark and the one truck they assigned him
-  - Every truck carries a **plate, make and model** — in a parts business the make is half of "will it fit"
-  - Each tab shows only that side's trucks with their make and model; the Autopark column appears only in the autopark tab
-  - Scanned on New sale; the purchase then reaches his e-commerce app and his autopark owner's app
 
 ## 3 · Products / Services
 > The sellable unit is a **variation**, not a product. A product says what a part *is*; a variation carries the SKU, barcode, cost, price, stock and shelf.
@@ -93,8 +85,16 @@ Fura POS  →  Back-office (web)  →  8 modules  →  screens  →  what is on 
   - What it proposes (sales rate × lead time, less stock on hand and on order)
   - Leaves a draft order for a person to approve — it never buys anything
 
-## 5 · Personnel management
+## 5 · Users
 - **Employees** (name, role, location, phone, wallet, sales this month)
+- **Autoparks** (the haulage companies under contract — contacts, purchase history; wallet: balance, debt, cashback, credit limit, AI insights)
+  - Companies only: an owner-driver is a **driver**, not an account
+- **Drivers** (who collects parts at the counter)
+  - Two sections: **Independent** (owns his truck) and **Autopark** (drives for a company) — a driver who is both appears in each
+  - Name, code (what his QR carries), phone, licence, **his own trucks** (several is normal), his autopark and the one truck they assigned him
+  - Every truck carries a **plate, make and model** — in a parts business the make is half of "will it fit"
+  - Each tab shows only that side's trucks with their make and model; the Autopark column appears only in the autopark tab
+  - Scanned on New sale; the purchase then reaches his e-commerce app and his autopark owner's app
 - **Access & roles**
   - Permission tree (module → section → action: view, create, edit, delete)
   - Partial state, not just on / off
@@ -155,8 +155,6 @@ mindmap
     Sales
       New sale
       All sales
-      Autoparks
-      Drivers
     Products
       Product list
       Transfers Corrections Stocktaking
@@ -166,8 +164,10 @@ mindmap
     Procurement
       Orders
       Reorder schedules
-    Personnel
+    Users
       Employees
+      Autoparks
+      Drivers
       Access and roles
     Marketing
       Promotions

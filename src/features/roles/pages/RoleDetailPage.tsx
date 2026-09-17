@@ -41,14 +41,14 @@ export default function RoleDetailPage() {
         title="No such role"
         action={
           <Button variant="secondary" asChild>
-            <Link to={paths.personnel.roles}>Back to roles</Link>
+            <Link to={paths.users.roles}>Back to roles</Link>
           </Button>
         }
       />
     )
   }
 
-  const locked = role.isSystem || !can('personnel.roles.edit')
+  const locked = role.isSystem || !can('users.roles.edit')
   const added = [...draft].filter((key) => !saved.has(key)).length
   const removed = [...saved].filter((key) => !draft.has(key)).length
   const dirty = added > 0 || removed > 0
@@ -65,7 +65,7 @@ export default function RoleDetailPage() {
   return (
     <>
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
-        <Link to={paths.personnel.roles}>
+        <Link to={paths.users.roles}>
           <ArrowLeft />
           Access & roles
         </Link>
@@ -153,7 +153,7 @@ export default function RoleDetailPage() {
                 {holders.map((employee) => (
                   <Link
                     key={employee.id}
-                    to={paths.personnel.employeeDetail(employee.id)}
+                    to={paths.users.employeeDetail(employee.id)}
                     className="hover:bg-surface-inset -mx-2 flex items-center gap-2.5 rounded-md px-2 py-1.5"
                   >
                     <Avatar name={employee.fullName} src={employee.avatarUrl} size="sm" />

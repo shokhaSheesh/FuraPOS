@@ -140,7 +140,7 @@ describe('the seeded roles', () => {
   it('gives the accountant every figure and nothing that moves stock', () => {
     const accountant = roles().find((r) => r.name === 'Accountant')!
     expect(holds(accountant, 'products.cost.view')).toBe(true)
-    expect(holds(accountant, 'personnel.salary.view')).toBe(true)
+    expect(holds(accountant, 'users.salary.view')).toBe(true)
     expect(holds(accountant, 'analytics.reportBuilder.export')).toBe(true)
     expect(holds(accountant, 'products.transfers.create')).toBe(false)
   })

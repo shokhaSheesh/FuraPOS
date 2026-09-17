@@ -111,18 +111,6 @@ export const navigation: NavSection[] = [
         to: paths.sales.shifts,
         permission: 'sales.cashShifts.view',
       },
-      {
-        label: 'Autoparks',
-        icon: Building2,
-        to: paths.sales.autoparks,
-        permission: 'sales.autoparks.view',
-      },
-      {
-        label: 'Drivers',
-        icon: IdCard,
-        to: paths.sales.drivers,
-        permission: 'sales.drivers.view',
-      },
     ],
   },
   {
@@ -195,21 +183,33 @@ export const navigation: NavSection[] = [
     ],
   },
   {
-    id: 'personnel',
-    label: 'Personnel management',
+    id: 'users',
+    label: 'Users',
     icon: Users,
     items: [
       {
         label: 'Employees',
         icon: UserRound,
-        to: paths.personnel.employees,
-        permission: 'personnel.employees.view',
+        to: paths.users.employees,
+        permission: 'users.employees.view',
+      },
+      {
+        label: 'Autoparks',
+        icon: Building2,
+        to: paths.users.autoparks,
+        permission: 'users.autoparks.view',
+      },
+      {
+        label: 'Drivers',
+        icon: IdCard,
+        to: paths.users.drivers,
+        permission: 'users.drivers.view',
       },
       {
         label: 'Access & roles',
         icon: ShieldCheck,
-        to: paths.personnel.roles,
-        permission: 'personnel.roles.view',
+        to: paths.users.roles,
+        permission: 'users.roles.view',
       },
     ],
   },

@@ -52,7 +52,7 @@ export default function EmployeeDetailPage() {
         description="They may have been removed."
         action={
           <Button variant="secondary" asChild>
-            <Link to={paths.personnel.employees}>Back to employees</Link>
+            <Link to={paths.users.employees}>Back to employees</Link>
           </Button>
         }
       />
@@ -61,7 +61,7 @@ export default function EmployeeDetailPage() {
 
   const { stats } = employee
   const quiet = daysSinceActive(employee)
-  const canEdit = can('personnel.employees.edit')
+  const canEdit = can('users.employees.edit')
 
   // Positive = the company owes them (salary earned, not yet paid). Negative =
   // they have taken more than they have earned, which is an advance to recover.
@@ -83,7 +83,7 @@ export default function EmployeeDetailPage() {
   return (
     <>
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
-        <Link to={paths.personnel.employees}>
+        <Link to={paths.users.employees}>
           <ArrowLeft />
           Employees
         </Link>
@@ -118,7 +118,7 @@ export default function EmployeeDetailPage() {
                 </Button>
               )}
               <Button variant="primary" asChild>
-                <Link to={paths.personnel.editEmployee(employee.id)}>
+                <Link to={paths.users.editEmployee(employee.id)}>
                   <Pencil />
                   Edit
                 </Link>

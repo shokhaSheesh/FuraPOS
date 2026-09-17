@@ -61,7 +61,7 @@ export default function ClientFormPage() {
         title="No such autopark"
         action={
           <Button variant="secondary" asChild>
-            <Link to={paths.sales.autoparks}>Back to autoparks</Link>
+            <Link to={paths.users.autoparks}>Back to autoparks</Link>
           </Button>
         }
       />
@@ -80,11 +80,11 @@ export default function ClientFormPage() {
       if (editing && existing) {
         actions.update(existing.id, input)
         toast.success('Saved')
-        navigate(paths.sales.autoparkDetail(existing.id))
+        navigate(paths.users.autoparkDetail(existing.id))
       } else {
         const created = actions.create(input)
         toast.success(`${created.name} added`)
-        navigate(paths.sales.autoparkDetail(created.id))
+        navigate(paths.users.autoparkDetail(created.id))
       }
     },
     () => toast.error('Check the highlighted fields'),
@@ -94,7 +94,7 @@ export default function ClientFormPage() {
     <form onSubmit={submit}>
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
         <Link
-          to={editing && existing ? paths.sales.autoparkDetail(existing.id) : paths.sales.autoparks}
+          to={editing && existing ? paths.users.autoparkDetail(existing.id) : paths.users.autoparks}
         >
           <ArrowLeft />
           {editing && existing ? existing.name : 'Autoparks'}

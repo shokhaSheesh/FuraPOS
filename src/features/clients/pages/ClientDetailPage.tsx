@@ -37,7 +37,7 @@ export default function ClientDetailPage() {
         title="No such autopark"
         action={
           <Button variant="secondary" asChild>
-            <Link to={paths.sales.autoparks}>Back to autoparks</Link>
+            <Link to={paths.users.autoparks}>Back to autoparks</Link>
           </Button>
         }
       />
@@ -46,12 +46,12 @@ export default function ClientDetailPage() {
 
   const { stats } = client
   const quiet = daysSinceLastSale(stats)
-  const canEdit = can('sales.autoparks.edit')
+  const canEdit = can('users.autoparks.edit')
 
   return (
     <>
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
-        <Link to={paths.sales.autoparks}>
+        <Link to={paths.users.autoparks}>
           <ArrowLeft />
           Autoparks
         </Link>
@@ -81,7 +81,7 @@ export default function ClientDetailPage() {
                 </Button>
               )}
               <Button variant="primary" asChild>
-                <Link to={paths.sales.editAutopark(client.id)}>
+                <Link to={paths.users.editAutopark(client.id)}>
                   <Pencil />
                   Edit
                 </Link>

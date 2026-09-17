@@ -225,12 +225,12 @@ const routes: RouteObject[] = [
         element: page(<RepricingDetailPage />, 'products.repricing.view'),
       },
       {
-        path: paths.sales.drivers,
-        element: page(<DriversPage />, 'sales.drivers.view'),
+        path: paths.users.drivers,
+        element: page(<DriversPage />, 'users.drivers.view'),
       },
       {
-        path: paths.sales.driverDetail(),
-        element: page(<DriverDetailPage />, 'sales.drivers.view'),
+        path: paths.users.driverDetail(),
+        element: page(<DriverDetailPage />, 'users.drivers.view'),
       },
       {
         path: paths.sales.shifts,
@@ -288,44 +288,44 @@ const routes: RouteObject[] = [
         element: page(<OrderImportPage />, 'procurement.orders.edit'),
       },
 
-      // --- Personnel management -------------------------------------------
-      { path: paths.personnel.root, element: <Navigate to={paths.personnel.employees} replace /> },
+      // --- Users (OX: Personnel management) ----------------------------------------
+      { path: paths.users.root, element: <Navigate to={paths.users.employees} replace /> },
       {
-        path: paths.personnel.employees,
-        element: page(<EmployeesPage />, 'personnel.employees.view'),
+        path: paths.users.employees,
+        element: page(<EmployeesPage />, 'users.employees.view'),
       },
       {
-        path: paths.personnel.newEmployee,
-        element: page(<EmployeeFormPage />, 'personnel.employees.create'),
+        path: paths.users.newEmployee,
+        element: page(<EmployeeFormPage />, 'users.employees.create'),
       },
       {
-        path: paths.personnel.editEmployee(),
-        element: page(<EmployeeFormPage />, 'personnel.employees.edit'),
+        path: paths.users.editEmployee(),
+        element: page(<EmployeeFormPage />, 'users.employees.edit'),
       },
       {
-        path: paths.personnel.employeeDetail(),
-        element: page(<EmployeeDetailPage />, 'personnel.employees.view'),
+        path: paths.users.employeeDetail(),
+        element: page(<EmployeeDetailPage />, 'users.employees.view'),
       },
-      { path: paths.personnel.roles, element: page(<RolesPage />, 'personnel.roles.view') },
+      { path: paths.users.roles, element: page(<RolesPage />, 'users.roles.view') },
       {
-        path: paths.personnel.roleDetail(),
-        element: page(<RoleDetailPage />, 'personnel.roles.view'),
+        path: paths.users.roleDetail(),
+        element: page(<RoleDetailPage />, 'users.roles.view'),
       },
 
       // --- Marketing --------------------------------------------------------
       { path: paths.marketing.root, element: <Navigate to={paths.marketing.promotions} replace /> },
-      { path: paths.sales.autoparks, element: page(<ClientsPage />, 'sales.autoparks.view') },
+      { path: paths.users.autoparks, element: page(<ClientsPage />, 'users.autoparks.view') },
       {
-        path: paths.sales.newAutopark,
-        element: page(<ClientFormPage />, 'sales.autoparks.create'),
+        path: paths.users.newAutopark,
+        element: page(<ClientFormPage />, 'users.autoparks.create'),
       },
       {
-        path: paths.sales.editAutopark(),
-        element: page(<ClientFormPage />, 'sales.autoparks.edit'),
+        path: paths.users.editAutopark(),
+        element: page(<ClientFormPage />, 'users.autoparks.edit'),
       },
       {
-        path: paths.sales.autoparkDetail(),
-        element: page(<ClientDetailPage />, 'sales.autoparks.view'),
+        path: paths.users.autoparkDetail(),
+        element: page(<ClientDetailPage />, 'users.autoparks.view'),
       },
       {
         path: paths.marketing.promotions,

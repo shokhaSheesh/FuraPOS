@@ -35,13 +35,6 @@ export const paths = {
     online: '/sales/online',
     onlineDetail: (id = ':onlineSaleId') => `/sales/online/${id}`,
     shiftDetail: (id = ':shiftId') => `/sales/shifts/${id}`,
-    /** The haulage companies Fura holds contracts with. OX: /app/sales/customers */
-    autoparks: '/sales/autoparks',
-    newAutopark: '/sales/autoparks/new',
-    autoparkDetail: (id = ':clientId') => `/sales/autoparks/${id}`,
-    editAutopark: (id = ':clientId') => `/sales/autoparks/${id}/edit`,
-    drivers: '/sales/drivers',
-    driverDetail: (id = ':driverId') => `/sales/drivers/${id}`,
   },
 
   products: {
@@ -85,14 +78,22 @@ export const paths = {
     orderDocument: (id = ':orderId') => `/procurement/orders/${id}/document`,
   },
 
-  personnel: {
-    root: '/personnel',
-    employees: '/personnel/employees', // OX: /app/personal-management/users
-    newEmployee: '/personnel/employees/new',
-    employeeDetail: (id = ':employeeId') => `/personnel/employees/${id}`,
-    editEmployee: (id = ':employeeId') => `/personnel/employees/${id}/edit`,
-    roles: '/personnel/roles', // OX: /app/personal-management/roles
-    roleDetail: (id = ':roleId') => `/personnel/roles/${id}`,
+  /** «Управление персоналом» in OX; renamed Users — everyone the business deals with by name. */
+  users: {
+    root: '/users',
+    employees: '/users/employees', // OX: /app/personal-management/users
+    newEmployee: '/users/employees/new',
+    employeeDetail: (id = ':employeeId') => `/users/employees/${id}`,
+    editEmployee: (id = ':employeeId') => `/users/employees/${id}/edit`,
+    roles: '/users/roles', // OX: /app/personal-management/roles
+    roleDetail: (id = ':roleId') => `/users/roles/${id}`,
+    /** The haulage companies Fura holds contracts with. OX keeps them in Marketing, /app/marketing/customers. */
+    autoparks: '/users/autoparks',
+    newAutopark: '/users/autoparks/new',
+    autoparkDetail: (id = ':clientId') => `/users/autoparks/${id}`,
+    editAutopark: (id = ':clientId') => `/users/autoparks/${id}/edit`,
+    drivers: '/users/drivers',
+    driverDetail: (id = ':driverId') => `/users/drivers/${id}`,
   },
 
   /** OX nests these under a second in-module menu; we surface them directly. */

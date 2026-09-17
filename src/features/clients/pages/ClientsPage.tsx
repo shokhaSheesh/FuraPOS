@@ -171,9 +171,9 @@ export default function ClientsPage() {
         title="Autoparks"
         description="The haulage companies you hold contracts with — what they owe, how much account they have left, and whether they have stopped coming."
         action={
-          can('sales.autoparks.create') ? (
+          can('users.autoparks.create') ? (
             <Button variant="primary" asChild>
-              <Link to={paths.sales.newAutopark}>
+              <Link to={paths.users.newAutopark}>
                 <Plus />
                 Add autopark
               </Link>
@@ -216,7 +216,7 @@ export default function ClientsPage() {
         }
         pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
         onPaginationChange={({ page, pageSize }) => setQuery({ page, pageSize })}
-        onRowClick={(client) => navigate(paths.sales.autoparkDetail(client.id))}
+        onRowClick={(client) => navigate(paths.users.autoparkDetail(client.id))}
         emptyState={
           query.search || query.f || query.lens || query.type ? (
             <EmptyState title="Nobody matches these filters" />
@@ -225,9 +225,9 @@ export default function ClientsPage() {
               title="No clients yet"
               description="Add the garages and buyers you sell to. A sale can then be put on their account rather than paid up front."
               action={
-                can('sales.autoparks.create') ? (
+                can('users.autoparks.create') ? (
                   <Button variant="primary" asChild>
-                    <Link to={paths.sales.newAutopark}>
+                    <Link to={paths.users.newAutopark}>
                       <Plus />
                       Add client
                     </Link>

@@ -130,7 +130,7 @@ export default function OnlineSaleDetailPage() {
             <Info
               label="Customer"
               value={sale.customerName}
-              href={sale.driverId ? paths.sales.driverDetail(sale.driverId) : undefined}
+              href={sale.driverId ? paths.users.driverDetail(sale.driverId) : undefined}
             />
             <Info label="Phone" value={sale.customerPhone} />
             <Info

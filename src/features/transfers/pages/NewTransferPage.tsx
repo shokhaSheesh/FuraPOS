@@ -6,8 +6,6 @@ import { ArrowLeft, ArrowRight, Pencil, Save, Truck, Wand2 } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
 import { EmptyState } from '@/shared/components/EmptyState'
-import { ScrollSentinel } from '@/shared/components/ScrollSentinel'
-import { useInfiniteRows } from '@/shared/hooks/useInfiniteRows'
 import { Steps } from '@/shared/components/Steps'
 import { buildTransferLineColumns, type TransferRow } from '../components/transferLineColumns'
 import type { TableColumn } from '@/shared/components/table/features'
@@ -374,16 +372,6 @@ export default function NewTransferPage() {
     form.setValue('lines', next, { shouldDirty: true })
   }
 
-  const lineColumns = buildTransferLineColumns({
-    canSeeCost,
-    cards: false,
-    fromName: from?.name ?? 'source',
-    toName: to?.name ?? 'destination',
-    demandName: demandLocation?.name ?? (requesting ? 'here' : 'source'),
-    onQuantityChange: setQuantity,
-    onRemove: (row) => remove(row.index),
-  })
-
   const movingUnits = lines.reduce((sum, line) => sum + (line.requestedQuantity || 0), 0)
 
   /*
@@ -624,13 +612,6 @@ export default function NewTransferPage() {
                   </Button>
                 ) : null
               }
-              renderTable={(visibleRows) => (
-                <ShelfTable
-                  rows={visibleRows}
-                  columns={lineColumns}
-                  emptyTitle={`Nothing here at ${from?.name ?? 'that location'}`}
-                />
-              )}
             />
           </>
         )}
@@ -646,43 +627,6 @@ export default function NewTransferPage() {
         />
       </div>
     </form>
-  )
-}
-
-/** The table view of the shelf, drawn ten rows at a time. */
-function ShelfTable({
-  rows,
-  columns,
-  emptyTitle,
-}: {
-  rows: TransferRow[]
-  columns: TableColumn<TransferRow>[]
-  emptyTitle: string
-}) {
-  const { visible, hasMore, shown, total, sentinel, showMore } = useInfiniteRows(rows)
-  return (
-    <DataTable
-      storageKey="transfer-lines"
-      columns={columns}
-      data={visible}
-      total={visible.length}
-      getRowId={(row) => row.key}
-      footer={
-        <ScrollSentinel
-          ref={sentinel}
-          hasMore={hasMore}
-          shown={shown}
-          total={total}
-          onShowMore={showMore}
-        />
-      }
-      emptyState={
-        <EmptyState
-          title={emptyTitle}
-          description="Nothing on this shelf matches the category and filters above."
-        />
-      }
-    />
   )
 }
 

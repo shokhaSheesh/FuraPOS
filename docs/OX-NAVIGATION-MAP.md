@@ -788,8 +788,13 @@ the page once the products step has been reached saves it without asking — by 
 sidebar or anything else. Clicking an unfinished transfer in the list reopens it at its products
 (`/products/transfers/:id/edit`); its detail page has **Continue editing**. Saving along the way and
 sending at the end write one document, not two. The comment sits beside From and To on the route
-step, and on the same line as the route above the products; the table's Move column has − / +
-either side of the number; product-card images are square.
+step, and on the same line as the route above the products; the dialog's Move column has − / +
+either side of the number, compact at 24 px. Product-card images keep their wide 5:2 box (a square
+was tried and reverted).
+
+**The list view is products, not variations** (client request): one row per product with the same
+stock pills and sales as a card, a `+` that opens the same variations dialog, and every
+product-list field in its Columns menu — so picking works one way in both views.
 
 The product step **is the source's shelf** (client request), the same shape a goods receipt and a
 purchase order use: everything that location holds is a row from the moment the route is chosen,

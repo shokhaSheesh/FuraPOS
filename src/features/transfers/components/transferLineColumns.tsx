@@ -189,6 +189,7 @@ export function buildTransferLineColumns({
               type="button"
               variant="secondary"
               size="icon"
+              className="size-6 [&_svg]:size-3.5"
               aria-label={`One fewer ${row.original.variation.fullName}`}
               disabled={row.original.quantity <= 0}
               onClick={() => onQuantityChange(row.original, row.original.quantity - 1)}
@@ -196,7 +197,7 @@ export function buildTransferLineColumns({
               <Minus />
             </Button>
             <NumberField
-              className="w-20"
+              className="h-6 w-14 px-1.5 text-xs"
               nullable={false}
               min={0}
               aria-label={`Move ${row.original.variation.fullName}`}
@@ -214,6 +215,7 @@ export function buildTransferLineColumns({
               type="button"
               variant="secondary"
               size="icon"
+              className="size-6 [&_svg]:size-3.5"
               aria-label={`One more ${row.original.variation.fullName}`}
               disabled={row.original.quantity >= row.original.atSource}
               onClick={() => onQuantityChange(row.original, row.original.quantity + 1)}

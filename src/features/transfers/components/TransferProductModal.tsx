@@ -291,6 +291,7 @@ function buildVariantColumns({
               type="button"
               variant="secondary"
               size="icon"
+              className="size-6 [&_svg]:size-3.5"
               aria-label={`One fewer ${line.variation.fullName}`}
               disabled={draft <= 0}
               onClick={() => set(line, draft - 1)}
@@ -298,7 +299,7 @@ function buildVariantColumns({
               <Minus />
             </Button>
             <NumberField
-              className="w-20"
+              className="h-6 w-14 px-1.5 text-xs"
               nullable={false}
               min={0}
               aria-label={`Move ${line.variation.fullName}`}
@@ -309,6 +310,7 @@ function buildVariantColumns({
               type="button"
               variant="secondary"
               size="icon"
+              className="size-6 [&_svg]:size-3.5"
               aria-label={`One more ${line.variation.fullName}`}
               disabled={draft >= line.atSource}
               onClick={() => set(line, draft + 1)}

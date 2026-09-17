@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import { Folder, LayoutGrid, Layers, List, Package, Plus, Search, Settings2 } from 'lucide-react'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { ScrollSentinel } from '@/shared/components/ScrollSentinel'
@@ -23,6 +23,7 @@ import {
 import { StockBox } from './StockBox'
 import { CATALOGUE_CARD_FIELDS, type CatalogueCardField } from '../model/cardFields'
 import { TransferProductModal } from './TransferProductModal'
+import { TransferProductTable } from './TransferProductTable'
 import type { TransferRow } from './transferLineColumns'
 
 /* --- what a card shows ---------------------------------------------------- */
@@ -86,15 +87,12 @@ export function TransferCatalogue({
   names,
   canSeeCost,
   onApply,
-  renderTable,
   actions,
 }: {
   rows: TransferRow[]
   names: Names
   canSeeCost: boolean
   onApply: (changes: { row: TransferRow; quantity: number }[]) => void
-  /** The table view, given the rows the current category and filters leave. */
-  renderTable: (rows: TransferRow[]) => ReactNode
   actions?: ReactNode
 }) {
   const categories = useDataStore((s) => s.categorySettings)
@@ -170,6 +168,7 @@ export function TransferCatalogue({
   const chosenProducts = groups.filter((g) => g.chosen > 0).length
   const chosenUnits = groups.reduce((sum, g) => sum + g.chosen, 0)
   const open = openId ? (groups.find((g) => g.productId === openId) ?? null) : null
+  const openGroup = useCallback((group: ProductGroup) => setOpenId(group.productId), [])
 
   const toggleField = (id: CardField, on: boolean) => {
     const order: CardField[] = [
@@ -295,7 +294,7 @@ export function TransferCatalogue({
                 type="button"
                 variant={view === 'table' ? 'secondary' : 'ghost'}
                 size="icon"
-                aria-label="Show variations as a table"
+                aria-label="Show products as a list"
                 aria-pressed={view === 'table'}
                 onClick={() => {
                   setView('table')
@@ -357,7 +356,24 @@ export function TransferCatalogue({
       </div>
 
       {view === 'table' ? (
-        renderTable(matching.flatMap((g) => g.rows))
+        <TransferProductTable
+          groups={visible}
+          names={names}
+          canSeeCost={canSeeCost}
+          onOpen={openGroup}
+          footer={
+            <ScrollSentinel
+              ref={sentinel}
+              hasMore={hasMore}
+              shown={shown}
+              total={total}
+              onShowMore={showMore}
+            />
+          }
+          emptyState={
+            <EmptyState title="No products match" description="Try another make or model." />
+          }
+        />
       ) : matching.length === 0 ? (
         <div className="rounded-card border-border bg-surface border">
           <EmptyState
@@ -519,7 +535,7 @@ function ProductCard({
       <button
         type="button"
         onClick={onOpen}
-        className="bg-surface-inset text-fg-subtle flex aspect-square items-center justify-center"
+        className="bg-surface-inset text-fg-subtle flex aspect-[5/2] items-center justify-center"
         aria-label={`Open ${group.productName}`}
       >
         {first.imageUrl ? (

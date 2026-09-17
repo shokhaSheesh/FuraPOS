@@ -131,7 +131,7 @@ export default function DriversPage() {
         cell: ({ row }) => (
           <div className="min-w-0">
             <Link
-              to={paths.marketing.driverDetail(row.original.id)}
+              to={paths.sales.driverDetail(row.original.id)}
               className="text-fg truncate font-medium hover:underline"
             >
               {row.original.fullName}
@@ -152,7 +152,7 @@ export default function DriversPage() {
             // From a driver to the company that holds the contract, the debt
             // and the promotion — in one click.
             <Link
-              to={paths.marketing.autoparkDetail(row.original.autoparkId)}
+              to={paths.sales.autoparkDetail(row.original.autoparkId)}
               className="text-fg hover:underline"
             >
               {row.original.autoparkName}
@@ -228,14 +228,14 @@ export default function DriversPage() {
               {
                 label: 'Edit',
                 icon: Pencil,
-                hidden: !can('marketing.drivers.edit'),
+                hidden: !can('sales.drivers.edit'),
                 onSelect: () => openFor(row.original),
               },
               {
                 label: 'Delete',
                 icon: Trash2,
                 destructive: true,
-                hidden: !can('marketing.drivers.delete'),
+                hidden: !can('sales.drivers.delete'),
                 onSelect: () => setDeleting(row.original),
               },
             ]}
@@ -279,7 +279,7 @@ export default function DriversPage() {
         title="Drivers"
         description="Who collects parts at the counter. Scanning a driver puts the purchase in his own app, and on the right truck in his autopark's."
         action={
-          can('marketing.drivers.create') ? (
+          can('sales.drivers.create') ? (
             <Button variant="primary" onClick={() => openFor(null)}>
               <Plus />
               Add driver

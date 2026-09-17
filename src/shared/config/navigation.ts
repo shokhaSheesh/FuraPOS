@@ -111,6 +111,18 @@ export const navigation: NavSection[] = [
         to: paths.sales.shifts,
         permission: 'sales.cashShifts.view',
       },
+      {
+        label: 'Autoparks',
+        icon: Building2,
+        to: paths.sales.autoparks,
+        permission: 'sales.autoparks.view',
+      },
+      {
+        label: 'Drivers',
+        icon: IdCard,
+        to: paths.sales.drivers,
+        permission: 'sales.drivers.view',
+      },
     ],
   },
   {
@@ -206,18 +218,6 @@ export const navigation: NavSection[] = [
     label: 'Marketing',
     icon: Megaphone,
     items: [
-      {
-        label: 'Autoparks',
-        icon: Building2,
-        to: paths.marketing.autoparks,
-        permission: 'marketing.clients.view',
-      },
-      {
-        label: 'Drivers',
-        icon: IdCard,
-        to: paths.marketing.drivers,
-        permission: 'marketing.drivers.view',
-      },
       {
         label: 'Promotions',
         icon: BadgePercent,

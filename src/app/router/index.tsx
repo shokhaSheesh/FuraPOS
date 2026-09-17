@@ -225,12 +225,12 @@ const routes: RouteObject[] = [
         element: page(<RepricingDetailPage />, 'products.repricing.view'),
       },
       {
-        path: paths.marketing.drivers,
-        element: page(<DriversPage />, 'marketing.drivers.view'),
+        path: paths.sales.drivers,
+        element: page(<DriversPage />, 'sales.drivers.view'),
       },
       {
-        path: paths.marketing.driverDetail(),
-        element: page(<DriverDetailPage />, 'marketing.drivers.view'),
+        path: paths.sales.driverDetail(),
+        element: page(<DriverDetailPage />, 'sales.drivers.view'),
       },
       {
         path: paths.sales.shifts,
@@ -313,19 +313,19 @@ const routes: RouteObject[] = [
       },
 
       // --- Marketing --------------------------------------------------------
-      { path: paths.marketing.root, element: <Navigate to={paths.marketing.autoparks} replace /> },
-      { path: paths.marketing.autoparks, element: page(<ClientsPage />, 'marketing.clients.view') },
+      { path: paths.marketing.root, element: <Navigate to={paths.marketing.promotions} replace /> },
+      { path: paths.sales.autoparks, element: page(<ClientsPage />, 'sales.autoparks.view') },
       {
-        path: paths.marketing.newAutopark,
-        element: page(<ClientFormPage />, 'marketing.clients.create'),
+        path: paths.sales.newAutopark,
+        element: page(<ClientFormPage />, 'sales.autoparks.create'),
       },
       {
-        path: paths.marketing.editAutopark(),
-        element: page(<ClientFormPage />, 'marketing.clients.edit'),
+        path: paths.sales.editAutopark(),
+        element: page(<ClientFormPage />, 'sales.autoparks.edit'),
       },
       {
-        path: paths.marketing.autoparkDetail(),
-        element: page(<ClientDetailPage />, 'marketing.clients.view'),
+        path: paths.sales.autoparkDetail(),
+        element: page(<ClientDetailPage />, 'sales.autoparks.view'),
       },
       {
         path: paths.marketing.promotions,

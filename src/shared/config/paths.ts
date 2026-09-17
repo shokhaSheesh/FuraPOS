@@ -35,6 +35,13 @@ export const paths = {
     online: '/sales/online',
     onlineDetail: (id = ':onlineSaleId') => `/sales/online/${id}`,
     shiftDetail: (id = ':shiftId') => `/sales/shifts/${id}`,
+    /** The haulage companies Fura holds contracts with. OX: /app/sales/customers */
+    autoparks: '/sales/autoparks',
+    newAutopark: '/sales/autoparks/new',
+    autoparkDetail: (id = ':clientId') => `/sales/autoparks/${id}`,
+    editAutopark: (id = ':clientId') => `/sales/autoparks/${id}/edit`,
+    drivers: '/sales/drivers',
+    driverDetail: (id = ':driverId') => `/sales/drivers/${id}`,
   },
 
   products: {
@@ -91,13 +98,6 @@ export const paths = {
   /** OX nests these under a second in-module menu; we surface them directly. */
   marketing: {
     root: '/marketing',
-    /** The haulage companies Fura holds contracts with. OX: /app/marketing/customers */
-    autoparks: '/marketing/autoparks',
-    newAutopark: '/marketing/autoparks/new',
-    autoparkDetail: (id = ':clientId') => `/marketing/autoparks/${id}`,
-    editAutopark: (id = ':clientId') => `/marketing/autoparks/${id}/edit`,
-    drivers: '/marketing/drivers',
-    driverDetail: (id = ':driverId') => `/marketing/drivers/${id}`,
     promotions: '/marketing/promotions', // OX: /app/marketing/promotions
     newPromotion: '/marketing/promotions/new',
     editPromotion: (id = ':promotionId') => `/marketing/promotions/${id}`,

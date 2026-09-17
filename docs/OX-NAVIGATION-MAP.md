@@ -33,16 +33,18 @@ OX shows badges on two sections: **Закупки** is `New`, **Финансы**
 
 ## 2. Продажи — Sales
 
-| OX (ru)           | Ours (en)        | OX route                                |
-| ----------------- | ---------------- | --------------------------------------- |
-| OX POS Касса      | _(not in scope)_ | `/app/sells/cashdesk-info`              |
-| Новая продажа     | New sale         | _(no route — navigates to Cash shifts)_ |
-| Все продажи       | All sales        | `/app/sells/orders`                     |
-| Кассовые смены    | _(not in scope)_ | `/app/sells/shifts`                     |
-| Закрытые продажи  | _(not in scope)_ | `/app/sells/closed`                     |
-| Открытые продажи  | Open sales       | `/app/sells/drafts`                     |
-| Удалённые продажи | Deleted sales    | `/app/sells/deleted`                    |
-| Отложки           | Postponed sales  | `/app/sells/postpones`                  |
+| OX (ru)                   | Ours (en)        | OX route                                |
+| ------------------------- | ---------------- | --------------------------------------- |
+| OX POS Касса              | _(not in scope)_ | `/app/sells/cashdesk-info`              |
+| Новая продажа             | New sale         | _(no route — navigates to Cash shifts)_ |
+| Все продажи               | All sales        | `/app/sells/orders`                     |
+| Кассовые смены            | _(not in scope)_ | `/app/sells/shifts`                     |
+| Закрытые продажи          | _(not in scope)_ | `/app/sells/closed`                     |
+| Открытые продажи          | Open sales       | `/app/sells/drafts`                     |
+| Удалённые продажи         | Deleted sales    | `/app/sells/deleted`                    |
+| Отложки                   | Postponed sales  | `/app/sells/postpones`                  |
+| Клиенты _(OX: Маркетинг)_ | Autoparks        | `/app/marketing/customers`              |
+| —                         | Drivers          | _(no OX equivalent)_                    |
 
 ## 3. Продукты/Услуги — Products / Services
 
@@ -1108,17 +1110,22 @@ wants one.
 
 ## 7. Маркетинг — Marketing
 
-Cut to two screens at the client's request. The OX rows are kept so the omissions read as decisions.
+Cut to one screen at the client's request. The OX rows are kept so the omissions read as decisions.
 
-| OX (ru)           | Ours (en)   | OX route                                |
-| ----------------- | ----------- | --------------------------------------- |
-| Клиенты           | Autoparks   | `/app/marketing/customers`              |
-| Группы            | — (removed) | `/app/marketing/groups`                 |
-| Кэшбэк            | — (removed) | `/app/marketing/cashbacks`              |
-| Рассылки          | — (removed) | `/app/marketing/newsletters`            |
-| Цифровые рассылки | — (removed) | `/app/marketing/digital-mass-messaging` |
-| Акции             | Promotions  | `/app/marketing/promotions`             |
-| Купоны            | — (removed) | `/app/marketing/coupon-collections`     |
+**Autoparks and Drivers moved to Sales** (`/sales/autoparks`, `/sales/drivers`; permissions
+`sales.autoparks`, `sales.drivers`). OX files its customers under Marketing, but here they are who
+every sale is made to — New sale picks the autopark and scans the driver — so they sit beside the
+sales ledger rather than beside promotions.
+
+| OX (ru)           | Ours (en)           | OX route                                |
+| ----------------- | ------------------- | --------------------------------------- |
+| Клиенты           | → Sales › Autoparks | `/app/marketing/customers`              |
+| Группы            | — (removed)         | `/app/marketing/groups`                 |
+| Кэшбэк            | — (removed)         | `/app/marketing/cashbacks`              |
+| Рассылки          | — (removed)         | `/app/marketing/newsletters`            |
+| Цифровые рассылки | — (removed)         | `/app/marketing/digital-mass-messaging` |
+| Акции             | Promotions          | `/app/marketing/promotions`             |
+| Купоны            | — (removed)         | `/app/marketing/coupon-collections`     |
 
 Nothing had been built in the five that went, and nothing referenced them. Cashback survives as a
 _field_ on a client and in the shared wallet; what was cut is the screen for configuring earn rules.

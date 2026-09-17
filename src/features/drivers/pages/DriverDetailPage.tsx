@@ -36,7 +36,7 @@ export default function DriverDetailPage() {
   return (
     <>
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
-        <Link to={paths.marketing.drivers}>
+        <Link to={paths.sales.drivers}>
           <ArrowLeft />
           Drivers
         </Link>
@@ -53,7 +53,7 @@ export default function DriverDetailPage() {
             </Badge>
             {driver.autoparkId ? (
               <Link
-                to={paths.marketing.autoparkDetail(driver.autoparkId)}
+                to={paths.sales.autoparkDetail(driver.autoparkId)}
                 className="text-fg-muted text-2xs hover:underline"
               >
                 {driver.autoparkName}
@@ -98,7 +98,7 @@ export default function DriverDetailPage() {
             value={
               driver.autoparkId ? (
                 <Link
-                  to={paths.marketing.autoparkDetail(driver.autoparkId)}
+                  to={paths.sales.autoparkDetail(driver.autoparkId)}
                   className="hover:underline"
                 >
                   {driver.autoparkName}

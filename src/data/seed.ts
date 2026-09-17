@@ -546,7 +546,7 @@ const roleSpecs: { id: string; name: string; keys: string[] }[] = [
       ...expand('products.cost', ['view']),
       ...expand('procurement.orders', ['view', 'create', 'edit', 'export']),
       ...expand('personnel.employees', ['view']),
-      ...expand('marketing.clients', ['view', 'create', 'edit', 'export']),
+      ...expand('sales.autoparks', ['view', 'create', 'edit', 'export']),
       ...expand('analytics.reportBuilder', ['view', 'create', 'edit', 'export']),
     ],
   },
@@ -558,7 +558,7 @@ const roleSpecs: { id: string; name: string; keys: string[] }[] = [
       // can work out how far they are allowed to discount.
       ...expand('sales.orders', ['view', 'create', 'edit']),
       ...expand('products.list', ['view']),
-      ...expand('marketing.clients', ['view', 'create', 'edit']),
+      ...expand('sales.autoparks', ['view', 'create', 'edit']),
     ],
   },
   {

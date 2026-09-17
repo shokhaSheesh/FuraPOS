@@ -1,16 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react'
-import {
-  ChevronRight,
-  Folder,
-  FolderOpen,
-  LayoutGrid,
-  Layers,
-  List,
-  Package,
-  Plus,
-  Search,
-  Settings2,
-} from 'lucide-react'
+import { Folder, LayoutGrid, Layers, List, Package, Plus, Search, Settings2 } from 'lucide-react'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { ScrollSentinel } from '@/shared/components/ScrollSentinel'
 import { useInfiniteRows } from '@/shared/hooks/useInfiniteRows'
@@ -26,14 +15,11 @@ import {
   childrenOf,
   countByCategory,
   groupByProduct,
-  matchesAvailability,
+  bestSellingFirst,
   matchesSearch,
-  sortGroups,
   stockLevel,
   subtreeOf,
-  type Availability,
   type ProductGroup,
-  type SortBy,
 } from '../model/browse'
 import { TransferProductModal } from './TransferProductModal'
 import type { TransferRow } from './transferLineColumns'
@@ -71,6 +57,8 @@ const CARD_FIELDS: { id: CardField; label: (names: Names) => string }[] = [
 
 /** The mockup's card, and nothing it did not have. */
 const DEFAULT_CARD_FIELDS: CardField[] = ['variations', 'atDestination', 'atSource', 'sales']
+/** The "no filter" value of a select, which cannot hold an empty string. */
+const ALL = '__all__'
 const CARD_FIELDS_KEY = 'transfer-card-fields'
 const VIEW_KEY = 'transfer-catalogue-view'
 
@@ -124,13 +112,13 @@ export function TransferCatalogue({
   actions?: ReactNode
 }) {
   const categories = useDataStore((s) => s.categorySettings)
+  const vehicleMakes = useDataStore((s) => s.vehicleMakes)
 
   /** The category drilled into, root first. Empty means every product. */
   const [path, setPath] = useState<string[]>([])
   const [search, setSearch] = useState('')
-  const [make, setMake] = useState('all')
-  const [availability, setAvailability] = useState<Availability>('any')
-  const [sortBy, setSortBy] = useState<SortBy>('sales')
+  const [make, setMake] = useState(ALL)
+  const [model, setModel] = useState(ALL)
   const [view, setView] = useState<'cards' | 'table'>(() => readStored(VIEW_KEY, 'cards'))
   const [fields, setFields] = useState<CardField[]>(() =>
     readStored(CARD_FIELDS_KEY, DEFAULT_CARD_FIELDS),
@@ -139,20 +127,38 @@ export function TransferCatalogue({
 
   const groups = useMemo(() => groupByProduct(rows), [rows])
   const counts = useMemo(() => countByCategory(groups, categories), [groups, categories])
-  const byId = useMemo(() => new Map(categories.map((c) => [c.id, c] as const)), [categories])
 
   const current = path.at(-1) ?? null
-  const roots = childrenOf(null, categories).filter((c) => (counts.get(c.id) ?? 0) > 0)
-  const folders = current
-    ? childrenOf(current, categories).filter((c) => (counts.get(c.id) ?? 0) > 0)
-    : []
-  // A search looks inside the folders instead of stopping at them.
-  const showFolders = folders.length > 0 && !search.trim()
+  const stocked = (id: string | null) =>
+    childrenOf(id, categories).filter((c) => (counts.get(c.id) ?? 0) > 0)
+  const roots = stocked(null)
+  /*
+    One row of sub-categories under the categories for every level drilled
+    into, so choosing never moves the picker down into the results — the
+    products of whatever is selected are already showing beneath it.
+  */
+  const levels = path
+    .map((id, depth) => ({ id, depth, children: stocked(id) }))
+    .filter((level) => level.children.length > 0)
 
   const makes = useMemo(
     () => [...new Set(groups.flatMap((g) => g.vehicleMakes))].sort((a, b) => a.localeCompare(b)),
     [groups],
   )
+
+  /**
+   * The chosen make's models, as Settings lists them, that something on this
+   * shelf actually fits. A product only records model names, not which make
+   * each belongs to, so Settings is what ties a model to its make.
+   */
+  const models = useMemo(() => {
+    if (make === ALL) return []
+    const known = vehicleMakes.find((m) => m.name === make)?.models.map((m) => m.name) ?? []
+    const fitted = new Set(
+      groups.filter((g) => g.vehicleMakes.includes(make)).flatMap((g) => g.vehicleModels),
+    )
+    return known.filter((name) => fitted.has(name))
+  }, [make, vehicleMakes, groups])
 
   const inCategory = useMemo(() => {
     const leaf = path.at(-1)
@@ -162,16 +168,15 @@ export function TransferCatalogue({
 
   const matching = useMemo(
     () =>
-      sortGroups(
+      bestSellingFirst(
         inCategory.filter(
           (g) =>
             matchesSearch(g, search) &&
-            (make === 'all' || g.vehicleMakes.includes(make)) &&
-            matchesAvailability(g, availability),
+            (make === ALL || g.vehicleMakes.includes(make)) &&
+            (model === ALL || g.vehicleModels.includes(model)),
         ),
-        sortBy,
       ),
-    [inCategory, search, make, availability, sortBy],
+    [inCategory, search, make, model],
   )
 
   const { visible, hasMore, shown, total, sentinel, showMore } = useInfiniteRows(matching)
@@ -216,61 +221,68 @@ export function TransferCatalogue({
         />
       </div>
 
+      {levels.map((level) => {
+        const parent = categories.find((c) => c.id === level.id)
+        return (
+          <div
+            key={level.id}
+            className="border-primary-border bg-primary-soft/40 rounded-card flex gap-2 overflow-x-auto border border-dashed p-2"
+          >
+            <CategoryTile
+              compact
+              active={path.length === level.depth + 1}
+              icon={<LayoutGrid />}
+              name={`All in ${parent?.name ?? 'this category'}`}
+              detail={`${formatNumber(counts.get(level.id) ?? 0)} products`}
+              onClick={() => goTo(path.slice(0, level.depth + 1))}
+            />
+            {level.children.map((child) => (
+              <CategoryTile
+                key={child.id}
+                compact
+                active={path[level.depth + 1] === child.id}
+                icon={<Folder />}
+                name={child.name}
+                detail={`${formatNumber(counts.get(child.id) ?? 0)} products`}
+                onClick={() => goTo([...path.slice(0, level.depth + 1), child.id])}
+              />
+            ))}
+          </div>
+        )
+      })}
+
       <div className="rounded-card border-border bg-surface shadow-card space-y-3 border p-3">
         <div className="flex flex-wrap items-center gap-2">
-          <nav aria-label="Category" className="flex min-w-0 flex-wrap items-center gap-1 text-sm">
-            <Crumb onClick={() => goTo([])} current={path.length === 0}>
-              All products
-            </Crumb>
-            {path.map((id, depth) => (
-              <span key={id} className="flex items-center gap-1">
-                <ChevronRight className="text-fg-subtle size-3.5" aria-hidden />
-                <Crumb
-                  onClick={() => goTo(path.slice(0, depth + 1))}
-                  current={depth === path.length - 1}
-                >
-                  {byId.get(id)?.name ?? id}
-                </Crumb>
-              </span>
-            ))}
-            <span className="text-fg-subtle text-2xs ml-2">
-              {showFolders
-                ? `${formatNumber(folders.length)} ${folders.length === 1 ? 'folder' : 'folders'}`
-                : `${formatNumber(matching.length)} products`}
-            </span>
-          </nav>
+          <p className="text-fg-muted text-sm">
+            <strong className="text-fg font-medium">{formatNumber(matching.length)}</strong>{' '}
+            {matching.length === 1 ? 'product' : 'products'}
+          </p>
 
           <div className="ml-auto flex flex-wrap items-center gap-2">
             <Select
-              className="w-36"
+              className="w-40"
               aria-label="Make"
               value={make}
-              onChange={setMake}
+              onChange={(next) => {
+                setMake(next)
+                // A model belongs to one make; keeping it across a change of make
+                // would filter on a pairing that cannot exist.
+                setModel(ALL)
+              }}
               options={[
-                { value: 'all', label: 'All makes' },
+                { value: ALL, label: 'All makes' },
                 ...makes.map((m) => ({ value: m, label: m })),
               ]}
             />
-            <Select<Availability>
-              className="w-48"
-              aria-label={`Stock at ${names.to}`}
-              value={availability}
-              onChange={setAvailability}
-              options={[
-                { value: 'any', label: 'Any stock' },
-                { value: 'low', label: `Low at ${names.to}` },
-                { value: 'none', label: `None at ${names.to}` },
-              ]}
-            />
-            <Select<SortBy>
+            <Select
               className="w-40"
-              aria-label="Sort"
-              value={sortBy}
-              onChange={setSortBy}
+              aria-label="Model"
+              value={model}
+              onChange={setModel}
+              disabled={make === ALL}
               options={[
-                { value: 'sales', label: 'Best selling' },
-                { value: 'stock', label: `Emptiest at ${names.to}` },
-                { value: 'name', label: 'By name' },
+                { value: ALL, label: make === ALL ? 'Pick a make first' : 'All models' },
+                ...models.map((m) => ({ value: m, label: m })),
               ]}
             />
             <div className="border-border rounded-control flex items-center border p-0.5">
@@ -344,32 +356,7 @@ export function TransferCatalogue({
         </div>
       </div>
 
-      {showFolders ? (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] gap-3">
-          {folders.map((folder) => (
-            <button
-              key={folder.id}
-              type="button"
-              onClick={() => goTo([...path, folder.id])}
-              className="rounded-card border-border bg-surface shadow-card hover:border-primary group flex items-center gap-3 border p-3 text-left transition-colors"
-            >
-              <span className="bg-primary-soft text-primary rounded-control flex size-14 shrink-0 items-center justify-center">
-                <Folder className="size-6 group-hover:hidden" />
-                <FolderOpen className="hidden size-6 group-hover:block" />
-              </span>
-              <span className="min-w-0">
-                <span className="text-fg block truncate text-sm font-medium">{folder.name}</span>
-                <span className="text-fg-subtle text-2xs block">
-                  {formatNumber(counts.get(folder.id) ?? 0)} products inside
-                </span>
-                <span className="text-primary text-2xs mt-1 inline-flex items-center gap-0.5 font-medium">
-                  Open <ChevronRight className="size-3" />
-                </span>
-              </span>
-            </button>
-          ))}
-        </div>
-      ) : view === 'table' ? (
+      {view === 'table' ? (
         renderTable(matching.flatMap((g) => g.rows))
       ) : matching.length === 0 ? (
         <div className="rounded-card border-border bg-surface border">
@@ -378,7 +365,7 @@ export function TransferCatalogue({
             description={
               current && search.trim()
                 ? 'Only this category was searched.'
-                : 'Try another make, or any stock.'
+                : 'Try another make or model.'
             }
             action={
               current && search.trim() ? (
@@ -438,12 +425,15 @@ export function TransferCatalogue({
 }
 
 function CategoryTile({
+  compact = false,
   active,
   icon,
   name,
   detail,
   onClick,
 }: {
+  /** A sub-category: the same tile, a size down. */
+  compact?: boolean
   active: boolean
   icon: ReactNode
   name: string
@@ -456,13 +446,15 @@ function CategoryTile({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        'rounded-card bg-surface shadow-card flex min-w-44 shrink-0 items-center gap-3 border p-2.5 pr-4 text-left transition-colors',
+        'rounded-card bg-surface shadow-card flex shrink-0 items-center border text-left transition-colors',
+        compact ? 'min-w-36 gap-2 p-1.5 pr-3' : 'min-w-44 gap-3 p-2.5 pr-4',
         active ? 'border-primary ring-primary ring-1' : 'border-border hover:border-border-strong',
       )}
     >
       <span
         className={cn(
-          'rounded-control flex size-10 shrink-0 items-center justify-center [&_svg]:size-5',
+          'rounded-control flex shrink-0 items-center justify-center',
+          compact ? 'size-7 [&_svg]:size-4' : 'size-10 [&_svg]:size-5',
           active ? 'bg-primary text-primary-fg' : 'bg-surface-inset text-fg-muted',
         )}
       >
@@ -472,26 +464,6 @@ function CategoryTile({
         <span className="text-fg block truncate text-sm font-medium">{name}</span>
         <span className="text-fg-subtle text-2xs block">{detail}</span>
       </span>
-    </button>
-  )
-}
-
-function Crumb({
-  children,
-  current,
-  onClick,
-}: {
-  children: ReactNode
-  current: boolean
-  onClick: () => void
-}) {
-  return current ? (
-    <span className="text-fg font-medium" aria-current="page">
-      {children}
-    </span>
-  ) : (
-    <button type="button" onClick={onClick} className="text-primary hover:underline">
-      {children}
     </button>
   )
 }

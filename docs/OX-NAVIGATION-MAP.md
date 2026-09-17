@@ -801,13 +801,16 @@ above them — the document as it will exist rather than the shelf it was chosen
 as draft live there, so nothing dispatches without that look.
 
 **Browsed as a catalogue — the client's mockup, on trial in transfers only.** The same shelf rows,
-regrouped: category tiles across the top (plus All categories), sub-categories as folder cards with
-a breadcrumb, then **one card per product** — what the destination holds (red at 2 or fewer, orange
+regrouped: category tiles across the top (plus All categories); choosing one opens its
+sub-categories as a second row of tiles **directly beneath** (client request — not as folders down in
+the results), with "All in <category>" first, and the products of whatever is selected show below
+straight away. Then **one card per product** — what the destination holds (red at 2 or fewer, orange
 at 5 or fewer), what the source holds, sales over 3 and 6 months, a badge with how many are on the
 transfer, and `+`. The `+` opens the product: every variation the source can spare, sales over
 3 / 6 / 12 months, and a − / + stepper capped at the shelf; quantities apply on "Add to transfer",
-so closing the dialog is a real cancel. Filters for make and destination stock, sorting by sales,
-emptiest destination or name, and one wide search (name, SKU, OEM, barcode, storage address) that
+so closing the dialog is a real cancel. Two filters, **make then model** (client request, replacing
+stock and sort filters): model stays locked until a make is picked and lists that make's models from
+Settings → Truck brands that something on the shelf fits. Cards are ordered best selling first. One wide search (name, SKU, OEM, barcode, storage address) that
 looks inside the folders instead of stopping at them.
 
 Field control is kept everywhere: **Fields** picks what a card shows, the product dialog's table has

@@ -126,22 +126,7 @@ export type StockLevel = 'critical' | 'low' | 'good'
 export const stockLevel = (units: number): StockLevel =>
   units <= 2 ? 'critical' : units <= 5 ? 'low' : 'good'
 
-export type Availability = 'any' | 'low' | 'none'
-
-/** Filtered on what the *receiving* end holds, since that is what a move is for. */
-export function matchesAvailability(group: ProductGroup, availability: Availability) {
-  if (availability === 'low') return group.atDestination <= 5
-  if (availability === 'none') return group.atDestination === 0
-  return true
-}
-
-export type SortBy = 'sales' | 'stock' | 'name'
-
-export function sortGroups(groups: ProductGroup[], by: SortBy): ProductGroup[] {
-  const sorted = [...groups]
-  if (by === 'sales') sorted.sort((a, b) => b.demand[3] - a.demand[3] || b.demand[6] - a.demand[6])
-  // Emptiest destination first: those are the ones worth moving.
-  if (by === 'stock') sorted.sort((a, b) => a.atDestination - b.atDestination)
-  if (by === 'name') sorted.sort((a, b) => a.productName.localeCompare(b.productName))
-  return sorted
+/** Best sellers first: over three months, then six to break a tie. */
+export function bestSellingFirst(groups: ProductGroup[]): ProductGroup[] {
+  return [...groups].sort((a, b) => b.demand[3] - a.demand[3] || b.demand[6] - a.demand[6])
 }

@@ -3,10 +3,9 @@ import type { TransferRow } from '../components/transferLineColumns'
 import type { VariationRow } from '@/features/products/model/product'
 import {
   countByCategory,
+  bestSellingFirst,
   groupByProduct,
-  matchesAvailability,
   matchesSearch,
-  sortGroups,
   stockLevel,
   subtreeOf,
   type CategoryNode,
@@ -87,23 +86,12 @@ describe('finding and ordering cards', () => {
     expect(matchesSearch(group!, 'nothing like it')).toBe(false)
   })
 
-  it('filters on what the receiving end holds', () => {
-    const [low, full] = groupByProduct([
-      row('a', 'p1', 'oil', { atDestination: 4 }),
-      row('b', 'p2', 'oil', { atDestination: 40 }),
-    ])
-    expect(matchesAvailability(low!, 'low')).toBe(true)
-    expect(matchesAvailability(full!, 'low')).toBe(false)
-    expect(matchesAvailability(low!, 'none')).toBe(false)
-  })
-
-  it('puts the best sellers first, or the emptiest destination first', () => {
+  it('puts the best sellers first', () => {
     const groups = groupByProduct([
-      row('a', 'p1', 'oil', { sold: 1, atDestination: 9 }),
-      row('b', 'p2', 'oil', { sold: 8, atDestination: 0 }),
+      row('a', 'p1', 'oil', { sold: 1 }),
+      row('b', 'p2', 'oil', { sold: 8 }),
     ])
-    expect(sortGroups(groups, 'sales')[0]!.productId).toBe('p2')
-    expect(sortGroups(groups, 'stock')[0]!.productId).toBe('p2')
+    expect(bestSellingFirst(groups)[0]!.productId).toBe('p2')
   })
 
   it('reads two or fewer as critical and five or fewer as low', () => {

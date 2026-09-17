@@ -7,7 +7,7 @@ import { DataTable } from '@/shared/components/DataTable'
 import { FilterSearch } from '@/shared/components/FilterSearch'
 import { decodeFilters, encodeFilters } from '@/shared/lib/fieldFilters'
 import { useDataStore } from '@/data/store'
-import { PRODUCT_FILTER_DEFAULTS, productFilterFields } from '../model/productFilterFields'
+import { productFilterFields } from '../model/productFilterFields'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { FilterSelect } from '@/shared/components/FilterSelect'
@@ -294,8 +294,6 @@ export default function ProductsPage() {
             onApply={(next) => setQuery({ f: encodeFilters(next) })}
             search={String(query.search ?? '')}
             onSearchChange={(search) => setQuery({ search })}
-            defaultFieldIds={PRODUCT_FILTER_DEFAULTS}
-            storageKey="products"
             placeholder="Filter and search"
           />
         }

@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
-import { Plus, Search, X } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
 import { MultiSelect } from '@/shared/ui/MultiSelect'
@@ -16,31 +16,14 @@ import {
   type FilterValues,
 } from '@/shared/lib/fieldFilters'
 
-function readFieldIds(key: string): string[] | null {
-  try {
-    const raw = localStorage.getItem(`filter-fields:${key}`)
-    return raw ? (JSON.parse(raw) as string[]) : null
-  } catch {
-    return null
-  }
-}
-
-function storeFieldIds(key: string, ids: string[]) {
-  try {
-    localStorage.setItem(`filter-fields:${key}`, JSON.stringify(ids))
-  } catch {
-    // Private windows refuse storage; the panel simply resets next visit.
-  }
-}
-
 /**
  * The search bar, OX-style: a text search that is also a filter by field.
  *
  * Typing searches as it always did. Clicking the bar opens a panel holding the
  * page's fields — a box per text field, a picker per list, from–to for numbers
  * — and Apply turns what was filled in into chips inside the bar, each removable
- * on its own. The panel starts with the fields most people filter by; "Add
- * field" brings in any other, and that choice is remembered per page.
+ * on its own. Every field of the page is in the panel from the start — nobody
+ * should have to go looking for a field before they can filter by it.
  *
  * Filling in the panel changes nothing until Apply, so half-typed values never
  * flicker the table, and Reset is a clean way back.
@@ -51,8 +34,6 @@ export function FilterSearch<T>({
   onApply,
   search,
   onSearchChange,
-  defaultFieldIds,
-  storageKey,
   placeholder = 'Filter and search',
 }: {
   fields: FilterField<T>[]
@@ -61,28 +42,14 @@ export function FilterSearch<T>({
   onApply: (values: FilterValues) => void
   search: string
   onSearchChange: (search: string) => void
-  /** The fields the panel shows before anybody adds one. */
-  defaultFieldIds: string[]
-  /** Remembers which fields this page's panel shows. */
-  storageKey: string
   placeholder?: string
 }) {
   const barRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState<FilterValues>(values)
-  const [shownIds, setShownIds] = useState<string[]>(
-    () => readFieldIds(storageKey) ?? defaultFieldIds,
-  )
-  const [adding, setAdding] = useState(false)
 
   const byId = useMemo(() => new Map(fields.map((field) => [field.id, field] as const)), [fields])
-
-  // A field with a value is always in the panel, whether or not it was added.
-  const panelFields = fields.filter(
-    (field) => shownIds.includes(field.id) || isActive(draft[field.id]),
-  )
-  const addable = fields.filter((field) => !panelFields.includes(field))
 
   const chips = Object.entries(values).flatMap(([id, value]) => {
     const field = byId.get(id)
@@ -93,11 +60,6 @@ export function FilterSearch<T>({
     if (open) return
     setDraft(values)
     setOpen(true)
-  }
-
-  const showFields = (ids: string[]) => {
-    setShownIds(ids)
-    storeFieldIds(storageKey, ids)
   }
 
   const setField = (id: string, value: FilterValue | undefined) =>
@@ -183,28 +145,24 @@ export function FilterSearch<T>({
         </div>
       }
     >
+      <header className="border-border flex items-center justify-between gap-2 border-b py-2 pr-2 pl-4">
+        <span className="text-fg text-sm font-semibold">Filters</span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label="Close filters"
+          onClick={() => setOpen(false)}
+        >
+          <X />
+        </Button>
+      </header>
+
       {/* Two fields a row, as OX lays them out: half the scrolling for the same fields. */}
       <div className="grid min-h-0 flex-1 content-start gap-x-4 gap-y-4 overflow-y-auto p-4 sm:grid-cols-2">
-        {panelFields.length === 0 ? (
-          <p className="text-fg-subtle text-sm sm:col-span-2">No fields yet — add one below.</p>
-        ) : null}
-        {panelFields.map((field) => (
+        {fields.map((field) => (
           <div key={field.id} className="min-w-0 space-y-1.5">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-fg text-sm font-medium">{field.label}</span>
-              <button
-                type="button"
-                className="text-fg-subtle hover:text-fg"
-                aria-label={`Remove the ${field.label} field`}
-                title="Remove this field"
-                onClick={() => {
-                  setField(field.id, undefined)
-                  showFields(shownIds.filter((id) => id !== field.id))
-                }}
-              >
-                <X className="size-3.5" />
-              </button>
-            </div>
+            <span className="text-fg block text-sm font-medium">{field.label}</span>
             <FieldEditor
               field={field}
               value={draft[field.id]}
@@ -215,41 +173,13 @@ export function FilterSearch<T>({
         ))}
       </div>
 
-      <footer className="border-border flex items-center justify-between gap-2 border-t p-3">
-        <Popover
-          open={adding}
-          onOpenChange={setAdding}
-          align="start"
-          className="max-h-72 w-56 overflow-y-auto p-1"
-          trigger={
-            <Button type="button" variant="link" size="sm" disabled={addable.length === 0}>
-              <Plus />
-              Add field
-            </Button>
-          }
-        >
-          {addable.map((field) => (
-            <button
-              key={field.id}
-              type="button"
-              className="text-fg hover:bg-surface-muted block w-full rounded px-2 py-1.5 text-left text-sm"
-              onClick={() => {
-                showFields([...shownIds, field.id])
-                setAdding(false)
-              }}
-            >
-              {field.label}
-            </button>
-          ))}
-        </Popover>
-        <div className="flex items-center gap-2">
-          <Button type="button" variant="secondary" onClick={reset}>
-            Reset
-          </Button>
-          <Button type="button" variant="primary" onClick={apply}>
-            Apply
-          </Button>
-        </div>
+      <footer className="border-border flex items-center justify-end gap-2 border-t p-3">
+        <Button type="button" variant="secondary" onClick={reset}>
+          Reset
+        </Button>
+        <Button type="button" variant="primary" onClick={apply}>
+          Apply
+        </Button>
       </footer>
     </Popover>
   )

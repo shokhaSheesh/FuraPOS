@@ -27,7 +27,6 @@ export function productFilterFields(
   }: { canSeeCost: boolean; locations: readonly { id: string; name: string }[] },
 ): FilterField<VariationRow>[] {
   const fields: FilterField<VariationRow>[] = [
-    { id: 'image', label: 'Has image', type: 'boolean', get: (v) => v.imageUrl },
     { id: 'productName', label: 'Product name', type: 'text', get: (v) => v.productName },
     { id: 'name', label: 'Variation name', type: 'text', get: (v) => v.name },
     { id: 'sku', label: 'SKU', type: 'text', get: (v) => v.sku },
@@ -114,18 +113,9 @@ export function productFilterFields(
       type: 'text',
       get: (v) => plainText(v.description ?? ''),
     },
+    // Last rather than first, where the Image column sits: it is the least
+    // likely thing to filter by, and the panel should open on the name.
+    { id: 'image', label: 'Has image', type: 'boolean', get: (v) => v.imageUrl },
   ]
   return canSeeCost ? fields : fields.filter((field) => field.id !== 'costPrice')
 }
-
-/** What the panel opens with — the fields OX opens with, in our names. */
-export const PRODUCT_FILTER_DEFAULTS = [
-  'productName',
-  'name',
-  'barcode',
-  'sku',
-  'categoryPath',
-  'brandName',
-  'vehicleMakes',
-  'vehicleModels',
-]

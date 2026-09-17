@@ -152,7 +152,7 @@ Conventions that are load-bearing — follow them rather than inventing per-scre
   via `useListQuery()`. `src/features/catalog/pages/ProductsPage.tsx` is the reference to copy.
 - **Search is a filter by field (OX-style, client request).** `<FilterSearch>` replaces the plain
   search box: clicking it opens a panel of the page's own fields (text, multi-pick,
-  from–to, yes/no), "Add field" brings in the rest, and Apply turns them into chips in the bar.
+  from–to, yes/no) — every field, always — and Apply turns them into chips in the bar.
   A page describes its fields once as `FilterField`s (`src/shared/lib/fieldFilters.ts`); applied
   filters live in the URL as `f`. Live on the product list (`productFilterFields`, held to the
   list's columns by a test); roll out to other lists page by page.

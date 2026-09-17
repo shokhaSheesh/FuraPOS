@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildProductFieldColumns } from '../components/productFieldColumns'
 import type { VariationRow } from './product'
-import { PRODUCT_FILTER_DEFAULTS, productFilterFields } from './productFilterFields'
+import { productFilterFields } from './productFilterFields'
 
 describe('the product search panel offers every product-list field', () => {
   const columns = buildProductFieldColumns<VariationRow>({
@@ -10,8 +10,10 @@ describe('the product search panel offers every product-list field', () => {
   })
   const fields = productFilterFields([], { canSeeCost: true, locations: [] })
 
-  it('has a field for each column, in the same order', () => {
-    expect(fields.map((field) => field.id)).toEqual(columns.map((column) => column.id))
+  it('has a field for each column, in the list’s order', () => {
+    // Image moves to the end of the panel; everything else keeps the list's order.
+    const ids = columns.map((column) => column.id).filter((id) => id !== 'image')
+    expect(fields.map((field) => field.id)).toEqual([...ids, 'image'])
   })
 
   it('names each field the way the list heads its column', () => {
@@ -25,10 +27,5 @@ describe('the product search panel offers every product-list field', () => {
   it('hides supplier price from roles that may not see what we pay', () => {
     const hidden = productFilterFields([], { canSeeCost: false, locations: [] })
     expect(hidden.map((field) => field.id)).not.toContain('costPrice')
-  })
-
-  it('opens with fields that exist', () => {
-    const ids = fields.map((field) => field.id)
-    for (const id of PRODUCT_FILTER_DEFAULTS) expect(ids).toContain(id)
   })
 })

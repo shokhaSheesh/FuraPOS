@@ -1889,9 +1889,9 @@ fields (Название вариации, Штрих-код with «Исключ
 reset and apply, and applied filters sit in the bar as chips («Не пок…: false ×»).
 
 **Ours, on the product list first (client request):** `FilterSearch`. Typing still searches as
-before; the panel opens with product name, variation name, barcode, SKU, category, supplier, make
-and model, and **Add field** offers every other product-list column under its own heading — the
-choice is remembered. Text fields take several values separated by commas (a pasted column of
+before. The panel shows **every product-list field at once** under its own heading — OX's
+«Добавить поле» and the per-field remove buttons were dropped at the client's request, so nobody
+has to go looking for a field first — and has a close button. Text fields take several values separated by commas (a pasted column of
 barcodes). OX's «Исключить» checkboxes were left out at the client's request. Prices are compared in UZS
 whatever currency a line is in. Filters go in the URL (`f`). The panel lays fields out two to a row, as OX does. The All / Active /
 Archived cards above the list were **cut at the client's request**.

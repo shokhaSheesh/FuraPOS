@@ -789,8 +789,8 @@ sidebar or anything else. Clicking an unfinished transfer in the list reopens it
 (`/products/transfers/:id/edit`); its detail page has **Continue editing**. Saving along the way and
 sending at the end write one document, not two. The comment has its own row under From and To on
 the route step, and sits on the same line as the route above the products; the dialog's Move column has − / +
-either side of the number, compact at 24 px. Cards are narrower (12 rem) so the image can be a full-width
-square; the list view's Columns menu sits beside the view switcher, where the cards' Fields menu is.
+either side of the number, compact at 24 px. Cards are back to their width (15 rem) with a 3:2 image box, the
+shape of the product photos (square was tried and dropped); the list view's Columns menu sits beside the view switcher, where the cards' Fields menu is.
 
 **Columns can be dragged by their heading** (client request, on the product dialog's variations
 table first, to be rolled out to every table once it is right). A press becomes a drag after a few
@@ -1939,9 +1939,9 @@ were **cut at the client's request**.
 
 ### Demo pictures
 
-The seeded catalogue carries pictures so screens read like a working platform: a flat illustration
-per kind of part (`public/images/parts`, fifteen of them) and per top-level category
-(`public/images/categories`), drawn by `scripts/draw-demo-images.py`. Each product gets its part's
-picture by name and each sub-category the part it is best known for — assigned by position, not the
-random stream, so no other seeded value moved. They stand in for product photos; replacing any file
-under the same name changes it everywhere.
+Products show **Fura Sentr's own product photos** (`public/images/photos`, four of them, resized to
+1200 px from the originals the client supplied), shared across the catalogue by position — a photo
+stands for "a product with a picture", not for that exact part. Categories keep flat illustrations
+(`public/images/categories`, and a part drawing per sub-category from `public/images/parts`), drawn
+by `scripts/draw-demo-images.py`. All are assigned by position, not the random stream, so no other
+seeded value moved; replacing a file under the same name changes it everywhere.

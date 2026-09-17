@@ -216,33 +216,13 @@ const productNouns = [
 ]
 
 /**
- * A picture for each kind of part — flat illustrations in `public/images/parts`,
- * standing in for the product photos a real catalogue would carry. Read from
- * the name rather than drawn from the random stream, so every seeded value
- * after this stays exactly where it was.
+ * Fura Sentr's own product photos (`public/images/photos`), shared out across
+ * the catalogue by position — there are four of them and a hundred-odd
+ * products, so a photo stands for "a product with a picture", not for that
+ * exact part. By position rather than a random draw, so no seeded value moves.
  */
-const PART_IMAGES: Record<(typeof productNouns)[number], string> = {
-  'Oil filter': 'oil-filter',
-  'Air filter': 'air-filter',
-  'Brake pad set': 'brake-pad-set',
-  'Brake disc': 'brake-disc',
-  'Spark plug': 'spark-plug',
-  'Timing belt': 'timing-belt',
-  Alternator: 'alternator',
-  'Starter motor': 'starter-motor',
-  'Wiper blade': 'wiper-blade',
-  'Engine oil 5W-30': 'engine-oil',
-  Coolant: 'coolant',
-  Battery: 'battery',
-  'Fuel pump': 'fuel-pump',
-  'Clutch kit': 'clutch-kit',
-  'Shock absorber': 'shock-absorber',
-}
-
-const partImage = (productName: string) => {
-  const noun = productNouns.find((entry) => productName.startsWith(entry))
-  return noun ? `/images/parts/${PART_IMAGES[noun]}.svg` : null
-}
+const PRODUCT_PHOTOS = [1, 2, 3, 4].map((n) => `/images/photos/fura-${n}.jpg`)
+const productPhoto = (index: number) => PRODUCT_PHOTOS[index % PRODUCT_PHOTOS.length]!
 
 /**
  * Products carry what a part *is*; variations carry what is actually sold.
@@ -327,7 +307,7 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
         random() > 0.4
           ? `${(index % 3) + 1}-${pick(['A', 'B', 'C'])}-${between(1, 20)}-${between(1, 9)}`
           : null,
-      imageUrl: partImage(name),
+      imageUrl: productPhoto(index),
       status: 'active' as const,
     }
     // MOQ used to be drawn last, after the shelf. It has left the product, but

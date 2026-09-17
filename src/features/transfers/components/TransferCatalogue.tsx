@@ -399,7 +399,7 @@ export function TransferCatalogue({
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(12rem,1fr))] gap-3">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] gap-3">
             {visible.map((group) => (
               <ProductCard
                 key={group.productId}
@@ -540,9 +540,7 @@ function ProductCard({
       <button
         type="button"
         onClick={onOpen}
-        // Full width and square: the card is narrow enough for a square photo
-        // not to crowd out what is written under it.
-        className="bg-surface-inset text-fg-subtle flex aspect-square w-full items-center justify-center overflow-hidden"
+        className="bg-surface-inset text-fg-subtle flex aspect-[3/2] items-center justify-center overflow-hidden"
         aria-label={`Open ${group.productName}`}
       >
         {first.imageUrl ? (

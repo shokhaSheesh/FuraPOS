@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type PointerEvent, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type PointerEvent, type ReactNode } from 'react'
 import {
   useTable,
   type ColumnVisibilityState,
@@ -52,6 +52,13 @@ export interface DataTableProps<T extends RowData> {
    * not drawn at all.
    */
   columnsMenuContainer?: HTMLElement | null
+  /**
+   * Lets columns be dragged by their heading into a new place. While dragging,
+   * holding the pointer near either edge scrolls the table that way, so a column
+   * at the far end can be carried all the way to the front. Remembered with the
+   * rest of the column choices.
+   */
+  reorderableColumns?: boolean
 }
 
 function readStoredVisibility(
@@ -153,6 +160,7 @@ export function DataTable<T extends RowData>({
   initialHidden,
   toolbar,
   columnsMenuContainer,
+  reorderableColumns = false,
   footer,
   getRowId,
   rowClassName,
@@ -184,6 +192,10 @@ export function DataTable<T extends RowData>({
     if (from === -1 || to < 0 || to >= ids.length) return
     const next = [...ids]
     next.splice(to, 0, ...next.splice(from, 1))
+    saveOrder(next)
+  }
+
+  const saveOrder = (next: ColumnOrder) => {
     setOrder(next)
     if (storageKey) {
       try {
@@ -193,6 +205,168 @@ export function DataTable<T extends RowData>({
       }
     }
   }
+
+  /* --- dragging a column by its heading ---------------------------------- */
+
+  const scrollRef = useRef<HTMLDivElement>(null)
+  /** A press on a heading that has not moved far enough to be a drag yet. */
+  const pressed = useRef<{ id: string; label: string; x: number; y: number } | null>(null)
+  /** Where the pointer is, for the edge scroll to keep reading while it holds still. */
+  const pointerX = useRef(0)
+  /** Whether the press has travelled far enough to be a drag. */
+  const active = useRef(false)
+  /**
+   * When a drag last ended. The click a browser fires on release must not sort
+   * the column — but only that click, so it is a moment, not a flag left set.
+   */
+  const draggedAt = useRef(0)
+  const [dragging, setDragging] = useState<{
+    id: string
+    label: string
+    x: number
+    y: number
+    /** Before which visible heading it would land; the count of headings means "at the end". */
+    dropIndex: number
+    indicatorX: number
+  } | null>(null)
+
+  /** The visible, movable headings in their on-screen order. */
+  const headingCells = () =>
+    Array.from(
+      scrollRef.current?.querySelectorAll<HTMLTableCellElement>('th[data-column-id]') ?? [],
+    ).filter((cell) => cell.dataset.columnId !== 'actions')
+
+  const dropTarget = (x: number) => {
+    const cells = headingCells()
+    let dropIndex = cells.length
+    for (let index = 0; index < cells.length; index++) {
+      const rect = cells[index]!.getBoundingClientRect()
+      if (x < rect.left + rect.width / 2) {
+        dropIndex = index
+        break
+      }
+    }
+    const container = scrollRef.current?.getBoundingClientRect()
+    const edge =
+      dropIndex < cells.length
+        ? cells[dropIndex]!.getBoundingClientRect().left
+        : (cells.at(-1)?.getBoundingClientRect().right ?? 0)
+    // Kept inside the visible part of the table, so the line is never drawn
+    // over whatever sits beside it.
+    const indicatorX = container ? Math.min(Math.max(edge, container.left), container.right) : edge
+    return { dropIndex, indicatorX }
+  }
+
+  const drop = (id: string, dropIndex: number) => {
+    const visible = headingCells().map((cell) => cell.dataset.columnId!)
+    const all = ordered.map(columnId).filter((key) => key !== 'actions')
+    const without = all.filter((key) => key !== id)
+    const before = visible[dropIndex]
+    let at: number
+    if (before === undefined) {
+      const lastVisible = [...visible].reverse().find((key) => key !== id)
+      at = lastVisible === undefined ? without.length : without.indexOf(lastVisible) + 1
+    } else if (before === id) {
+      return
+    } else {
+      at = without.indexOf(before)
+    }
+    const next = [...without]
+    next.splice(at, 0, id)
+    if (next.join('|') !== all.join('|')) saveOrder(next)
+  }
+
+  const pressHeading = (event: PointerEvent<HTMLTableCellElement>, id: string, label: string) => {
+    if (!reorderableColumns || id === 'actions' || event.button !== 0) return
+    // Controls inside a heading keep working as controls.
+    if ((event.target as HTMLElement).closest('input, select, textarea, [role="separator"]')) return
+    pressed.current = { id, label, x: event.clientX, y: event.clientY }
+  }
+
+  useEffect(() => {
+    if (!reorderableColumns) return
+
+    let scrollTimer: number | null = null
+    const stopScrolling = () => {
+      if (scrollTimer !== null) window.clearInterval(scrollTimer)
+      scrollTimer = null
+    }
+
+    const onMove = (event: globalThis.PointerEvent) => {
+      const press = pressed.current
+      if (!press) return
+      pointerX.current = event.clientX
+      if (!active.current) {
+        // A few pixels of travel before it counts, so a click still sorts.
+        if (Math.hypot(event.clientX - press.x, event.clientY - press.y) < 6) return
+        active.current = true
+        document.body.style.userSelect = 'none'
+        document.body.style.cursor = 'grabbing'
+        // Scrolls while the pointer is held near an edge — an interval rather
+        // than animation frames, so it keeps going while the pointer holds
+        // still and stops the moment the drag does.
+        scrollTimer = window.setInterval(() => {
+          const container = scrollRef.current
+          if (!container) return
+          const rect = container.getBoundingClientRect()
+          const zone = 64
+          const x = pointerX.current
+          let step = 0
+          if (x < rect.left + zone) step = -Math.ceil(((rect.left + zone - x) / zone) * 18)
+          else if (x > rect.right - zone) step = Math.ceil(((x - (rect.right - zone)) / zone) * 18)
+          if (step === 0) return
+          container.scrollLeft += Math.max(-36, Math.min(36, step))
+          setDragging((latest) => (latest ? { ...latest, ...dropTarget(x) } : latest))
+        }, 16)
+      }
+      setDragging({
+        id: press.id,
+        label: press.label,
+        x: event.clientX,
+        y: event.clientY,
+        ...dropTarget(event.clientX),
+      })
+    }
+
+    const finish = (commit: boolean) => {
+      stopScrolling()
+      const press = pressed.current
+      const wasDragging = active.current
+      pressed.current = null
+      active.current = false
+      document.body.style.userSelect = ''
+      document.body.style.cursor = ''
+      if (press && wasDragging) {
+        draggedAt.current = Date.now()
+        if (commit) drop(press.id, dropTarget(pointerX.current).dropIndex)
+      }
+      setDragging(null)
+    }
+
+    const onUp = () => finish(true)
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || !active.current) return
+      // Esc during a drag cancels the drag, and only that — not the dialog
+      // or panel the table happens to sit in.
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      finish(false)
+    }
+
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onUp)
+    // Capture on window, so it is heard before a dialog's own Esc handling.
+    window.addEventListener('keydown', onKey, true)
+    return () => {
+      stopScrolling()
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onUp)
+      window.removeEventListener('keydown', onKey, true)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reorderableColumns, ordered])
   const drag = useRef<{ id: string; startX: number; startWidth: number } | null>(null)
 
   const saveWidths = (next: ColumnWidths) => {
@@ -351,7 +525,7 @@ export function DataTable<T extends RowData>({
       ) : null}
       {columnsMenuContainer ? createPortal(columnsMenu, columnsMenuContainer) : null}
 
-      <div className="overflow-x-auto">
+      <div ref={scrollRef} className="overflow-x-auto">
         {/*
           `min-w-max` is what makes the scroll real. Without it the table is
           only ever as wide as its container, so a table with more columns than
@@ -371,11 +545,34 @@ export function DataTable<T extends RowData>({
                     <th
                       key={header.id}
                       scope="col"
+                      data-column-id={header.column.id}
                       style={widthStyle(widths[header.column.id])}
+                      onPointerDown={(event) =>
+                        pressHeading(
+                          event,
+                          header.column.id,
+                          typeof header.column.columnDef.header === 'string'
+                            ? header.column.columnDef.header
+                            : header.column.id,
+                        )
+                      }
+                      onClickCapture={(event) => {
+                        if (Date.now() - draggedAt.current > 250) return
+                        draggedAt.current = 0
+                        event.preventDefault()
+                        event.stopPropagation()
+                      }}
+                      title={
+                        reorderableColumns && header.column.id !== 'actions'
+                          ? 'Drag to move this column'
+                          : undefined
+                      }
                       className={cn(
                         'text-2xs text-fg-muted group/th relative h-10 px-3 font-semibold tracking-wide whitespace-nowrap uppercase',
                         widths[header.column.id] !== undefined && 'overflow-hidden text-ellipsis',
                         alignRight ? 'text-right' : 'text-left',
+                        reorderableColumns && header.column.id !== 'actions' && 'cursor-grab',
+                        dragging?.id === header.column.id && 'bg-primary-soft text-primary',
                       )}
                     >
                       {header.isPlaceholder ? null : canSort ? (
@@ -464,6 +661,7 @@ export function DataTable<T extends RowData>({
                         // the focus ring of an input sitting in one.
                         widths[cell.column.id] !== undefined && 'overflow-hidden text-ellipsis',
                         cell.column.columnDef.meta?.align === 'right' ? 'text-right' : 'text-left',
+                        dragging?.id === cell.column.id && 'bg-primary-soft/40 opacity-60',
                       )}
                     >
                       <table.FlexRender cell={cell} />
@@ -475,6 +673,33 @@ export function DataTable<T extends RowData>({
           </tbody>
         </table>
       </div>
+
+      {dragging
+        ? createPortal(
+            <>
+              <div
+                aria-hidden
+                className="bg-primary pointer-events-none fixed z-[100] w-0.5 rounded-full"
+                style={{
+                  left: dragging.indicatorX - 1,
+                  top: scrollRef.current?.getBoundingClientRect().top ?? 0,
+                  height: Math.min(
+                    scrollRef.current?.getBoundingClientRect().height ?? 0,
+                    window.innerHeight,
+                  ),
+                }}
+              />
+              <div
+                aria-hidden
+                className="bg-surface border-primary text-primary shadow-popover text-2xs rounded-control pointer-events-none fixed z-[100] border px-2.5 py-1.5 font-semibold tracking-wide whitespace-nowrap uppercase"
+                style={{ left: dragging.x + 12, top: dragging.y + 12 }}
+              >
+                {dragging.label}
+              </div>
+            </>,
+            document.body,
+          )
+        : null}
 
       {footer ??
         (pagination && onPaginationChange ? (

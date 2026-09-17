@@ -186,6 +186,7 @@ function OpenProduct({
 
         <DataTable
           storageKey="transfer-product-variations"
+          reorderableColumns
           initialHidden={PRODUCT_FIELD_COLUMN_IDS.filter(
             (id) => !SHOWN_ELSEWHERE.includes(id) && !VISIBLE_BY_DEFAULT.includes(id),
           )}

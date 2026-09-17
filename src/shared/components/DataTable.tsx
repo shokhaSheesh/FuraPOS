@@ -487,9 +487,10 @@ export function DataTable<T extends RowData>({
                         ? column.columnDef.header
                         : column.id}
                     </span>
-                    {/* Ordering lives here rather than on the heading: a
-                        table is read by dragging it sideways, so dragging a
-                        heading to move it fought with scrolling. */}
+                    {/* Ordering by arrows here works on every table. Tables
+                        with `reorderableColumns` can also be rearranged by
+                        dragging a heading, which scrolls the table itself
+                        when held near an edge. */}
                     <span className="ml-1 flex shrink-0 items-center">
                       <MoveButton
                         label={`Move ${column.id} left`}

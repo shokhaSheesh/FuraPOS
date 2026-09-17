@@ -792,6 +792,14 @@ the route step, and sits on the same line as the route above the products; the d
 either side of the number, compact at 24 px. Cards are narrower (12 rem) so the image can be a full-width
 square; the list view's Columns menu sits beside the view switcher, where the cards' Fields menu is.
 
+**Columns can be dragged by their heading** (client request, on the product dialog's variations
+table first, to be rolled out to every table once it is right). A press becomes a drag after a few
+pixels, so a click still sorts; the column highlights, a line shows where it will land, and its name
+follows the pointer. Holding near either edge scrolls the table that way — faster the closer to the
+edge — so a column at the far end can be carried to the front. Esc cancels the drag without closing
+the dialog. The order is remembered with the rest of the column choices; the Columns menu's arrows
+still work. `DataTable reorderableColumns` turns it on.
+
 **The list view is products, not variations** (client request): one row per product with the same
 stock pills and sales as a card, a `+` that opens the same variations dialog, and every
 product-list field in its Columns menu — so picking works one way in both views.

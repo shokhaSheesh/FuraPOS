@@ -30,8 +30,8 @@ export function productFilterFields(
     { id: 'image', label: 'Has image', type: 'boolean', get: (v) => v.imageUrl },
     { id: 'productName', label: 'Product name', type: 'text', get: (v) => v.productName },
     { id: 'name', label: 'Variation name', type: 'text', get: (v) => v.name },
-    { id: 'sku', label: 'SKU', type: 'text', excludable: true, get: (v) => v.sku },
-    { id: 'barcode', label: 'Barcode', type: 'text', excludable: true, get: (v) => v.barcode },
+    { id: 'sku', label: 'SKU', type: 'text', get: (v) => v.sku },
+    { id: 'barcode', label: 'Barcode', type: 'text', get: (v) => v.barcode },
     { id: 'stock', label: 'Quantity', type: 'range', get: (v) => v.stock },
     {
       id: 'location',
@@ -71,7 +71,7 @@ export function productFilterFields(
       options: distinct(variations.map((v) => v.categoryPath)),
     },
     { id: 'partSide', label: 'Part', type: 'text', get: (v) => v.partSide },
-    { id: 'oem', label: 'OEM', type: 'text', excludable: true, get: (v) => v.oem },
+    { id: 'oem', label: 'OEM', type: 'text', get: (v) => v.oem },
     {
       id: 'vehicleMakes',
       label: 'Make',

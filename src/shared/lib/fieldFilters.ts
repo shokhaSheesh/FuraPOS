@@ -23,14 +23,12 @@ export interface FilterField<T> {
   get: (row: T) => FieldValue
   /** The choices, for `options`. */
   options?: { value: string; label: string }[]
-  /** Text only: offer "exclude", which keeps the rows that do *not* match. */
-  excludable?: boolean
   /** Range only: shown after the numbers, e.g. "kg". */
   unit?: string
 }
 
 export type FilterValue =
-  | { type: 'text'; text: string; exclude?: boolean }
+  | { type: 'text'; text: string }
   | { type: 'options'; values: string[] }
   | { type: 'range'; min: number | null; max: number | null }
   | { type: 'boolean'; value: boolean }
@@ -77,10 +75,7 @@ function matchesOne<T>(row: T, field: FilterField<T>, value: FilterValue): boole
   switch (value.type) {
     case 'text': {
       const wanted = terms(value.text)
-      const hit = asList(raw).some((entry) =>
-        wanted.some((term) => entry.toLowerCase().includes(term)),
-      )
-      return value.exclude ? !hit : hit
+      return asList(raw).some((entry) => wanted.some((term) => entry.toLowerCase().includes(term)))
     }
     case 'options': {
       const have = asList(raw)
@@ -115,7 +110,7 @@ const number = (n: number, unit?: string) => `${n.toLocaleString('ru-RU')}${unit
 export function describe<T>(field: FilterField<T>, value: FilterValue): string {
   switch (value.type) {
     case 'text':
-      return `${field.label}${value.exclude ? ' ≠ ' : ': '}${value.text.trim()}`
+      return `${field.label}: ${value.text.trim()}`
     case 'options': {
       const names = value.values.map(
         (v) => field.options?.find((option) => option.value === v)?.label ?? v,

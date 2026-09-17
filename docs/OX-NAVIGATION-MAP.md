@@ -1892,7 +1892,7 @@ reset and apply, and applied filters sit in the bar as chips («Не пок…: 
 before; the panel opens with product name, variation name, barcode, SKU, category, supplier, make
 and model, and **Add field** offers every other product-list column under its own heading — the
 choice is remembered. Text fields take several values separated by commas (a pasted column of
-barcodes), and SKU, barcode and OEM can be excluded instead of matched. Prices are compared in UZS
+barcodes). OX's «Исключить» checkboxes were left out at the client's request. Prices are compared in UZS
 whatever currency a line is in. Filters go in the URL (`f`). The panel lays fields out two to a row, as OX does. The All / Active /
 Archived cards above the list were **cut at the client's request**.
 Other list pages get it next, one at a time.

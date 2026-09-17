@@ -1,7 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { Plus, Search, X } from 'lucide-react'
 import { Button } from '@/shared/ui/Button'
-import { Checkbox } from '@/shared/ui/Checkbox'
 import { Input } from '@/shared/ui/Input'
 import { MultiSelect } from '@/shared/ui/MultiSelect'
 import { Popover } from '@/shared/ui/Popover'
@@ -271,28 +270,14 @@ function FieldEditor<T>({
     case 'text': {
       const current = value?.type === 'text' ? value : { type: 'text' as const, text: '' }
       return (
-        <div className="flex items-center gap-3">
-          <Input
-            className="min-w-0 flex-1"
-            value={current.text}
-            aria-label={field.label}
-            placeholder={field.excludable ? 'One or several, comma-separated' : undefined}
-            onChange={(event) => onChange({ ...current, text: event.target.value })}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') onEnter()
-            }}
-          />
-          {field.excludable ? (
-            <label className="text-fg-muted flex shrink-0 cursor-pointer items-center gap-2 text-sm">
-              <Checkbox
-                aria-label={`Exclude ${field.label}`}
-                checked={Boolean(current.exclude)}
-                onCheckedChange={(exclude) => onChange({ ...current, exclude })}
-              />
-              Exclude
-            </label>
-          ) : null}
-        </div>
+        <Input
+          value={current.text}
+          aria-label={field.label}
+          onChange={(event) => onChange({ ...current, text: event.target.value })}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') onEnter()
+          }}
+        />
       )
     }
     case 'options':

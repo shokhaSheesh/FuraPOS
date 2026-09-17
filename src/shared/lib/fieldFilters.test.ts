@@ -23,7 +23,7 @@ const rows: Row[] = [
 
 const fields: FilterField<Row>[] = [
   { id: 'name', label: 'Name', type: 'text', get: (r) => r.name },
-  { id: 'barcode', label: 'Barcode', type: 'text', excludable: true, get: (r) => r.barcode },
+  { id: 'barcode', label: 'Barcode', type: 'text', get: (r) => r.barcode },
   {
     id: 'make',
     label: 'Make',
@@ -49,13 +49,6 @@ group('filtering by field', () => {
       barcode: { type: 'text', text: '4600001, 4600002' },
     })
     expect(names(found)).toEqual(['Fuel pump', 'Oil filter'])
-  })
-
-  it('keeps the rows that do not match when excluding', () => {
-    const found = applyFieldFilters(rows, fields, {
-      barcode: { type: 'text', text: '4600001', exclude: true },
-    })
-    expect(names(found)).toEqual(['Brake disc', 'Oil filter'])
   })
 
   it('matches any chosen option against any value of the row', () => {
@@ -93,7 +86,7 @@ group('filtering by field', () => {
 
 group('chips and the URL', () => {
   it('says what a filter does in a few words', () => {
-    expect(describe(fields[1]!, { type: 'text', text: '46', exclude: true })).toBe('Barcode ≠ 46')
+    expect(describe(fields[1]!, { type: 'text', text: '46' })).toBe('Barcode: 46')
     expect(describe(fields[2]!, { type: 'options', values: ['DAF', 'MAN', 'Volvo'] })).toBe(
       'Make: DAF, MAN +1',
     )

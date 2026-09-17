@@ -10,7 +10,7 @@
  * Palette — light blue and white, at the client's request (it replaced the
  * original yellow-on-black brand treatment):
  *   #FFFFFF  white      — surfaces and the sidebar
- *   #F3F7FB  pale blue  — the canvas behind cards
+ *   #FAFCFE  snow       — the canvas behind cards (client: lighter, "like snow")
  *   #E6F3FC  light blue — soft fills: active nav, selected rows, highlights
  *   #0A7BC4  sky blue   — primary actions, active state, focus
  *
@@ -46,13 +46,13 @@
 :root {
   color-scheme: light;
 
-  --color-canvas: #f3f7fb;
+  --color-canvas: #fafcfe; /* snow — the client's word for how light it should be */
   --color-surface: #ffffff;
-  --color-surface-muted: #f6f9fc;
-  --color-surface-inset: #edf3f9;
+  --color-surface-muted: #f7f9fc;
+  --color-surface-inset: #f1f5f9;
 
-  --color-border: #dce5ee;
-  --color-border-strong: #c3cfdb;
+  --color-border: #e3e9f0;
+  --color-border-strong: #cbd5e0;
 
   --color-fg: #111827;
   --color-fg-muted: #5b6778;
@@ -68,10 +68,10 @@
 
   /* Chrome: the sidebar. White, with a hairline edge against the canvas. */
   --color-chrome: #ffffff;
-  --color-chrome-muted: #f1f6fb;
+  --color-chrome-muted: #f4f7fb;
   --color-chrome-fg: #111827;
   --color-chrome-fg-muted: #5b6778;
-  --color-chrome-border: #dce5ee;
+  --color-chrome-border: #e3e9f0;
 
   --color-success: #15803d;
   --color-success-soft: #e3f4e9;
@@ -90,7 +90,7 @@
   /* Behind a modal. Its own token now the sidebar is no longer dark. */
   --color-overlay: #0f1b2d;
 
-  --shadow-card: 0 1px 2px rgb(16 42 67 / 0.06);
+  --shadow-card: 0 1px 3px rgb(16 42 67 / 0.07);
   --shadow-popover: 0 8px 24px -6px rgb(16 42 67 / 0.16);
   --shadow-modal: 0 24px 60px -12px rgb(16 42 67 / 0.28);
 }

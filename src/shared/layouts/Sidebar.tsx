@@ -117,6 +117,7 @@ function SidebarSection({ section, collapsed }: { section: NavSection; collapsed
                   )
                 }
               >
+                {item.icon ? <item.icon className="size-3.5 shrink-0" /> : null}
                 <span className="flex-1 truncate">{item.label}</span>
                 {item.badge ? <LifecycleBadge>{item.badge}</LifecycleBadge> : null}
               </NavLink>

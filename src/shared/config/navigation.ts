@@ -1,14 +1,40 @@
 import type { LucideIcon } from 'lucide-react'
 import {
+  ArrowLeftRight,
+  BadgePercent,
   BarChart3,
   Boxes,
+  Building2,
+  Calculator,
+  CircleUser,
+  ClipboardList,
+  Factory,
+  FileChartColumn,
+  FolderTree,
+  Globe,
+  Handshake,
+  History,
+  IdCard,
   LayoutDashboard,
+  MapPin,
   Megaphone,
+  Package,
+  PackagePlus,
+  Printer,
+  Receipt,
+  ScanLine,
   Settings,
-  Smartphone,
+  ShieldCheck,
   ShoppingCart,
+  SlidersHorizontal,
+  Smartphone,
+  Tag,
+  Tags,
   Truck,
+  UserRound,
   Users,
+  Wallet,
+  Wrench,
 } from 'lucide-react'
 import { paths } from './paths'
 
@@ -22,6 +48,8 @@ export interface NavItem {
   badge?: NavBadge
   /** Exact match only (used for index routes that would otherwise stay active). */
   end?: boolean
+  /** Shown beside the label, as the sections' own icons are. */
+  icon?: LucideIcon
   /**
    * Optional heading rendered above this item. Used by Finance, which in OX
    * groups its pages under "ОТЧЕТЫ" and "НАСТРОЙКИ" headings.
@@ -58,14 +86,30 @@ export const navigation: NavSection[] = [
     label: 'Sales',
     icon: ShoppingCart,
     items: [
-      { label: 'Offline sales', to: paths.sales.orders, permission: 'sales.orders.view' },
-      { label: 'Online sales', to: paths.sales.online, permission: 'sales.online.view' },
+      {
+        label: 'Offline sales',
+        icon: Receipt,
+        to: paths.sales.orders,
+        permission: 'sales.orders.view',
+      },
+      {
+        label: 'Online sales',
+        icon: Globe,
+        to: paths.sales.online,
+        permission: 'sales.online.view',
+      },
       {
         label: 'Partner orders',
+        icon: Handshake,
         to: paths.sales.partnerOrders,
         permission: 'sales.partnerOrders.view',
       },
-      { label: 'Cash shifts', to: paths.sales.shifts, permission: 'sales.cashShifts.view' },
+      {
+        label: 'Cash shifts',
+        icon: Wallet,
+        to: paths.sales.shifts,
+        permission: 'sales.cashShifts.view',
+      },
     ],
   },
   {
@@ -73,30 +117,54 @@ export const navigation: NavSection[] = [
     label: 'Products / Services',
     icon: Boxes,
     items: [
-      { label: 'Product list', to: paths.products.list, permission: 'products.list.view' },
-      { label: 'Transfers', to: paths.products.transfers, permission: 'products.transfers.view' },
+      {
+        label: 'Product list',
+        icon: Package,
+        to: paths.products.list,
+        permission: 'products.list.view',
+      },
+      {
+        label: 'Transfers',
+        icon: ArrowLeftRight,
+        to: paths.products.transfers,
+        permission: 'products.transfers.view',
+      },
       {
         label: 'Corrections',
+        icon: Wrench,
         to: paths.products.corrections,
         permission: 'products.corrections.view',
       },
       {
         label: 'Stocktaking',
+        icon: ScanLine,
         to: paths.products.stocktaking,
         permission: 'products.stocktaking.view',
       },
       {
         label: 'Goods receipt',
+        icon: PackagePlus,
         to: paths.products.goodsReceipt,
         permission: 'products.goodsReceipt.view',
       },
-      { label: 'Repricing', to: paths.products.repricing, permission: 'products.repricing.view' },
+      {
+        label: 'Repricing',
+        icon: Tags,
+        to: paths.products.repricing,
+        permission: 'products.repricing.view',
+      },
       {
         label: 'Print templates',
+        icon: Printer,
         to: paths.products.printTemplates,
         permission: 'products.printTemplates.view',
       },
-      { label: 'Suppliers', to: paths.products.suppliers, permission: 'products.suppliers.view' },
+      {
+        label: 'Suppliers',
+        icon: Factory,
+        to: paths.products.suppliers,
+        permission: 'products.suppliers.view',
+      },
     ],
   },
   {
@@ -105,7 +173,12 @@ export const navigation: NavSection[] = [
     icon: Truck,
     badge: 'new',
     items: [
-      { label: 'Orders', to: paths.procurement.orders, permission: 'procurement.orders.view' },
+      {
+        label: 'Orders',
+        icon: ClipboardList,
+        to: paths.procurement.orders,
+        permission: 'procurement.orders.view',
+      },
     ],
   },
   {
@@ -113,8 +186,18 @@ export const navigation: NavSection[] = [
     label: 'Personnel management',
     icon: Users,
     items: [
-      { label: 'Employees', to: paths.personnel.employees, permission: 'personnel.employees.view' },
-      { label: 'Access & roles', to: paths.personnel.roles, permission: 'personnel.roles.view' },
+      {
+        label: 'Employees',
+        icon: UserRound,
+        to: paths.personnel.employees,
+        permission: 'personnel.employees.view',
+      },
+      {
+        label: 'Access & roles',
+        icon: ShieldCheck,
+        to: paths.personnel.roles,
+        permission: 'personnel.roles.view',
+      },
     ],
   },
   {
@@ -122,10 +205,21 @@ export const navigation: NavSection[] = [
     label: 'Marketing',
     icon: Megaphone,
     items: [
-      { label: 'Autoparks', to: paths.marketing.autoparks, permission: 'marketing.clients.view' },
-      { label: 'Drivers', to: paths.marketing.drivers, permission: 'marketing.drivers.view' },
+      {
+        label: 'Autoparks',
+        icon: Building2,
+        to: paths.marketing.autoparks,
+        permission: 'marketing.clients.view',
+      },
+      {
+        label: 'Drivers',
+        icon: IdCard,
+        to: paths.marketing.drivers,
+        permission: 'marketing.drivers.view',
+      },
       {
         label: 'Promotions',
+        icon: BadgePercent,
         to: paths.marketing.promotions,
         permission: 'marketing.promotions.view',
       },
@@ -138,11 +232,13 @@ export const navigation: NavSection[] = [
     items: [
       {
         label: 'Report generator',
+        icon: FileChartColumn,
         to: paths.analytics.reports,
         permission: 'analytics.reportBuilder.view',
       },
       {
         label: 'Product logs',
+        icon: History,
         to: paths.analytics.productLogs,
         permission: 'analytics.productLogs.view',
       },
@@ -161,16 +257,32 @@ export const navigation: NavSection[] = [
     label: 'Settings',
     icon: Settings,
     items: [
-      { label: 'General', to: paths.settings.general, permission: 'settings.general.view' },
-      { label: 'Brands', to: paths.settings.brands, permission: 'settings.brands.view' },
+      {
+        label: 'General',
+        icon: SlidersHorizontal,
+        to: paths.settings.general,
+        permission: 'settings.general.view',
+      },
+      { label: 'Brands', icon: Tag, to: paths.settings.brands, permission: 'settings.brands.view' },
       {
         label: 'Cash registers',
+        icon: Calculator,
         to: paths.settings.registers,
         permission: 'settings.registers.view',
       },
-      { label: 'Locations', to: paths.settings.locations, permission: 'settings.locations.view' },
-      { label: 'Categories', to: paths.settings.categories, permission: 'settings.products.view' },
-      { label: 'Personal data', to: paths.settings.personal },
+      {
+        label: 'Locations',
+        icon: MapPin,
+        to: paths.settings.locations,
+        permission: 'settings.locations.view',
+      },
+      {
+        label: 'Categories',
+        icon: FolderTree,
+        to: paths.settings.categories,
+        permission: 'settings.products.view',
+      },
+      { label: 'Personal data', icon: CircleUser, to: paths.settings.personal },
     ],
   },
 ]

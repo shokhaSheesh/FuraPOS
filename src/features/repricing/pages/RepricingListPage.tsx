@@ -214,6 +214,7 @@ export default function RepricingListPage() {
       />
 
       <DataTable
+        reorderableColumns
         storageKey="repricings"
         columns={columns}
         initialHidden={['createdBy', 'comment']}
@@ -231,11 +232,6 @@ export default function RepricingListPage() {
         }
         pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
         onPaginationChange={({ page, pageSize }) => setQuery({ page, pageSize })}
-        sorting={query.sort ? [{ id: String(query.sort), desc: query.order === 'desc' }] : []}
-        onSortingChange={(sorting) => {
-          const [first] = sorting
-          setQuery({ sort: first?.id ?? null, order: first?.desc ? 'desc' : 'asc' })
-        }}
         onRowClick={(repricing) => navigate(paths.products.repricingDetail(repricing.id))}
         emptyState={
           query.search || query.f || query.status || query.direction ? (

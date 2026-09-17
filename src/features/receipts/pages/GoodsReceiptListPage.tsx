@@ -183,6 +183,7 @@ export default function GoodsReceiptListPage() {
       />
 
       <DataTable
+        reorderableColumns
         storageKey="goods-receipts"
         columns={columns}
         initialHidden={RECEIPT_COLUMNS_HIDDEN_BY_DEFAULT}
@@ -200,11 +201,6 @@ export default function GoodsReceiptListPage() {
         }
         pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
         onPaginationChange={({ page, pageSize }) => setQuery({ page, pageSize })}
-        sorting={query.sort ? [{ id: String(query.sort), desc: query.order === 'desc' }] : []}
-        onSortingChange={(sorting) => {
-          const [first] = sorting
-          setQuery({ sort: first?.id ?? null, order: first?.desc ? 'desc' : 'asc' })
-        }}
         onRowClick={(receipt) => navigate(paths.products.goodsReceiptDetail(receipt.id))}
         emptyState={
           query.search || query.f || query.status || query.location || query.supplier ? (

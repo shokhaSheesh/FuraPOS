@@ -223,6 +223,7 @@ export default function OrdersListPage() {
       />
 
       <DataTable
+        reorderableColumns
         storageKey="orders"
         columns={columns}
         initialHidden={['locationName', 'createdBy', 'comment']}

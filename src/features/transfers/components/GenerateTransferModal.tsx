@@ -146,7 +146,7 @@ export function GenerateTransferModal({
                       </td>
                       <td className="px-3 py-2">
                         <div className="flex items-center gap-2.5">
-                          <ProductThumb src={suggestion.imageUrl} size="sm" wide />
+                          <ProductThumb src={suggestion.imageUrl} size="md" wide />
                           <div className="min-w-0">
                             <p className="text-fg truncate font-medium">{suggestion.name}</p>
                             <p className="text-fg-subtle text-2xs font-mono">{suggestion.sku}</p>

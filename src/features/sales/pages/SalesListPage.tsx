@@ -310,11 +310,6 @@ export function SalesListPage({ title, description }: { title: string; descripti
         }
         pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
         onPaginationChange={({ page, pageSize }) => setQuery({ page, pageSize })}
-        sorting={query.sort ? [{ id: String(query.sort), desc: query.order === 'desc' }] : []}
-        onSortingChange={(sorting) => {
-          const next = sorting[0]
-          setQuery({ sort: next?.id ?? null, order: next ? (next.desc ? 'desc' : 'asc') : null })
-        }}
         onRowClick={(sale) => navigate(paths.sales.orderDetail(sale.id))}
         emptyState={
           isFiltered ? (

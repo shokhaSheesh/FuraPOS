@@ -277,6 +277,7 @@ export default function ProductsPage() {
       />
 
       <DataTable
+        reorderableColumns
         key={view}
         // Bumped when the default order changed, so a stored order from the
         // old column set does not survive into the new one.

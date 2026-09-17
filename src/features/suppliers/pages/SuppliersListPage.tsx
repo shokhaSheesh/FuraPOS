@@ -277,6 +277,7 @@ export default function SuppliersListPage() {
       ) : null}
 
       <DataTable
+        reorderableColumns
         storageKey="suppliers"
         columns={columns}
         initialHidden={['phone', 'products']}

@@ -138,6 +138,7 @@ export function TransferProductTable({
 
   return (
     <DataTable
+      reorderableColumns
       storageKey="transfer-products"
       columns={columns}
       initialHidden={CATALOGUE_CARD_FIELDS.map((field) => field.id).filter(

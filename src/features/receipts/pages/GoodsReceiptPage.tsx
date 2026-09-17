@@ -398,6 +398,7 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
       ) : null}
 
       <DataTable
+        reorderableColumns
         storageKey={cards ? 'receipt-lines-cards' : 'receipt-lines'}
         columns={columns}
         data={rows}
@@ -904,6 +905,7 @@ function ReviewStep({
   return (
     <>
       <DataTable
+        reorderableColumns
         storageKey="receipt-review"
         columns={columns}
         data={rows}

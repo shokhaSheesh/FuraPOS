@@ -279,6 +279,7 @@ export default function StocktakingListPage() {
       />
 
       <DataTable
+        reorderableColumns
         storageKey="stocktakes"
         columns={columns}
         initialHidden={['createdBy', 'comment', 'found', 'appliedAt']}
@@ -296,11 +297,6 @@ export default function StocktakingListPage() {
         }
         pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
         onPaginationChange={({ page, pageSize }) => setQuery({ page, pageSize })}
-        sorting={query.sort ? [{ id: String(query.sort), desc: query.order === 'desc' }] : []}
-        onSortingChange={(sorting) => {
-          const [first] = sorting
-          setQuery({ sort: first?.id ?? null, order: first?.desc ? 'desc' : 'asc' })
-        }}
         onRowClick={(stocktake) => navigate(paths.products.stocktakeDetail(stocktake.id))}
         emptyState={
           query.search || query.f || query.status || query.location ? (

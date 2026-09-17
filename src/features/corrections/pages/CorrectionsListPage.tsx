@@ -123,6 +123,7 @@ export default function CorrectionsListPage() {
       />
 
       <DataTable
+        reorderableColumns
         storageKey="corrections"
         columns={columns}
         initialHidden={CORRECTION_COLUMNS_HIDDEN_BY_DEFAULT}
@@ -140,11 +141,6 @@ export default function CorrectionsListPage() {
         }
         pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
         onPaginationChange={({ page, pageSize }) => setQuery({ page, pageSize })}
-        sorting={query.sort ? [{ id: String(query.sort), desc: query.order === 'desc' }] : []}
-        onSortingChange={(sorting) => {
-          const [first] = sorting
-          setQuery({ sort: first?.id ?? null, order: first?.desc ? 'desc' : 'asc' })
-        }}
         onRowClick={(correction) => navigate(paths.products.correctionDetail(correction.id))}
         emptyState={
           query.search ||

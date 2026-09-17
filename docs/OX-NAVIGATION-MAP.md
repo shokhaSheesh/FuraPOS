@@ -792,9 +792,10 @@ the route step, and sits on the same line as the route above the products; the d
 either side of the number, compact at 24 px. Cards are back to their width (15 rem) with a 3:2 image box, the
 shape of the product photos (square was tried and dropped); the list view's Columns menu sits beside the view switcher, where the cards' Fields menu is.
 
-**Columns can be dragged by their heading** (client request, on the product dialog's variations
-table first, to be rolled out to every table once it is right). A press becomes a drag after a few
-pixels, so a click still sorts; the column highlights, a line shows where it will land, and its name
+**Columns can be dragged by their heading** (client request) — on the product list, corrections, stocktaking, goods receipt, repricing,
+suppliers and orders lists, and on every product-picking table (goods receipt, order, transfer
+dialog and list). A press becomes a drag after a few
+pixels; the column highlights, a line shows where it will land, and its name
 follows the pointer. Holding near either edge scrolls the table that way — faster the closer to the
 edge — so a column at the far end can be carried to the front. Esc cancels the drag without closing
 the dialog. The order is remembered with the rest of the column choices; the Columns menu's arrows
@@ -1945,3 +1946,9 @@ stands for "a product with a picture", not for that exact part. Categories keep 
 (`public/images/categories`, and a part drawing per sub-category from `public/images/parts`), drawn
 by `scripts/draw-demo-images.py`. All are assigned by position, not the random stream, so no other
 seeded value moved; replacing a file under the same name changes it everywhere.
+
+### Table headings do not sort
+
+The sort arrows on column headings were **removed from every table at the client's request**. A
+heading is for reading, resizing and dragging; lists are ordered by what they are for (newest first,
+most owed first) and narrowed with the search panel.

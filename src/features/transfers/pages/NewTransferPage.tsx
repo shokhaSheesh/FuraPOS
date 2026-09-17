@@ -674,6 +674,7 @@ function ReviewStep({
       </Card>
 
       <DataTable
+        reorderableColumns
         storageKey="transfer-review"
         columns={columns}
         data={rows}

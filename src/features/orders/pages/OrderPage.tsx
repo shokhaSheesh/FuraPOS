@@ -355,6 +355,7 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
       ) : null}
 
       <DataTable
+        reorderableColumns
         storageKey={cards ? 'order-lines-cards' : 'order-lines'}
         columns={columns}
         data={rows}

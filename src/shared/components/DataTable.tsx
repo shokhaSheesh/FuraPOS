@@ -1,11 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent, type ReactNode } from 'react'
-import {
-  useTable,
-  type ColumnVisibilityState,
-  type RowData,
-  type SortingState,
-} from '@tanstack/react-table'
-import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, ChevronsUpDown, Settings2 } from 'lucide-react'
+import { useTable, type ColumnVisibilityState, type RowData } from '@tanstack/react-table'
+import { ChevronDown, ChevronUp, Settings2 } from 'lucide-react'
 import { DropdownMenu } from 'radix-ui'
 import { createPortal } from 'react-dom'
 import { cn } from '@/shared/lib/cn'
@@ -29,8 +24,6 @@ export interface DataTableProps<T extends RowData> {
   getRowId?: (row: T, index: number) => string
   /** Extra classes for a row — e.g. the line that was just added. */
   rowClassName?: (row: T) => string | undefined
-  sorting?: SortingState
-  onSortingChange?: (next: SortingState) => void
   isLoading?: boolean
   onRowClick?: (row: T) => void
   emptyState?: ReactNode
@@ -151,8 +144,6 @@ export function DataTable<T extends RowData>({
   total,
   pagination,
   onPaginationChange,
-  sorting = [],
-  onSortingChange,
   isLoading,
   onRowClick,
   emptyState,
@@ -297,7 +288,7 @@ export function DataTable<T extends RowData>({
       if (!press) return
       pointerX.current = event.clientX
       if (!active.current) {
-        // A few pixels of travel before it counts, so a click still sorts.
+        // A few pixels of travel before it counts, so a plain click is just a click.
         if (Math.hypot(event.clientX - press.x, event.clientY - press.y) < 6) return
         active.current = true
         document.body.style.userSelect = 'none'
@@ -425,12 +416,7 @@ export function DataTable<T extends RowData>({
     data,
     columns: ordered,
     getRowId,
-    manualSorting: true,
-    state: { sorting, columnVisibility },
-    onSortingChange: (updater) => {
-      if (!onSortingChange) return
-      onSortingChange(typeof updater === 'function' ? updater(sorting) : updater)
-    },
+    state: { columnVisibility },
     onColumnVisibilityChange: (updater) => {
       setColumnVisibility((previous) => {
         const next = typeof updater === 'function' ? updater(previous) : updater
@@ -538,8 +524,6 @@ export function DataTable<T extends RowData>({
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
-                  const canSort = Boolean(onSortingChange) && header.column.getCanSort()
-                  const sorted = header.column.getIsSorted()
                   const alignRight = header.column.columnDef.meta?.align === 'right'
                   const resizable = header.column.id !== 'actions'
                   return (
@@ -576,26 +560,9 @@ export function DataTable<T extends RowData>({
                         dragging?.id === header.column.id && 'bg-primary-soft text-primary',
                       )}
                     >
-                      {header.isPlaceholder ? null : canSort ? (
-                        <button
-                          type="button"
-                          onClick={() => header.column.toggleSorting()}
-                          // Form controls do not inherit text-transform, so the
-                          // header typography is repeated here on purpose.
-                          className="hover:text-fg inline-flex items-center gap-1 tracking-wide uppercase"
-                        >
-                          <table.FlexRender header={header} />
-                          {sorted === 'asc' ? (
-                            <ArrowUp className="size-3" />
-                          ) : sorted === 'desc' ? (
-                            <ArrowDown className="size-3" />
-                          ) : (
-                            <ChevronsUpDown className="size-3 opacity-40" />
-                          )}
-                        </button>
-                      ) : (
-                        <table.FlexRender header={header} />
-                      )}
+                      {/* No sort control on a heading (client request): a heading
+                          is for reading and for dragging. */}
+                      {header.isPlaceholder ? null : <table.FlexRender header={header} />}
                       {resizable ? (
                         <span
                           role="separator"

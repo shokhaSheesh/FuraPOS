@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { useNavigate } from 'react-router'
 import { ArrowDownRight, ArrowUpRight, History, Package } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
@@ -7,35 +7,14 @@ import { SearchInput } from '@/shared/components/SearchInput'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { FilterSelect } from '@/shared/components/FilterSelect'
-import { ProductThumb } from '@/shared/components/ProductThumb'
 import { Card } from '@/shared/ui/Card'
-import { Button } from '@/shared/ui/Button'
 import { DateRangePicker } from '@/shared/ui/DateRangePicker'
 import { useListQuery } from '@/shared/hooks/useListQuery'
-import { paths } from '@/shared/config/paths'
-import { formatDateTime, formatNumber } from '@/shared/lib/format'
-import type { TableColumn } from '@/shared/components/table/features'
+import { formatNumber } from '@/shared/lib/format'
 import { useDataStore } from '@/data/store'
 import { useLogKindCounts, useLogSummary, useStockLog } from '../api/logs'
-import { STOCK_LOG_KINDS, logKindLabel, type StockLogEntry } from '../model/log'
-
-/** Where each kind of document lives, so a row can be clicked through. */
-const documentPath = (entry: StockLogEntry) => {
-  switch (entry.kind) {
-    case 'receipt':
-      return paths.products.goodsReceiptDetail(entry.documentId)
-    case 'transfer_in':
-    case 'transfer_out':
-      return paths.products.transferDetail(entry.documentId)
-    case 'correction':
-    case 'stocktake':
-      return paths.products.correctionDetail(entry.documentId)
-    case 'sale':
-      return paths.sales.orderDetail(entry.documentId)
-    case 'online_sale':
-      return paths.sales.onlineDetail(entry.documentId)
-  }
-}
+import { STOCK_LOG_KINDS } from '../model/log'
+import { buildLogColumns, documentPath } from '../components/logColumns'
 
 /**
  * Product logs.
@@ -62,86 +41,7 @@ export default function ProductLogsPage() {
   const { data: counts } = useLogKindCounts(filters)
   const summary = useLogSummary(filters)
 
-  const columns = useMemo<TableColumn<StockLogEntry>[]>(
-    () => [
-      {
-        accessorKey: 'name',
-        header: 'Product',
-        enableHiding: false,
-        cell: ({ row }) => (
-          <div className="flex min-w-0 items-center gap-2.5">
-            <ProductThumb src={row.original.imageUrl} size="sm" />
-            <div className="min-w-0">
-              <p className="text-fg truncate font-medium">{row.original.name}</p>
-              <p className="text-fg-subtle text-2xs truncate font-mono">{row.original.sku}</p>
-            </div>
-          </div>
-        ),
-      },
-      { accessorKey: 'locationName', header: 'Location' },
-      {
-        id: 'delta',
-        header: 'Change',
-        meta: { align: 'right' },
-        enableHiding: false,
-        cell: ({ row }) => {
-          const up = row.original.delta > 0
-          return (
-            <div>
-              <p
-                className={`flex items-center justify-end gap-1 font-medium tabular-nums ${
-                  up ? 'text-success' : 'text-danger'
-                }`}
-              >
-                {up ? (
-                  <ArrowUpRight className="size-3.5" />
-                ) : (
-                  <ArrowDownRight className="size-3.5" />
-                )}
-                {up ? '+' : '−'}
-                {formatNumber(Math.abs(row.original.delta))}
-              </p>
-              <p className="text-fg-subtle text-2xs tabular-nums">
-                {row.original.balanceAfter === null
-                  ? '—'
-                  : `→ ${formatNumber(row.original.balanceAfter)}`}
-              </p>
-            </div>
-          )
-        },
-      },
-      {
-        id: 'document',
-        header: 'Because of',
-        enableHiding: false,
-        cell: ({ row }) => (
-          <div className="min-w-0">
-            <p className="text-fg-muted text-2xs">{logKindLabel(row.original.kind)}</p>
-            {/* OX shows a grey icon here. A number you can click is the point
-                of an audit trail — the next question is always "show me". */}
-            <Button variant="link" size="sm" className="h-auto px-0 font-mono" asChild>
-              <Link to={documentPath(row.original)} onClick={(event) => event.stopPropagation()}>
-                {row.original.documentNumber}
-              </Link>
-            </Button>
-          </div>
-        ),
-      },
-      {
-        accessorKey: 'reason',
-        header: 'Reason',
-        cell: ({ row }) => row.original.reason ?? <span className="text-fg-subtle">—</span>,
-      },
-      { accessorKey: 'by', header: 'Who' },
-      {
-        accessorKey: 'at',
-        header: 'When',
-        enableHiding: false,
-        cell: ({ row }) => formatDateTime(row.original.at),
-      },
-    ],
-    [],
-  )
+  const columns = useMemo(() => buildLogColumns({ subject: 'product' }), [])
 
   const tiles = [
     {

@@ -202,6 +202,9 @@ function withBalances(entries: StockLogEntry[], state: State): StockLogEntry[] {
 }
 
 export interface LogFilters {
+  /** One product's history only — its own Log tab. */
+  productId?: unknown
+  variationId?: unknown
   search?: unknown
   location?: unknown
   kind?: unknown
@@ -228,6 +231,8 @@ export function useStockLog(filters: LogFilters = {}) {
     const to = filters.to ? new Date(String(filters.to)).getTime() + 86_400_000 - 1 : null
 
     const items = all.filter((entry) => {
+      if (filters.productId && entry.productId !== filters.productId) return false
+      if (filters.variationId && entry.variationId !== filters.variationId) return false
       if (filters.location && entry.locationId !== filters.location) return false
       if (filters.kind && entry.kind !== filters.kind) return false
       const at = new Date(entry.at).getTime()
@@ -249,6 +254,8 @@ export function useStockLog(filters: LogFilters = {}) {
     transfers,
     corrections,
     onlineSales,
+    filters.productId,
+    filters.variationId,
     filters.search,
     filters.location,
     filters.kind,

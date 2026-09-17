@@ -1390,6 +1390,12 @@ stock.
 - The seed sold parts from shelves they had never been on, which left the balance unknowable. Sales
   now draw only from what that location stocks — and the log was right to refuse.
 
+**Per product, too (client request).** Every product detail page has a **Product log** tab: the
+same log narrowed to that product — same columns, filter chips with counts, location, dates and
+search, plus a variation filter when the product has more than one. It reads from the same replay
+as this screen (`buildStockLog`, `buildLogColumns`), so the two cannot disagree. Shown only to roles
+with `analytics.productLogs.view`.
+
 ### Customer report — «Отчёт по клиентам», read from the live tenant
 
 OX's is an **RFM screen** — recency, frequency, money — and it is one of the better things in that

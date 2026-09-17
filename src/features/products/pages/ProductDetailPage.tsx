@@ -7,6 +7,8 @@ import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
 import { Badge } from '@/shared/ui/Badge'
 import { Button } from '@/shared/ui/Button'
 import { Tabs } from '@/shared/ui/Tabs'
+import { useSession } from '@/app/providers/SessionProvider'
+import { ProductLog } from '@/features/productLogs/components/ProductLog'
 import { paths } from '@/shared/config/paths'
 import { cn } from '@/shared/lib/cn'
 import { formatDate, formatMoney, formatNumber, formatPercent } from '@/shared/lib/format'
@@ -32,6 +34,7 @@ const Empty = () => <span className="text-fg-subtle">—</span>
 export default function ProductDetailPage() {
   const { productId = '' } = useParams()
   const { data: product, isError } = useProduct(productId)
+  const { can } = useSession()
 
   if (isError || !product) {
     return (
@@ -117,6 +120,21 @@ export default function ProductDetailPage() {
           },
           { value: 'details', label: 'Details', content: <Details product={product} /> },
           { value: 'stock', label: 'Stock by location', content: <StockTable product={product} /> },
+          // Product logs narrowed to this product, for whoever may read the log.
+          ...(can('analytics.productLogs.view')
+            ? [
+                {
+                  value: 'log',
+                  label: 'Product log',
+                  content: (
+                    <ProductLog
+                      productId={product.id}
+                      variations={product.variations.map((v) => ({ id: v.id, name: v.name }))}
+                    />
+                  ),
+                },
+              ]
+            : []),
         ]}
       />
     </>

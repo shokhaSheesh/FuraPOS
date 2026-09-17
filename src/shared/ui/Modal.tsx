@@ -8,6 +8,7 @@ const sizes = {
   sm: 'max-w-100', // confirmations
   md: 'max-w-140', // the default form
   lg: 'max-w-190', // a form containing a table
+  xl: 'max-w-280', // a wide table the reader has to compare across
 } as const
 
 export interface ModalProps {

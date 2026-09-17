@@ -800,6 +800,21 @@ together. Review shows only the lines actually moving, read-only, with the route
 above them — the document as it will exist rather than the shelf it was chosen from. Send and Save
 as draft live there, so nothing dispatches without that look.
 
+**Browsed as a catalogue — the client's mockup, on trial in transfers only.** The same shelf rows,
+regrouped: category tiles across the top (plus All categories), sub-categories as folder cards with
+a breadcrumb, then **one card per product** — what the destination holds (red at 2 or fewer, orange
+at 5 or fewer), what the source holds, sales over 3 and 6 months, a badge with how many are on the
+transfer, and `+`. The `+` opens the product: every variation the source can spare, sales over
+3 / 6 / 12 months, and a − / + stepper capped at the shelf; quantities apply on "Add to transfer",
+so closing the dialog is a real cancel. Filters for make and destination stock, sorting by sales,
+emptiest destination or name, and one wide search (name, SKU, OEM, barcode, storage address) that
+looks inside the folders instead of stopping at them.
+
+Field control is kept everywhere: **Fields** picks what a card shows, the product dialog's table has
+the standard Columns menu, and the list toggle returns the full shelf table with its own Columns
+menu. It lives in `TransferCatalogue`, `TransferProductModal` and `model/browse.ts`, so reverting it
+is removing those and putting the table back on the step. Receipts and orders are untouched.
+
 The stepper is full width like the other documents', and its steps are clickable: jumping forward
 past something unfilled lands on the step that is unfilled, with the reason, rather than on a screen
 that cannot work yet.

@@ -5,7 +5,7 @@ import { ONLINE_SALE_FILTER_OVERRIDES } from '../model/onlineSaleFilterFields'
 import { useDataStore } from '@/data/store'
 import { matches, paginate } from '@/data/query'
 import type { ListQuery } from '@/shared/types'
-import { amountPaid, isOpenOnline, takesStock, unitsOf, type OnlineSale } from '../model/onlineSale'
+import type { OnlineSale } from '../model/onlineSale'
 
 /** Everything but the status chip, so the chip counts describe the rest of the filters. */
 function scope(all: OnlineSale[], query: ListQuery) {
@@ -49,22 +49,6 @@ export function useOnlineSaleCounts(query: ListQuery) {
     const counts: Record<string, number> = { all: rows.length }
     for (const sale of rows) counts[sale.status] = (counts[sale.status] ?? 0) + 1
     return counts
-  }, [all, query])
-}
-
-/** The strip above the table: what came in, what is still open, what it took off shelves. */
-export function useOnlineSalesSummary(query: ListQuery) {
-  const all = useDataStore((s) => s.onlineSales)
-  return useMemo(() => {
-    const rows = scope(all, query)
-    const live = rows.filter(takesStock)
-    return {
-      orders: rows.length,
-      received: rows.reduce((sum, sale) => sum + amountPaid(sale), 0),
-      open: rows.filter((s) => isOpenOnline(s.status)).length,
-      unpaid: rows.filter((s) => s.paymentStatus === 'unpaid' && isOpenOnline(s.status)).length,
-      units: live.reduce((sum, sale) => sum + unitsOf(sale), 0),
-    }
   }, [all, query])
 }
 

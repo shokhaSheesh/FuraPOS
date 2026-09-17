@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { Plus, Wallet, AlertTriangle, MoonStar, Building2 } from 'lucide-react'
+import { Plus, Building2 } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
 import { ColumnFilterSearch } from '@/shared/components/ColumnFilterSearch'
@@ -8,14 +8,13 @@ import { CLIENT_FILTER_OVERRIDES } from '../model/clientFilterFields'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { Badge } from '@/shared/ui/Badge'
-import { Card } from '@/shared/ui/Card'
 import { Button } from '@/shared/ui/Button'
 import { useListQuery } from '@/shared/hooks/useListQuery'
 import { useSession } from '@/app/providers/SessionProvider'
 import { paths } from '@/shared/config/paths'
 import { formatDate, formatMoney, formatNumber } from '@/shared/lib/format'
 import type { TableColumn } from '@/shared/components/table/features'
-import { useClientCounts, useClients, useClientsSummary, type ClientRow } from '../api/clients'
+import { useClientCounts, useClients, type ClientRow } from '../api/clients'
 import { clientStatusLabel, clientStatusTone, daysSinceLastSale } from '../model/client'
 
 /**
@@ -45,7 +44,6 @@ export default function ClientsPage() {
   const filters = { f: query.f, search: query.search, type: 'business' as const, lens: query.lens }
   const { data, isLoading } = useClients(filters)
   const { data: counts } = useClientCounts(filters)
-  const summary = useClientsSummary()
 
   const columns = useMemo<TableColumn<ClientRow>[]>(
     () => [
@@ -167,30 +165,6 @@ export default function ClientsPage() {
     [],
   )
 
-  const tiles = [
-    {
-      icon: Wallet,
-      label: 'Owed to us',
-      value: formatMoney(Math.round(summary.owed)),
-      meta: `across ${formatNumber(summary.owing)} ${summary.owing === 1 ? 'autopark' : 'autoparks'}`,
-      tone: summary.owed > 0 ? ('danger' as const) : undefined,
-    },
-    {
-      icon: AlertTriangle,
-      label: 'Over their limit',
-      value: formatNumber(summary.overLimit),
-      meta: 'owe more than they were allowed',
-      tone: summary.overLimit > 0 ? ('danger' as const) : undefined,
-    },
-    {
-      icon: MoonStar,
-      label: 'Gone quiet',
-      value: formatNumber(summary.dormant),
-      meta: 'used to buy, have not in two months',
-      tone: summary.dormant > 0 ? ('warning' as const) : undefined,
-    },
-  ]
-
   return (
     <>
       <PageHeader
@@ -223,31 +197,6 @@ export default function ClientsPage() {
           </div>
         }
       />
-
-      <div className="grid gap-3 sm:grid-cols-3">
-        {tiles.map((tile) => (
-          <Card key={tile.label} className="flex items-start gap-3 p-4">
-            <span className="bg-surface-inset text-fg-muted mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full">
-              <tile.icon className="size-4" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-fg-muted text-sm">{tile.label}</p>
-              <p
-                className={`mt-0.5 text-lg font-semibold ${
-                  tile.tone === 'danger'
-                    ? 'text-danger'
-                    : tile.tone === 'warning'
-                      ? 'text-warning'
-                      : 'text-fg'
-                }`}
-              >
-                {tile.value}
-              </p>
-              <p className="text-fg-subtle text-2xs">{tile.meta}</p>
-            </div>
-          </Card>
-        ))}
-      </div>
 
       <DataTable
         storageKey="clients"

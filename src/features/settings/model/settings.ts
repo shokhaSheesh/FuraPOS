@@ -77,35 +77,6 @@ export interface Brand {
 }
 
 /**
- * How badly a line on an order is needed — «Zarurlik darajasi».
- *
- * A reference list rather than a fixed enum, because the words and how many of
- * them there are is the business's call, not ours. It exists for the China
- * order, where a factory is making a long list and needs to know what to make
- * first; the tone is only how it is coloured on screen and in the PDF.
- */
-export interface UrgencyLevel {
-  id: Id
-  name: string
-  tone: 'danger' | 'warning' | 'info' | 'neutral'
-  /** Lower comes first — on the order, and on the PDF the factory reads. */
-  rank: number
-}
-
-export const URGENCY_TONES: { value: UrgencyLevel['tone']; label: string }[] = [
-  { value: 'danger', label: 'Red' },
-  { value: 'warning', label: 'Amber' },
-  { value: 'info', label: 'Blue' },
-  { value: 'neutral', label: 'Grey' },
-]
-
-export const urgencyLevelSchema = z.object({
-  name: z.string().trim().min(1, 'Give the level a name'),
-  tone: z.enum(['danger', 'warning', 'info', 'neutral']),
-  rank: z.number().int().min(1, 'Order starts at 1'),
-})
-
-/**
  * A truck brand and the models it comes in — DAF → XF 105, CF 85.
  *
  * Not the same thing as a part brand. Bosch makes the filter; DAF makes the

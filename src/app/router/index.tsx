@@ -39,7 +39,6 @@ const NewRepricingPage = lazy(() => import('@/features/repricing/pages/NewRepric
 const SuppliersListPage = lazy(() => import('@/features/suppliers/pages/SuppliersListPage'))
 const SupplierDetailPage = lazy(() => import('@/features/suppliers/pages/SupplierDetailPage'))
 const SupplierFormPage = lazy(() => import('@/features/suppliers/pages/SupplierFormPage'))
-const CustomerReportPage = lazy(() => import('@/features/customerReport/pages/CustomerReportPage'))
 const ProductLogsPage = lazy(() => import('@/features/productLogs/pages/ProductLogsPage'))
 const GeneralSettingsPage = lazy(() => import('@/features/settings/pages/GeneralSettingsPage'))
 const BrandsSettingsPage = lazy(() => import('@/features/settings/pages/BrandsSettingsPage'))
@@ -56,7 +55,6 @@ const OnlineSalesListPage = lazy(() => import('@/features/onlineSales/pages/Onli
 const OnlineSaleDetailPage = lazy(() => import('@/features/onlineSales/pages/OnlineSaleDetailPage'))
 const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage'))
 const MobileAppPage = lazy(() => import('@/features/mobileApp/pages/MobileAppPage'))
-const UrgencySettingsPage = lazy(() => import('@/features/settings/pages/UrgencySettingsPage'))
 const PersonalSettingsPage = lazy(() => import('@/features/settings/pages/PersonalSettingsPage'))
 const ReportsPage = lazy(() => import('@/features/reports/pages/ReportsPage'))
 const ReportBuilderPage = lazy(() => import('@/features/reports/pages/ReportBuilderPage'))
@@ -362,10 +360,6 @@ const routes: RouteObject[] = [
         path: paths.analytics.productLogs,
         element: page(<ProductLogsPage />, 'analytics.productLogs.view'),
       },
-      {
-        path: paths.analytics.customers,
-        element: page(<CustomerReportPage />, 'analytics.customers.view'),
-      },
 
       // --- Standalone sections ------------------------------------------------
       { path: paths.mobileApp, element: page(<MobileAppPage />) },
@@ -388,10 +382,6 @@ const routes: RouteObject[] = [
       {
         path: paths.settings.categories,
         element: page(<CategoriesSettingsPage />, 'settings.products.view'),
-      },
-      {
-        path: paths.settings.urgency,
-        element: page(<UrgencySettingsPage />, 'settings.products.view'),
       },
       { path: paths.settings.personal, element: page(<PersonalSettingsPage />) },
 

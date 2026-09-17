@@ -38,7 +38,6 @@ import type {
   CompanySettings,
   LocationSettings,
   NotificationPreferences,
-  UrgencyLevel,
   VehicleMake,
 } from '@/features/settings/model/settings'
 
@@ -534,7 +533,6 @@ const roleSpecs: { id: string; name: string; keys: string[] }[] = [
       ...expand('personnel.employees', ['view']),
       ...expand('marketing.clients', ['view', 'create', 'edit', 'export']),
       ...expand('analytics.reportBuilder', ['view', 'create', 'edit', 'export']),
-      ...expand('analytics.customers', ['view', 'export']),
     ],
   },
   {
@@ -1630,7 +1628,7 @@ export const orders: PurchaseOrder[] = Array.from({ length: 11 }, (_, index) => 
   // Decided by position rather than the random stream, so adding market orders
   // does not shift every seeded value that comes after them.
   const market = sequence % 4 === 0
-  // And two were made to order in China, which is where urgency levels show up.
+  // And two were made to order in China.
   const china = sequence % 4 === 2 && sequence < 10
   const location = random() > 0.25 ? locations[0]! : pick(locations)
   const createdAt = new Date(Date.now() - between(3, 70) * 86_400_000)
@@ -1661,10 +1659,6 @@ export const orders: PurchaseOrder[] = Array.from({ length: 11 }, (_, index) => 
       receivedQuantity,
       unitCost: variation.costPrice,
       costCurrency: variation.costCurrency,
-      // Positional, like the kind above, so no random draw is added.
-      urgencyId: china
-        ? (['urg-1', 'urg-3', 'urg-2', 'urg-3', 'urg-4'][lineIndex % 5] ?? null)
-        : null,
     }
   })
 
@@ -2349,14 +2343,6 @@ export const brandSettings: Brand[] = brands.map((brand, index) => ({
   zone: ['Germany', 'Japan', 'Germany', 'United Kingdom'][index] ?? null,
   active: true,
 }))
-
-/** The levels a China order line can carry. Editable in Settings. */
-export const urgencyLevels: UrgencyLevel[] = [
-  { id: 'urg-1', name: 'Critical', tone: 'danger', rank: 1 },
-  { id: 'urg-2', name: 'High', tone: 'warning', rank: 2 },
-  { id: 'urg-3', name: 'Normal', tone: 'info', rank: 3 },
-  { id: 'urg-4', name: 'Low', tone: 'neutral', rank: 4 },
-]
 
 export const locationSettings: LocationSettings[] = [
   {

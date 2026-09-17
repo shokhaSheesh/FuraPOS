@@ -92,11 +92,6 @@ export interface OrderLine {
   /** The agreed price, which is the point of having an order at all. */
   unitCost: number
   costCurrency: 'USD' | 'UZS'
-  /**
-   * How badly this line is needed, from the Settings list. Set on China orders,
-   * where a factory works down a long list; absent or null elsewhere.
-   */
-  urgencyId?: Id | null
 }
 
 export interface PurchaseOrder {
@@ -227,7 +222,6 @@ export const orderLineSchema = z.object({
   receivedQuantity: z.number().nonnegative(),
   unitCost: z.number().nonnegative(),
   costCurrency: z.enum(['USD', 'UZS']),
-  urgencyId: z.string().nullable().optional(),
 })
 
 export const orderDraftSchema = z

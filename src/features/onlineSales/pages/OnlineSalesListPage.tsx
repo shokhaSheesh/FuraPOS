@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router'
-import { Boxes, Clock, Globe, Wallet } from 'lucide-react'
+import { Globe } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
 import { ColumnFilterSearch } from '@/shared/components/ColumnFilterSearch'
@@ -9,14 +9,13 @@ import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { FilterSelect } from '@/shared/components/FilterSelect'
 import { Badge } from '@/shared/ui/Badge'
-import { Card } from '@/shared/ui/Card'
 import { DateRangePicker } from '@/shared/ui/DateRangePicker'
 import type { TableColumn } from '@/shared/components/table/features'
 import { useListQuery } from '@/shared/hooks/useListQuery'
 import { paths } from '@/shared/config/paths'
 import { formatDateTime, formatMoney, formatNumber } from '@/shared/lib/format'
 import { useDataStore } from '@/data/store'
-import { useOnlineSaleCounts, useOnlineSales, useOnlineSalesSummary } from '../api/onlineSales'
+import { useOnlineSaleCounts, useOnlineSales } from '../api/onlineSales'
 import {
   DELIVERY_LABEL,
   ONLINE_SALE_STATUSES,
@@ -43,7 +42,6 @@ export default function OnlineSalesListPage() {
   const locations = useDataStore((s) => s.locations)
   const { data, isLoading } = useOnlineSales(query)
   const counts = useOnlineSaleCounts(query)
-  const summary = useOnlineSalesSummary(query)
 
   const columns = useMemo<TableColumn<OnlineSale>[]>(
     () => [
@@ -143,33 +141,6 @@ export default function OnlineSalesListPage() {
     [],
   )
 
-  const tiles = [
-    {
-      icon: Globe,
-      label: 'Orders',
-      value: formatNumber(summary.orders),
-      meta: 'from the e-commerce app',
-    },
-    {
-      icon: Wallet,
-      label: 'Money received',
-      value: formatMoney(summary.received),
-      meta: 'paid online, less refunds',
-    },
-    {
-      icon: Clock,
-      label: 'Still open',
-      value: formatNumber(summary.open),
-      meta: `${formatNumber(summary.unpaid)} not paid yet`,
-    },
-    {
-      icon: Boxes,
-      label: 'Units taken from stock',
-      value: formatNumber(summary.units),
-      meta: 'cancelled orders give theirs back',
-    },
-  ]
-
   const filtered =
     query.search || query.f || query.status || query.location || query.payment || query.from
 
@@ -225,21 +196,6 @@ export default function OnlineSalesListPage() {
           </div>
         }
       />
-
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {tiles.map((tile) => (
-          <Card key={tile.label} className="flex items-start gap-3 p-4">
-            <span className="bg-surface-inset text-fg-muted mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full">
-              <tile.icon className="size-4" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-fg-muted text-sm">{tile.label}</p>
-              <p className="text-fg mt-0.5 text-lg font-semibold">{tile.value}</p>
-              <p className="text-fg-subtle text-2xs">{tile.meta}</p>
-            </div>
-          </Card>
-        ))}
-      </div>
 
       <DataTable
         storageKey="online-sales"

@@ -46,7 +46,6 @@ import type {
   LocationSettings,
   NotificationChannel,
   NotificationPreferences,
-  UrgencyLevel,
   VehicleMake,
 } from '@/features/settings/model/settings'
 import { sameName, vehicleUsage } from '@/features/settings/model/settings'
@@ -97,7 +96,6 @@ import {
   cashShifts as seedCashShifts,
   companySettings as seedCompany,
   brandSettings as seedBrandSettings,
-  urgencyLevels as seedUrgencyLevels,
   vehicleMakeSettings as seedVehicleMakes,
   locationSettings as seedLocationSettings,
   categorySettings as seedCategorySettings,
@@ -143,7 +141,6 @@ interface CatalogState {
   company: CompanySettings
   brandSettings: Brand[]
   /** «Zarurlik darajasi» — the levels a China order line can carry. */
-  urgencyLevels: UrgencyLevel[]
   /** Truck brands and their models — what products fit and what trucks are. */
   vehicleMakes: VehicleMake[]
   locationSettings: LocationSettings[]
@@ -263,10 +260,6 @@ interface CatalogState {
     makeId: string,
     modelId: string,
   ) => { ok: true } | { ok: false; error: string }
-  createUrgencyLevel: (input: Omit<UrgencyLevel, 'id'>) => UrgencyLevel
-  updateUrgencyLevel: (id: string, input: Omit<UrgencyLevel, 'id'>) => void
-  /** Refused while an order line still carries the level. */
-  deleteUrgencyLevel: (id: string) => { ok: true } | { ok: false; error: string }
 
   createLocation: (input: Omit<LocationSettings, 'id'>) => LocationSettings
   updateLocation: (id: string, input: Omit<LocationSettings, 'id'>) => void
@@ -733,7 +726,6 @@ export const useDataStore = create<CatalogState>((set, get) => ({
   cashShifts: seedCashShifts,
   company: seedCompany,
   brandSettings: seedBrandSettings,
-  urgencyLevels: seedUrgencyLevels,
   vehicleMakes: seedVehicleMakes,
   locationSettings: seedLocationSettings,
   categorySettings: seedCategorySettings,
@@ -1744,31 +1736,6 @@ export const useDataStore = create<CatalogState>((set, get) => ({
         m.id === makeId ? { ...m, models: m.models.filter((x) => x.id !== modelId) } : m,
       ),
     })
-    return { ok: true }
-  },
-
-  createUrgencyLevel: (input) => {
-    const level: UrgencyLevel = { ...input, id: `urg-${Date.now()}` }
-    set({ urgencyLevels: [...get().urgencyLevels, level] })
-    return level
-  },
-  updateUrgencyLevel: (id, input) =>
-    set({
-      urgencyLevels: get().urgencyLevels.map((level) =>
-        level.id === id ? { ...level, ...input } : level,
-      ),
-    }),
-  deleteUrgencyLevel: (id) => {
-    // An order a factory already has in hand says "Critical" on it; deleting
-    // the level would leave that line saying nothing.
-    const used = get().orders.reduce(
-      (sum, order) => sum + order.lines.filter((line) => line.urgencyId === id).length,
-      0,
-    )
-    if (used > 0) {
-      return { ok: false, error: `${used} order lines use this level — change them first` }
-    }
-    set({ urgencyLevels: get().urgencyLevels.filter((level) => level.id !== id) })
     return { ok: true }
   },
 

@@ -91,7 +91,6 @@ export const permissionTree: readonly PermissionNode[] = [
     children: [
       { key: 'analytics.reportBuilder', label: 'Report generator', actions: crudExport },
       { key: 'analytics.productLogs', label: 'Product logs', actions: readExport },
-      { key: 'analytics.customers', label: 'Customer report', actions: readExport },
     ],
   },
   {

@@ -27,15 +27,12 @@ const price = (value: number, currency: string) =>
  * print dialog — the same way print templates reach a printer, with no PDF
  * library to keep up to date. Outside the app shell on purpose: no sidebar, no
  * top bar, just an A4 sheet that prints exactly as it looks.
- *
- * Lines are sorted by urgency, most urgent first, because a factory reads a
- * long list from the top and the top is what gets made first.
+
  */
 export default function OrderDocumentPage() {
   const { orderId } = useParams()
   const order = useDataStore((s) => s.orders.find((o) => o.id === orderId))
   const variations = useDataStore((s) => s.variations)
-  const levels = useDataStore((s) => s.urgencyLevels)
   const company = useDataStore((s) => s.company)
 
   useEffect(() => {
@@ -46,17 +43,13 @@ export default function OrderDocumentPage() {
     return <EmptyState title="Order not found" description="It may have been deleted." />
   }
 
-  const levelOf = (id: string | null | undefined) => levels.find((l) => l.id === id)
-  const rows = [...order.lines]
-    .map((line) => ({
-      line,
-      level: levelOf(line.urgencyId),
-      // The OEM number lives in the product description in this catalogue, and
-      // it is the code a factory actually recognises.
-      oem: variations.find((v) => v.id === line.variationId)?.oem ?? null,
-      brand: variations.find((v) => v.id === line.variationId)?.brandName ?? null,
-    }))
-    .sort((a, b) => (a.level?.rank ?? 999) - (b.level?.rank ?? 999))
+  const rows = [...order.lines].map((line) => ({
+    line,
+    // The OEM number lives in the product description in this catalogue, and
+    // it is the code a factory actually recognises.
+    oem: variations.find((v) => v.id === line.variationId)?.oem ?? null,
+    brand: variations.find((v) => v.id === line.variationId)?.brandName ?? null,
+  }))
 
   // One currency per document where possible; mixed orders get a total each.
   const totals = new Map<string, number>()
@@ -135,14 +128,13 @@ export default function OrderDocumentPage() {
               <th className="py-1.5 pr-2">OEM no.</th>
               <th className="py-1.5 pr-2">Description</th>
               <th className="py-1.5 pr-2">Brand</th>
-              <th className="py-1.5 pr-2">Urgency</th>
               <th className="py-1.5 pr-2 text-right">Qty</th>
               <th className="py-1.5 pr-2 text-right">Unit price</th>
               <th className="py-1.5 text-right">Amount</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map(({ line, level, oem, brand }, index) => (
+            {rows.map(({ line, oem, brand }, index) => (
               <tr
                 key={line.id}
                 className="break-inside-avoid border-b border-neutral-300 align-top"
@@ -152,23 +144,6 @@ export default function OrderDocumentPage() {
                 <td className="py-1.5 pr-2 font-mono">{oem ?? '—'}</td>
                 <td className="py-1.5 pr-2">{line.name}</td>
                 <td className="py-1.5 pr-2">{brand ?? '—'}</td>
-                <td className="py-1.5 pr-2">
-                  {level ? (
-                    <span
-                      className={
-                        level.tone === 'danger'
-                          ? 'font-bold text-red-700'
-                          : level.tone === 'warning'
-                            ? 'font-semibold text-amber-700'
-                            : ''
-                      }
-                    >
-                      {level.name}
-                    </span>
-                  ) : (
-                    '—'
-                  )}
-                </td>
                 <td className="py-1.5 pr-2 text-right tabular-nums">
                   {number(line.orderedQuantity)} {line.unit}
                 </td>
@@ -216,8 +191,8 @@ export default function OrderDocumentPage() {
         ) : null}
 
         <p className="mt-5 text-neutral-600">
-          Please produce lines in order of urgency, most urgent first. Confirm quantities, prices
-          and the shipping date in writing before production starts.
+          Please confirm quantities, prices and the shipping date in writing before production
+          starts.
         </p>
 
         <footer className="mt-12 grid grid-cols-2 gap-12">

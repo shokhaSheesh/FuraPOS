@@ -5,7 +5,7 @@ import { TRANSFER_FILTER_OVERRIDES } from '../model/transferFilterFields'
 import { useDataStore, type CreateTransferInput } from '@/data/store'
 import { matches, paginate } from '@/data/query'
 import type { ListQuery } from '@/shared/types'
-import { transferQuantity, type Transfer, type TransferStatus } from '../model/transfer'
+import type { Transfer, TransferStatus } from '../model/transfer'
 
 /**
  * Reads straight from the in-memory store, keeping the `{ data, isLoading }`
@@ -59,32 +59,6 @@ export function useTransfers(query: ListQuery) {
 export function useTransfer(id: string) {
   const transfer = useDataStore((s) => s.transfers.find((t) => t.id === id))
   return { data: transfer, isLoading: false, isError: !transfer }
-}
-
-export interface TransferSummary {
-  inTransit: number
-  inTransitUnits: number
-  drafts: number
-  receivedRecently: number
-}
-
-export function useTransferSummary(query: ListQuery) {
-  const transfers = useDataStore((s) => s.transfers)
-  return useMemo<TransferSummary>(() => {
-    // Status is deliberately ignored so the tiles keep describing the whole
-    // board while a status filter narrows the table beneath them.
-    const scoped = filterTransfers(transfers, { ...query, status: undefined })
-    const inTransit = scoped.filter((t) => t.status === 'in_transit')
-    const monthAgo = new Date(Date.now() - 30 * 86_400_000).toISOString()
-    return {
-      inTransit: inTransit.length,
-      inTransitUnits: inTransit.reduce((sum, t) => sum + transferQuantity(t), 0),
-      drafts: scoped.filter((t) => t.status === 'draft').length,
-      receivedRecently: scoped.filter(
-        (t) => t.status === 'received' && (t.receivedAt ?? '') > monthAgo,
-      ).length,
-    }
-  }, [transfers, query])
 }
 
 export function useTransferStatusCounts(query: ListQuery) {

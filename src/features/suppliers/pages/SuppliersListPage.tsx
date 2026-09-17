@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { Plus, Wallet, Boxes, ShoppingBag, Moon } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
 import { ColumnFilterSearch } from '@/shared/components/ColumnFilterSearch'
@@ -217,34 +217,6 @@ export default function SuppliersListPage() {
     [canSeeCost, canSeePortal],
   )
 
-  const tiles = [
-    {
-      icon: Wallet,
-      label: 'We owe',
-      value: formatMoney(summary.debt),
-      meta: `${formatNumber(summary.owing)} ${summary.owing === 1 ? 'supplier' : 'suppliers'}`,
-      tone: summary.debt > 0 ? ('danger' as const) : undefined,
-    },
-    {
-      icon: Boxes,
-      label: 'Still on the shelf',
-      value: canSeeCost ? formatMoney(summary.onHandValue) : formatNumber(summary.onHandUnits),
-      meta: `${formatNumber(summary.onHandUnits)} units bought and not yet sold`,
-    },
-    {
-      icon: ShoppingBag,
-      label: 'Bought',
-      value: canSeeCost ? formatMoney(summary.purchased) : '—',
-      meta: `${formatPercent(summary.soldRatio)} of it has sold on`,
-    },
-    {
-      icon: Moon,
-      label: 'Gone quiet',
-      value: formatNumber(summary.dormant),
-      meta: 'no delivery in 90 days',
-    },
-  ]
-
   return (
     <>
       <PageHeader
@@ -286,27 +258,6 @@ export default function SuppliersListPage() {
           </div>
         }
       />
-
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {tiles.map((tile) => (
-          <Card key={tile.label} className="flex items-start gap-3 p-4">
-            <span className="bg-surface-inset text-fg-muted mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full">
-              <tile.icon className="size-4" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-fg-muted text-sm">{tile.label}</p>
-              <p
-                className={`mt-0.5 text-lg font-semibold ${
-                  tile.tone === 'danger' ? 'text-danger' : 'text-fg'
-                }`}
-              >
-                {tile.value}
-              </p>
-              <p className="text-fg-subtle text-2xs">{tile.meta}</p>
-            </div>
-          </Card>
-        ))}
-      </div>
 
       {/* OX shows this as a "Без поставщика" row in the table; it reads better
           as a note, because it is a data-quality problem rather than a supplier. */}

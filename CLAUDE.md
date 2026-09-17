@@ -71,12 +71,12 @@ Do not rename a nav item or invent a screen without updating that map first.
    in-module menu; we surface them directly in the sidebar under those two headings.
 7. **Marketing** — clients (CRM, gets the wallet + AI-insights component), groups, cashback, SMS
    campaigns, digital campaigns, promotions, coupons.
-8. **Analytics** — report generator, product logs, online storefront report, sales report, customer
-   report, promotions report, call history.
+8. **Analytics** — report generator and product logs. The customer report was built and then
+   **cut at the client's request**.
 9. **My uploads** — an async job log for bulk imports (not a file manager) — filename, user, job
    type, status.
-10. **Settings** — general, brands, equipment, locations, categories, urgency levels, personal
-    data. Billing was built and then **cut at the client's request**.
+10. **Settings** — general, brands, equipment, locations, categories, personal data. Billing and
+    urgency levels were built and then **cut at the client's request**.
 
 OX also has Integrations, Partner program, Support, and Settings entries for Webhooks and AI / MCP.
 **Those five are deliberately out of scope** — see non-goals below. The map records them so the

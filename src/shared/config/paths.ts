@@ -108,7 +108,6 @@ export const paths = {
     reportView: (id = ':reportId') => `/analytics/reports/${id}`,
     editReport: (id = ':reportId') => `/analytics/reports/${id}/edit`,
     productLogs: '/analytics/product-logs', // OX: /app/statistics/stock-count-histories
-    customers: '/analytics/customers', // OX: /app/statistics/customer-reports
   },
 
   settings: {
@@ -118,7 +117,6 @@ export const paths = {
     registers: '/settings/registers',
     locations: '/settings/locations',
     categories: '/settings/categories', // OX: /app/settings/products
-    urgency: '/settings/urgency', // no OX equivalent — «Zarurlik darajasi», client request
     personal: '/settings/personal', // OX: Личные данные
   },
 

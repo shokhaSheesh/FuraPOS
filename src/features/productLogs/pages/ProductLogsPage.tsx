@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router'
-import { ArrowDownRight, ArrowUpRight, History, Package } from 'lucide-react'
+import { Package } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
 import { ColumnFilterSearch } from '@/shared/components/ColumnFilterSearch'
@@ -8,12 +8,10 @@ import { LOG_FILTER_OVERRIDES } from '../model/logFilterFields'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { FilterSelect } from '@/shared/components/FilterSelect'
-import { Card } from '@/shared/ui/Card'
 import { DateRangePicker } from '@/shared/ui/DateRangePicker'
 import { useListQuery } from '@/shared/hooks/useListQuery'
-import { formatNumber } from '@/shared/lib/format'
 import { useDataStore } from '@/data/store'
-import { useLogKindCounts, useLogSummary, useStockLog } from '../api/logs'
+import { useLogKindCounts, useStockLog } from '../api/logs'
 import { STOCK_LOG_KINDS } from '../model/log'
 import { buildLogColumns, documentPath } from '../components/logColumns'
 
@@ -45,30 +43,8 @@ export default function ProductLogsPage() {
   }
   const { data, isLoading } = useStockLog(filters)
   const { data: counts } = useLogKindCounts(filters)
-  const summary = useLogSummary(filters)
 
   const columns = useMemo(() => buildLogColumns({ subject: 'product' }), [])
-
-  const tiles = [
-    {
-      icon: History,
-      label: 'Changes',
-      value: formatNumber(summary.events),
-      meta: `across ${formatNumber(summary.products)} products`,
-    },
-    {
-      icon: ArrowUpRight,
-      label: 'Units in',
-      value: formatNumber(summary.unitsIn),
-      meta: 'received, transferred in, found',
-    },
-    {
-      icon: ArrowDownRight,
-      label: 'Units out',
-      value: formatNumber(summary.unitsOut),
-      meta: 'sold, transferred out, written off',
-    },
-  ]
 
   return (
     <>
@@ -114,21 +90,6 @@ export default function ProductLogsPage() {
           </div>
         }
       />
-
-      <div className="grid gap-3 sm:grid-cols-3">
-        {tiles.map((tile) => (
-          <Card key={tile.label} className="flex items-start gap-3 p-4">
-            <span className="bg-surface-inset text-fg-muted mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full">
-              <tile.icon className="size-4" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-fg-muted text-sm">{tile.label}</p>
-              <p className="text-fg mt-0.5 text-lg font-semibold">{tile.value}</p>
-              <p className="text-fg-subtle text-2xs">{tile.meta}</p>
-            </div>
-          </Card>
-        ))}
-      </div>
 
       <DataTable
         storageKey="product-logs"

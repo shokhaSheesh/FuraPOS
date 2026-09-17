@@ -768,11 +768,12 @@ because all three end the same way — an order that is received against when th
 - **Add item** creates a real product, not a one-off line: once it lands it is stock that has to be
   found, counted and sold.
 - A market or China order has no supplier, so receiving it charges **no debt**.
-- **China lines carry an urgency level** — «Zarurlik darajasi», an editable reference list under
-  Settings → Urgency levels (no OX equivalent). The items table shows sold in 3 and 6 months, as on
+- **Urgency levels are cut** (client request). They were «Zarurlik darajasi», an editable list under
+  Settings → Urgency levels carried by China order lines; the settings page, the line field and the
+  PDF's Urgency column are all gone. The items table shows sold in 3 and 6 months, as on
   Transfers. The **PDF** is a print-styled A4 page at `/procurement/orders/:id/document`, saved by
   the browser's own print dialog like Print templates — no PDF library. It is in English with
-  unambiguous dates, since a factory reads it, and lists lines most urgent first.
+  unambiguous dates, since a factory reads it.
 
 ### Transfers — picking from the sending shelf
 
@@ -895,9 +896,7 @@ checking their delivery against something they were never sent.
 
 - **Creating a product inline** from the order (the full product form in a dialog). Adding something
   we have never carried now means going to the product list first.
-- **Urgency per line on a China order.** The factory PDF still sorts by it and still has the column,
-  so on orders raised from now on that column reads "Not set" throughout. Worth either restoring the
-  field or taking urgency off the PDF — flagged rather than silently left broken.
+- **Urgency per line on a China order** — and later the whole urgency concept, PDF column included.
 
 **The decisions worth keeping:**
 
@@ -1227,7 +1226,7 @@ the Brakes promotion — but the seed reads as nonsense. Worth tidying when the 
 | Логи продуктов       | Product logs     | `/app/statistics/stock-count-histories` |
 | Отчет онлайн-витрины | — (removed)      | `/app/statistics/utm-reports`           |
 | Отчет по продажам    | — (removed)      | `/app/statistics/sell-reports`          |
-| Отчёт по клиентам    | Customer report  | `/app/statistics/customer-reports`      |
+| Отчёт по клиентам    | — (removed)      | `/app/statistics/customer-reports`      |
 | Отчёт по акциям      | — (removed)      | `/app/statistics/promotion-report`      |
 | История звонков      | — (removed)      | `/app/statistics/call-history`          |
 
@@ -1405,6 +1404,9 @@ as this screen (`buildStockLog`, `buildLogColumns`), so the two cannot disagree.
 with `analytics.productLogs.view`.
 
 ### Customer report — «Отчёт по клиентам», read from the live tenant
+
+**Built, then cut at the client's request** — the page, its route and its permission are gone. The
+notes below are kept as the record of what OX has and what was built.
 
 OX's is an **RFM screen** — recency, frequency, money — and it is one of the better things in that
 product. Subtitle: «Кто ваши клиенты, сколько стоят, куда уходят и что с ними делать». Filter-gated
@@ -1904,7 +1906,8 @@ Archived cards above the list were **cut at the client's request**.
 **Now on every list (client request):** offline and online sales, partner orders, cash shifts,
 transfers, corrections, stocktaking, goods receipt, repricing, print templates, suppliers, orders,
 employees, autoparks, drivers, promotions, the report generator, product logs (and each product's
-log tab) and the customer report. Each panel is built from that list's own table columns, so it
+log tab). Each panel is built from that list's own table columns, so it
 cannot drift from what the table shows; print templates, a card grid, describe theirs explicitly.
 The status and "late / owed" chips already on those pages stay, and their counts follow the field
-filters. The Offline sales KPI cards were **cut at the client's request**.
+filters. The KPI cards on Offline sales, Suppliers, Transfers, Online sales, Autoparks and Product logs
+were **cut at the client's request**.

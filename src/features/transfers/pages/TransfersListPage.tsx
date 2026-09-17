@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { Plus, Truck, FileEdit, PackageCheck } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
 import { ColumnFilterSearch } from '@/shared/components/ColumnFilterSearch'
@@ -8,7 +8,6 @@ import { TRANSFER_FILTER_OVERRIDES } from '../model/transferFilterFields'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { FilterSelect } from '@/shared/components/FilterSelect'
-import { Card } from '@/shared/ui/Card'
 import { Button } from '@/shared/ui/Button'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 import { toast } from '@/shared/ui/toast'
@@ -18,12 +17,7 @@ import { paths } from '@/shared/config/paths'
 import { formatNumber } from '@/shared/lib/format'
 import { useDataStore } from '@/data/store'
 import { USD_RATE } from '@/data/seed'
-import {
-  useSetTransferStatus,
-  useTransferStatusCounts,
-  useTransferSummary,
-  useTransfers,
-} from '../api/transfers'
+import { useSetTransferStatus, useTransferStatusCounts, useTransfers } from '../api/transfers'
 import {
   buildTransferColumns,
   TRANSFER_COLUMNS_HIDDEN_BY_DEFAULT,
@@ -32,7 +26,7 @@ import { transferQuantity, type Transfer } from '../model/transfer'
 
 /**
  * Stock moving between locations. The list is a log of documents, so the
- * default order is newest first and the tiles answer the only urgent
+ * default order is newest first; the "In transit" chip answers the only urgent
  * question — what is on a truck right now, and therefore countable at neither
  * end.
  */
@@ -46,7 +40,6 @@ export default function TransfersListPage() {
   const scope = { search: query.search, location: query.location, f: query.f }
   const { data, isLoading } = useTransfers(query)
   const { data: counts } = useTransferStatusCounts(scope)
-  const summary = useTransferSummary(scope)
 
   const [pendingCancel, setPendingCancel] = useState<Transfer | null>(null)
   const cancelTransfer = useSetTransferStatus(pendingCancel?.id ?? '')
@@ -63,27 +56,6 @@ export default function TransfersListPage() {
       }),
     [can],
   )
-
-  const tiles = [
-    {
-      icon: Truck,
-      label: 'In transit',
-      value: formatNumber(summary.inTransit),
-      meta: `${formatNumber(summary.inTransitUnits)} units on the move`,
-    },
-    {
-      icon: FileEdit,
-      label: 'Drafts',
-      value: formatNumber(summary.drafts),
-      meta: 'not sent yet',
-    },
-    {
-      icon: PackageCheck,
-      label: 'Received',
-      value: formatNumber(summary.receivedRecently),
-      meta: 'in the last 30 days',
-    },
-  ]
 
   return (
     <>
@@ -125,21 +97,6 @@ export default function TransfersListPage() {
           </div>
         }
       />
-
-      <div className="grid gap-3 sm:grid-cols-3">
-        {tiles.map((tile) => (
-          <Card key={tile.label} className="flex items-start gap-3 p-4">
-            <span className="bg-surface-inset text-fg-muted mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full">
-              <tile.icon className="size-4" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-fg-muted text-sm">{tile.label}</p>
-              <p className="text-fg mt-0.5 text-lg font-semibold">{tile.value}</p>
-              <p className="text-fg-subtle text-2xs">{tile.meta}</p>
-            </div>
-          </Card>
-        ))}
-      </div>
 
       <DataTable
         storageKey="transfers"

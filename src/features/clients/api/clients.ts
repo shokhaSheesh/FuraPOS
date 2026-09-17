@@ -161,28 +161,6 @@ export function useClientCounts(filters: ClientFilters = {}) {
   )
 }
 
-export interface ClientsSummary {
-  owed: number
-  owing: number
-  overLimit: number
-  dormant: number
-  revenue: number
-}
-
-export function useClientsSummary(): ClientsSummary {
-  const { data } = useClients()
-  return useMemo(
-    () => ({
-      owed: data.items.reduce((sum, c) => sum + c.debt, 0),
-      owing: data.items.filter((c) => c.debt > 0).length,
-      overLimit: data.items.filter((c) => c.overLimit).length,
-      dormant: data.items.filter((c) => c.dormant).length,
-      revenue: data.items.reduce((sum, c) => sum + c.stats.revenue, 0),
-    }),
-    [data.items],
-  )
-}
-
 export function useClientActions() {
   const create = useDataStore((s) => s.createClient)
   const update = useDataStore((s) => s.updateClient)

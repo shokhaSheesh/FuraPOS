@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { ChevronDown, Download, FileUp, PencilLine, Plus } from 'lucide-react'
+import { ChevronDown, Download, FileUp, LayoutGrid, List, PencilLine, Plus } from 'lucide-react'
 import { DropdownMenu } from 'radix-ui'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
@@ -9,6 +9,8 @@ import { decodeFilters, encodeFilters } from '@/shared/lib/fieldFilters'
 import { useDataStore } from '@/data/store'
 import { productFilterFields } from '../model/productFilterFields'
 import { EmptyState } from '@/shared/components/EmptyState'
+import { TablePagination } from '@/shared/components/TablePagination'
+import { ProductCardGrid } from '../components/ProductCardGrid'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { FilterSelect } from '@/shared/components/FilterSelect'
 import { Button } from '@/shared/ui/Button'
@@ -58,6 +60,22 @@ export default function ProductsPage() {
 
   const [pendingDelete, setPendingDelete] = useState<VariationRow | null>(null)
   const [importing, setImporting] = useState(false)
+  /** Table or boxes — a per-person preference, so it is remembered in this browser. */
+  const [display, setDisplay] = useState<'table' | 'cards'>(() => {
+    try {
+      return localStorage.getItem('products-display') === 'cards' ? 'cards' : 'table'
+    } catch {
+      return 'table'
+    }
+  })
+  const chooseDisplay = (next: 'table' | 'cards') => {
+    setDisplay(next)
+    try {
+      localStorage.setItem('products-display', next)
+    } catch {
+      // Private windows refuse storage; the choice lasts this visit.
+    }
+  }
 
   const columns = useMemo(
     () =>
@@ -152,6 +170,31 @@ export default function ProductsPage() {
     )
     toast.success(`Exported ${rows.length} products`)
   }
+
+  const displaySwitch = (
+    <div className="border-border rounded-control flex items-center border p-0.5">
+      <Button
+        type="button"
+        variant={display === 'cards' ? 'secondary' : 'ghost'}
+        size="icon"
+        aria-label="Show products as boxes"
+        aria-pressed={display === 'cards'}
+        onClick={() => chooseDisplay('cards')}
+      >
+        <LayoutGrid />
+      </Button>
+      <Button
+        type="button"
+        variant={display === 'table' ? 'secondary' : 'ghost'}
+        size="icon"
+        aria-label="Show products as a list"
+        aria-pressed={display === 'table'}
+        onClick={() => chooseDisplay('table')}
+      >
+        <List />
+      </Button>
+    </div>
+  )
 
   return (
     <>
@@ -276,61 +319,121 @@ export default function ProductsPage() {
         }
       />
 
-      <DataTable
-        reorderableColumns
-        key={view}
-        // Bumped when the default order changed, so a stored order from the
-        // old column set does not survive into the new one.
-        storageKey={view === 'variations' ? 'products-v2' : `products-v2-${view}`}
-        columns={columns}
-        initialHidden={hidden}
-        getRowId={productRowId}
-        data={data?.items ?? []}
-        total={data?.total ?? 0}
-        isLoading={isLoading}
-        toolbar={
-          <FilterSearch
-            fields={filterFields}
-            values={fieldFilters}
-            onApply={(next) => setQuery({ f: encodeFilters(next) })}
-            search={String(query.search ?? '')}
-            onSearchChange={(search) => setQuery({ search })}
-            placeholder="Filter and search"
-          />
-        }
-        pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
-        onPaginationChange={({ page, pageSize }) => setQuery({ page, pageSize })}
-        onRowClick={(variation) => navigate(paths.products.detail(variation.productId))}
-        emptyState={
-          isFiltered ? (
-            <EmptyState
-              title="No products match these filters"
-              description="Try a different search term, or clear the filters to see everything."
-              action={
-                <Button
-                  variant="secondary"
-                  onClick={() => setQuery({ search: null, status: null, stock: null, f: null })}
-                >
-                  Clear filters
-                </Button>
-              }
+      {display === 'cards' ? (
+        <div className="rounded-card border-border bg-surface shadow-card overflow-hidden border">
+          <div className="border-border flex flex-wrap items-center gap-2 border-b p-2">
+            <FilterSearch
+              fields={filterFields}
+              values={fieldFilters}
+              onApply={(next) => setQuery({ f: encodeFilters(next) })}
+              search={String(query.search ?? '')}
+              onSearchChange={(search) => setQuery({ search })}
+              placeholder="Filter and search"
             />
-          ) : (
-            <EmptyState
-              title="No products yet"
-              description="Products are everything you sell. Add the first one to start tracking stock and sales."
-              action={
-                can('products.list.create') ? (
-                  <Button variant="primary">
-                    <Plus />
-                    Add product
+            <div className="flex-1" />
+            {displaySwitch}
+          </div>
+          {(data?.items.length ?? 0) === 0 ? (
+            isFiltered ? (
+              <EmptyState
+                title="No products match these filters"
+                description="Try a different search term, or clear the filters to see everything."
+                action={
+                  <Button
+                    variant="secondary"
+                    onClick={() => setQuery({ search: null, status: null, stock: null, f: null })}
+                  >
+                    Clear filters
                   </Button>
-                ) : null
-              }
+                }
+              />
+            ) : (
+              <EmptyState
+                title="No products yet"
+                description="Products are everything you sell. Add the first one to start tracking stock and sales."
+                action={
+                  can('products.list.create') ? (
+                    <Button variant="primary">
+                      <Plus />
+                      Add product
+                    </Button>
+                  ) : null
+                }
+              />
+            )
+          ) : (
+            <ProductCardGrid
+              rows={data?.items ?? []}
+              onOpen={(variation) => navigate(paths.products.detail(variation.productId))}
             />
-          )
-        }
-      />
+          )}
+          <TablePagination
+            total={data?.total ?? 0}
+            pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
+            onChange={({ page, pageSize }) => setQuery({ page, pageSize })}
+          />
+        </div>
+      ) : (
+        <DataTable
+          reorderableColumns
+          key={view}
+          // Bumped when the default order changed, so a stored order from the
+          // old column set does not survive into the new one.
+          storageKey={view === 'variations' ? 'products-v2' : `products-v2-${view}`}
+          columns={columns}
+          initialHidden={hidden}
+          getRowId={productRowId}
+          data={data?.items ?? []}
+          total={data?.total ?? 0}
+          isLoading={isLoading}
+          toolbar={
+            <div className="flex flex-1 flex-wrap items-center gap-2">
+              <FilterSearch
+                fields={filterFields}
+                values={fieldFilters}
+                onApply={(next) => setQuery({ f: encodeFilters(next) })}
+                search={String(query.search ?? '')}
+                onSearchChange={(search) => setQuery({ search })}
+                placeholder="Filter and search"
+              />
+              <div className="flex-1" />
+              {displaySwitch}
+            </div>
+          }
+          pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
+          onPaginationChange={({ page, pageSize }) => setQuery({ page, pageSize })}
+          onRowClick={(variation) => navigate(paths.products.detail(variation.productId))}
+          emptyState={
+            isFiltered ? (
+              <EmptyState
+                title="No products match these filters"
+                description="Try a different search term, or clear the filters to see everything."
+                action={
+                  <Button
+                    variant="secondary"
+                    onClick={() => setQuery({ search: null, status: null, stock: null, f: null })}
+                  >
+                    Clear filters
+                  </Button>
+                }
+              />
+            ) : (
+              <EmptyState
+                title="No products yet"
+                description="Products are everything you sell. Add the first one to start tracking stock and sales."
+                action={
+                  can('products.list.create') ? (
+                    <Button variant="primary">
+                      <Plus />
+                      Add product
+                    </Button>
+                  ) : null
+                }
+              />
+            )
+          }
+        />
+      )}
 
       <ImportProductsModal
         open={importing}

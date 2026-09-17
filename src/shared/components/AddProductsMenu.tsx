@@ -1,40 +1,30 @@
 import { useNavigate } from 'react-router'
 import { DropdownMenu } from 'radix-ui'
-import { ChevronDown, Plus, Search, Upload } from 'lucide-react'
+import { ChevronDown, Plus, Upload } from 'lucide-react'
 import { Button } from '@/shared/ui/Button'
 import { paths } from '@/shared/config/paths'
 
 /**
- * The three ways a product gets onto a document — a goods receipt, a purchase
- * order — when there is no catalogue of theirs already on screen to type
- * quantities into.
+ * The ways a product gets onto a document — a goods receipt, a purchase order —
+ * besides picking it from the catalogue the product step already shows.
  *
  * Shared so the two read identically: somebody who has learnt to book a
  * delivery in should not have to learn a second menu to raise an order.
  *
  * Each option says what it is *for* under its name, because "create a new
  * product" and "pick from the catalogue" sound like the same thing to somebody
- * standing in front of an open box for the first time. Picking from the
- * catalogue comes first: it is what happens nearly every time.
+ * standing in front of an open box for the first time.
  */
 export function AddProductsMenu({
-  onPickFromCatalogue,
   onUploadSpreadsheet,
   label = 'Add products',
 }: {
-  onPickFromCatalogue: () => void
   onUploadSpreadsheet: () => void
   label?: string
 }) {
   const navigate = useNavigate()
 
   const options = [
-    {
-      icon: Search,
-      label: 'Pick from the catalogue',
-      hint: 'Search or scan what you already stock',
-      onSelect: onPickFromCatalogue,
-    },
     {
       icon: Upload,
       label: 'Upload a spreadsheet',

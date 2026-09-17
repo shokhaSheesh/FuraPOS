@@ -14,6 +14,7 @@ import { toast } from '@/shared/ui/toast'
 import { useListQuery } from '@/shared/hooks/useListQuery'
 import { useSession } from '@/app/providers/SessionProvider'
 import { paths } from '@/shared/config/paths'
+import { downloadCsv } from '@/shared/lib/csv'
 import { formatNumber } from '@/shared/lib/format'
 import { useDataStore } from '@/data/store'
 import { USD_RATE } from '@/data/seed'
@@ -46,6 +47,36 @@ export default function TransfersListPage() {
 
   const locationId = (query.location as string | null) ?? null
 
+  const canSeeCost = can('products.cost.view')
+
+  /** The transfer's lines as a spreadsheet — what was asked for, sent and counted in. */
+  const downloadTransfer = (transfer: Transfer) => {
+    downloadCsv(
+      `${transfer.number}.csv`,
+      [
+        'SKU',
+        'Product',
+        'Unit',
+        'Requested',
+        'Sent',
+        'Received',
+        ...(canSeeCost ? ['Cost price', 'Currency'] : []),
+        'Sale price',
+      ],
+      transfer.lines.map((line) => [
+        line.sku,
+        line.name,
+        line.unit,
+        line.requestedQuantity,
+        line.sentQuantity ?? '',
+        line.receivedQuantity ?? '',
+        ...(canSeeCost ? [line.unitCost, line.costCurrency] : []),
+        line.unitPrice,
+      ]),
+    )
+    toast.success(`${transfer.number} downloaded`)
+  }
+
   const columns = useMemo(
     () =>
       buildTransferColumns({
@@ -53,7 +84,9 @@ export default function TransfersListPage() {
         canSeeCost: can('products.cost.view'),
         usdRate: USD_RATE,
         onCancel: setPendingCancel,
+        onDownload: downloadTransfer,
       }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [can],
   )
 

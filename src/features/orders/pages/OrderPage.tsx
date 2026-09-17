@@ -21,7 +21,6 @@ import { PurchaseCatalogue } from '@/shared/components/catalogue/PurchaseCatalog
 import { buildPurchaseRows, type PurchaseOffer } from '@/shared/components/catalogue/purchaseRows'
 import type { VariationDraft } from '@/shared/components/catalogue/VariationsDialog'
 import { demandAt } from '@/shared/lib/demand'
-import { ProductPicker } from '@/shared/components/ProductPicker'
 import { ProductThumb } from '@/shared/components/ProductThumb'
 import { ScrollSentinel } from '@/shared/components/ScrollSentinel'
 import { SearchInput } from '@/shared/components/SearchInput'
@@ -290,7 +289,6 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
   const [cards, setCards] = useState(false)
   const [search, setSearch] = useState('')
   const [suggesting, setSuggesting] = useState(false)
-  const [adding, setAdding] = useState(false)
   const sales = useDataStore((s) => s.sales)
   const locationName = useDataStore(
     (s) => s.locations.find((l) => l.id === order.locationId)?.name ?? 'this location',
@@ -446,40 +444,6 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
     writeLines(next)
   }
 
-  const scanning =
-    adding && !fromCatalogue ? (
-      <Card className="p-3">
-        <div className="flex items-center gap-2">
-          <div className="min-w-0 flex-1">
-            <ProductPicker
-              onPick={(variation) =>
-                setQuantity(
-                  {
-                    key: variation.id,
-                    line: order.lines.find((l) => l.variationId === variation.id) ?? null,
-                    index: order.lines.findIndex((l) => l.variationId === variation.id),
-                    variation,
-                    name: variation.fullName,
-                    quantity: 0,
-                    unitCost: variation.costPrice,
-                    costCurrency: variation.costCurrency,
-                    newToUs: false,
-                    stockHere: [],
-                  },
-                  (order.lines.find((l) => l.variationId === variation.id)?.orderedQuantity ?? 0) +
-                    1,
-                )
-              }
-              placeholder="Search or scan a barcode to put it on this order…"
-            />
-          </div>
-          <Button variant="secondary" onClick={() => setAdding(false)}>
-            Close scanning
-          </Button>
-        </div>
-      </Card>
-    ) : null
-
   const suggestModal = (
     <GenerateOrderModal
       open={suggesting}
@@ -528,7 +492,6 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
   if (editable) {
     return (
       <>
-        {scanning}
         <PurchaseCatalogue
           rows={pickRows}
           storageKey="order"
@@ -544,7 +507,6 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
               </Button>
               {!fromCatalogue ? (
                 <AddProductsMenu
-                  onPickFromCatalogue={() => setAdding(true)}
                   onUploadSpreadsheet={() => navigate(paths.procurement.orderImport(order.id))}
                 />
               ) : null}
@@ -576,39 +538,6 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
 
   return (
     <>
-      {adding && !fromCatalogue ? (
-        <Card className="p-3">
-          <div className="flex items-center gap-2">
-            <div className="min-w-0 flex-1">
-              <ProductPicker
-                onPick={(variation) =>
-                  setQuantity(
-                    {
-                      key: variation.id,
-                      line: order.lines.find((l) => l.variationId === variation.id) ?? null,
-                      index: order.lines.findIndex((l) => l.variationId === variation.id),
-                      variation,
-                      name: variation.fullName,
-                      quantity: 0,
-                      unitCost: variation.costPrice,
-                      costCurrency: variation.costCurrency,
-                      newToUs: false,
-                      stockHere: [],
-                    },
-                    (order.lines.find((l) => l.variationId === variation.id)?.orderedQuantity ??
-                      0) + 1,
-                  )
-                }
-                placeholder="Search or scan a barcode to put it on this order…"
-              />
-            </div>
-            <Button variant="secondary" onClick={() => setAdding(false)}>
-              Close scanning
-            </Button>
-          </div>
-        </Card>
-      ) : null}
-
       <DataTable
         reorderableColumns
         storageKey={cards ? 'order-lines-cards' : 'order-lines'}
@@ -655,7 +584,6 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
             ) : null}
             {editable && !fromCatalogue ? (
               <AddProductsMenu
-                onPickFromCatalogue={() => setAdding(true)}
                 onUploadSpreadsheet={() => navigate(paths.procurement.orderImport(order.id))}
               />
             ) : null}

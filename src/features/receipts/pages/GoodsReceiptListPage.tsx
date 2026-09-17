@@ -92,7 +92,7 @@ export default function GoodsReceiptListPage() {
         canSeeCost ? Math.round(landedUnitCost(line, receipt, USD_RATE)) : '',
       ]),
     )
-    toast.success(`${receipt.number} exported`)
+    toast.success(`${receipt.number} downloaded`)
   }
 
   const columns = useMemo(

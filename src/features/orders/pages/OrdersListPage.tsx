@@ -1,11 +1,14 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { Plus } from 'lucide-react'
+import { Download, Plus } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
 import { ColumnFilterSearch } from '@/shared/components/ColumnFilterSearch'
 import { ORDER_FILTER_OVERRIDES } from '../model/orderFilterFields'
 import { EmptyState } from '@/shared/components/EmptyState'
+import { RowActions } from '@/shared/components/RowActions'
+import { toast } from '@/shared/ui/toast'
+import { downloadCsv } from '@/shared/lib/csv'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { FilterSelect } from '@/shared/components/FilterSelect'
 import { Badge } from '@/shared/ui/Badge'
@@ -59,6 +62,32 @@ export default function OrdersListPage() {
   const { data, isLoading } = useOrders(query)
   const { data: counts } = useOrderStatusCounts(scope)
   const canSeeCost = can('products.cost.view')
+
+  /** The order's lines as a spreadsheet — what was ordered, what came, what is still coming. */
+  const downloadOrder = (order: PurchaseOrder) => {
+    downloadCsv(
+      `${order.number}.csv`,
+      [
+        'SKU',
+        'Product',
+        'Unit',
+        'Ordered',
+        'Delivered',
+        'Still coming',
+        ...(canSeeCost ? ['Agreed price', 'Currency'] : []),
+      ],
+      order.lines.map((line) => [
+        line.sku,
+        line.name,
+        line.unit,
+        line.orderedQuantity,
+        line.receivedQuantity,
+        Math.max(0, line.orderedQuantity - line.receivedQuantity),
+        ...(canSeeCost ? [line.unitCost, line.costCurrency] : []),
+      ]),
+    )
+    toast.success(`${order.number} downloaded`)
+  }
 
   const columns = useMemo<TableColumn<PurchaseOrder>[]>(
     () => [
@@ -172,7 +201,24 @@ export default function OrdersListPage() {
         header: 'Note',
         cell: ({ row }) => row.original.comment ?? <span className="text-fg-subtle">—</span>,
       },
+      {
+        id: 'actions',
+        header: '',
+        enableHiding: false,
+        cell: ({ row }) => (
+          <RowActions
+            actions={[
+              {
+                label: 'Download',
+                icon: Download,
+                onSelect: () => downloadOrder(row.original),
+              },
+            ]}
+          />
+        ),
+      },
     ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [canSeeCost],
   )
 

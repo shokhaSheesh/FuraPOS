@@ -2,21 +2,18 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import {
   ArrowLeft,
-  ChevronDown,
   FileText,
   LayoutGrid,
   List,
   PackageCheck,
   Plus,
   Save,
-  Sliders,
   Trash2,
 } from 'lucide-react'
 import { DataTable } from '@/shared/components/DataTable'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
-import { ProductPicker } from '@/shared/components/ProductPicker'
 import { AddProductsMenu } from '@/shared/components/AddProductsMenu'
 import { PurchaseCatalogue } from '@/shared/components/catalogue/PurchaseCatalogue'
 import { buildPurchaseRows, type PurchaseOffer } from '@/shared/components/catalogue/purchaseRows'
@@ -31,7 +28,6 @@ import { Button } from '@/shared/ui/Button'
 import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 import { Input } from '@/shared/ui/Input'
-import { Popover } from '@/shared/ui/Popover'
 import { Select } from '@/shared/ui/Select'
 import { toast } from '@/shared/ui/toast'
 import { paths } from '@/shared/config/paths'
@@ -189,6 +185,8 @@ export default function GoodsReceiptPage() {
 
 /* --- shared ------------------------------------------------------------- */
 
+const REVIEW_COST_SETTINGS: CostSettings = { currency: 'uzs', basis: 'actual' }
+
 /** What leaving compares against, to say whether this visit changed anything. */
 const snapshot = (receipt: GoodsReceipt | undefined) =>
   receipt ? JSON.stringify([receipt.lines, receipt.additionalCosts, receipt.comment]) : ''
@@ -304,7 +302,6 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
   const update = useUpdateReceipt(receipt.id)
   const { rows: all, fromCatalogue } = useLineRows(receipt)
   const [cards, setCards] = useState(false)
-  const [adding, setAdding] = useState(false)
   const [search, setSearch] = useState('')
   const variations = useDataStore((s) => s.variations)
   const supplierProducts = useDataStore((s) => s.supplierProducts)
@@ -435,39 +432,6 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
     writeLines(receipt.lines.map((line, i) => (i === row.index ? { ...line, ...patch } : line)))
   }
 
-  /** Put a catalogue row on the receipt, or one more of a line already there. */
-  const addVariation = (variation: VariationRow) => {
-    const existing = receipt.lines.findIndex((line) => line.variationId === variation.id)
-    if (existing > -1) {
-      writeLines(
-        receipt.lines.map((line, i) =>
-          i === existing
-            ? { ...line, receivedQuantity: (line.receivedQuantity ?? line.orderedQuantity) + 1 }
-            : line,
-        ),
-      )
-      return
-    }
-    writeLines([
-      ...receipt.lines,
-      {
-        id: `grl-${receipt.id}-${receipt.lines.length + 1}`,
-        variationId: variation.id,
-        productId: variation.productId,
-        sku: variation.sku,
-        name: variation.fullName,
-        imageUrl: variation.imageUrl,
-        unit: variation.unit,
-        // Nothing was expected — this line was found on the lorry, not ordered.
-        orderedQuantity: 0,
-        receivedQuantity: 1,
-        // Last known cost, as a starting point the buyer corrects.
-        unitCost: variation.costPrice,
-        costCurrency: variation.costCurrency,
-      },
-    ])
-  }
-
   const columns = buildReceiptLineColumns({
     editable,
     canSeeCost,
@@ -525,21 +489,6 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
   if (editable) {
     return (
       <>
-        {adding && !fromCatalogue ? (
-          <Card className="p-3">
-            <div className="flex items-center gap-2">
-              <div className="min-w-0 flex-1">
-                <ProductPicker
-                  onPick={addVariation}
-                  placeholder="Search or scan a barcode to put it on this receipt…"
-                />
-              </div>
-              <Button variant="secondary" onClick={() => setAdding(false)}>
-                Close scanning
-              </Button>
-            </div>
-          </Card>
-        ) : null}
         <PurchaseCatalogue
           rows={pickRows}
           storageKey="receipt"
@@ -551,7 +500,6 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
           actions={
             !fromCatalogue ? (
               <AddProductsMenu
-                onPickFromCatalogue={() => setAdding(true)}
                 onUploadSpreadsheet={() => navigate(paths.products.goodsReceiptImport(receipt.id))}
               />
             ) : null
@@ -571,22 +519,6 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
 
   return (
     <>
-      {adding && !fromCatalogue ? (
-        <Card className="p-3">
-          <div className="flex items-center gap-2">
-            <div className="min-w-0 flex-1">
-              <ProductPicker
-                onPick={addVariation}
-                placeholder="Search or scan a barcode to put it on this receipt…"
-              />
-            </div>
-            <Button variant="secondary" onClick={() => setAdding(false)}>
-              Close scanning
-            </Button>
-          </div>
-        </Card>
-      ) : null}
-
       <DataTable
         reorderableColumns
         storageKey={cards ? 'receipt-lines-cards' : 'receipt-lines'}
@@ -626,7 +558,6 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
                 to add, only quantities to type. */}
             {editable && !fromCatalogue ? (
               <AddProductsMenu
-                onPickFromCatalogue={() => setAdding(true)}
                 onUploadSpreadsheet={() => navigate(paths.products.goodsReceiptImport(receipt.id))}
               />
             ) : null}
@@ -1048,7 +979,6 @@ function ReviewStep({
 }) {
   const { can } = useSession()
   const canSeeCost = can('products.cost.view')
-  const update = useUpdateReceipt(receipt.id)
   const post = useSetReceiptStatus(receipt.id)
   // Only what is actually on the receipt. The product step may be showing a
   // supplier's whole catalogue; a review of a delivery is not a review of
@@ -1056,7 +986,12 @@ function ReviewStep({
   const all = useLineRows(receipt).rows.filter((row) => row.line !== null)
   const [confirming, setConfirming] = useState(false)
   const [search, setSearch] = useState('')
-  const settings = receipt.costSettings
+  /*
+    Cost price in UZS for what actually arrived. The receipt used to let this be
+    switched to the supplier's currency or the expected quantity; the client
+    asked for the switch to go, so every receipt reads the same way.
+  */
+  const settings = REVIEW_COST_SETTINGS
 
   const rows = search.trim()
     ? all.filter((row) =>
@@ -1065,12 +1000,6 @@ function ReviewStep({
           .some((field) => field.toLowerCase().includes(search.trim().toLowerCase())),
       )
     : all
-
-  const setSettings = (next: Partial<CostSettings>) =>
-    update.mutate(
-      { costSettings: { ...settings, ...next } },
-      { onError: (message) => toast.error(message) },
-    )
 
   const columns = buildReceiptReviewColumns({
     canSeeCost,
@@ -1109,7 +1038,6 @@ function ReviewStep({
               placeholder="Search by barcode, SKU, variation or product name…"
             />
             <div className="flex-1" />
-            <CostSettingsMenu settings={settings} editable={editable} onChange={setSettings} />
             {editable ? (
               <Button variant="primary" onClick={() => setConfirming(true)}>
                 <PackageCheck />
@@ -1175,62 +1103,5 @@ function ReviewStep({
         }
       />
     </>
-  )
-}
-
-/** How the review step's cost price is worked out — the reference's own two questions. */
-function CostSettingsMenu({
-  settings,
-  editable,
-  onChange,
-}: {
-  settings: CostSettings
-  editable: boolean
-  onChange: (next: Partial<CostSettings>) => void
-}) {
-  return (
-    <Popover
-      align="end"
-      trigger={
-        <Button variant="secondary">
-          <Sliders />
-          Cost price settings
-          <ChevronDown />
-        </Button>
-      }
-    >
-      <div className="w-64 space-y-3">
-        <Field label="Cost price currency">
-          {(p) => (
-            <Select
-              {...p}
-              className="w-full"
-              value={settings.currency}
-              disabled={!editable}
-              onChange={(v) => onChange({ currency: v as CostSettings['currency'] })}
-              options={[
-                { value: 'uzs', label: 'UZS' },
-                { value: 'supplier', label: "The supplier's price" },
-              ]}
-            />
-          )}
-        </Field>
-        <Field label="Show cost price by">
-          {(p) => (
-            <Select
-              {...p}
-              className="w-full"
-              value={settings.basis}
-              disabled={!editable}
-              onChange={(v) => onChange({ basis: v as CostSettings['basis'] })}
-              options={[
-                { value: 'actual', label: 'Actual quantity' },
-                { value: 'expected', label: 'Expected quantity' },
-              ]}
-            />
-          )}
-        </Field>
-      </div>
-    </Popover>
   )
 }

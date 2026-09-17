@@ -345,9 +345,10 @@ still.
    Invoice total / Debt (to pay), and a payments table — Date and time, Payer, Account, Amount,
    Note.
 4. **Review and finish.** ID, Barcode, Product name, SKU, Variation name, Actual quantity, Expected
-   quantity, Sale price, Cost price (per unit). Plus OX's two buttons: **Cost price settings**
-   (a popover: cost price currency — UZS or the supplier's; show cost price by — actual or expected
-   quantity) and **Post receipt** (`Оприходовать`).
+   quantity, Sale price, Cost price (per unit), and **Post receipt** (`Оприходовать`). OX also has
+   **Cost price settings** (cost price currency — UZS or the supplier's; by actual or expected
+   quantity); it was built and then **cut at the client's request** — cost price always shows in
+   UZS for what actually arrived.
 
 **Spreadsheet import is built**, as **its own page** in OX's three steps: choose the file → match
 the columns → import. Shared with Orders, so both read identically.

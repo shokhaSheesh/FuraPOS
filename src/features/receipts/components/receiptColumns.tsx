@@ -195,7 +195,7 @@ export function buildReceiptColumns({
         <RowActions
           actions={[
             {
-              label: 'Download as CSV',
+              label: 'Download',
               icon: Download,
               onSelect: () => onDownload(row.original),
             },

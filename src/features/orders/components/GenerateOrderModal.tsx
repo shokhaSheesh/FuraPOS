@@ -4,6 +4,7 @@ import { Modal } from '@/shared/ui/Modal'
 import { Button } from '@/shared/ui/Button'
 import { Checkbox } from '@/shared/ui/Checkbox'
 import { SegmentedControl } from '@/shared/ui/SegmentedControl'
+import { ProductThumb } from '@/shared/components/ProductThumb'
 import { formatMoneyIn, formatNumber } from '@/shared/lib/format'
 import { useDataStore } from '@/data/store'
 import type { CatalogueEntry } from '@/features/suppliers/model/catalogue'
@@ -37,6 +38,7 @@ export function GenerateOrderModal({
   onAdd: (suggestions: OrderSuggestion[]) => void
 }) {
   const sales = useDataStore((s) => s.sales)
+  const variations = useDataStore((s) => s.variations)
   const [months, setMonths] = useState<'3' | '6'>('3')
   const [dropped, setDropped] = useState<string[]>([])
 
@@ -48,6 +50,9 @@ export function GenerateOrderModal({
   // A different window is a different proposal, so previous exclusions no
   // longer refer to anything.
   useEffect(() => setDropped([]), [months, open])
+
+  /** Our photo and SKU for each line, as the transfer's suggestions show them. */
+  const ours = useMemo(() => new Map(variations.map((v) => [v.id, v])), [variations])
 
   const chosen = suggestions.filter((s) => !dropped.includes(s.supplierProductId))
   const units = chosen.reduce((sum, s) => sum + s.suggested, 0)
@@ -138,10 +143,23 @@ export function GenerateOrderModal({
                         />
                       </td>
                       <td className="px-3 py-2">
-                        <p className="text-fg truncate font-medium">{suggestion.name}</p>
-                        <p className="text-fg-subtle text-2xs font-mono">
-                          {suggestion.supplierSku}
-                        </p>
+                        <div className="flex items-center gap-2.5">
+                          <ProductThumb
+                            src={ours.get(suggestion.variationId)?.imageUrl ?? null}
+                            size="md"
+                          />
+                          <div className="min-w-0">
+                            <p className="text-fg truncate font-medium">{suggestion.name}</p>
+                            <p className="text-fg-subtle text-2xs font-mono">
+                              {ours.get(suggestion.variationId)?.sku ?? suggestion.supplierSku}
+                              {/* A market run is picked from our list, so their code is ours. */}
+                              {suggestion.supplierSku &&
+                              suggestion.supplierSku !== ours.get(suggestion.variationId)?.sku
+                                ? ` · ${suggestion.supplierSku}`
+                                : ''}
+                            </p>
+                          </div>
+                        </div>
                       </td>
                       <td className="text-fg-muted px-3 py-2 text-right tabular-nums">
                         {formatNumber(suggestion.sold)}

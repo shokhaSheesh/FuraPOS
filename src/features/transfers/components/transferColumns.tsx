@@ -1,4 +1,4 @@
-import { ArrowRight, Trash2 } from 'lucide-react'
+import { ArrowRight, Download, Trash2 } from 'lucide-react'
 import { Badge } from '@/shared/ui/Badge'
 import { RowActions } from '@/shared/components/RowActions'
 import type { TableColumn } from '@/shared/components/table/features'
@@ -27,11 +27,13 @@ const Empty = () => <span className="text-fg-subtle">—</span>
  */
 export function buildTransferColumns({
   onCancel,
+  onDownload,
   canCancelTransfers,
   canSeeCost,
   usdRate,
 }: {
   onCancel: (transfer: Transfer) => void
+  onDownload: (transfer: Transfer) => void
   canCancelTransfers: boolean
   canSeeCost: boolean
   usdRate: number
@@ -172,18 +174,20 @@ export function buildTransferColumns({
       enableHiding: false,
       cell: ({ row }) => (
         <RowActions
-          actions={
-            canCancelTransfers && canCancel(row.original.status)
-              ? [
-                  {
-                    label: 'Cancel transfer',
-                    icon: Trash2,
-                    destructive: true,
-                    onSelect: () => onCancel(row.original),
-                  },
-                ]
-              : []
-          }
+          actions={[
+            {
+              label: 'Download',
+              icon: Download,
+              onSelect: () => onDownload(row.original),
+            },
+            {
+              label: 'Cancel transfer',
+              icon: Trash2,
+              destructive: true,
+              hidden: !canCancelTransfers || !canCancel(row.original.status),
+              onSelect: () => onCancel(row.original),
+            },
+          ]}
         />
       ),
     },

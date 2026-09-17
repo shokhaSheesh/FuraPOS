@@ -17,10 +17,10 @@ import {
   groupByProduct,
   bestSellingFirst,
   matchesSearch,
-  stockLevel,
   subtreeOf,
   type ProductGroup,
 } from '../model/browse'
+import { StockBox } from './StockBox'
 import { TransferProductModal } from './TransferProductModal'
 import type { TransferRow } from './transferLineColumns'
 
@@ -66,6 +66,11 @@ interface Names {
   from: string
   to: string
   demand: string
+  /**
+   * Whose shelf is yours. Sending, it is the source; requesting, it is the
+   * destination — and yours is the one whose stock is coloured by level.
+   */
+  requesting: boolean
 }
 
 function readStored<T>(key: string, fallback: T): T {
@@ -96,7 +101,6 @@ function store(key: string, value: unknown) {
 export function TransferCatalogue({
   rows,
   names,
-  demandLocationId,
   canSeeCost,
   onApply,
   renderTable,
@@ -104,7 +108,6 @@ export function TransferCatalogue({
 }: {
   rows: TransferRow[]
   names: Names
-  demandLocationId: string | null
   canSeeCost: boolean
   onApply: (changes: { row: TransferRow; quantity: number }[]) => void
   /** The table view, given the rows the current category and filters leave. */
@@ -416,7 +419,7 @@ export function TransferCatalogue({
         fromName={names.from}
         toName={names.to}
         demandName={names.demand}
-        demandLocationId={demandLocationId}
+        requesting={names.requesting}
         canSeeCost={canSeeCost}
         onApply={onApply}
       />
@@ -467,12 +470,6 @@ function CategoryTile({
     </button>
   )
 }
-
-const LEVEL_STYLE = {
-  critical: 'bg-danger-soft text-danger',
-  low: 'bg-warning-soft text-warning',
-  good: 'bg-success-soft text-success',
-} as const
 
 function ProductCard({
   group,
@@ -546,25 +543,21 @@ function ProductCard({
 
         {has('atDestination') || has('atSource') ? (
           <div className="grid grid-cols-2 gap-1.5">
-            {has('atDestination') ? (
-              <div
-                className={cn(
-                  'rounded-control px-2 py-1.5',
-                  LEVEL_STYLE[stockLevel(group.atDestination)],
-                )}
-              >
-                <p className="text-2xs truncate opacity-80">At {names.to}</p>
-                <p className="text-sm font-semibold tabular-nums">
-                  {formatNumber(group.atDestination)}
-                </p>
-              </div>
-            ) : null}
-            {has('atSource') ? (
-              <div className="rounded-control bg-surface-muted text-fg px-2 py-1.5">
-                <p className="text-2xs text-fg-subtle truncate">At {names.from}</p>
-                <p className="text-sm font-semibold tabular-nums">{formatNumber(group.atSource)}</p>
-              </div>
-            ) : null}
+            {/* Yours first, judged by level; theirs beside it, in blue. */}
+            {(names.requesting
+              ? [
+                  ['atDestination', 'mine', names.to, group.atDestination] as const,
+                  ['atSource', 'theirs', names.from, group.atSource] as const,
+                ]
+              : [
+                  ['atSource', 'mine', names.from, group.atSource] as const,
+                  ['atDestination', 'theirs', names.to, group.atDestination] as const,
+                ]
+            )
+              .filter(([field]) => has(field))
+              .map(([field, side, name, units]) => (
+                <StockBox key={field} side={side} label={`At ${name}`} units={units} />
+              ))}
           </div>
         ) : null}
 

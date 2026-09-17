@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Minus, Plus } from 'lucide-react'
 import { DataTable } from '@/shared/components/DataTable'
 import { NumberField } from '@/shared/components/NumberField'
@@ -7,13 +7,12 @@ import type { TableColumn } from '@/shared/components/table/features'
 import { Button } from '@/shared/ui/Button'
 import { Modal } from '@/shared/ui/Modal'
 import { formatNumber } from '@/shared/lib/format'
-import { unitsSoldAt } from '@/shared/lib/demand'
-import { useDataStore } from '@/data/store'
 import {
   buildProductFieldColumns,
   PRODUCT_FIELD_COLUMN_IDS,
 } from '@/features/products/components/productFieldColumns'
 import type { ProductGroup } from '../model/browse'
+import { StockBox, StockPill } from './StockBox'
 import type { TransferRow } from './transferLineColumns'
 
 /** What the variations table already says in its own columns. */
@@ -23,7 +22,6 @@ const VISIBLE_BY_DEFAULT = ['shelfAddress']
 
 interface VariantRow {
   row: TransferRow
-  sold12: number
   draft: number
 }
 
@@ -41,7 +39,7 @@ export function TransferProductModal({
   fromName,
   toName,
   demandName,
-  demandLocationId,
+  requesting,
   canSeeCost,
   onApply,
 }: {
@@ -50,7 +48,8 @@ export function TransferProductModal({
   fromName: string
   toName: string
   demandName: string
-  demandLocationId: string | null
+  /** Sending, your shelf is the source; requesting, it is the destination. */
+  requesting: boolean
   canSeeCost: boolean
   onApply: (changes: { row: TransferRow; quantity: number }[]) => void
 }) {
@@ -62,7 +61,7 @@ export function TransferProductModal({
       fromName={fromName}
       toName={toName}
       demandName={demandName}
-      demandLocationId={demandLocationId}
+      requesting={requesting}
       canSeeCost={canSeeCost}
       onClose={() => onOpenChange(false)}
       onApply={onApply}
@@ -75,7 +74,7 @@ function OpenProduct({
   fromName,
   toName,
   demandName,
-  demandLocationId,
+  requesting,
   canSeeCost,
   onClose,
   onApply,
@@ -84,25 +83,14 @@ function OpenProduct({
   fromName: string
   toName: string
   demandName: string
-  demandLocationId: string | null
+  /** Sending, your shelf is the source; requesting, it is the destination. */
+  requesting: boolean
   canSeeCost: boolean
   onClose: () => void
   onApply: (changes: { row: TransferRow; quantity: number }[]) => void
 }) {
-  const sales = useDataStore((s) => s.sales)
   const [draft, setDraft] = useState<Record<string, number>>(() =>
     Object.fromEntries(group.rows.map((row) => [row.key, row.quantity])),
-  )
-
-  const sold12 = useMemo(
-    () =>
-      Object.fromEntries(
-        group.rows.map((row) => [
-          row.key,
-          demandLocationId ? unitsSoldAt(sales, row.variation.id, demandLocationId, 12) : 0,
-        ]),
-      ),
-    [group.rows, sales, demandLocationId],
   )
 
   const set = (row: TransferRow, quantity: number) =>
@@ -114,11 +102,17 @@ function OpenProduct({
 
   const data: VariantRow[] = group.rows.map((row) => ({
     row,
-    sold12: sold12[row.key] ?? 0,
     draft: draft[row.key] ?? 0,
   }))
 
-  const columns = buildVariantColumns({ fromName, toName, demandName, canSeeCost, set })
+  const columns = buildVariantColumns({
+    fromName,
+    toName,
+    demandName,
+    requesting,
+    canSeeCost,
+    set,
+  })
 
   const units = data.reduce((sum, entry) => sum + entry.draft, 0)
   const changes = data
@@ -166,8 +160,23 @@ function OpenProduct({
       <div className="space-y-4">
         <div className="flex flex-wrap items-stretch gap-3">
           <ProductThumb src={group.rows[0]?.variation.imageUrl} size="lg" />
-          <Stat label={`At ${toName}`} value={`${formatNumber(group.atDestination)}`} />
-          <Stat label={`At ${fromName}`} value={`${formatNumber(group.atSource)}`} />
+          {/* Yours first, judged by level; theirs beside it, in blue. */}
+          <div className="min-w-32 flex-1">
+            <StockBox
+              large
+              side="mine"
+              label={`At ${requesting ? toName : fromName}`}
+              units={requesting ? group.atDestination : group.atSource}
+            />
+          </div>
+          <div className="min-w-32 flex-1">
+            <StockBox
+              large
+              side="theirs"
+              label={`At ${requesting ? fromName : toName}`}
+              units={requesting ? group.atSource : group.atDestination}
+            />
+          </div>
           <Stat
             label={`Sold at ${demandName}, 3 / 6 months`}
             value={`${formatNumber(group.demand[3])} / ${formatNumber(group.demand[6])}`}
@@ -203,12 +212,14 @@ function buildVariantColumns({
   fromName,
   toName,
   demandName,
+  requesting,
   canSeeCost,
   set,
 }: {
   fromName: string
   toName: string
   demandName: string
+  requesting: boolean
   canSeeCost: boolean
   set: (row: TransferRow, quantity: number) => void
 }): TableColumn<VariantRow>[] {
@@ -243,9 +254,7 @@ function buildVariantColumns({
       header: `At ${fromName}`,
       meta: { align: 'right' },
       cell: ({ row }) => (
-        <span className="text-fg font-medium tabular-nums">
-          {formatNumber(row.original.row.atSource)}
-        </span>
+        <StockPill side={requesting ? 'theirs' : 'mine'} units={row.original.row.atSource} />
       ),
     },
     {
@@ -253,22 +262,19 @@ function buildVariantColumns({
       header: `At ${toName}`,
       meta: { align: 'right' },
       cell: ({ row }) => (
-        <span className="text-fg-muted tabular-nums">
-          {formatNumber(row.original.row.atDestination)}
-        </span>
+        <StockPill side={requesting ? 'mine' : 'theirs'} units={row.original.row.atDestination} />
       ),
     },
     {
       id: 'sold',
-      header: `Sold at ${demandName}, 3 / 6 / 12 mo`,
+      header: `Sold at ${demandName}, 3 / 6 mo`,
       meta: { align: 'right' },
       cell: ({ row }) => (
         <span className="text-fg-muted tabular-nums">
           {formatNumber(row.original.row.demand[3])} /{' '}
           <strong className="text-fg font-medium">
             {formatNumber(row.original.row.demand[6])}
-          </strong>{' '}
-          / {formatNumber(row.original.sold12)}
+          </strong>
         </span>
       ),
     },

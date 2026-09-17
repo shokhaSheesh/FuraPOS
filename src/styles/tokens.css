@@ -77,6 +77,10 @@
   --color-success-soft: #e3f4e9;
   --color-warning: #c2410c; /* orange, so nothing blue is ever a warning */
   --color-warning-soft: #fdece3;
+  /* Amber, for a middle stock level that is neither fine nor urgent (client's
+     mockup). Distinct from warning, which stays orange. */
+  --color-caution: #a16207;
+  --color-caution-soft: #fdf5d8;
   --color-danger: #c81e1e;
   --color-danger-soft: #fce9e9;
   --color-info: #1d5fa8;
@@ -127,6 +131,8 @@
   --color-success-soft: #14291c;
   --color-warning: #fb923c;
   --color-warning-soft: #2e1d10;
+  --color-caution: #facc15;
+  --color-caution-soft: #2b2610;
   --color-danger: #f87171;
   --color-danger-soft: #2e1616;
   --color-info: #8db8f5;
@@ -167,6 +173,8 @@
   --color-success-soft: var(--color-success-soft);
   --color-warning: var(--color-warning);
   --color-warning-soft: var(--color-warning-soft);
+  --color-caution: var(--color-caution);
+  --color-caution-soft: var(--color-caution-soft);
   --color-danger: var(--color-danger);
   --color-danger-soft: var(--color-danger-soft);
   --color-info: var(--color-info);

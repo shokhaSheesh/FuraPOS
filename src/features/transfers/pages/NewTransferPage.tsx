@@ -520,8 +520,8 @@ export default function NewTransferPage() {
                 from: from?.name ?? 'source',
                 to: to?.name ?? 'destination',
                 demand: demandLocation?.name ?? (requesting ? 'here' : 'source'),
+                requesting,
               }}
-              demandLocationId={demandLocationId || null}
               canSeeCost={canSeeCost}
               onApply={applyQuantities}
               actions={

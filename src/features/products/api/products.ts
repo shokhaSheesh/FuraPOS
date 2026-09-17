@@ -1,9 +1,8 @@
 import { useMemo } from 'react'
 import { useDataStore, type ProductInput } from '@/data/store'
 import { matches, paginate } from '@/data/query'
-import { USD_RATE } from '@/data/seed'
 import type { ListQuery } from '@/shared/types'
-import { costInUzs, effectivePrice, type VariationRow } from '../model/product'
+import type { VariationRow } from '../model/product'
 import { plainText } from '@/shared/ui/RichTextEditor'
 import { applyFieldFilters, decodeFilters } from '@/shared/lib/fieldFilters'
 import { productFilterFields } from '../model/productFilterFields'
@@ -140,37 +139,6 @@ export function useProducts(query: ListQuery, options: { enabled?: boolean } = {
 export function useProduct(id: string) {
   const product = useDataStore((s) => s.products.find((p) => p.id === id))
   return { data: product, isLoading: false, isError: !product }
-}
-
-export interface CatalogSummary {
-  total: number
-  products: number
-  active: number
-  archived: number
-  quantity: number
-  saleValue: number
-  costValue: number
-  zeroStock: number
-  withImage: number
-}
-
-export function useCatalogSummary(query: ListQuery) {
-  const variations = useDataStore((s) => s.variations)
-  const data = useMemo<CatalogSummary>(() => {
-    const scoped = filterVariations(variations, query)
-    return {
-      total: scoped.length,
-      products: new Set(scoped.map((v) => v.productId)).size,
-      active: scoped.filter((v) => v.status === 'active').length,
-      archived: scoped.filter((v) => v.status === 'archived').length,
-      quantity: scoped.reduce((sum, v) => sum + v.stock, 0),
-      saleValue: scoped.reduce((sum, v) => sum + v.stock * effectivePrice(v), 0),
-      costValue: scoped.reduce((sum, v) => sum + v.stock * costInUzs(v, USD_RATE), 0),
-      zeroStock: scoped.filter((v) => v.stock === 0).length,
-      withImage: scoped.filter((v) => v.imageUrl).length,
-    }
-  }, [variations, query])
-  return { data, isLoading: false }
 }
 
 export function useCategories() {

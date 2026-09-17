@@ -22,7 +22,6 @@ import {
   PRODUCT_LIST_VIEWS,
   productListView,
   productRowId,
-  useCatalogSummary,
   useDeleteVariation,
   useLocations,
   useVariations,
@@ -32,7 +31,6 @@ import {
   buildProductColumns,
   PRODUCT_COLUMNS_HIDDEN_BY_DEFAULT,
 } from '../components/productColumns'
-import { ProductsSummaryStrip } from '../components/ProductsSummaryStrip'
 import { ImportProductsModal } from '../components/ImportProductsModal'
 import { effectivePrice, type VariationRow } from '../model/product'
 
@@ -53,14 +51,6 @@ export default function ProductsPage() {
   // price, a barcode and stock, so it is what can be sold, counted or picked.
   const view = productListView(query.view)
   const { data, isLoading } = useVariations(query)
-  /*
-    The tiles count the three states, so they must be blind to the state
-    filter — otherwise picking "Active" would make Active and All read the same
-    number and Archived read zero. Every other filter still applies, the
-    location scope included.
-  */
-  const scope = { search: query.search, stock: query.stock, location: query.location, f: query.f }
-  const { data: summary, isLoading: summaryLoading } = useCatalogSummary(scope)
   const { data: locationData } = useLocations()
   const locationId = (query.location as string | null) ?? null
   const location = locationData.items.find((item) => item.id === locationId)
@@ -285,8 +275,6 @@ export default function ProductsPage() {
           </div>
         }
       />
-
-      <ProductsSummaryStrip summary={summary} loading={summaryLoading} />
 
       <DataTable
         key={view}

@@ -131,7 +131,7 @@ export function FilterSearch<T>({
       onInteractOutside={(event) => {
         if (barRef.current?.contains(event.target as Node)) event.preventDefault()
       }}
-      className="flex max-h-[min(36rem,var(--radix-popover-content-available-height))] w-[max(var(--radix-popover-trigger-width),30rem)] flex-col"
+      className="flex max-h-[min(36rem,var(--radix-popover-content-available-height))] w-[min(max(var(--radix-popover-trigger-width),48rem),calc(100vw-2rem))] flex-col"
       trigger={
         <div
           ref={barRef}
@@ -184,12 +184,13 @@ export function FilterSearch<T>({
         </div>
       }
     >
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
+      {/* Two fields a row, as OX lays them out: half the scrolling for the same fields. */}
+      <div className="grid min-h-0 flex-1 content-start gap-x-4 gap-y-4 overflow-y-auto p-4 sm:grid-cols-2">
         {panelFields.length === 0 ? (
-          <p className="text-fg-subtle text-sm">No fields yet — add one below.</p>
+          <p className="text-fg-subtle text-sm sm:col-span-2">No fields yet — add one below.</p>
         ) : null}
         {panelFields.map((field) => (
-          <div key={field.id} className="space-y-1.5">
+          <div key={field.id} className="min-w-0 space-y-1.5">
             <div className="flex items-center justify-between gap-2">
               <span className="text-fg text-sm font-medium">{field.label}</span>
               <button
@@ -272,10 +273,10 @@ function FieldEditor<T>({
       return (
         <div className="flex items-center gap-3">
           <Input
-            className="flex-1"
+            className="min-w-0 flex-1"
             value={current.text}
             aria-label={field.label}
-            placeholder={field.excludable ? 'One or several, separated by commas' : undefined}
+            placeholder={field.excludable ? 'One or several, comma-separated' : undefined}
             onChange={(event) => onChange({ ...current, text: event.target.value })}
             onKeyDown={(event) => {
               if (event.key === 'Enter') onEnter()

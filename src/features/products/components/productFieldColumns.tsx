@@ -42,7 +42,7 @@ export function buildProductFieldColumns<T extends RowData>({
       header: 'Image',
       enableSorting: false,
       cell: ({ row }) => (
-        <ProductThumb src={variationOf(row.original)?.imageUrl ?? null} size="sm" />
+        <ProductThumb src={variationOf(row.original)?.imageUrl ?? null} size="sm" wide />
       ),
     },
     {

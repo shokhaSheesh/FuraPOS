@@ -27,6 +27,7 @@ export function TransferProductTable({
   onOpen,
   footer,
   emptyState,
+  columnsMenuContainer,
 }: {
   groups: ProductGroup[]
   names: { from: string; to: string; demand: string; requesting: boolean }
@@ -34,6 +35,8 @@ export function TransferProductTable({
   onOpen: (group: ProductGroup) => void
   footer: ReactNode
   emptyState: ReactNode
+  /** Where the Columns menu goes — beside the view switcher. */
+  columnsMenuContainer: HTMLElement | null
 }) {
   const columns = useMemo<TableColumn<ProductGroup>[]>(() => {
     const variations = (group: ProductGroup) => group.rows.map((row) => row.variation)
@@ -146,6 +149,7 @@ export function TransferProductTable({
       onRowClick={onOpen}
       footer={footer}
       emptyState={emptyState}
+      columnsMenuContainer={columnsMenuContainer}
     />
   )
 }

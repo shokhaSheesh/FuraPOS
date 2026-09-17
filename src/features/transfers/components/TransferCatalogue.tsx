@@ -108,6 +108,8 @@ export function TransferCatalogue({
     readStored(CARD_FIELDS_KEY, DEFAULT_CARD_FIELDS),
   )
   const [openId, setOpenId] = useState<string | null>(null)
+  /** The slot beside the view switcher the list's Columns menu is drawn into. */
+  const [columnsSlot, setColumnsSlot] = useState<HTMLElement | null>(null)
 
   const groups = useMemo(() => groupByProduct(rows), [rows])
   const counts = useMemo(() => countByCategory(groups, categories), [groups, categories])
@@ -304,6 +306,8 @@ export function TransferCatalogue({
                 <List />
               </Button>
             </div>
+            {/* The list's Columns menu lands here, where the cards' Fields menu sits. */}
+            {view === 'table' ? <div ref={setColumnsSlot} className="flex" /> : null}
             {view === 'cards' ? (
               <Popover
                 align="end"
@@ -361,6 +365,7 @@ export function TransferCatalogue({
           names={names}
           canSeeCost={canSeeCost}
           onOpen={openGroup}
+          columnsMenuContainer={columnsSlot}
           footer={
             <ScrollSentinel
               ref={sentinel}
@@ -394,7 +399,7 @@ export function TransferCatalogue({
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] gap-3">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(12rem,1fr))] gap-3">
             {visible.map((group) => (
               <ProductCard
                 key={group.productId}
@@ -535,9 +540,9 @@ function ProductCard({
       <button
         type="button"
         onClick={onOpen}
-        // A square tile, sized rather than stretched to the card, so a photo
-        // keeps its proportions and the card stays compact.
-        className="bg-surface-inset text-fg-subtle rounded-control mx-3 mt-3 flex size-28 items-center justify-center self-center overflow-hidden"
+        // Full width and square: the card is narrow enough for a square photo
+        // not to crowd out what is written under it.
+        className="bg-surface-inset text-fg-subtle flex aspect-square w-full items-center justify-center overflow-hidden"
         aria-label={`Open ${group.productName}`}
       >
         {first.imageUrl ? (

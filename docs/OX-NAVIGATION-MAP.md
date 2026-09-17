@@ -789,8 +789,8 @@ sidebar or anything else. Clicking an unfinished transfer in the list reopens it
 (`/products/transfers/:id/edit`); its detail page has **Continue editing**. Saving along the way and
 sending at the end write one document, not two. The comment has its own row under From and To on
 the route step, and sits on the same line as the route above the products; the dialog's Move column has − / +
-either side of the number, compact at 24 px. Product-card images are a compact 112 px square, centred
-(a full-width square and a wide box were both tried).
+either side of the number, compact at 24 px. Cards are narrower (12 rem) so the image can be a full-width
+square; the list view's Columns menu sits beside the view switcher, where the cards' Fields menu is.
 
 **The list view is products, not variations** (client request): one row per product with the same
 stock pills and sales as a card, a `+` that opens the same variations dialog, and every
@@ -1928,3 +1928,12 @@ cannot drift from what the table shows; print templates, a card grid, describe t
 The status and "late / owed" chips already on those pages stay, and their counts follow the field
 filters. The KPI cards on Offline sales, Suppliers, Transfers, Online sales, Autoparks and Product logs
 were **cut at the client's request**.
+
+### Demo pictures
+
+The seeded catalogue carries pictures so screens read like a working platform: a flat illustration
+per kind of part (`public/images/parts`, fifteen of them) and per top-level category
+(`public/images/categories`), drawn by `scripts/draw-demo-images.py`. Each product gets its part's
+picture by name and each sub-category the part it is best known for — assigned by position, not the
+random stream, so no other seeded value moved. They stand in for product photos; replacing any file
+under the same name changes it everywhere.

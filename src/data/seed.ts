@@ -216,6 +216,35 @@ const productNouns = [
 ]
 
 /**
+ * A picture for each kind of part — flat illustrations in `public/images/parts`,
+ * standing in for the product photos a real catalogue would carry. Read from
+ * the name rather than drawn from the random stream, so every seeded value
+ * after this stays exactly where it was.
+ */
+const PART_IMAGES: Record<(typeof productNouns)[number], string> = {
+  'Oil filter': 'oil-filter',
+  'Air filter': 'air-filter',
+  'Brake pad set': 'brake-pad-set',
+  'Brake disc': 'brake-disc',
+  'Spark plug': 'spark-plug',
+  'Timing belt': 'timing-belt',
+  Alternator: 'alternator',
+  'Starter motor': 'starter-motor',
+  'Wiper blade': 'wiper-blade',
+  'Engine oil 5W-30': 'engine-oil',
+  Coolant: 'coolant',
+  Battery: 'battery',
+  'Fuel pump': 'fuel-pump',
+  'Clutch kit': 'clutch-kit',
+  'Shock absorber': 'shock-absorber',
+}
+
+const partImage = (productName: string) => {
+  const noun = productNouns.find((entry) => productName.startsWith(entry))
+  return noun ? `/images/parts/${PART_IMAGES[noun]}.svg` : null
+}
+
+/**
  * Products carry what a part *is*; variations carry what is actually sold.
  * Most parts have one variation; side-specific ones (steps, mirrors, wings)
  * have a left and a right, which is exactly the split the reference data shows.
@@ -298,7 +327,7 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
         random() > 0.4
           ? `${(index % 3) + 1}-${pick(['A', 'B', 'C'])}-${between(1, 20)}-${between(1, 9)}`
           : null,
-      imageUrl: null,
+      imageUrl: partImage(name),
       status: 'active' as const,
     }
     // MOQ used to be drawn last, after the shelf. It has left the product, but
@@ -2393,6 +2422,25 @@ export const locationSettings: LocationSettings[] = [
   },
 ]
 
+/** A picture per top-level group, drawn for it. */
+const GROUP_IMAGES: Record<string, string> = {
+  Engine: '/images/categories/engine.svg',
+  Chassis: '/images/categories/chassis.svg',
+  Electrics: '/images/categories/electrics.svg',
+  Consumables: '/images/categories/consumables.svg',
+  Body: '/images/categories/body.svg',
+}
+
+/** A category shows the part it is best known for. */
+const CATEGORY_IMAGES: Record<string, string> = {
+  'cat-1': '/images/parts/timing-belt.svg',
+  'cat-2': '/images/parts/brake-disc.svg',
+  'cat-3': '/images/parts/oil-filter.svg',
+  'cat-4': '/images/parts/battery.svg',
+  'cat-5': '/images/parts/coolant.svg',
+  'cat-6': '/images/parts/wiper-blade.svg',
+}
+
 /** Categories, with the parent implied by the path the catalogue already uses. */
 export const categorySettings: CategorySettings[] = (() => {
   const parents = [...new Set(categories.map((c) => c.path.split(' > ')[0]!))]
@@ -2401,13 +2449,13 @@ export const categorySettings: CategorySettings[] = (() => {
       id: `catgrp-${index + 1}`,
       name,
       parentId: null,
-      imageUrl: null,
+      imageUrl: GROUP_IMAGES[name] ?? null,
     })),
     ...categories.map((category) => ({
       id: category.id,
       name: category.name,
       parentId: `catgrp-${parents.indexOf(category.path.split(' > ')[0]!) + 1}`,
-      imageUrl: null,
+      imageUrl: CATEGORY_IMAGES[category.id] ?? null,
     })),
   ]
 })()

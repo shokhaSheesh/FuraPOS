@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-table'
 import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, ChevronsUpDown, Settings2 } from 'lucide-react'
 import { DropdownMenu } from 'radix-ui'
+import { createPortal } from 'react-dom'
 import { cn } from '@/shared/lib/cn'
 import { Button } from '@/shared/ui/Button'
 import { Skeleton } from '@/shared/ui/Skeleton'
@@ -45,6 +46,12 @@ export interface DataTableProps<T extends RowData> {
    * has exactly one toolbar: controls left, column visibility right.
    */
   toolbar?: ReactNode
+  /**
+   * Where the Columns menu goes when it belongs beside other view controls
+   * outside the table. When set and there is no toolbar, the toolbar row is
+   * not drawn at all.
+   */
+  columnsMenuContainer?: HTMLElement | null
 }
 
 function readStoredVisibility(
@@ -145,6 +152,7 @@ export function DataTable<T extends RowData>({
   storageKey,
   initialHidden,
   toolbar,
+  columnsMenuContainer,
   footer,
   getRowId,
   rowClassName,
@@ -261,80 +269,87 @@ export function DataTable<T extends RowData>({
   const visibleColumnCount = table.getVisibleLeafColumns().length
   const rows = table.getRowModel().rows
 
+  const columnsMenu = (
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger asChild>
+        <Button variant="ghost" size="sm" className="ml-auto">
+          <Settings2 />
+          Columns
+        </Button>
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content
+          align="end"
+          sideOffset={4}
+          // Capped so a 19-column table does not open a full-height wall
+          // of checkboxes; it never grows past the space actually available.
+          className="rounded-control border-border bg-surface shadow-popover z-50 max-h-[min(18rem,var(--radix-dropdown-menu-content-available-height))] min-w-48 overflow-y-auto overscroll-contain border p-1"
+        >
+          {(() => {
+            const movable = table
+              .getAllLeafColumns()
+              .filter((column) => column.id !== 'actions')
+              .map((column) => column.id)
+            return table
+              .getAllLeafColumns()
+              .filter((column) => column.getCanHide())
+              .map((column) => {
+                const position = movable.indexOf(column.id)
+                return (
+                  <DropdownMenu.CheckboxItem
+                    key={column.id}
+                    checked={column.getIsVisible()}
+                    onCheckedChange={(checked) => column.toggleVisibility(Boolean(checked))}
+                    onSelect={(event) => event.preventDefault()}
+                    className="text-fg data-[highlighted]:bg-surface-muted flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm outline-none"
+                  >
+                    <span className="border-border-strong flex size-4 shrink-0 items-center justify-center rounded border">
+                      <DropdownMenu.ItemIndicator>
+                        <span className="bg-primary block size-2 rounded-[2px]" />
+                      </DropdownMenu.ItemIndicator>
+                    </span>
+                    <span className="flex-1 truncate">
+                      {typeof column.columnDef.header === 'string'
+                        ? column.columnDef.header
+                        : column.id}
+                    </span>
+                    {/* Ordering lives here rather than on the heading: a
+                        table is read by dragging it sideways, so dragging a
+                        heading to move it fought with scrolling. */}
+                    <span className="ml-1 flex shrink-0 items-center">
+                      <MoveButton
+                        label={`Move ${column.id} left`}
+                        disabled={position <= 0}
+                        onClick={() => moveColumn(column.id, -1)}
+                      >
+                        <ChevronUp />
+                      </MoveButton>
+                      <MoveButton
+                        label={`Move ${column.id} right`}
+                        disabled={position === -1 || position >= movable.length - 1}
+                        onClick={() => moveColumn(column.id, 1)}
+                      >
+                        <ChevronDown />
+                      </MoveButton>
+                    </span>
+                  </DropdownMenu.CheckboxItem>
+                )
+              })
+          })()}
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
+  )
+
   return (
     <div className="rounded-card border-border bg-surface shadow-card overflow-hidden border">
-      <div className="border-border flex flex-wrap items-center gap-2 border-b p-2">
-        {toolbar}
-        <DropdownMenu.Root>
-          <DropdownMenu.Trigger asChild>
-            <Button variant="ghost" size="sm" className="ml-auto">
-              <Settings2 />
-              Columns
-            </Button>
-          </DropdownMenu.Trigger>
-          <DropdownMenu.Portal>
-            <DropdownMenu.Content
-              align="end"
-              sideOffset={4}
-              // Capped so a 19-column table does not open a full-height wall
-              // of checkboxes; it never grows past the space actually available.
-              className="rounded-control border-border bg-surface shadow-popover z-50 max-h-[min(18rem,var(--radix-dropdown-menu-content-available-height))] min-w-48 overflow-y-auto overscroll-contain border p-1"
-            >
-              {(() => {
-                const movable = table
-                  .getAllLeafColumns()
-                  .filter((column) => column.id !== 'actions')
-                  .map((column) => column.id)
-                return table
-                  .getAllLeafColumns()
-                  .filter((column) => column.getCanHide())
-                  .map((column) => {
-                    const position = movable.indexOf(column.id)
-                    return (
-                      <DropdownMenu.CheckboxItem
-                        key={column.id}
-                        checked={column.getIsVisible()}
-                        onCheckedChange={(checked) => column.toggleVisibility(Boolean(checked))}
-                        onSelect={(event) => event.preventDefault()}
-                        className="text-fg data-[highlighted]:bg-surface-muted flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm outline-none"
-                      >
-                        <span className="border-border-strong flex size-4 shrink-0 items-center justify-center rounded border">
-                          <DropdownMenu.ItemIndicator>
-                            <span className="bg-primary block size-2 rounded-[2px]" />
-                          </DropdownMenu.ItemIndicator>
-                        </span>
-                        <span className="flex-1 truncate">
-                          {typeof column.columnDef.header === 'string'
-                            ? column.columnDef.header
-                            : column.id}
-                        </span>
-                        {/* Ordering lives here rather than on the heading: a
-                            table is read by dragging it sideways, so dragging a
-                            heading to move it fought with scrolling. */}
-                        <span className="ml-1 flex shrink-0 items-center">
-                          <MoveButton
-                            label={`Move ${column.id} left`}
-                            disabled={position <= 0}
-                            onClick={() => moveColumn(column.id, -1)}
-                          >
-                            <ChevronUp />
-                          </MoveButton>
-                          <MoveButton
-                            label={`Move ${column.id} right`}
-                            disabled={position === -1 || position >= movable.length - 1}
-                            onClick={() => moveColumn(column.id, 1)}
-                          >
-                            <ChevronDown />
-                          </MoveButton>
-                        </span>
-                      </DropdownMenu.CheckboxItem>
-                    )
-                  })
-              })()}
-            </DropdownMenu.Content>
-          </DropdownMenu.Portal>
-        </DropdownMenu.Root>
-      </div>
+      {columnsMenuContainer === undefined || toolbar ? (
+        <div className="border-border flex flex-wrap items-center gap-2 border-b p-2">
+          {toolbar}
+          {columnsMenuContainer === undefined ? columnsMenu : null}
+        </div>
+      ) : null}
+      {columnsMenuContainer ? createPortal(columnsMenu, columnsMenuContainer) : null}
 
       <div className="overflow-x-auto">
         {/*

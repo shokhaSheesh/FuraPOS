@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F5F8FC"/><stop offset="1" stop-color="#E4EBF4"/></linearGradient>
+<linearGradient id="steel" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E3E8EF"/><stop offset="0.5" stop-color="#AEB8C5"/><stop offset="1" stop-color="#7D8898"/></linearGradient>
+<linearGradient id="dark" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4A5566"/><stop offset="1" stop-color="#1F2733"/></linearGradient>
+<linearGradient id="blue" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3B9BE0"/><stop offset="1" stop-color="#0A5E9C"/></linearGradient>
+<linearGradient id="red" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F0625A"/><stop offset="1" stop-color="#B42A22"/></linearGradient>
+<linearGradient id="amber" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFD166"/><stop offset="1" stop-color="#E09B1A"/></linearGradient>
+<linearGradient id="green" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5FD08E"/><stop offset="1" stop-color="#1E8A52"/></linearGradient>
+<radialGradient id="glow" cx="0.5" cy="0.45" r="0.55"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.9"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></radialGradient>
+</defs>
+<rect width="400" height="400" fill="url(#bg)"/>
+<circle cx="200" cy="190" r="170" fill="url(#glow)"/>
+<ellipse cx="200" cy="338" rx="120" ry="16" fill="#0F1B2D" opacity="0.10"/>
+<path d="M120 120 Q120 96 150 96 H230 L250 70 H280 V110 Q300 120 300 150 V310 Q300 330 280 330 H140 Q120 330 120 310 Z" fill="url(#green)"/>
+<rect x="250" y="56" width="34" height="22" rx="5" fill="#12171F"/>
+<path d="M150 96 v-16 h40 v16" fill="none" stroke="#FFFFFF" stroke-width="10" opacity="0.4"/>
+<rect x="140" y="170" width="140" height="110" rx="10" fill="#FFFFFF" opacity="0.93"/>
+<text x="210" y="220" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="700" fill="#1F2733" text-anchor="middle">−40°C</text>
+<text x="210" y="254" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#5B6778" text-anchor="middle">Coolant</text>
+</svg>

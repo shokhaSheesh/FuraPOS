@@ -166,6 +166,12 @@ Conventions that are load-bearing — follow them rather than inventing per-scre
   variation gets received. The document's own editable columns (counted quantity, line price) go
   straight after the identity block, not appended at the end. A test compares the two column sets,
   so a field added to the catalogue cannot quietly go missing from the documents.
+- **Products are picked from cards (client mockup).** A document's product step — transfers,
+  purchase orders, goods receipts — is `<ProductCatalogue>` (`src/shared/components/catalogue/`):
+  category tiles with sub-categories beneath, make → model filters, cards or a list with Fields /
+  Columns beside the switcher, and a `+` that opens `<VariationsDialog>` to set quantities (and, on
+  purchases, prices) per variation. Orders and receipts use `<PurchaseCatalogue>` over
+  `buildPurchaseRows`. Unfinished documents have a Save button and say so when you leave.
 - **Overlays are ours.** Dropdowns, date pickers and menus all build on `shared/ui/Popover`;
   `Select`, `Calendar` (three-step days → months → years) and `DateRangePicker` are the components.
   Never a native `<select>`, never a stock library theme — see DESIGN_RULES § 11.

@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import type { TransferRow } from '../components/transferLineColumns'
 import type { VariationRow } from '@/features/products/model/product'
 import {
   countByCategory,
@@ -8,15 +7,22 @@ import {
   matchesSearch,
   stockLevel,
   subtreeOf,
+  sumRows,
+  type CatalogueRow,
   type CategoryNode,
 } from './browse'
+
+interface Row extends CatalogueRow {
+  atSource: number
+  supplierSku: string | null
+}
 
 const row = (
   id: string,
   productId: string,
   categoryId: string,
-  numbers: { atSource?: number; atDestination?: number; sold?: number; quantity?: number } = {},
-): TransferRow => ({
+  numbers: { atSource?: number; sold?: number; quantity?: number } = {},
+): Row => ({
   key: id,
   variation: {
     id,
@@ -34,12 +40,10 @@ const row = (
     vehicleMakes: [],
     vehicleModels: [],
   } as unknown as VariationRow,
-  index: numbers.quantity ? 0 : -1,
   quantity: numbers.quantity ?? 0,
   atSource: numbers.atSource ?? 5,
-  atDestination: numbers.atDestination ?? 0,
   demand: { 3: numbers.sold ?? 0, 6: numbers.sold ?? 0 },
-  stalled: false,
+  supplierSku: `THEIR-${id}`,
 })
 
 const tree: CategoryNode[] = [
@@ -52,12 +56,13 @@ const tree: CategoryNode[] = [
 describe('groupByProduct', () => {
   it('puts the variations of one product on one card and adds their numbers up', () => {
     const groups = groupByProduct([
-      row('a', 'p1', 'oil', { atSource: 3, atDestination: 1, sold: 4, quantity: 2 }),
-      row('b', 'p1', 'oil', { atSource: 4, atDestination: 2, sold: 1 }),
+      row('a', 'p1', 'oil', { atSource: 3, sold: 4, quantity: 2 }),
+      row('b', 'p1', 'oil', { atSource: 4, sold: 1 }),
       row('c', 'p2', 'body'),
     ])
     expect(groups).toHaveLength(2)
-    expect(groups[0]).toMatchObject({ atSource: 7, atDestination: 3, chosen: 2 })
+    expect(groups[0]).toMatchObject({ chosen: 2 })
+    expect(sumRows(groups[0]!, (r) => r.atSource)).toBe(7)
     expect(groups[0]!.demand).toEqual({ 3: 5, 6: 5 })
   })
 })
@@ -84,6 +89,12 @@ describe('finding and ordering cards', () => {
     const [group] = groupByProduct([row('a', 'p1', 'oil'), row('b', 'p1', 'oil')])
     expect(matchesSearch(group!, 'oem-b')).toBe(true)
     expect(matchesSearch(group!, 'nothing like it')).toBe(false)
+  })
+
+  it('also searches what the document knows a row by, such as a supplier code', () => {
+    const [group] = groupByProduct([row('a', 'p1', 'oil')])
+    expect(matchesSearch(group!, 'their-a')).toBe(false)
+    expect(matchesSearch(group!, 'their-a', (r) => [r.supplierSku])).toBe(true)
   })
 
   it('puts the best sellers first', () => {

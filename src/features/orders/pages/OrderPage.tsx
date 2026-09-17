@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import {
   ArrowLeft,
@@ -8,6 +8,7 @@ import {
   LayoutGrid,
   List,
   PackageCheck,
+  Save,
   Send,
   Wand2,
 } from 'lucide-react'
@@ -16,6 +17,10 @@ import { EmptyState } from '@/shared/components/EmptyState'
 import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
 import { AddProductsMenu } from '@/shared/components/AddProductsMenu'
+import { PurchaseCatalogue } from '@/shared/components/catalogue/PurchaseCatalogue'
+import { buildPurchaseRows, type PurchaseOffer } from '@/shared/components/catalogue/purchaseRows'
+import type { VariationDraft } from '@/shared/components/catalogue/VariationsDialog'
+import { demandAt } from '@/shared/lib/demand'
 import { ProductPicker } from '@/shared/components/ProductPicker'
 import { ProductThumb } from '@/shared/components/ProductThumb'
 import { ScrollSentinel } from '@/shared/components/ScrollSentinel'
@@ -36,6 +41,7 @@ import { useSession } from '@/app/providers/SessionProvider'
 import { formatDate, formatDateTime, formatMoney, formatNumber } from '@/shared/lib/format'
 import { useDataStore } from '@/data/store'
 import { USD_RATE } from '@/data/seed'
+import type { VariationRow } from '@/features/products/model/product'
 import { catalogueFor } from '@/features/suppliers/model/catalogue'
 import { GenerateOrderModal } from '../components/GenerateOrderModal'
 import { buildOrderLineColumns, type OrderRow } from '../components/orderLineColumns'
@@ -87,6 +93,26 @@ export default function OrderPage() {
   const { data: order } = useOrder(orderId)
   const [step, setStep] = useState(1)
 
+  /*
+    Every change is written as it is made, so an unfinished order is never
+    lost. Leaving still says so — by the back link, the sidebar or anything
+    else — when something changed on this visit, the way a transfer does.
+  */
+  const openedWith = useRef(snapshot(order))
+  const latest = useRef(order)
+  useEffect(() => {
+    latest.current = order
+  }, [order])
+  useEffect(
+    () => () => {
+      const now = latest.current
+      if (now?.status === 'draft' && snapshot(now) !== openedWith.current) {
+        toast.success(`${now.number} saved as unfinished — pick it up from Orders`)
+      }
+    },
+    [],
+  )
+
   if (!order) {
     return (
       <EmptyState
@@ -122,6 +148,19 @@ export default function OrderPage() {
             {late ? ` — ${formatNumber(late)} days late` : ''}
           </span>
         ) : null}
+        {editable ? (
+          <Button
+            variant="secondary"
+            className="ml-auto"
+            onClick={() => {
+              openedWith.current = snapshot(order)
+              toast.success(`${order.number} saved as unfinished`)
+            }}
+          >
+            <Save />
+            Save
+          </Button>
+        ) : null}
       </div>
 
       <Steps steps={STEPS} current={step} onSelect={setStep} selectable wide />
@@ -138,6 +177,10 @@ export default function OrderPage() {
 }
 
 /* --- shared ------------------------------------------------------------- */
+
+/** What leaving compares against, to say whether this visit changed anything. */
+const snapshot = (order: PurchaseOrder | undefined) =>
+  order ? JSON.stringify([order.lines, order.comment, order.expectedAt]) : ''
 
 /**
  * The rows of the product step, laid out over a catalogue exactly as a goods
@@ -248,6 +291,54 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
   const [search, setSearch] = useState('')
   const [suggesting, setSuggesting] = useState(false)
   const [adding, setAdding] = useState(false)
+  const sales = useDataStore((s) => s.sales)
+  const locationName = useDataStore(
+    (s) => s.locations.find((l) => l.id === order.locationId)?.name ?? 'this location',
+  )
+
+  /*
+    What the cards browse while the order is being written: the supplier's own
+    catalogue, or ours for a market run or a factory — with the order's lines
+    laid over it.
+  */
+  const offers = useMemo<PurchaseOffer[]>(
+    () =>
+      catalogue.flatMap((entry) =>
+        entry.variation
+          ? [
+              {
+                variation: entry.variation,
+                price: entry.product.price,
+                currency: entry.product.currency,
+                supplierSku: order.kind === 'supplier' ? entry.product.supplierSku : null,
+              },
+            ]
+          : [],
+      ),
+    [catalogue, order.kind],
+  )
+  /** They list it and we have never carried it — nothing to order against yet. */
+  const newToUs = catalogue.filter((entry) => !entry.variation).length
+  const pickRows = useMemo(
+    () =>
+      editable
+        ? buildPurchaseRows({
+            offers,
+            lines: order.lines.map((line) => ({
+              variationId: line.variationId,
+              quantity: line.orderedQuantity,
+              unitCost: line.unitCost,
+              costCurrency: line.costCurrency,
+              expected: null,
+            })),
+            variations,
+            locationId: order.locationId,
+            // Company-wide, as Suggest counts it: an order refills the business.
+            demandOf: (id) => demandAt(sales, id, null),
+          })
+        : [],
+    [editable, offers, order.lines, order.locationId, variations, sales],
+  )
 
   /** Whether their catalogue is already the table, so nothing needs adding. */
   const fromCatalogue = order.kind === 'supplier' && order.status === 'draft'
@@ -318,6 +409,170 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
   })
 
   const units = orderedUnits(order)
+
+  /** A product's dialog, applied: quantities and agreed prices in one write. */
+  const applyChanges = (changes: { row: { variation: VariationRow }; draft: VariationDraft }[]) => {
+    const next = [...order.lines]
+    for (const { row, draft } of changes) {
+      const variation = row.variation
+      const at = next.findIndex((line) => line.variationId === variation.id)
+      if (at > -1) {
+        if (draft.quantity > 0) {
+          next[at] = {
+            ...next[at]!,
+            orderedQuantity: draft.quantity,
+            unitCost: draft.unitCost,
+            costCurrency: draft.costCurrency,
+          }
+        } else {
+          next.splice(at, 1)
+        }
+      } else if (draft.quantity > 0) {
+        next.push({
+          id: `pol-${order.id}-${variation.id}`,
+          variationId: variation.id,
+          productId: variation.productId,
+          sku: variation.sku,
+          name: variation.fullName,
+          imageUrl: variation.imageUrl,
+          unit: variation.unit,
+          orderedQuantity: draft.quantity,
+          receivedQuantity: 0,
+          unitCost: draft.unitCost,
+          costCurrency: draft.costCurrency,
+        })
+      }
+    }
+    writeLines(next)
+  }
+
+  const scanning =
+    adding && !fromCatalogue ? (
+      <Card className="p-3">
+        <div className="flex items-center gap-2">
+          <div className="min-w-0 flex-1">
+            <ProductPicker
+              onPick={(variation) =>
+                setQuantity(
+                  {
+                    key: variation.id,
+                    line: order.lines.find((l) => l.variationId === variation.id) ?? null,
+                    index: order.lines.findIndex((l) => l.variationId === variation.id),
+                    variation,
+                    name: variation.fullName,
+                    quantity: 0,
+                    unitCost: variation.costPrice,
+                    costCurrency: variation.costCurrency,
+                    newToUs: false,
+                    stockHere: [],
+                  },
+                  (order.lines.find((l) => l.variationId === variation.id)?.orderedQuantity ?? 0) +
+                    1,
+                )
+              }
+              placeholder="Search or scan a barcode to put it on this order…"
+            />
+          </div>
+          <Button variant="secondary" onClick={() => setAdding(false)}>
+            Close scanning
+          </Button>
+        </div>
+      </Card>
+    ) : null
+
+  const suggestModal = (
+    <GenerateOrderModal
+      open={suggesting}
+      onOpenChange={setSuggesting}
+      entries={catalogue}
+      supplierName={
+        order.kind === 'market'
+          ? 'the market'
+          : order.kind === 'china'
+            ? 'China'
+            : (order.supplierName ?? '')
+      }
+      scope={order.kind === 'supplier' ? undefined : 'Everything in our catalogue'}
+      onAdd={(suggestions) => {
+        /*
+          Suggestions top up what is already on the order rather than
+          replacing it: somebody has usually typed a few lines by hand before
+          asking, and throwing those away would be the opposite of help.
+        */
+        const byVariation = new Map(order.lines.map((line) => [line.variationId, line]))
+        for (const suggestion of suggestions) {
+          const existing = byVariation.get(suggestion.variationId)
+          const variation = variations.find((v) => v.id === suggestion.variationId)
+          if (!variation) continue
+          byVariation.set(suggestion.variationId, {
+            id: existing?.id ?? `pol-${order.id}-${suggestion.variationId}`,
+            variationId: variation.id,
+            productId: variation.productId,
+            sku: variation.sku,
+            name: variation.fullName,
+            imageUrl: variation.imageUrl,
+            unit: variation.unit,
+            orderedQuantity: suggestion.suggested,
+            receivedQuantity: existing?.receivedQuantity ?? 0,
+            unitCost: existing?.unitCost ?? suggestion.price,
+            costCurrency: existing?.costCurrency ?? suggestion.currency,
+          })
+        }
+        writeLines([...byVariation.values()])
+        toast.success(`${suggestions.length} products added from the suggestion`)
+        setSuggesting(false)
+      }}
+    />
+  )
+
+  if (editable) {
+    return (
+      <>
+        {scanning}
+        <PurchaseCatalogue
+          rows={pickRows}
+          storageKey="order"
+          noun="order"
+          locationName={locationName}
+          canSeeCost={canSeeCost}
+          onApply={applyChanges}
+          actions={
+            <>
+              <Button type="button" variant="primary" onClick={() => setSuggesting(true)}>
+                <Wand2 />
+                Suggest
+              </Button>
+              {!fromCatalogue ? (
+                <AddProductsMenu
+                  onPickFromCatalogue={() => setAdding(true)}
+                  onUploadSpreadsheet={() => navigate(paths.procurement.orderImport(order.id))}
+                />
+              ) : null}
+            </>
+          }
+          summary={
+            <>
+              {canSeeCost ? (
+                <p className="text-fg-muted text-sm">
+                  Order value:{' '}
+                  <strong className="text-fg font-medium">
+                    {formatMoney(Math.round(orderValue(order, USD_RATE)))}
+                  </strong>
+                </p>
+              ) : null}
+              {newToUs > 0 ? (
+                <p className="text-fg-subtle text-2xs">
+                  {formatNumber(newToUs)} more they list {newToUs === 1 ? 'is' : 'are'} new to us —
+                  add {newToUs === 1 ? 'it' : 'them'} to the catalogue to order
+                </p>
+              ) : null}
+            </>
+          }
+        />
+        {suggestModal}
+      </>
+    )
+  }
 
   return (
     <>
@@ -448,48 +703,7 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
         }
       />
 
-      <GenerateOrderModal
-        open={suggesting}
-        onOpenChange={setSuggesting}
-        entries={catalogue}
-        supplierName={
-          order.kind === 'market'
-            ? 'the market'
-            : order.kind === 'china'
-              ? 'China'
-              : (order.supplierName ?? '')
-        }
-        scope={order.kind === 'supplier' ? undefined : 'Everything in our catalogue'}
-        onAdd={(suggestions) => {
-          /*
-            Suggestions top up what is already on the order rather than
-            replacing it: somebody has usually typed a few lines by hand before
-            asking, and throwing those away would be the opposite of help.
-          */
-          const byVariation = new Map(order.lines.map((line) => [line.variationId, line]))
-          for (const suggestion of suggestions) {
-            const existing = byVariation.get(suggestion.variationId)
-            const variation = variations.find((v) => v.id === suggestion.variationId)
-            if (!variation) continue
-            byVariation.set(suggestion.variationId, {
-              id: existing?.id ?? `pol-${order.id}-${suggestion.variationId}`,
-              variationId: variation.id,
-              productId: variation.productId,
-              sku: variation.sku,
-              name: variation.fullName,
-              imageUrl: variation.imageUrl,
-              unit: variation.unit,
-              orderedQuantity: suggestion.suggested,
-              receivedQuantity: existing?.receivedQuantity ?? 0,
-              unitCost: existing?.unitCost ?? suggestion.price,
-              costCurrency: existing?.costCurrency ?? suggestion.currency,
-            })
-          }
-          writeLines([...byVariation.values()])
-          toast.success(`${suggestions.length} products added from the suggestion`)
-          setSuggesting(false)
-        }}
-      />
+      {suggestModal}
     </>
   )
 }

@@ -1,6 +1,6 @@
 import { cn } from '@/shared/lib/cn'
 import { formatNumber } from '@/shared/lib/format'
-import { stockLevel } from '../model/browse'
+import { stockLevel } from './browse'
 
 /**
  * How a stock figure is coloured while picking a transfer — the client's

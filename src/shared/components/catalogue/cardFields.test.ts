@@ -7,11 +7,11 @@ import type { VariationRow } from '@/features/products/model/product'
 import { ALWAYS_ON_CARD, CATALOGUE_CARD_FIELDS } from './cardFields'
 
 /**
- * The client rule, for the transfer's product cards: every field of the
+ * The client rule, for the product cards on transfers, orders and receipts: every field of the
  * product list can be put on a card. This is what stops the card's choices
  * falling behind when the catalogue gains a field.
  */
-describe('a transfer card offers every product-list field', () => {
+describe('a product card offers every product-list field', () => {
   it('has a choice for each field, in the catalogue’s order', () => {
     expect(CATALOGUE_CARD_FIELDS.map((field) => field.id)).toEqual(
       PRODUCT_FIELD_COLUMN_IDS.filter((id) => !ALWAYS_ON_CARD.includes(id)),

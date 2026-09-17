@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import {
   ArrowLeft,
@@ -8,6 +8,7 @@ import {
   List,
   PackageCheck,
   Plus,
+  Save,
   Sliders,
   Trash2,
 } from 'lucide-react'
@@ -17,6 +18,10 @@ import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
 import { ProductPicker } from '@/shared/components/ProductPicker'
 import { AddProductsMenu } from '@/shared/components/AddProductsMenu'
+import { PurchaseCatalogue } from '@/shared/components/catalogue/PurchaseCatalogue'
+import { buildPurchaseRows, type PurchaseOffer } from '@/shared/components/catalogue/purchaseRows'
+import type { VariationDraft } from '@/shared/components/catalogue/VariationsDialog'
+import { demandAt } from '@/shared/lib/demand'
 import { ScrollSentinel } from '@/shared/components/ScrollSentinel'
 import { SearchInput } from '@/shared/components/SearchInput'
 import { useInfiniteRows } from '@/shared/hooks/useInfiniteRows'
@@ -90,6 +95,26 @@ export default function GoodsReceiptPage() {
   const { data: receipt } = useReceipt(receiptId)
   const [step, setStep] = useState(1)
 
+  /*
+    Every change is written as it is made, so an unfinished receipt is never
+    lost. Leaving still says so when this visit changed something — the way a
+    transfer does.
+  */
+  const openedWith = useRef(snapshot(receipt))
+  const latest = useRef(receipt)
+  useEffect(() => {
+    latest.current = receipt
+  }, [receipt])
+  useEffect(
+    () => () => {
+      const now = latest.current
+      if (now?.status === 'draft' && snapshot(now) !== openedWith.current) {
+        toast.success(`${now.number} saved as unfinished — pick it up from Goods receipt`)
+      }
+    },
+    [],
+  )
+
   if (!receipt) {
     return (
       <EmptyState
@@ -128,6 +153,19 @@ export default function GoodsReceiptPage() {
             </Link>
           </Button>
         ) : null}
+        {editable ? (
+          <Button
+            variant="secondary"
+            className="ml-auto"
+            onClick={() => {
+              openedWith.current = snapshot(receipt)
+              toast.success(`${receipt.number} saved as unfinished`)
+            }}
+          >
+            <Save />
+            Save
+          </Button>
+        ) : null}
       </div>
 
       <Steps steps={STEPS} current={step} onSelect={setStep} selectable wide />
@@ -150,6 +188,10 @@ export default function GoodsReceiptPage() {
 }
 
 /* --- shared ------------------------------------------------------------- */
+
+/** What leaving compares against, to say whether this visit changed anything. */
+const snapshot = (receipt: GoodsReceipt | undefined) =>
+  receipt ? JSON.stringify([receipt.lines, receipt.additionalCosts, receipt.comment]) : ''
 
 /**
  * The rows of the product step.
@@ -264,6 +306,68 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
   const [cards, setCards] = useState(false)
   const [adding, setAdding] = useState(false)
   const [search, setSearch] = useState('')
+  const variations = useDataStore((s) => s.variations)
+  const supplierProducts = useDataStore((s) => s.supplierProducts)
+  const sales = useDataStore((s) => s.sales)
+
+  /*
+    What the cards browse while the receipt is being built: the supplier's own
+    catalogue when we hold one, ours otherwise — with the receipt's lines laid
+    over it.
+  */
+  const supplierCatalogue = useMemo(
+    () =>
+      receipt.kind === 'supplier' && receipt.supplierId
+        ? catalogueFor(supplierProducts, variations, receipt.supplierId)
+        : [],
+    [receipt.kind, receipt.supplierId, supplierProducts, variations],
+  )
+  const offers = useMemo<PurchaseOffer[]>(
+    () =>
+      supplierCatalogue.length
+        ? supplierCatalogue.flatMap((entry) =>
+            entry.variation
+              ? [
+                  {
+                    variation: entry.variation,
+                    price: entry.product.price,
+                    currency: entry.product.currency,
+                    supplierSku: entry.product.supplierSku,
+                  },
+                ]
+              : [],
+          )
+        : variations
+            .filter((variation) => variation.status === 'active')
+            .map((variation) => ({
+              variation,
+              price: variation.costPrice,
+              currency: variation.costCurrency,
+              supplierSku: null,
+            })),
+    [supplierCatalogue, variations],
+  )
+  /** They list it and we have never carried it — it cannot be received. */
+  const newToUs = supplierCatalogue.filter((entry) => !entry.variation).length
+  const pickRows = useMemo(
+    () =>
+      editable
+        ? buildPurchaseRows({
+            offers,
+            lines: receipt.lines.map((line) => ({
+              variationId: line.variationId,
+              quantity: line.receivedQuantity ?? line.orderedQuantity,
+              unitCost: line.unitCost,
+              costCurrency: line.costCurrency,
+              expected: line.orderedQuantity > 0 ? line.orderedQuantity : null,
+            })),
+            variations,
+            locationId: receipt.locationId,
+            demandOf: (id) => demandAt(sales, id, null),
+          })
+        : [],
+    [editable, offers, receipt.lines, receipt.locationId, variations, sales],
+  )
 
   // Filtering only what is drawn, never what is stored: the index on each row
   // still points at its place in the receipt, so editing a filtered row edits
@@ -378,6 +482,92 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
     (sum, line) => sum + (line.receivedQuantity ?? line.orderedQuantity),
     0,
   )
+
+  /** A product's dialog, applied: what arrived and at what price, in one write. */
+  const applyChanges = (changes: { row: { variation: VariationRow }; draft: VariationDraft }[]) => {
+    const next = [...receipt.lines]
+    for (const { row, draft } of changes) {
+      const variation = row.variation
+      const at = next.findIndex((line) => line.variationId === variation.id)
+      if (at > -1) {
+        const line = next[at]!
+        if (draft.quantity > 0 || line.orderedQuantity > 0) {
+          // A line the order expected stays at zero, so the shortfall shows.
+          next[at] = {
+            ...line,
+            receivedQuantity: draft.quantity,
+            unitCost: draft.unitCost,
+            costCurrency: draft.costCurrency,
+          }
+        } else {
+          next.splice(at, 1)
+        }
+      } else if (draft.quantity > 0) {
+        next.push({
+          id: `grl-${receipt.id}-${variation.id}`,
+          variationId: variation.id,
+          productId: variation.productId,
+          sku: variation.sku,
+          name: variation.fullName,
+          imageUrl: variation.imageUrl,
+          unit: variation.unit,
+          // Nothing was expected — no order stands behind this line.
+          orderedQuantity: 0,
+          receivedQuantity: draft.quantity,
+          unitCost: draft.unitCost,
+          costCurrency: draft.costCurrency,
+        })
+      }
+    }
+    writeLines(next)
+  }
+
+  if (editable) {
+    return (
+      <>
+        {adding && !fromCatalogue ? (
+          <Card className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="min-w-0 flex-1">
+                <ProductPicker
+                  onPick={addVariation}
+                  placeholder="Search or scan a barcode to put it on this receipt…"
+                />
+              </div>
+              <Button variant="secondary" onClick={() => setAdding(false)}>
+                Close scanning
+              </Button>
+            </div>
+          </Card>
+        ) : null}
+        <PurchaseCatalogue
+          rows={pickRows}
+          storageKey="receipt"
+          noun="receipt"
+          locationName={receipt.locationName}
+          canSeeCost={canSeeCost}
+          showExpected={Boolean(receipt.orderId)}
+          onApply={applyChanges}
+          actions={
+            !fromCatalogue ? (
+              <AddProductsMenu
+                onPickFromCatalogue={() => setAdding(true)}
+                onUploadSpreadsheet={() => navigate(paths.products.goodsReceiptImport(receipt.id))}
+              />
+            ) : null
+          }
+          summary={
+            newToUs > 0 ? (
+              <p className="text-fg-subtle text-2xs">
+                {formatNumber(newToUs)} more they list {newToUs === 1 ? 'is' : 'are'} new to us —
+                add {newToUs === 1 ? 'it' : 'them'} to the catalogue to receive
+              </p>
+            ) : null
+          }
+        />
+      </>
+    )
+  }
 
   return (
     <>

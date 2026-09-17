@@ -1,30 +1,38 @@
-import type { TransferRow } from '../components/transferLineColumns'
+import type { VariationRow } from '@/features/products/model/product'
 
 /**
- * The transfer's product step, browsed the way the client's mockup does it:
+ * A document's product step, browsed the way the client's mockup does it:
  * category → sub-category → product cards → a product's variations.
  *
- * The rows underneath are still the sending shelf, one per variation, exactly
- * as the table view shows them. This file only regroups them into the cards
- * and folders that sit on top, so the two views can never disagree about what
- * is on the shelf or on the transfer.
+ * Transfers, purchase orders and goods receipts all pick products this way.
+ * Each keeps its own rows — the sending shelf, a supplier's catalogue, ours —
+ * one per variation, and this file only regroups them into the cards and
+ * folders on top, so the cards and the list can never disagree about what is
+ * on offer or already on the document.
  */
 
-/** One card: a product, with the variations of it the source can spare. */
-export interface ProductGroup {
+/** What every document's row has, whatever else it carries. */
+export interface CatalogueRow {
+  /** Stable across renders. */
+  key: string
+  variation: VariationRow
+  /** How many are on the document. Zero means it is not on it yet. */
+  quantity: number
+  /** Units sold over 3 and 6 months, wherever the document cares about. */
+  demand: { 3: number; 6: number }
+}
+
+/** One card: a product, with its variations on offer. */
+export interface ProductGroup<R extends CatalogueRow = CatalogueRow> {
   productId: string
   productName: string
   categoryId: string
   categoryPath: string
-  brandName: string | null
-  manufacturer: string | null
   vehicleMakes: string[]
   vehicleModels: string[]
-  rows: TransferRow[]
-  atSource: number
-  atDestination: number
+  rows: R[]
   demand: { 3: number; 6: number }
-  /** Units of it already on the transfer, across its variations. */
+  /** Units of it already on the document, across its variations. */
   chosen: number
 }
 
@@ -35,8 +43,8 @@ export interface CategoryNode {
   imageUrl?: string | null
 }
 
-export function groupByProduct(rows: TransferRow[]): ProductGroup[] {
-  const groups = new Map<string, ProductGroup>()
+export function groupByProduct<R extends CatalogueRow>(rows: R[]): ProductGroup<R>[] {
+  const groups = new Map<string, ProductGroup<R>>()
   for (const row of rows) {
     const v = row.variation
     let group = groups.get(v.productId)
@@ -46,26 +54,24 @@ export function groupByProduct(rows: TransferRow[]): ProductGroup[] {
         productName: v.productName,
         categoryId: v.categoryId,
         categoryPath: v.categoryPath,
-        brandName: v.brandName,
-        manufacturer: v.manufacturer,
         vehicleMakes: v.vehicleMakes,
         vehicleModels: v.vehicleModels,
         rows: [],
-        atSource: 0,
-        atDestination: 0,
         demand: { 3: 0, 6: 0 },
         chosen: 0,
       }
       groups.set(v.productId, group)
     }
     group.rows.push(row)
-    group.atSource += row.atSource
-    group.atDestination += row.atDestination
     group.demand = { 3: group.demand[3] + row.demand[3], 6: group.demand[6] + row.demand[6] }
     group.chosen += row.quantity
   }
   return [...groups.values()]
 }
+
+/** A per-row figure added up across a card's variations. */
+export const sumRows = <R extends CatalogueRow>(group: ProductGroup<R>, pick: (row: R) => number) =>
+  group.rows.reduce((sum, row) => sum + pick(row), 0)
 
 export const childrenOf = (id: string | null, categories: CategoryNode[]) =>
   categories.filter((category) => category.parentId === id)
@@ -84,7 +90,7 @@ export function subtreeOf(id: string, categories: CategoryNode[]): Set<string> {
 
 /** How many cards sit under each category, its sub-categories included. */
 export function countByCategory(
-  groups: ProductGroup[],
+  groups: ProductGroup<CatalogueRow>[],
   categories: CategoryNode[],
 ): Map<string, number> {
   const parentOf = new Map(categories.map((c) => [c.id, c.parentId] as const))
@@ -102,8 +108,16 @@ export function countByCategory(
   return counts
 }
 
-/** Name, code, OEM, barcode or storage address — of the product or any variation of it. */
-export function matchesSearch(group: ProductGroup, query: string) {
+/**
+ * Name, code, OEM, barcode or storage address — of the product or any variation
+ * of it — plus whatever else the document's rows are known by, such as a
+ * supplier's own code.
+ */
+export function matchesSearch<R extends CatalogueRow>(
+  group: ProductGroup<R>,
+  query: string,
+  extra?: (row: R) => (string | null | undefined)[],
+) {
   const q = query.trim().toLowerCase()
   if (!q) return true
   return group.rows.some((row) =>
@@ -115,6 +129,7 @@ export function matchesSearch(group: ProductGroup, query: string) {
       row.variation.oem,
       row.variation.shelfAddress,
       row.variation.productId,
+      ...(extra?.(row) ?? []),
     ].some((field) => field?.toLowerCase().includes(q)),
   )
 }
@@ -128,6 +143,6 @@ export const stockLevel = (units: number): StockLevel =>
   units <= 2 ? 'critical' : units <= 5 ? 'low' : 'good'
 
 /** Best sellers first: over three months, then six to break a tie. */
-export function bestSellingFirst(groups: ProductGroup[]): ProductGroup[] {
+export function bestSellingFirst<G extends ProductGroup<CatalogueRow>>(groups: G[]): G[] {
   return [...groups].sort((a, b) => b.demand[3] - a.demand[3] || b.demand[6] - a.demand[6])
 }

@@ -59,7 +59,8 @@ export const ORDER_STATUSES: {
   label: string
   tone: 'neutral' | 'info' | 'warning' | 'success' | 'danger'
 }[] = [
-  { value: 'draft', label: 'Draft', tone: 'neutral' },
+  // «Незавершённый» — the client's word, as on transfers and goods receipts.
+  { value: 'draft', label: 'Unfinished', tone: 'neutral' },
   { value: 'sent', label: 'Sent', tone: 'info' },
   { value: 'confirmed', label: 'Confirmed', tone: 'info' },
   { value: 'partial', label: 'Part delivered', tone: 'warning' },

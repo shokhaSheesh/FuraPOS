@@ -3,7 +3,7 @@ import { plainText } from '@/shared/ui/RichTextEditor'
 import type { VariationRow } from '@/features/products/model/product'
 
 /**
- * What a product card on a transfer can show.
+ * What a product card can show, wherever products are picked from cards.
  *
  * The client rule for documents holds here too: wherever products are picked,
  * every field of the product list is available. A card is one *product*, so a

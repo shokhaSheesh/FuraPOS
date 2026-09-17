@@ -7,6 +7,13 @@ const sizes = {
   lg: 'size-14',
 } as const
 
+/** The same heights at 3:2, the shape product photos are taken in. */
+const wideSizes = {
+  sm: 'h-8 w-12',
+  md: 'h-10 w-15',
+  lg: 'h-16 w-24',
+} as const
+
 /**
  * A product's picture, with a fallback for the (common) case of no photo.
  *
@@ -17,6 +24,7 @@ const sizes = {
 export function ProductThumb({
   src,
   size = 'md',
+  wide = false,
   className,
 }: {
   src: string | null | undefined
@@ -25,10 +33,12 @@ export function ProductThumb({
    * name, so describing it again is noise for a screen reader.
    */
   size?: keyof typeof sizes
+  /** 3:2 rather than square, so a landscape photo shows whole. */
+  wide?: boolean
   className?: string
 }) {
   const base = cn(
-    sizes[size],
+    wide ? wideSizes[size] : sizes[size],
     'rounded-control border-border shrink-0 overflow-hidden border',
     className,
   )

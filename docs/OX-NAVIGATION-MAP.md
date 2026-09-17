@@ -1880,3 +1880,18 @@ Ours condenses those into four tiles: **In stock** (quantity, active/archived), 
 2. **Custom fields: no, and not planned.** The attributes that matter for truck parts — vehicle
    make, models, part side — are modelled as real, typed fields. A generic field builder is not
    being built; if a new attribute is needed it gets a real column.
+
+### Search bar — «Фильтр и поиск», a filter by field
+
+OX's search bar on Variations is a field-by-field filter: clicking it drops a panel of the page's
+fields (Название вариации, Штрих-код with «Исключить штрих-код», Артикул with «Исключить SKU»,
+Название продукта, Категории, Бренды, Приход…), «Добавить поле» adds more, «Сбросить» / «Применить»
+reset and apply, and applied filters sit in the bar as chips («Не пок…: false ×»).
+
+**Ours, on the product list first (client request):** `FilterSearch`. Typing still searches as
+before; the panel opens with product name, variation name, barcode, SKU, category, supplier, make
+and model, and **Add field** offers every other product-list column under its own heading — the
+choice is remembered. Text fields take several values separated by commas (a pasted column of
+barcodes), and SKU, barcode and OEM can be excluded instead of matched. Prices are compared in UZS
+whatever currency a line is in. Filters go in the URL (`f`), and the summary cards follow them.
+Other list pages get it next, one at a time.

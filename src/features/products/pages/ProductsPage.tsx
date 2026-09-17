@@ -4,7 +4,10 @@ import { ChevronDown, Download, FileUp, PencilLine, Plus } from 'lucide-react'
 import { DropdownMenu } from 'radix-ui'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
-import { SearchInput } from '@/shared/components/SearchInput'
+import { FilterSearch } from '@/shared/components/FilterSearch'
+import { decodeFilters, encodeFilters } from '@/shared/lib/fieldFilters'
+import { useDataStore } from '@/data/store'
+import { PRODUCT_FILTER_DEFAULTS, productFilterFields } from '../model/productFilterFields'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { FilterSelect } from '@/shared/components/FilterSelect'
@@ -56,7 +59,7 @@ export default function ProductsPage() {
     number and Archived read zero. Every other filter still applies, the
     location scope included.
   */
-  const scope = { search: query.search, stock: query.stock, location: query.location }
+  const scope = { search: query.search, stock: query.stock, location: query.location, f: query.f }
   const { data: summary, isLoading: summaryLoading } = useCatalogSummary(scope)
   const { data: locationData } = useLocations()
   const locationId = (query.location as string | null) ?? null
@@ -96,7 +99,20 @@ export default function ProductsPage() {
     [view, locationData.items],
   )
 
-  const isFiltered = Boolean(query.search || query.status || query.stock || query.location)
+  const allVariations = useDataStore((s) => s.variations)
+  const filterFields = useMemo(
+    () =>
+      productFilterFields(allVariations, {
+        canSeeCost: can('products.cost.view'),
+        locations: locationData.items,
+      }),
+    [allVariations, can, locationData.items],
+  )
+  const fieldFilters = useMemo(() => decodeFilters(query.f), [query.f])
+
+  const isFiltered = Boolean(
+    query.search || query.status || query.stock || query.location || query.f,
+  )
 
   const confirmDelete = () => {
     if (!pendingDelete) return
@@ -284,10 +300,15 @@ export default function ProductsPage() {
         total={data?.total ?? 0}
         isLoading={isLoading}
         toolbar={
-          <SearchInput
-            value={String(query.search ?? '')}
-            onChange={(search) => setQuery({ search })}
-            placeholder="Search by name, SKU, barcode or OEM…"
+          <FilterSearch
+            fields={filterFields}
+            values={fieldFilters}
+            onApply={(next) => setQuery({ f: encodeFilters(next) })}
+            search={String(query.search ?? '')}
+            onSearchChange={(search) => setQuery({ search })}
+            defaultFieldIds={PRODUCT_FILTER_DEFAULTS}
+            storageKey="products"
+            placeholder="Filter and search"
           />
         }
         pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
@@ -301,7 +322,7 @@ export default function ProductsPage() {
               action={
                 <Button
                   variant="secondary"
-                  onClick={() => setQuery({ search: null, status: null, stock: null })}
+                  onClick={() => setQuery({ search: null, status: null, stock: null, f: null })}
                 >
                   Clear filters
                 </Button>

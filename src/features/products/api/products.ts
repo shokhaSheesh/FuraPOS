@@ -5,6 +5,8 @@ import { USD_RATE } from '@/data/seed'
 import type { ListQuery } from '@/shared/types'
 import { costInUzs, effectivePrice, type VariationRow } from '../model/product'
 import { plainText } from '@/shared/ui/RichTextEditor'
+import { applyFieldFilters, decodeFilters } from '@/shared/lib/fieldFilters'
+import { productFilterFields } from '../model/productFilterFields'
 
 /**
  * Everything here reads the in-memory store directly. There is no network, so
@@ -69,7 +71,14 @@ function filterVariations(all: VariationRow[], query: ListQuery) {
     : view === 'location'
       ? splitByLocation(all)
       : all
-  return scoped.filter((v) => {
+  // The search bar's field filters. Choices do not affect matching, so the
+  // fields are built without them; everyone may filter on what they can see.
+  const byField = applyFieldFilters(
+    scoped,
+    productFilterFields([], { canSeeCost: true, locations: [] }),
+    decodeFilters(query.f),
+  )
+  return byField.filter((v) => {
     if (query.status && v.status !== query.status) return false
     if (query.stock === 'zero' && v.stock !== 0) return false
     if (query.stock === 'low') {

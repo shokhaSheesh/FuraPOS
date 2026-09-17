@@ -150,6 +150,12 @@ Conventions that are load-bearing — follow them rather than inventing per-scre
   `useSession().can('module.section.action')` or `<RequirePermission>`.
 - **List screens** compose `<PageHeader>` + `<ListPage>` + `<DataTable>`, with list state in the URL
   via `useListQuery()`. `src/features/catalog/pages/ProductsPage.tsx` is the reference to copy.
+- **Search is a filter by field (OX-style, client request).** `<FilterSearch>` replaces the plain
+  search box: clicking it opens a panel of the page's own fields (text with exclude, multi-pick,
+  from–to, yes/no), "Add field" brings in the rest, and Apply turns them into chips in the bar.
+  A page describes its fields once as `FilterField`s (`src/shared/lib/fieldFilters.ts`); applied
+  filters live in the URL as `f`. Live on the product list (`productFilterFields`, held to the
+  list's columns by a test); roll out to other lists page by page.
 - **Wherever products are put on a document — transfers, purchase orders, goods receipt — the table
   shows the same fields as the product list.** Client rule. Use
   `buildProductFieldColumns` (`src/features/products/components/productFieldColumns.tsx`), never a

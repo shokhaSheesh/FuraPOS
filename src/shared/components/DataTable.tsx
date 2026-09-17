@@ -615,7 +615,7 @@ export function DataTable<T extends RowData>({
                   onClick={onRowClick ? () => onRowClick(row.original) : undefined}
                   className={cn(
                     'border-border border-t',
-                    onRowClick && 'hover:bg-surface-muted cursor-pointer',
+                    onRowClick && 'hover:bg-primary-soft/50 cursor-pointer',
                     rowClassName?.(row.original),
                   )}
                 >

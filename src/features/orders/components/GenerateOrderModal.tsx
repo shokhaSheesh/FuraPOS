@@ -5,6 +5,7 @@ import { Button } from '@/shared/ui/Button'
 import { Checkbox } from '@/shared/ui/Checkbox'
 import { SegmentedControl } from '@/shared/ui/SegmentedControl'
 import { ProductThumb } from '@/shared/components/ProductThumb'
+import { QuantityStepper } from '@/shared/components/catalogue/VariationsDialog'
 import { formatMoneyIn, formatNumber } from '@/shared/lib/format'
 import { useDataStore } from '@/data/store'
 import type { CatalogueEntry } from '@/features/suppliers/model/catalogue'
@@ -41,6 +42,8 @@ export function GenerateOrderModal({
   const variations = useDataStore((s) => s.variations)
   const [months, setMonths] = useState<'3' | '6'>('3')
   const [dropped, setDropped] = useState<string[]>([])
+  /** Quantities somebody changed from what was suggested, by catalogue line. */
+  const [edited, setEdited] = useState<Record<string, number>>({})
 
   const suggestions = useMemo(
     () => suggestOrder({ entries, sales, months: Number(months) }),
@@ -49,12 +52,18 @@ export function GenerateOrderModal({
 
   // A different window is a different proposal, so previous exclusions no
   // longer refer to anything.
-  useEffect(() => setDropped([]), [months, open])
+  useEffect(() => {
+    setDropped([])
+    setEdited({})
+  }, [months, open])
 
   /** Our photo and SKU for each line, as the transfer's suggestions show them. */
   const ours = useMemo(() => new Map(variations.map((v) => [v.id, v])), [variations])
 
-  const chosen = suggestions.filter((s) => !dropped.includes(s.supplierProductId))
+  const quantityOf = (s: OrderSuggestion) => edited[s.supplierProductId] ?? s.suggested
+  const chosen = suggestions
+    .filter((s) => !dropped.includes(s.supplierProductId) && quantityOf(s) > 0)
+    .map((s) => ({ ...s, suggested: quantityOf(s) }))
   const units = chosen.reduce((sum, s) => sum + s.suggested, 0)
 
   const toggle = (id: string) =>
@@ -169,11 +178,22 @@ export function GenerateOrderModal({
                           {formatNumber(suggestion.stock)}
                         </span>
                       </td>
-                      <td className="text-fg w-40 px-3 py-2 text-right font-medium tabular-nums">
-                        <span className="whitespace-nowrap">
-                          {formatNumber(suggestion.suggested)} {suggestion.unit}
-                        </span>
-                        {suggestion.suggested > suggestion.shortfall ? (
+                      <td className="text-fg w-44 px-3 py-2 text-right font-medium tabular-nums">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <QuantityStepper
+                            value={quantityOf(suggestion)}
+                            label={suggestion.name}
+                            onChange={(next) =>
+                              setEdited((current) => ({
+                                ...current,
+                                [suggestion.supplierProductId]: Math.max(0, next),
+                              }))
+                            }
+                          />
+                          <span className="text-fg-subtle text-2xs">{suggestion.unit}</span>
+                        </div>
+                        {quantityOf(suggestion) === suggestion.suggested &&
+                        suggestion.suggested > suggestion.shortfall ? (
                           // Says why it is more than the gap, rather than
                           // quietly ordering more than was asked for.
                           <p className="text-fg-subtle text-2xs font-normal whitespace-nowrap">
@@ -184,7 +204,7 @@ export function GenerateOrderModal({
                       </td>
                       <td className="text-fg-muted px-3 py-2 text-right tabular-nums">
                         {formatMoneyIn(
-                          suggestion.suggested * suggestion.price,
+                          quantityOf(suggestion) * suggestion.price,
                           suggestion.currency,
                         )}
                       </td>

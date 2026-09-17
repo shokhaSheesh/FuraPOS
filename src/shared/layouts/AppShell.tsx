@@ -10,7 +10,8 @@ export function AppShell() {
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar />
         <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-[1600px] space-y-4 p-4 lg:p-6">
+          {/* Full width at every size — a big desktop gets more room, not wider margins. */}
+          <div className="space-y-4 p-4 lg:p-6 2xl:px-8">
             <Outlet />
           </div>
         </main>

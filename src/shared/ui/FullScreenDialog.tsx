@@ -32,7 +32,7 @@ export function FullScreenDialog({
           className="bg-canvas fixed inset-0 z-50 overflow-y-auto outline-none"
         >
           <Dialog.Title className="sr-only">{title}</Dialog.Title>
-          <div className="mx-auto w-full max-w-[1400px] px-6 py-5">{children}</div>
+          <div className="w-full px-6 py-5 2xl:px-8">{children}</div>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

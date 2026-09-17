@@ -232,3 +232,46 @@ export const transferDraftSchema = z
   })
 
 export type TransferDraft = z.infer<typeof transferDraftSchema>
+
+/**
+ * How much of what a transfer delivered has sold where it went — the transfer's
+ * version of a goods receipt's sell-through, and the question behind moving
+ * stock at all: did it sell there?
+ *
+ * Counted from sales rather than guessed from the shelf. Each line takes the
+ * units of it sold at the destination since the transfer was received, capped
+ * at what that line brought — so a part that was already selling there before
+ * the transfer can never make it look like more than all of it sold. It is
+ * still an estimate: those sales may have drawn on stock that was already
+ * there, which this build cannot tell apart.
+ */
+export function transferSoldThrough(
+  transfer: Pick<Transfer, 'lines' | 'status' | 'toLocationId' | 'receivedAt'>,
+  sales: {
+    status: string
+    locationId: string
+    createdAt: string
+    lines: { variationId: string; quantity: number }[]
+  }[],
+): { received: number; sold: number; ratio: number } {
+  if (transfer.status !== 'received' || !transfer.receivedAt) {
+    return { received: 0, sold: 0, ratio: 0 }
+  }
+  const since = new Date(transfer.receivedAt).getTime()
+  const soldOf = new Map<string, number>()
+  for (const sale of sales) {
+    if (sale.status === 'deleted' || sale.locationId !== transfer.toLocationId) continue
+    if (new Date(sale.createdAt).getTime() < since) continue
+    for (const line of sale.lines) {
+      soldOf.set(line.variationId, (soldOf.get(line.variationId) ?? 0) + line.quantity)
+    }
+  }
+  let received = 0
+  let sold = 0
+  for (const line of transfer.lines) {
+    const arrived = line.receivedQuantity ?? 0
+    received += arrived
+    sold += Math.min(arrived, soldOf.get(line.variationId) ?? 0)
+  }
+  return { received, sold, ratio: received === 0 ? 0 : sold / received }
+}

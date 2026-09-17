@@ -37,6 +37,7 @@ export default function TransfersListPage() {
   const { query, setQuery } = useListQuery()
   const allTransfers = useDataStore((s) => s.transfers)
   const locations = useDataStore((s) => s.locations)
+  const sales = useDataStore((s) => s.sales)
 
   const scope = { search: query.search, location: query.location, f: query.f }
   const { data, isLoading } = useTransfers(query)
@@ -85,9 +86,10 @@ export default function TransfersListPage() {
         usdRate: USD_RATE,
         onCancel: setPendingCancel,
         onDownload: downloadTransfer,
+        sales,
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [can],
+    [can, sales],
   )
 
   return (

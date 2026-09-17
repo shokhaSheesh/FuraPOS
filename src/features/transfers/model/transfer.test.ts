@@ -8,6 +8,8 @@ import {
   transferInTransit,
   transferQuantity,
   transferShortfall,
+  transferSoldThrough,
+  type Transfer,
 } from './transfer'
 
 const LINE = {
@@ -322,5 +324,43 @@ describe('partial fulfilment', () => {
     useDataStore.getState().setTransferStatus(transfer.id, 'received')
     const done = useDataStore.getState().transfers.find((t) => t.id === transfer.id)!
     expect(done.receivedBy).toBeTruthy()
+  })
+})
+
+describe('transferSoldThrough', () => {
+  const line = (variationId: string, received: number) =>
+    ({ variationId, receivedQuantity: received }) as unknown as Transfer['lines'][number]
+  const sale = (variationId: string, quantity: number, at: string, locationId = 'shop') => ({
+    status: 'completed',
+    locationId,
+    createdAt: at,
+    lines: [{ variationId, quantity }],
+  })
+
+  it('counts sales at the destination after arrival, never more than arrived', () => {
+    const result = transferSoldThrough(
+      {
+        status: 'received',
+        toLocationId: 'shop',
+        receivedAt: '2026-09-01T00:00:00Z',
+        lines: [line('a', 10), line('b', 4)],
+      },
+      [
+        sale('a', 3, '2026-09-05T00:00:00Z'),
+        sale('a', 9, '2026-08-01T00:00:00Z'), // before it arrived
+        sale('a', 2, '2026-09-06T00:00:00Z', 'warehouse'), // somewhere else
+        sale('b', 7, '2026-09-07T00:00:00Z'), // more than the transfer brought
+      ],
+    )
+    expect(result).toEqual({ received: 14, sold: 7, ratio: 0.5 })
+  })
+
+  it('has nothing to say until the transfer is received', () => {
+    expect(
+      transferSoldThrough(
+        { status: 'in_transit', toLocationId: 'shop', receivedAt: null, lines: [line('a', 5)] },
+        [],
+      ).received,
+    ).toBe(0)
   })
 })

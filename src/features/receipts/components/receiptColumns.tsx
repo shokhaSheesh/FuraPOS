@@ -1,11 +1,12 @@
 import { Link } from 'react-router'
 import { Ban, Download } from 'lucide-react'
 import { Badge } from '@/shared/ui/Badge'
+import { SoldBar } from '@/shared/components/SoldBar'
 import { RowActions } from '@/shared/components/RowActions'
 import type { TableColumn } from '@/shared/components/table/features'
 import { paths } from '@/shared/config/paths'
 import { PROCUREMENT_KINDS } from '@/shared/types'
-import { formatDateTime, formatMoney, formatNumber, formatPercent } from '@/shared/lib/format'
+import { formatDateTime, formatMoney, formatNumber } from '@/shared/lib/format'
 import {
   canCancel,
   landedTotal,
@@ -80,26 +81,9 @@ export function buildReceiptColumns({
       id: 'soldThrough',
       header: 'Sold',
       enableHiding: false,
-      cell: ({ row }) => {
-        const { received, sold, ratio } = soldThrough(row.original, stockAt)
-        if (received === 0) return <Empty />
-        return (
-          <div
-            className="flex items-center gap-2"
-            title={`About ${formatNumber(sold)} of the ${formatNumber(
-              received,
-            )} units in this delivery have sold since it arrived`}
-          >
-            <span className="bg-surface-inset h-1.5 w-20 shrink-0 overflow-hidden rounded-full">
-              <span
-                className={`block h-full rounded-full ${ratio >= 1 ? 'bg-success' : 'bg-info'}`}
-                style={{ width: `${Math.min(100, Math.round(ratio * 100))}%` }}
-              />
-            </span>
-            <span className="text-fg-muted text-2xs tabular-nums">{formatPercent(ratio)}</span>
-          </div>
-        )
-      },
+      cell: ({ row }) => (
+        <SoldBar {...soldThrough(row.original, stockAt)} place="since this delivery arrived" />
+      ),
     },
     {
       accessorKey: 'locationName',

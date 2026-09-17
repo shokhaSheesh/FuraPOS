@@ -27,6 +27,25 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  /*
+    Rows alternate white and light grey in every table (client request). In the
+    base layer, so a row's own background — hover, selected, a warning tint —
+    still wins over the stripe.
+  */
+  tbody > tr:nth-child(even) {
+    background-color: var(--color-row-stripe);
+  }
+
+  /*
+    Big desktops (client request): the layout already fills the width; the text
+    grows a step so a 27-inch screen is not a page of tiny type.
+  */
+  @media (min-width: 1920px) {
+    html {
+      font-size: 16px;
+    }
+  }
+
   /* Numbers in tables must align on the decimal — always. */
   td,
   th {

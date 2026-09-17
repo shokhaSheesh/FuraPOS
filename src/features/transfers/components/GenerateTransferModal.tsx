@@ -5,6 +5,7 @@ import { Button } from '@/shared/ui/Button'
 import { Checkbox } from '@/shared/ui/Checkbox'
 import { SegmentedControl } from '@/shared/ui/SegmentedControl'
 import { ProductThumb } from '@/shared/components/ProductThumb'
+import { QuantityStepper } from '@/shared/components/catalogue/VariationsDialog'
 import { formatNumber } from '@/shared/lib/format'
 import { useDataStore } from '@/data/store'
 import { suggestTransfer, type TransferSuggestion } from '../model/suggest'
@@ -39,6 +40,8 @@ export function GenerateTransferModal({
   const sales = useDataStore((s) => s.sales)
   const [months, setMonths] = useState<'3' | '6'>('3')
   const [dropped, setDropped] = useState<string[]>([])
+  /** Quantities somebody changed from what was suggested, by variation. */
+  const [edited, setEdited] = useState<Record<string, number>>({})
 
   const suggestions = useMemo(
     () =>
@@ -54,9 +57,15 @@ export function GenerateTransferModal({
 
   // A different window is a different proposal, so previous exclusions no
   // longer refer to anything.
-  useEffect(() => setDropped([]), [months, open])
+  useEffect(() => {
+    setDropped([])
+    setEdited({})
+  }, [months, open])
 
-  const chosen = suggestions.filter((s) => !dropped.includes(s.variationId))
+  const quantityOf = (s: TransferSuggestion) => edited[s.variationId] ?? s.suggested
+  const chosen = suggestions
+    .filter((s) => !dropped.includes(s.variationId) && quantityOf(s) > 0)
+    .map((s) => ({ ...s, suggested: quantityOf(s) }))
   const units = chosen.reduce((sum, s) => sum + s.suggested, 0)
 
   const toggle = (id: string) =>
@@ -164,11 +173,27 @@ export function GenerateTransferModal({
                       <td className="text-fg-muted px-3 py-2 text-right tabular-nums">
                         {formatNumber(suggestion.stockAtSource)}
                       </td>
-                      <td className="text-fg w-40 px-3 py-2 text-right font-medium tabular-nums">
-                        <span className="whitespace-nowrap">
-                          {formatNumber(suggestion.suggested)} {suggestion.unit}
-                        </span>
-                        {suggestion.suggested < suggestion.shortfall ? (
+                      <td className="text-fg w-44 px-3 py-2 text-right font-medium tabular-nums">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <QuantityStepper
+                            value={quantityOf(suggestion)}
+                            // Never more than the source actually holds.
+                            max={suggestion.stockAtSource}
+                            label={suggestion.name}
+                            onChange={(next) =>
+                              setEdited((current) => ({
+                                ...current,
+                                [suggestion.variationId]: Math.min(
+                                  suggestion.stockAtSource,
+                                  Math.max(0, next),
+                                ),
+                              }))
+                            }
+                          />
+                          <span className="text-fg-subtle text-2xs">{suggestion.unit}</span>
+                        </div>
+                        {quantityOf(suggestion) === suggestion.suggested &&
+                        suggestion.suggested < suggestion.shortfall ? (
                           // Says why it is not sending the full shortfall,
                           // rather than quietly sending less than asked.
                           <p className="text-warning text-2xs font-normal whitespace-nowrap">

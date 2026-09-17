@@ -1,6 +1,7 @@
 import { ArrowRight, Download, Trash2 } from 'lucide-react'
 import { Badge } from '@/shared/ui/Badge'
 import { RowActions } from '@/shared/components/RowActions'
+import { SoldBar } from '@/shared/components/SoldBar'
 import type { TableColumn } from '@/shared/components/table/features'
 import { formatDate, formatMoney, formatNumber } from '@/shared/lib/format'
 import {
@@ -12,6 +13,7 @@ import {
   transferSaleValue,
   transferSent,
   transferShortfall,
+  transferSoldThrough,
   transferStatusLabel,
   transferStatusTone,
   type Transfer,
@@ -28,12 +30,15 @@ const Empty = () => <span className="text-fg-subtle">—</span>
 export function buildTransferColumns({
   onCancel,
   onDownload,
+  sales,
   canCancelTransfers,
   canSeeCost,
   usdRate,
 }: {
   onCancel: (transfer: Transfer) => void
   onDownload: (transfer: Transfer) => void
+  /** For how much of what arrived has sold at the destination. */
+  sales: Parameters<typeof transferSoldThrough>[1]
   canCancelTransfers: boolean
   canSeeCost: boolean
   usdRate: number
@@ -109,6 +114,18 @@ export function buildTransferColumns({
         const moving = transferInTransit(row.original)
         return moving > 0 ? formatNumber(moving) : <Empty />
       },
+    },
+    // An estimate, drawn as a bar like a goods receipt's — see `transferSoldThrough`.
+    {
+      id: 'sold',
+      header: 'Sold',
+      enableHiding: false,
+      cell: ({ row }) => (
+        <SoldBar
+          {...transferSoldThrough(row.original, sales)}
+          place={`at ${row.original.toLocationName} since it arrived`}
+        />
+      ),
     },
     {
       accessorKey: 'status',

@@ -173,7 +173,8 @@ Fixed and identical on every screen — `AppShell`:
   This order never changes. The top bar holds **account and app-level chrome only** — it never
   carries a create action or a search field, because both belong to the screen the user is on
   (the primary action lives in `PageHeader`, search lives in the table's toolbar).
-- **Content**, scrolls independently, `max-w-[1600px]`, centered.
+- **Content**, scrolls independently, full width at every size (client request: a big desktop
+  gets more room, not wider margins). From 1920px the root font grows from 15px to 16px.
 
 ### 3.3 Radii and elevation
 
@@ -264,7 +265,9 @@ box floating above the card and a second control row inside it is the mistake th
 - **Every row is 44px, single line.** Cell content never wraps and never stacks a second line —
   ragged row heights are the fastest way to make a table look broken. Data that wants a second
   line (a brand under a name) gets its own column instead.
-- Rows: 1px `border-border` top border, `hover:bg-surface-muted` **only if the row is clickable**.
+- Rows: 1px `border-border` top border, and they alternate white and `--color-row-stripe` light
+  grey (client request) — set once in `global.css` for every `<tbody>`, never per table.
+  `hover:bg-primary-soft/50` **only if the row is clickable**, so hover stays visible on a grey row.
 - Row click opens the detail page. It never opens a modal and never toggles selection.
 - First column is the identifier (SKU / number / name). It and the name column cannot be hidden.
 - Last column is the actions column — right-aligned, ghost icon buttons, no header label.

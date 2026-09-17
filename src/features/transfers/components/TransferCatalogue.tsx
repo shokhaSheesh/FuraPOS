@@ -9,7 +9,7 @@ import { Input } from '@/shared/ui/Input'
 import { Popover } from '@/shared/ui/Popover'
 import { Select } from '@/shared/ui/Select'
 import { cn } from '@/shared/lib/cn'
-import { formatMoney, formatNumber } from '@/shared/lib/format'
+import { formatNumber } from '@/shared/lib/format'
 import { useDataStore } from '@/data/store'
 import {
   childrenOf,
@@ -21,38 +21,21 @@ import {
   type ProductGroup,
 } from '../model/browse'
 import { StockBox } from './StockBox'
+import { CATALOGUE_CARD_FIELDS, type CatalogueCardField } from '../model/cardFields'
 import { TransferProductModal } from './TransferProductModal'
 import type { TransferRow } from './transferLineColumns'
 
 /* --- what a card shows ---------------------------------------------------- */
 
-type CardField =
-  | 'variations'
-  | 'atDestination'
-  | 'atSource'
-  | 'sales'
-  | 'vehicleMakes'
-  | 'vehicleModels'
-  | 'brandName'
-  | 'manufacturer'
-  | 'categoryPath'
-  | 'sku'
-  | 'shelfAddress'
-  | 'salePrice'
+/** The transfer's own figures; everything else a card can show is a product-list field. */
+type TransferCardField = 'variations' | 'atDestination' | 'atSource' | 'sales'
+type CardField = TransferCardField | CatalogueCardField
 
-const CARD_FIELDS: { id: CardField; label: (names: Names) => string }[] = [
+const TRANSFER_CARD_FIELDS: { id: TransferCardField; label: (names: Names) => string }[] = [
   { id: 'variations', label: () => 'Variations' },
   { id: 'atDestination', label: (n) => `At ${n.to}` },
   { id: 'atSource', label: (n) => `At ${n.from}` },
   { id: 'sales', label: (n) => `Sold at ${n.demand}` },
-  { id: 'vehicleMakes', label: () => 'Make' },
-  { id: 'vehicleModels', label: () => 'Model' },
-  { id: 'brandName', label: () => 'Supplier' },
-  { id: 'manufacturer', label: () => 'Product brand' },
-  { id: 'categoryPath', label: () => 'Category' },
-  { id: 'sku', label: () => 'SKU' },
-  { id: 'shelfAddress', label: () => 'Storage address' },
-  { id: 'salePrice', label: () => 'Sale price' },
 ]
 
 /** The mockup's card, and nothing it did not have. */
@@ -189,8 +172,12 @@ export function TransferCatalogue({
   const open = openId ? (groups.find((g) => g.productId === openId) ?? null) : null
 
   const toggleField = (id: CardField, on: boolean) => {
+    const order: CardField[] = [
+      ...TRANSFER_CARD_FIELDS.map((f) => f.id),
+      ...CATALOGUE_CARD_FIELDS.map((f) => f.id),
+    ]
     const next = on
-      ? CARD_FIELDS.map((f) => f.id).filter((f) => f === id || fields.includes(f))
+      ? order.filter((f) => f === id || fields.includes(f))
       : fields.filter((f) => f !== id)
     setFields(next)
     store(CARD_FIELDS_KEY, next)
@@ -319,7 +306,7 @@ export function TransferCatalogue({
             {view === 'cards' ? (
               <Popover
                 align="end"
-                className="max-h-80 w-60 overflow-y-auto p-1"
+                className="max-h-[min(28rem,var(--radix-popover-content-available-height))] w-64 overflow-y-auto p-1"
                 trigger={
                   <Button type="button" variant="ghost" size="sm">
                     <Settings2 />
@@ -327,20 +314,28 @@ export function TransferCatalogue({
                   </Button>
                 }
               >
-                <p className="text-fg-subtle text-2xs px-2 pt-1 pb-1.5">Shown on each card</p>
-                {CARD_FIELDS.map((field) => (
-                  <label
+                <p className="text-fg-subtle text-2xs px-2 pt-1 pb-1.5">This transfer</p>
+                {TRANSFER_CARD_FIELDS.map((field) => (
+                  <FieldToggle
                     key={field.id}
-                    className="text-fg hover:bg-surface-muted flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm"
-                  >
-                    <Checkbox
-                      aria-label={field.label(names)}
-                      checked={fields.includes(field.id)}
-                      onCheckedChange={(checked) => toggleField(field.id, checked)}
-                    />
-                    {field.label(names)}
-                  </label>
+                    label={field.label(names)}
+                    checked={fields.includes(field.id)}
+                    onChange={(checked) => toggleField(field.id, checked)}
+                  />
                 ))}
+                <p className="text-fg-subtle text-2xs border-border mt-1 border-t px-2 pt-2 pb-1.5">
+                  Product fields
+                </p>
+                {CATALOGUE_CARD_FIELDS.filter((field) => canSeeCost || !field.costOnly).map(
+                  (field) => (
+                    <FieldToggle
+                      key={field.id}
+                      label={field.label}
+                      checked={fields.includes(field.id)}
+                      onChange={(checked) => toggleField(field.id, checked)}
+                    />
+                  ),
+                )}
               </Popover>
             ) : null}
             {actions}
@@ -388,6 +383,7 @@ export function TransferCatalogue({
                 group={group}
                 fields={fields}
                 names={names}
+                canSeeCost={canSeeCost}
                 onOpen={() => setOpenId(group.productId)}
               />
             ))}
@@ -471,42 +467,42 @@ function CategoryTile({
   )
 }
 
+function FieldToggle({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string
+  checked: boolean
+  onChange: (checked: boolean) => void
+}) {
+  return (
+    <label className="text-fg hover:bg-surface-muted flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm">
+      <Checkbox aria-label={label} checked={checked} onCheckedChange={onChange} />
+      {label}
+    </label>
+  )
+}
+
 function ProductCard({
   group,
   fields,
   names,
+  canSeeCost,
   onOpen,
 }: {
   group: ProductGroup
   fields: CardField[]
   names: Names
+  canSeeCost: boolean
   onOpen: () => void
 }) {
   const has = (field: CardField) => fields.includes(field)
   const first = group.rows[0]!.variation
-  const unique = (values: (string | null)[]) =>
-    [...new Set(values.filter((v): v is string => Boolean(v)))].join(', ') || '—'
-  const prices = group.rows.map((row) => row.variation.salePrice)
-
-  const extras: [string, string][] = [
-    has('vehicleMakes') ? ['Make', group.vehicleMakes.join(', ') || '—'] : null,
-    has('vehicleModels') ? ['Model', group.vehicleModels.join(', ') || '—'] : null,
-    has('brandName') ? ['Supplier', group.brandName ?? '—'] : null,
-    has('manufacturer') ? ['Product brand', group.manufacturer ?? '—'] : null,
-    has('categoryPath') ? ['Category', group.categoryPath] : null,
-    has('sku') ? ['SKU', unique(group.rows.map((r) => r.variation.sku))] : null,
-    has('shelfAddress')
-      ? ['Storage address', unique(group.rows.map((r) => r.variation.shelfAddress))]
-      : null,
-    has('salePrice')
-      ? [
-          'Sale price',
-          Math.min(...prices) === Math.max(...prices)
-            ? formatMoney(prices[0]!)
-            : `${formatMoney(Math.min(...prices))} – ${formatMoney(Math.max(...prices))}`,
-        ]
-      : null,
-  ].filter((entry): entry is [string, string] => entry !== null)
+  const variations = group.rows.map((row) => row.variation)
+  const extras = CATALOGUE_CARD_FIELDS.filter(
+    (field) => has(field.id) && (canSeeCost || !field.costOnly),
+  ).map((field) => [field.label, field.value(variations)] as const)
 
   return (
     <article

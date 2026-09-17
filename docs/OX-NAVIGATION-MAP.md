@@ -816,7 +816,9 @@ stock and sort filters): model stays locked until a make is picked and lists tha
 Settings → Truck brands that something on the shelf fits. Cards are ordered best selling first. One wide search (name, SKU, OEM, barcode, storage address) that
 looks inside the folders instead of stopping at them.
 
-Field control is kept everywhere: **Fields** picks what a card shows, the product dialog's table has
+Field control is kept everywhere: **Fields** picks what a card shows — the transfer's own figures plus
+**every product-list field** (client rule; a test compares the choices with the catalogue's columns,
+and a field that differs between variations shows each value once, prices as a range) — the product dialog's table has
 the standard Columns menu, and the list toggle returns the full shelf table with its own Columns
 menu. It lives in `TransferCatalogue`, `TransferProductModal` and `model/browse.ts`, so reverting it
 is removing those and putting the table back on the step. Receipts and orders are untouched.

@@ -52,7 +52,7 @@ export function TransferProductTable({
         id: 'image',
         header: 'Image',
         cell: ({ row }) => (
-          <ProductThumb src={row.original.rows[0]?.variation.imageUrl ?? null} size="sm" wide />
+          <ProductThumb src={row.original.rows[0]?.variation.imageUrl ?? null} size="sm" />
         ),
       },
       {

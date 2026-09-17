@@ -24,7 +24,7 @@ const wideSizes = {
 export function ProductThumb({
   src,
   size = 'md',
-  wide = false,
+  wide = true,
   className,
 }: {
   src: string | null | undefined
@@ -33,7 +33,11 @@ export function ProductThumb({
    * name, so describing it again is noise for a screen reader.
    */
   size?: keyof typeof sizes
-  /** 3:2 rather than square, so a landscape photo shows whole. */
+  /**
+   * 3:2 — the shape product photos are taken in — everywhere by default, so a
+   * photo shows whole wherever a product is listed. `wide={false}` for a
+   * square tile, such as a category's illustration.
+   */
   wide?: boolean
   className?: string
 }) {

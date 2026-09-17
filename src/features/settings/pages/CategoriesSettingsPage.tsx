@@ -113,7 +113,7 @@ export default function CategoriesSettingsPage() {
             className="flex items-center gap-2.5"
             style={{ paddingLeft: row.original.depth * 20 }}
           >
-            <ProductThumb src={row.original.imageUrl} size="sm" />
+            <ProductThumb src={row.original.imageUrl} size="sm" wide={false} />
             <span className={row.original.depth === 0 ? 'text-fg font-medium' : 'text-fg-muted'}>
               {row.original.name}
             </span>

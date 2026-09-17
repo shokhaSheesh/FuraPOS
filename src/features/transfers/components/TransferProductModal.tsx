@@ -159,12 +159,7 @@ function OpenProduct({
     >
       <div className="space-y-4">
         <div className="flex flex-wrap items-stretch gap-3">
-          <ProductThumb
-            src={group.rows[0]?.variation.imageUrl}
-            size="lg"
-            wide
-            className="self-center"
-          />
+          <ProductThumb src={group.rows[0]?.variation.imageUrl} size="lg" className="self-center" />
           {/* Yours first, judged by level; theirs beside it, in blue. */}
           <div className="min-w-32 flex-1">
             <StockBox
@@ -243,7 +238,7 @@ function buildVariantColumns({
         const v = row.original.row.variation
         return (
           <div className="flex items-center gap-2">
-            <ProductThumb src={v.imageUrl} size="sm" wide />
+            <ProductThumb src={v.imageUrl} size="sm" />
             <div className="min-w-0">
               <p className="text-fg text-sm font-medium">{v.name || v.productName}</p>
               <p className="text-fg-subtle text-2xs font-mono">

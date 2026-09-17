@@ -44,7 +44,7 @@ export function buildProductColumns({
       id: 'image',
       header: 'Image',
       enableSorting: false,
-      cell: ({ row }) => <ProductThumb src={row.original.imageUrl} size="sm" wide />,
+      cell: ({ row }) => <ProductThumb src={row.original.imageUrl} size="sm" />,
     },
     // Штрих-код
     {

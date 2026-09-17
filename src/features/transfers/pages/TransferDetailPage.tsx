@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import { ArrowLeft, ArrowRight, Check, Truck } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, Pencil, Truck } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { ProductThumb } from '@/shared/components/ProductThumb'
@@ -103,6 +103,14 @@ export default function TransferDetailPage() {
             {canCancel(transfer.status) && can('products.transfers.delete') ? (
               <Button variant="secondary" onClick={() => setConfirmCancel(true)}>
                 Cancel transfer
+              </Button>
+            ) : null}
+            {transfer.status === 'draft' && can('products.transfers.create') ? (
+              <Button variant="secondary" asChild>
+                <Link to={paths.products.editTransfer(transfer.id)}>
+                  <Pencil />
+                  Continue editing
+                </Link>
               </Button>
             ) : null}
             {step && can('products.transfers.edit') ? (

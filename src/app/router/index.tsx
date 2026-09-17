@@ -172,6 +172,10 @@ const routes: RouteObject[] = [
         element: page(<TransferDetailPage />, 'products.transfers.view'),
       },
       {
+        path: paths.products.editTransfer(),
+        element: page(<NewTransferPage />, 'products.transfers.create'),
+      },
+      {
         path: paths.products.corrections,
         element: page(<CorrectionsListPage />, 'products.corrections.view'),
       },

@@ -782,6 +782,15 @@ because all three end the same way — an order that is received against when th
 
 ### Transfers — picking from the sending shelf
 
+**Nothing picked is lost (client request).** A **Save** button on every step keeps the transfer as
+**Unfinished** (the draft status, renamed to the client's word, as on goods receipt), and leaving
+the page once the products step has been reached saves it without asking — by the back link, the
+sidebar or anything else. Clicking an unfinished transfer in the list reopens it at its products
+(`/products/transfers/:id/edit`); its detail page has **Continue editing**. Saving along the way and
+sending at the end write one document, not two. The comment sits beside From and To on the route
+step, and on the same line as the route above the products; the table's Move column has − / +
+either side of the number; product-card images are square.
+
 The product step **is the source's shelf** (client request), the same shape a goods receipt and a
 purchase order use: everything that location holds is a row from the moment the route is chosen,
 waiting for a quantity. Typing one puts the row on the transfer; clearing it takes the row off.

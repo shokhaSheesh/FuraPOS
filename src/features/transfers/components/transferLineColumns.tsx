@@ -1,4 +1,4 @@
-import { Info, Trash2 } from 'lucide-react'
+import { Info, Minus, Plus, Trash2 } from 'lucide-react'
 import { NumberField } from '@/shared/components/NumberField'
 import { ProductThumb } from '@/shared/components/ProductThumb'
 import type { TableColumn } from '@/shared/components/table/features'
@@ -184,9 +184,19 @@ export function buildTransferLineColumns({
             {formatNumber(row.original.quantity)} {row.original.variation.unit}
           </span>
         ) : (
-          <div className="flex justify-end">
+          <div className="flex items-center justify-end gap-1">
+            <Button
+              type="button"
+              variant="secondary"
+              size="icon"
+              aria-label={`One fewer ${row.original.variation.fullName}`}
+              disabled={row.original.quantity <= 0}
+              onClick={() => onQuantityChange(row.original, row.original.quantity - 1)}
+            >
+              <Minus />
+            </Button>
             <NumberField
-              className="w-24"
+              className="w-20"
               nullable={false}
               min={0}
               aria-label={`Move ${row.original.variation.fullName}`}
@@ -200,6 +210,16 @@ export function buildTransferLineColumns({
                 )
               }
             />
+            <Button
+              type="button"
+              variant="secondary"
+              size="icon"
+              aria-label={`One more ${row.original.variation.fullName}`}
+              disabled={row.original.quantity >= row.original.atSource}
+              onClick={() => onQuantityChange(row.original, row.original.quantity + 1)}
+            >
+              <Plus />
+            </Button>
           </div>
         ),
     },

@@ -77,7 +77,7 @@ export default function TransfersListPage() {
             <StatusChips
               options={[
                 { value: null, label: 'All' },
-                { value: 'draft', label: 'Draft' },
+                { value: 'draft', label: 'Unfinished' },
                 { value: 'in_transit', label: 'In transit' },
                 { value: 'received', label: 'Received' },
                 { value: 'cancelled', label: 'Cancelled' },
@@ -121,7 +121,14 @@ export default function TransfersListPage() {
           const [first] = sorting
           setQuery({ sort: first?.id ?? null, order: first?.desc ? 'desc' : 'asc' })
         }}
-        onRowClick={(transfer) => navigate(paths.products.transferDetail(transfer.id))}
+        // An unfinished transfer opens where it was left, ready to carry on.
+        onRowClick={(transfer) =>
+          navigate(
+            transfer.status === 'draft'
+              ? paths.products.editTransfer(transfer.id)
+              : paths.products.transferDetail(transfer.id),
+          )
+        }
         emptyState={
           query.search || query.status || query.location || query.f ? (
             <EmptyState title="No transfers match these filters" />

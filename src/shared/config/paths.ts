@@ -46,6 +46,8 @@ export const paths = {
     transfers: '/products/transfers', // OX: /app/products/transfers
     newTransfer: '/products/transfers/new',
     transferDetail: (id = ':transferId') => `/products/transfers/${id}`,
+    /** An unfinished transfer, reopened where it was left. */
+    editTransfer: (id = ':transferId') => `/products/transfers/${id}/edit`,
     corrections: '/products/corrections', // OX: /app/products/corrections
     newCorrection: '/products/corrections/new',
     correctionDetail: (id = ':correctionId') => `/products/corrections/${id}`,

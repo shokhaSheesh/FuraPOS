@@ -18,7 +18,8 @@ export const TRANSFER_STATUSES: {
   label: string
   tone: 'neutral' | 'info' | 'warning' | 'success' | 'danger'
 }[] = [
-  { value: 'draft', label: 'Draft', tone: 'neutral' },
+  // «Незавершённый» — the client's word, and the one goods receipt already uses.
+  { value: 'draft', label: 'Unfinished', tone: 'neutral' },
   { value: 'in_transit', label: 'In transit', tone: 'warning' },
   { value: 'received', label: 'Received', tone: 'success' },
   { value: 'cancelled', label: 'Cancelled', tone: 'danger' },

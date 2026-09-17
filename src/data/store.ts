@@ -155,6 +155,14 @@ interface CatalogState {
 
   createTransfer: (input: CreateTransferInput) => Transfer
   /**
+   * Rewrites an unfinished transfer with what the form holds now. Only a draft
+   * can be rewritten: once anything has left the shelf the document is a record.
+   */
+  updateTransferDraft: (
+    id: string,
+    input: Omit<CreateTransferInput, 'status'>,
+  ) => { ok: true } | { ok: false; error: string }
+  /**
    * Advances a transfer and moves the stock that goes with it. Returns the
    * reason it could not, so the screen can say so rather than failing quietly.
    */
@@ -912,6 +920,33 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       get().setTransferStatus(transfer.id, 'in_transit')
     }
     return get().transfers.find((t) => t.id === transfer.id) ?? transfer
+  },
+
+  updateTransferDraft: (id, input) => {
+    const transfer = get().transfers.find((t) => t.id === id)
+    if (!transfer) return { ok: false, error: 'That transfer no longer exists' }
+    if (transfer.status !== 'draft')
+      return { ok: false, error: 'This transfer is no longer unfinished' }
+    const named = (locationId: string) =>
+      get().locations.find((l) => l.id === locationId)?.name ?? '—'
+    set({
+      transfers: get().transfers.map((t) =>
+        t.id === id
+          ? {
+              ...t,
+              kind: input.kind,
+              fromLocationId: input.fromLocationId,
+              fromLocationName: named(input.fromLocationId),
+              toLocationId: input.toLocationId,
+              toLocationName: named(input.toLocationId),
+              lines: input.lines,
+              comment: input.comment || null,
+              updatedAt: new Date().toISOString(),
+            }
+          : t,
+      ),
+    })
+    return { ok: true }
   },
 
   setTransferStatus: (id, to, quantities) => {

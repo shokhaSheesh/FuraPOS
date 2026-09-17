@@ -519,7 +519,7 @@ function ProductCard({
       <button
         type="button"
         onClick={onOpen}
-        className="bg-surface-inset text-fg-subtle flex aspect-[5/2] items-center justify-center"
+        className="bg-surface-inset text-fg-subtle flex aspect-square items-center justify-center"
         aria-label={`Open ${group.productName}`}
       >
         {first.imageUrl ? (

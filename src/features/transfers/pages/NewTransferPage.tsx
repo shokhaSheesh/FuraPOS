@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router'
 import { useFieldArray, useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, ArrowRight, Pencil, Truck, Wand2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Pencil, Save, Truck, Wand2 } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
 import { EmptyState } from '@/shared/components/EmptyState'
@@ -26,7 +26,6 @@ import { paths } from '@/shared/config/paths'
 import { formatNumber } from '@/shared/lib/format'
 import { useSession } from '@/app/providers/SessionProvider'
 import { useDataStore } from '@/data/store'
-import { useCreateTransfer } from '../api/transfers'
 import { TRANSFER_KINDS, transferDraftSchema, type TransferDraft } from '../model/transfer'
 import { demandAt, hasStalled } from '@/shared/lib/demand'
 
@@ -39,8 +38,13 @@ import { demandAt, hasStalled } from '@/shared/lib/demand'
  * mean adding lines against a stock figure that then changes meaning.
  *
  * Sending is offered here as well as on the detail page, because most transfers
- * are written and dispatched in one go; saving as a draft is for the case where
- * someone else does the picking.
+ * are written and dispatched in one go.
+ *
+ * **Nothing picked is ever lost** (client request). Save keeps the transfer as
+ * unfinished at any point, and leaving the page once the products step has been
+ * reached saves it without being asked — by the back link, the sidebar, or
+ * anything else that takes you away. An unfinished transfer reopens here, at
+ * its products, from the transfers list.
  */
 /** A new transfer line for a variation, with its prices snapshotted now. */
 function lineFor(variation: VariationRow, quantity: number): TransferDraft['lines'][number] {
@@ -65,20 +69,44 @@ function lineFor(variation: VariationRow, quantity: number): TransferDraft['line
 
 export default function NewTransferPage() {
   const navigate = useNavigate()
+  const { transferId } = useParams()
   const locations = useDataStore((s) => s.locations)
   const variations = useDataStore((s) => s.variations)
-  const create = useCreateTransfer()
+  const saved = useDataStore((s) => s.transfers.find((t) => t.id === transferId))
+  const createTransfer = useDataStore((s) => s.createTransfer)
+  const updateDraft = useDataStore((s) => s.updateTransferDraft)
+  const setTransferStatus = useDataStore((s) => s.setTransferStatus)
+
+  /** Only an unfinished transfer can be picked up again; the rest are records. */
+  const resuming = saved?.status === 'draft' ? saved : undefined
 
   const form = useForm<TransferDraft>({
     resolver: zodResolver(transferDraftSchema),
-    defaultValues: {
-      kind: 'send',
-      fromLocationId: locations[0]?.id ?? '',
-      toLocationId: '',
-      comment: '',
-      lines: [],
-    },
+    defaultValues: resuming
+      ? {
+          kind: resuming.kind,
+          fromLocationId: resuming.fromLocationId,
+          toLocationId: resuming.toLocationId,
+          comment: resuming.comment ?? '',
+          lines: resuming.lines,
+        }
+      : {
+          kind: 'send',
+          fromLocationId: locations[0]?.id ?? '',
+          toLocationId: '',
+          comment: '',
+          lines: [],
+        },
   })
+
+  /** The unfinished transfer this page writes to, once there is one. */
+  const draftId = useRef<string | null>(resuming?.id ?? null)
+  /** What was last written, so leaving without a change does not save again. */
+  const lastSaved = useRef<string | null>(resuming ? JSON.stringify(form.getValues()) : null)
+  /** Set once the transfer has been sent or saved for good, so leaving does not save over it. */
+  const finished = useRef(false)
+  /** Leaving saves only once the products step has been reached. */
+  const reachedProducts = useRef(Boolean(resuming))
 
   const { append, remove } = useFieldArray({ control: form.control, name: 'lines' })
   const lines = form.watch('lines')
@@ -111,7 +139,61 @@ export default function NewTransferPage() {
   const { can } = useSession()
   const canSeeCost = can('products.cost.view')
   /** Route and note first, products second — the reference product's two-page create. */
-  const [step, setStep] = useState<1 | 2 | 3>(1)
+  const [step, setStep] = useState<1 | 2 | 3>(resuming ? 2 : 1)
+  useEffect(() => {
+    if (step >= 2) reachedProducts.current = true
+  }, [step])
+
+  /**
+   * Writes the form to its unfinished transfer, creating it the first time.
+   * Returns null when there is no route yet — a transfer needs both ends before
+   * it is anything at all.
+   */
+  const saveDraft = () => {
+    const values = form.getValues()
+    if (!values.fromLocationId || !values.toLocationId) return null
+    if (values.fromLocationId === values.toLocationId) return null
+    const input = {
+      kind: values.kind,
+      fromLocationId: values.fromLocationId,
+      toLocationId: values.toLocationId,
+      comment: values.comment,
+      lines: values.lines,
+    }
+    if (draftId.current) {
+      const result = updateDraft(draftId.current, input)
+      if (!result.ok) return null
+    } else {
+      draftId.current = createTransfer({ ...input, status: 'draft' }).id
+    }
+    lastSaved.current = JSON.stringify(values)
+    return useDataStore.getState().transfers.find((t) => t.id === draftId.current) ?? null
+  }
+
+  const saveNow = async () => {
+    if (!(await form.trigger(['kind', 'fromLocationId', 'toLocationId']))) {
+      toast.error('Pick both locations first')
+      setStep(1)
+      return
+    }
+    const transfer = saveDraft()
+    if (transfer) toast.success(`${transfer.number} saved as unfinished`)
+  }
+
+  /*
+    Leaving saves. An unmount is every way out at once — the back link, the
+    sidebar, the browser's back button — so it is the one place to catch them.
+    The ref holds the latest closure; the effect itself runs only on the way out.
+  */
+  const saveOnLeave = useRef(() => {})
+  saveOnLeave.current = () => {
+    if (finished.current || !reachedProducts.current) return
+    if (lastSaved.current === JSON.stringify(form.getValues())) return
+    const transfer = saveDraft()
+    if (transfer)
+      toast.success(`${transfer.number} saved as unfinished — pick it up from Transfers`)
+  }
+  useEffect(() => () => saveOnLeave.current(), [])
 
   /** Adds what the proposal chose, leaving anything already listed alone. */
   const addSuggestions = (suggestions: TransferSuggestion[]) => {
@@ -186,19 +268,24 @@ export default function NewTransferPage() {
           return
         }
 
-        create.mutate(
-          { ...values, status },
-          {
-            onSuccess: (transfer) => {
-              toast.success(
-                status === 'draft'
-                  ? `${transfer.number} saved as a draft`
-                  : `${transfer.number} sent to ${transfer.toLocationName}`,
-              )
-              navigate(paths.products.transferDetail(transfer.id))
-            },
-          },
+        // Written to the unfinished transfer when there is one, so saving along
+        // the way and sending at the end are one document, not two.
+        const transfer = saveDraft()
+        if (!transfer) return
+        if (status === 'in_transit' && values.kind === 'send') {
+          const result = setTransferStatus(transfer.id, 'in_transit')
+          if (!result.ok) {
+            toast.error(result.error)
+            return
+          }
+        }
+        finished.current = true
+        toast.success(
+          status === 'draft'
+            ? `${transfer.number} saved as unfinished`
+            : `${transfer.number} sent to ${transfer.toLocationName}`,
         )
+        navigate(paths.products.transferDetail(transfer.id))
       },
       () => toast.error('Check the highlighted fields'),
     )
@@ -247,7 +334,17 @@ export default function NewTransferPage() {
   const setQuantity = (row: TransferRow, quantity: number) => {
     if (row.index > -1) {
       if (quantity > 0) {
-        form.setValue(`lines.${row.index}.requestedQuantity`, quantity, { shouldDirty: true })
+        // A new list rather than a nested set: the rows are worked out from
+        // the list, and a quantity changed inside it is a change nothing sees.
+        form.setValue(
+          'lines',
+          form
+            .getValues('lines')
+            .map((line, index) =>
+              index === row.index ? { ...line, requestedQuantity: quantity } : line,
+            ),
+          { shouldDirty: true },
+        )
       } else {
         remove(row.index)
       }
@@ -318,7 +415,9 @@ export default function NewTransferPage() {
       </Button>
 
       <PageHeader
-        title={requesting ? 'New request' : 'New transfer'}
+        title={
+          resuming ? `${resuming.number} — unfinished` : requesting ? 'New request' : 'New transfer'
+        }
         description={
           requesting
             ? 'Ask another location to supply this one.'
@@ -338,8 +437,9 @@ export default function NewTransferPage() {
         action={
           step < 3 ? (
             <div className="flex items-center gap-2">
-              <Button type="button" variant="secondary" asChild>
-                <Link to={paths.products.transfers}>Cancel</Link>
+              <Button type="button" variant="secondary" onClick={saveNow}>
+                <Save />
+                Save
               </Button>
               <Button type="button" variant="primary" onClick={() => goTo((step + 1) as 2 | 3)}>
                 Continue
@@ -352,8 +452,9 @@ export default function NewTransferPage() {
                 <ArrowLeft />
                 Back
               </Button>
-              <Button type="button" variant="secondary" onClick={submit('draft')}>
-                Save as draft
+              <Button type="button" variant="secondary" onClick={saveNow}>
+                <Save />
+                Save
               </Button>
               {/* A request cannot dispatch: the goods are on somebody else's
                   shelf and they have not agreed to part with them yet. */}
@@ -419,7 +520,7 @@ export default function NewTransferPage() {
                   {TRANSFER_KINDS.find((entry) => entry.value === kind)?.hint}
                 </p>
               </CardHeader>
-              <CardBody className="grid items-start gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+              <CardBody className="grid items-start gap-3 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_minmax(0,1fr)]">
                 <Field
                   label={requesting ? 'Ask' : 'From'}
                   required
@@ -449,7 +550,7 @@ export default function NewTransferPage() {
                     />
                   )}
                 </Field>
-                <div className="text-fg-subtle hidden self-center pt-6 sm:block">
+                <div className="text-fg-subtle hidden self-center pt-6 lg:block">
                   <ArrowRight className="size-4" />
                 </div>
                 <Field
@@ -478,14 +579,8 @@ export default function NewTransferPage() {
                     />
                   )}
                 </Field>
-              </CardBody>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Note</CardTitle>
-              </CardHeader>
-              <CardBody>
+                {/* Beside the route rather than in a card of its own: it says why
+                    this route, and is read with it. */}
                 <Field label="Comment" hint="Why this is moving — useful when it is queried later">
                   {(p) => (
                     <Input {...p} placeholder="Weekly top-up" {...form.register('comment')} />
@@ -500,14 +595,11 @@ export default function NewTransferPage() {
             <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
               <div className="min-w-0">
                 <p className="text-fg-subtle text-2xs">{requesting ? 'Request' : 'Transfer'}</p>
-                <p className="text-fg flex items-center gap-2 text-sm font-medium">
-                  {from?.name ?? '—'}
-                  <ArrowRight className="text-fg-subtle size-3.5" />
-                  {to?.name ?? '—'}
-                </p>
-                {form.watch('comment') ? (
-                  <p className="text-fg-subtle text-2xs truncate">{form.watch('comment')}</p>
-                ) : null}
+                <RouteLine
+                  fromName={from?.name ?? '—'}
+                  toName={to?.name ?? '—'}
+                  comment={form.watch('comment')}
+                />
               </div>
               <Button type="button" variant="secondary" size="sm" onClick={() => setStep(1)}>
                 <Pencil />
@@ -624,12 +716,7 @@ function ReviewStep({
       <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
         <div className="min-w-0">
           <p className="text-fg-subtle text-2xs">{requesting ? 'Request' : 'Transfer'}</p>
-          <p className="text-fg flex items-center gap-2 text-sm font-medium">
-            {fromName}
-            <ArrowRight className="text-fg-subtle size-3.5" />
-            {toName}
-          </p>
-          {comment ? <p className="text-fg-subtle text-2xs truncate">{comment}</p> : null}
+          <RouteLine fromName={fromName} toName={toName} comment={comment} />
         </div>
         <p className="text-fg-muted text-sm">
           {requesting ? 'Asking for' : 'Moving'}{' '}
@@ -653,5 +740,29 @@ function ReviewStep({
         }
       />
     </>
+  )
+}
+
+/** The route, with the comment on the same line — it says why this route. */
+function RouteLine({
+  fromName,
+  toName,
+  comment,
+}: {
+  fromName: string
+  toName: string
+  comment: string
+}) {
+  return (
+    <p className="text-fg flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-sm font-medium">
+      {fromName}
+      <ArrowRight className="text-fg-subtle size-3.5" />
+      {toName}
+      {comment ? (
+        <span className="text-fg-muted min-w-0 truncate font-normal" title={comment}>
+          · {comment}
+        </span>
+      ) : null}
+    </p>
   )
 }

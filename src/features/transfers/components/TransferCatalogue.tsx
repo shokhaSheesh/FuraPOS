@@ -201,7 +201,7 @@ export function TransferCatalogue({
   return (
     <div className="space-y-3">
       {/* Categories: always the top level, whatever is drilled into below. */}
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      <div className="-m-1 flex gap-2 overflow-x-auto p-1 pb-2">
         {roots.map((category) => (
           <CategoryTile
             key={category.id}

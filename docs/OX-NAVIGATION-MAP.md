@@ -787,10 +787,10 @@ because all three end the same way — an order that is received against when th
 the page once the products step has been reached saves it without asking — by the back link, the
 sidebar or anything else. Clicking an unfinished transfer in the list reopens it at its products
 (`/products/transfers/:id/edit`); its detail page has **Continue editing**. Saving along the way and
-sending at the end write one document, not two. The comment sits beside From and To on the route
-step, and on the same line as the route above the products; the dialog's Move column has − / +
-either side of the number, compact at 24 px. Product-card images keep their wide 5:2 box (a square
-was tried and reverted).
+sending at the end write one document, not two. The comment has its own row under From and To on
+the route step, and sits on the same line as the route above the products; the dialog's Move column has − / +
+either side of the number, compact at 24 px. Product-card images are a compact 112 px square, centred
+(a full-width square and a wide box were both tried).
 
 **The list view is products, not variations** (client request): one row per product with the same
 stock pills and sales as a card, a `+` that opens the same variations dialog, and every

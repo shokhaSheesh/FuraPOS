@@ -508,7 +508,7 @@ export default function NewTransferPage() {
                   {TRANSFER_KINDS.find((entry) => entry.value === kind)?.hint}
                 </p>
               </CardHeader>
-              <CardBody className="grid items-start gap-3 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_minmax(0,1fr)]">
+              <CardBody className="grid items-start gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
                 <Field
                   label={requesting ? 'Ask' : 'From'}
                   required
@@ -538,7 +538,7 @@ export default function NewTransferPage() {
                     />
                   )}
                 </Field>
-                <div className="text-fg-subtle hidden self-center pt-6 lg:block">
+                <div className="text-fg-subtle hidden self-center pt-6 sm:block">
                   <ArrowRight className="size-4" />
                 </div>
                 <Field
@@ -567,9 +567,12 @@ export default function NewTransferPage() {
                     />
                   )}
                 </Field>
-                {/* Beside the route rather than in a card of its own: it says why
-                    this route, and is read with it. */}
-                <Field label="Comment" hint="Why this is moving — useful when it is queried later">
+                {/* Its own row under the route, spanning both ends. */}
+                <Field
+                  label="Comment"
+                  hint="Why this is moving — useful when it is queried later"
+                  className="sm:col-span-3"
+                >
                   {(p) => (
                     <Input {...p} placeholder="Weekly top-up" {...form.register('comment')} />
                   )}

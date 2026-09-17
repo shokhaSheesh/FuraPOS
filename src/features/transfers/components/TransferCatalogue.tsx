@@ -535,7 +535,9 @@ function ProductCard({
       <button
         type="button"
         onClick={onOpen}
-        className="bg-surface-inset text-fg-subtle flex aspect-[5/2] items-center justify-center"
+        // A square tile, sized rather than stretched to the card, so a photo
+        // keeps its proportions and the card stays compact.
+        className="bg-surface-inset text-fg-subtle rounded-control mx-3 mt-3 flex size-28 items-center justify-center self-center overflow-hidden"
         aria-label={`Open ${group.productName}`}
       >
         {first.imageUrl ? (

@@ -5,6 +5,8 @@ import { DataTable } from '@/shared/components/DataTable'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { RowActions } from '@/shared/components/RowActions'
 import { Field } from '@/shared/components/Field'
+import { ImageField } from '@/shared/components/ImageField'
+import { ProductThumb } from '@/shared/components/ProductThumb'
 import { Badge } from '@/shared/ui/Badge'
 import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
@@ -46,7 +48,11 @@ export default function CategoriesSettingsPage() {
 
   const [editing, setEditing] = useState<CategorySettings | null>(null)
   const [open, setOpen] = useState(false)
-  const [draft, setDraft] = useState({ name: '', parentId: null as string | null })
+  const [draft, setDraft] = useState({
+    name: '',
+    parentId: null as string | null,
+    imageUrl: null as string | null,
+  })
   const [showErrors, setShowErrors] = useState(false)
   const [deleting, setDeleting] = useState<Row | null>(null)
 
@@ -78,7 +84,11 @@ export default function CategoriesSettingsPage() {
 
   const openFor = (category: CategorySettings | null) => {
     setEditing(category)
-    setDraft({ name: category?.name ?? '', parentId: category?.parentId ?? null })
+    setDraft({
+      name: category?.name ?? '',
+      parentId: category?.parentId ?? null,
+      imageUrl: category?.imageUrl ?? null,
+    })
     setShowErrors(false)
     setOpen(true)
   }
@@ -99,12 +109,15 @@ export default function CategoriesSettingsPage() {
         header: 'Category',
         enableHiding: false,
         cell: ({ row }) => (
-          <span
-            className={row.original.depth === 0 ? 'text-fg font-medium' : 'text-fg-muted'}
+          <div
+            className="flex items-center gap-2.5"
             style={{ paddingLeft: row.original.depth * 20 }}
           >
-            {row.original.name}
-          </span>
+            <ProductThumb src={row.original.imageUrl} size="sm" />
+            <span className={row.original.depth === 0 ? 'text-fg font-medium' : 'text-fg-muted'}>
+              {row.original.name}
+            </span>
+          </div>
         ),
       },
       {
@@ -199,6 +212,17 @@ export default function CategoriesSettingsPage() {
         primary={{ label: editing ? 'Save changes' : 'Add category', onClick: save }}
       >
         <div className="space-y-3">
+          <Field
+            label="Picture"
+            hint="Shown wherever a category is picked, like a transfer's product step"
+          >
+            {() => (
+              <ImageField
+                value={draft.imageUrl}
+                onChange={(imageUrl) => setDraft((c) => ({ ...c, imageUrl }))}
+              />
+            )}
+          </Field>
           <Field label="Name" required error={errors.name?.[0]}>
             {(p) => (
               <Input

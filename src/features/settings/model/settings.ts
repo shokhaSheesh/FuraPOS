@@ -185,6 +185,8 @@ export interface CategorySettings {
   name: string
   /** Parent category, so the tree has more than one level. */
   parentId: Id | null
+  /** A data URL, or null for no picture — see ImageField. */
+  imageUrl: string | null
 }
 
 export const brandSchema = z.object({
@@ -204,6 +206,7 @@ export const locationSchema = z.object({
 export const categorySchema = z.object({
   name: z.string().min(1, 'Give the category a name'),
   parentId: z.string().nullable(),
+  imageUrl: z.string().nullable(),
 })
 
 /* --- notifications ------------------------------------------------------- */

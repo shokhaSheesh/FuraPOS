@@ -816,6 +816,12 @@ stock and sort filters): model stays locked until a make is picked and lists tha
 Settings → Truck brands that something on the shelf fits. Cards are ordered best selling first. One wide search (name, SKU, OEM, barcode, storage address) that
 looks inside the folders instead of stopping at them.
 
+**Category pictures (client request).** Every category can carry a picture, uploaded in
+Settings → Categories when creating or editing one (the same `ImageField` products use: JPG or
+PNG up to 2 MB, kept as a data URL since there is no file storage). The picture shows as the
+category's thumbnail in the settings list and on its tile here; a category without one keeps
+the icon.
+
 Field control is kept everywhere: **Fields** picks what a card shows — the transfer's own figures plus
 **every product-list field** (client rule; a test compares the choices with the catalogue's columns,
 and a field that differs between variations shows each value once, prices as a range) — the product dialog's table has

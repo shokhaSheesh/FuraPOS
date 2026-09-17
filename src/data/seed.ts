@@ -2389,11 +2389,17 @@ export const locationSettings: LocationSettings[] = [
 export const categorySettings: CategorySettings[] = (() => {
   const parents = [...new Set(categories.map((c) => c.path.split(' > ')[0]!))]
   return [
-    ...parents.map((name, index) => ({ id: `catgrp-${index + 1}`, name, parentId: null })),
+    ...parents.map((name, index) => ({
+      id: `catgrp-${index + 1}`,
+      name,
+      parentId: null,
+      imageUrl: null,
+    })),
     ...categories.map((category) => ({
       id: category.id,
       name: category.name,
       parentId: `catgrp-${parents.indexOf(category.path.split(' > ')[0]!) + 1}`,
+      imageUrl: null,
     })),
   ]
 })()

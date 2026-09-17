@@ -197,6 +197,7 @@ export function TransferCatalogue({
             key={category.id}
             active={path[0] === category.id}
             icon={<Layers />}
+            imageUrl={category.imageUrl}
             name={category.name}
             detail={`${formatNumber(counts.get(category.id) ?? 0)} products`}
             onClick={() => goTo([category.id])}
@@ -232,6 +233,7 @@ export function TransferCatalogue({
                 compact
                 active={path[level.depth + 1] === child.id}
                 icon={<Folder />}
+                imageUrl={child.imageUrl}
                 name={child.name}
                 detail={`${formatNumber(counts.get(child.id) ?? 0)} products`}
                 onClick={() => goTo([...path.slice(0, level.depth + 1), child.id])}
@@ -427,6 +429,7 @@ function CategoryTile({
   compact = false,
   active,
   icon,
+  imageUrl,
   name,
   detail,
   onClick,
@@ -435,6 +438,8 @@ function CategoryTile({
   compact?: boolean
   active: boolean
   icon: ReactNode
+  /** The category's own picture, set in Settings → Categories. Falls back to `icon`. */
+  imageUrl?: string | null
   name: string
   detail: string
   onClick: () => void
@@ -452,12 +457,12 @@ function CategoryTile({
     >
       <span
         className={cn(
-          'rounded-control flex shrink-0 items-center justify-center',
+          'rounded-control flex shrink-0 items-center justify-center overflow-hidden',
           compact ? 'size-7 [&_svg]:size-4' : 'size-10 [&_svg]:size-5',
           active ? 'bg-primary text-primary-fg' : 'bg-surface-inset text-fg-muted',
         )}
       >
-        {icon}
+        {imageUrl ? <img src={imageUrl} alt="" className="size-full object-cover" /> : icon}
       </span>
       <span className="min-w-0">
         <span className="text-fg block truncate text-sm font-medium">{name}</span>

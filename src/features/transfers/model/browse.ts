@@ -32,6 +32,7 @@ export interface CategoryNode {
   id: string
   name: string
   parentId: string | null
+  imageUrl?: string | null
 }
 
 export function groupByProduct(rows: TransferRow[]): ProductGroup[] {

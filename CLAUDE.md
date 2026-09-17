@@ -150,12 +150,15 @@ Conventions that are load-bearing — follow them rather than inventing per-scre
   `useSession().can('module.section.action')` or `<RequirePermission>`.
 - **List screens** compose `<PageHeader>` + `<ListPage>` + `<DataTable>`, with list state in the URL
   via `useListQuery()`. `src/features/catalog/pages/ProductsPage.tsx` is the reference to copy.
-- **Search is a filter by field (OX-style, client request).** `<FilterSearch>` replaces the plain
-  search box: clicking it opens a panel of the page's own fields (text, multi-pick,
-  from–to, yes/no) — every field, always — and Apply turns them into chips in the bar.
-  A page describes its fields once as `FilterField`s (`src/shared/lib/fieldFilters.ts`); applied
-  filters live in the URL as `f`. Live on the product list (`productFilterFields`, held to the
-  list's columns by a test); roll out to other lists page by page.
+- **Search is a filter by field (OX-style, client request).** Every list's search bar is
+  `<ColumnFilterSearch>` (URL-backed) or `<FilterSearch>` (local state): clicking it opens a panel
+  with **one field per table column**, named as the column is headed — text, pick-list, from–to,
+  date range or yes/no, inferred from the data by `filterFieldsFromColumns`
+  (`src/shared/lib/columnFilterFields.ts`). Applied filters live in the URL as `f`; the page's data
+  hook applies them with `applyQueryFilters`. A column whose value is worked out, or whose raw value
+  is a code, gets an entry in the feature's `model/*FilterFields.ts` overrides — shared by the panel
+  and the hook, so both read a field from the same place. A new list page does the same; the
+  product list keeps its hand-written `productFilterFields`.
 - **Wherever products are put on a document — transfers, purchase orders, goods receipt — the table
   shows the same fields as the product list.** Client rule. Use
   `buildProductFieldColumns` (`src/features/products/components/productFieldColumns.tsx`), never a

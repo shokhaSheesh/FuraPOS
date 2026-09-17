@@ -1,4 +1,7 @@
 import { useMemo } from 'react'
+import { applyQueryFilters } from '@/shared/lib/fieldFilters'
+import { gettersOf } from '@/shared/lib/columnFilterFields'
+import { ORDER_FILTER_OVERRIDES } from '../model/orderFilterFields'
 import { useDataStore, type CreateOrderInput } from '@/data/store'
 import { matches, paginate } from '@/data/query'
 import { USD_RATE } from '@/data/seed'
@@ -14,7 +17,8 @@ import {
 } from '../model/order'
 
 function filterOrders(all: PurchaseOrder[], query: ListQuery) {
-  return all.filter((order) => {
+  const byField = applyQueryFilters(all, query.f, gettersOf(ORDER_FILTER_OVERRIDES))
+  return byField.filter((order) => {
     if (query.status && order.status !== query.status) return false
     if (query.supplier && order.supplierId !== query.supplier) return false
     if (query.location && order.locationId !== query.location) return false

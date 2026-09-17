@@ -3,7 +3,9 @@ import { Link, useNavigate } from 'react-router'
 import { Play, Users } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
-import { SearchInput } from '@/shared/components/SearchInput'
+import { FilterSearch } from '@/shared/components/FilterSearch'
+import { filterFieldsFromColumns, type FieldOverrides } from '@/shared/lib/columnFilterFields'
+import { applyFieldFilters, type FilterValues } from '@/shared/lib/fieldFilters'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { FilterGate } from '@/shared/components/FilterGate'
 import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
@@ -49,6 +51,20 @@ const defaultFrom = () => new Date(Date.now() - DEFAULT_WINDOW_DAYS * 86_400_000
  * that in its subtitle and then shows a coloured label, which is a diagnosis
  * with no prescription.
  */
+/** The report's search panel: its columns, worked-out figures given a getter. */
+const CUSTOMER_FILTER_OVERRIDES: FieldOverrides<ScoredCustomer> = {
+  name: { type: 'text' },
+  segment: { type: 'options', optionLabel: (value) => segmentLabel(value as RfmSegment) },
+  // Three scores in one cell; the segment is what they add up to.
+  rfm: { skip: true },
+  spend: { get: (c) => Math.round(c.spend) },
+  purchases: { label: 'Purchases', type: 'range', get: (c) => c.purchases },
+  averageCheck: { get: (c) => (c.purchases === 0 ? null : Math.round(c.averageCheck)) },
+  recency: { unit: 'days', get: (c) => c.recencyDays },
+  owed: { get: (c) => c.debt },
+  lastPurchaseAt: { label: 'Last bought', type: 'date', get: (c) => c.lastPurchaseAt },
+}
+
 export default function CustomerReportPage() {
   const navigate = useNavigate()
   const [range, setRange] = useState<{ from: Date | null; to: Date | null }>({
@@ -57,6 +73,7 @@ export default function CustomerReportPage() {
   })
   const [segment, setSegment] = useState<RfmSegment | null>(null)
   const [search, setSearch] = useState('')
+  const [fieldFilters, setFieldFilters] = useState<FilterValues>({})
   const [ran, setRan] = useState(false)
 
   const filters = useMemo(
@@ -171,6 +188,15 @@ export default function CustomerReportPage() {
     [],
   )
 
+  const filterFields = useMemo(
+    () => filterFieldsFromColumns(columns, report?.customers ?? [], CUSTOMER_FILTER_OVERRIDES),
+    [columns, report],
+  )
+  const customers = useMemo(
+    () => applyFieldFilters(report?.customers ?? [], filterFields, fieldFilters),
+    [report, filterFields, fieldFilters],
+  )
+
   const tiles = report
     ? [
         {
@@ -230,7 +256,15 @@ export default function CustomerReportPage() {
                 setRan(false)
               }}
             />
-            <SearchInput value={search} onChange={setSearch} placeholder="Find a client…" />
+            <div className="w-full max-w-xl">
+              <FilterSearch
+                fields={filterFields}
+                values={fieldFilters}
+                onApply={setFieldFilters}
+                search={search}
+                onSearchChange={setSearch}
+              />
+            </div>
           </div>
         }
       />
@@ -307,8 +341,8 @@ export default function CustomerReportPage() {
               storageKey="customer-report"
               columns={columns}
               initialHidden={['averageCheck']}
-              data={report.customers}
-              total={report.customers.length}
+              data={customers}
+              total={customers.length}
               isLoading={false}
               toolbar={
                 segment ? (

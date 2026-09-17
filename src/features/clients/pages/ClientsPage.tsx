@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router'
 import { Plus, Wallet, AlertTriangle, MoonStar, Building2 } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
-import { SearchInput } from '@/shared/components/SearchInput'
+import { ColumnFilterSearch } from '@/shared/components/ColumnFilterSearch'
+import { CLIENT_FILTER_OVERRIDES } from '../model/clientFilterFields'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { Badge } from '@/shared/ui/Badge'
@@ -27,17 +28,21 @@ import { clientStatusLabel, clientStatusTone, daysSinceLastSale } from '../model
  * Individuals are not here. An owner-driver is a **driver**, and his purchases
  * are attributed to him rather than to an account.
  */
+/** Every autopark, unfiltered — the search panel reads its pick-lists from these. */
+const EVERY_BUSINESS = { type: 'business' as const }
+
 export default function ClientsPage() {
   const navigate = useNavigate()
   const { can } = useSession()
   const { query, setQuery } = useListQuery()
+  const { data: everyClient } = useClients(EVERY_BUSINESS)
 
   /*
     Companies only. An autopark is a business by definition, so a person on
     this list would be somebody who cannot hold a contract — and the type
     filter that used to sit above the table now has one answer.
   */
-  const filters = { search: query.search, type: 'business' as const, lens: query.lens }
+  const filters = { f: query.f, search: query.search, type: 'business' as const, lens: query.lens }
   const { data, isLoading } = useClients(filters)
   const { data: counts } = useClientCounts(filters)
   const summary = useClientsSummary()
@@ -252,17 +257,19 @@ export default function ClientsPage() {
         total={data.total}
         isLoading={isLoading}
         toolbar={
-          <SearchInput
-            value={String(query.search ?? '')}
-            onChange={(search) => setQuery({ search })}
-            placeholder="Search by name, phone or email…"
+          <ColumnFilterSearch
+            columns={columns}
+            rows={everyClient.items}
+            overrides={CLIENT_FILTER_OVERRIDES}
+            query={query}
+            setQuery={setQuery}
           />
         }
         pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
         onPaginationChange={({ page, pageSize }) => setQuery({ page, pageSize })}
         onRowClick={(client) => navigate(paths.marketing.autoparkDetail(client.id))}
         emptyState={
-          query.search || query.lens || query.type ? (
+          query.search || query.f || query.lens || query.type ? (
             <EmptyState title="Nobody matches these filters" />
           ) : (
             <EmptyState

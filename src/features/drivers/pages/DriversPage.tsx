@@ -4,7 +4,8 @@ import { Link } from 'react-router'
 import { Pencil, Plus, Trash2, Truck } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
-import { SearchInput } from '@/shared/components/SearchInput'
+import { ColumnFilterSearch } from '@/shared/components/ColumnFilterSearch'
+import { DRIVER_FILTER_OVERRIDES } from '../model/driverFilterFields'
 import { Tabs } from '@/shared/ui/Tabs'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { RowActions } from '@/shared/components/RowActions'
@@ -58,7 +59,8 @@ export default function DriversPage() {
   // The list is always one section or the other — there is no combined view,
   // because "all drivers" is not a group anybody sells to.
   const section = (query.section as 'independent' | 'autopark') ?? 'independent'
-  const { data } = useDrivers({ search: query.search, section, status: query.status })
+  const { data: everyDriver } = useDrivers({ section })
+  const { data } = useDrivers({ search: query.search, section, status: query.status, f: query.f })
   const counts = useDriverCounts()
   const actions = useDriverActions()
   const clients = useDataStore((s) => s.clients)
@@ -287,10 +289,12 @@ export default function DriversPage() {
       />
 
       <div className="flex flex-wrap items-center gap-3">
-        <SearchInput
-          value={(query.search as string) ?? ''}
-          onChange={(search) => setQuery({ search })}
-          placeholder="Search by name, code, phone or plate…"
+        <ColumnFilterSearch
+          columns={columns}
+          rows={everyDriver.items}
+          overrides={DRIVER_FILTER_OVERRIDES}
+          query={query}
+          setQuery={setQuery}
         />
         <Select
           className="w-44"

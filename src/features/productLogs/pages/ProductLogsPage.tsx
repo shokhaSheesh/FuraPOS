@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router'
 import { ArrowDownRight, ArrowUpRight, History, Package } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
-import { SearchInput } from '@/shared/components/SearchInput'
+import { ColumnFilterSearch } from '@/shared/components/ColumnFilterSearch'
+import { LOG_FILTER_OVERRIDES } from '../model/logFilterFields'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { FilterSelect } from '@/shared/components/FilterSelect'
@@ -16,6 +17,9 @@ import { useLogKindCounts, useLogSummary, useStockLog } from '../api/logs'
 import { STOCK_LOG_KINDS } from '../model/log'
 import { buildLogColumns, documentPath } from '../components/logColumns'
 
+/** The whole log, unfiltered — the search panel reads its pick-lists from it. */
+const EVERY_ENTRY = { page: 1, pageSize: 100_000 }
+
 /**
  * Product logs.
  *
@@ -26,9 +30,11 @@ import { buildLogColumns, documentPath } from '../components/logColumns'
 export default function ProductLogsPage() {
   const navigate = useNavigate()
   const { query, setQuery } = useListQuery()
+  const { data: everyEntry } = useStockLog(EVERY_ENTRY)
   const locations = useDataStore((s) => s.locations)
 
   const filters = {
+    f: query.f,
     search: query.search,
     location: query.location,
     kind: query.kind,
@@ -132,10 +138,12 @@ export default function ProductLogsPage() {
         total={data.total}
         isLoading={isLoading}
         toolbar={
-          <SearchInput
-            value={String(query.search ?? '')}
-            onChange={(search) => setQuery({ search })}
-            placeholder="Search by product, SKU or document…"
+          <ColumnFilterSearch
+            columns={columns}
+            rows={everyEntry.items}
+            overrides={LOG_FILTER_OVERRIDES}
+            query={query}
+            setQuery={setQuery}
           />
         }
         pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 50) }}

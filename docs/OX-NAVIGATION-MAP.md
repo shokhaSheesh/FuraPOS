@@ -1901,4 +1901,10 @@ has to go looking for a field first — and has a close button. Text fields take
 barcodes). OX's «Исключить» checkboxes were left out at the client's request. Prices are compared in UZS
 whatever currency a line is in. Filters go in the URL (`f`). The panel lays fields out two to a row, as OX does. The All / Active /
 Archived cards above the list were **cut at the client's request**.
-Other list pages get it next, one at a time.
+**Now on every list (client request):** offline and online sales, partner orders, cash shifts,
+transfers, corrections, stocktaking, goods receipt, repricing, print templates, suppliers, orders,
+employees, autoparks, drivers, promotions, the report generator, product logs (and each product's
+log tab) and the customer report. Each panel is built from that list's own table columns, so it
+cannot drift from what the table shows; print templates, a card grid, describe theirs explicitly.
+The status and "late / owed" chips already on those pages stay, and their counts follow the field
+filters. The Offline sales KPI cards were **cut at the client's request**.

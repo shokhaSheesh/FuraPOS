@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router'
 import { Plus, Wallet, Boxes, ShoppingBag, Moon } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
-import { SearchInput } from '@/shared/components/SearchInput'
+import { ColumnFilterSearch } from '@/shared/components/ColumnFilterSearch'
+import { SUPPLIER_FILTER_OVERRIDES } from '../model/supplierFilterFields'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { FilterSelect } from '@/shared/components/FilterSelect'
@@ -37,13 +38,17 @@ import {
  * about why: a supplier list is not a contact book. Every column here is money
  * or movement. The name is how you find the row; the debt is why you opened it.
  */
+/** Every supplier, unfiltered — the search panel reads its pick-lists from these. */
+const EVERY_ROW = { page: 1, pageSize: 100_000 }
+
 export default function SuppliersListPage() {
   const navigate = useNavigate()
   const { can } = useSession()
   const { query, setQuery } = useListQuery()
+  const { data: everySupplier } = useSuppliers(EVERY_ROW)
   const suppliers = useDataStore((s) => s.suppliers)
 
-  const scope = { search: query.search, zone: query.zone }
+  const scope = { f: query.f, search: query.search, zone: query.zone }
   const { data, isLoading } = useSuppliers(query)
   const { data: counts } = useSupplierLensCounts(scope)
   const summary = useSuppliersSummary(scope)
@@ -322,17 +327,19 @@ export default function SuppliersListPage() {
         total={data?.total ?? 0}
         isLoading={isLoading}
         toolbar={
-          <SearchInput
-            value={String(query.search ?? '')}
-            onChange={(search) => setQuery({ search })}
-            placeholder="Search by name, contact or zone…"
+          <ColumnFilterSearch
+            columns={columns}
+            rows={everySupplier?.items ?? []}
+            overrides={SUPPLIER_FILTER_OVERRIDES}
+            query={query}
+            setQuery={setQuery}
           />
         }
         pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
         onPaginationChange={({ page, pageSize }) => setQuery({ page, pageSize })}
         onRowClick={(row) => navigate(paths.products.supplierDetail(row.supplier.id))}
         emptyState={
-          query.search || query.lens || query.zone ? (
+          query.search || query.f || query.lens || query.zone ? (
             <EmptyState title="No suppliers match these filters" />
           ) : (
             <EmptyState

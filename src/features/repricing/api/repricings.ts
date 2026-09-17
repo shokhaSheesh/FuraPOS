@@ -1,11 +1,15 @@
 import { useMemo } from 'react'
+import { applyQueryFilters } from '@/shared/lib/fieldFilters'
+import { gettersOf } from '@/shared/lib/columnFilterFields'
+import { REPRICING_FILTER_OVERRIDES } from '../model/repricingFilterFields'
 import { useDataStore, type CreateRepricingInput } from '@/data/store'
 import { matches, paginate } from '@/data/query'
 import type { ListQuery } from '@/shared/types'
 import { averageChange, changedLines, marginShift, type Repricing } from '../model/repricing'
 
 function filterRepricings(all: Repricing[], query: ListQuery) {
-  return all.filter((repricing) => {
+  const byField = applyQueryFilters(all, query.f, gettersOf(REPRICING_FILTER_OVERRIDES))
+  return byField.filter((repricing) => {
     if (query.status && repricing.status !== query.status) return false
     if (query.direction === 'up' && averageChange(repricing) <= 0) return false
     if (query.direction === 'down' && averageChange(repricing) >= 0) return false

@@ -4,7 +4,10 @@ import { Package } from 'lucide-react'
 import { DataTable } from '@/shared/components/DataTable'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { FilterSelect } from '@/shared/components/FilterSelect'
-import { SearchInput } from '@/shared/components/SearchInput'
+import { FilterSearch } from '@/shared/components/FilterSearch'
+import { filterFieldsFromColumns } from '@/shared/lib/columnFilterFields'
+import { encodeFilters, type FilterValues } from '@/shared/lib/fieldFilters'
+import { LOG_FILTER_OVERRIDES } from '../model/logFilterFields'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { DateRangePicker } from '@/shared/ui/DateRangePicker'
 import { formatNumber } from '@/shared/lib/format'
@@ -40,10 +43,12 @@ export function ProductLog({
     to: null,
   })
   const [search, setSearch] = useState('')
+  const [fieldFilters, setFieldFilters] = useState<FilterValues>({})
   const [page, setPage] = useState({ page: 1, pageSize: 25 })
 
   const day = (date: Date | null) => (date ? date.toISOString().slice(0, 10) : null)
   const filters = {
+    f: encodeFilters(fieldFilters),
     productId,
     variationId,
     kind,
@@ -58,6 +63,12 @@ export function ProductLog({
   const summary = useLogSummary(filters)
 
   const columns = useMemo(() => buildLogColumns({ subject: 'variation' }), [])
+  // This product's whole history, for the panel's pick-lists.
+  const { data: everyEntry } = useStockLog({ productId, page: 1, pageSize: 100_000 })
+  const filterFields = useMemo(
+    () => filterFieldsFromColumns(columns, everyEntry.items, LOG_FILTER_OVERRIDES),
+    [columns, everyEntry.items],
+  )
 
   // Any filter change is a new list; staying on page 4 of it looks like nothing matched.
   const reset = () => setPage((current) => ({ ...current, page: 1 }))
@@ -125,13 +136,18 @@ export function ProductLog({
         data={data.items}
         total={data.total}
         toolbar={
-          <SearchInput
-            value={search}
-            onChange={(next) => {
+          <FilterSearch
+            fields={filterFields}
+            values={fieldFilters}
+            onApply={(next) => {
+              setFieldFilters(next)
+              reset()
+            }}
+            search={search}
+            onSearchChange={(next) => {
               setSearch(next)
               reset()
             }}
-            placeholder="Search by SKU, document or who…"
           />
         }
         pagination={page}

@@ -1,4 +1,7 @@
 import { useMemo } from 'react'
+import { applyQueryFilters } from '@/shared/lib/fieldFilters'
+import { gettersOf } from '@/shared/lib/columnFilterFields'
+import { CLIENT_FILTER_OVERRIDES } from '../model/clientFilterFields'
 import { useDataStore, type ClientInput } from '@/data/store'
 import { matches } from '@/data/query'
 import type { Sale } from '@/features/sales/model/sale'
@@ -58,6 +61,8 @@ export interface ClientRow extends Client {
 }
 
 export interface ClientFilters {
+  /** The search bar's field filters. */
+  f?: unknown
   search?: unknown
   type?: unknown
   lens?: unknown
@@ -103,8 +108,9 @@ export function useClients(filters: ClientFilters = {}) {
         return b.stats.revenue - a.stats.revenue
       })
 
-    return { data: { items, total: items.length }, isLoading: false }
-  }, [clients, sales, filters.type, filters.lens, filters.search])
+    const matching = applyQueryFilters(items, filters.f, gettersOf(CLIENT_FILTER_OVERRIDES))
+    return { data: { items: matching, total: matching.length }, isLoading: false }
+  }, [clients, sales, filters.type, filters.lens, filters.search, filters.f])
 }
 
 export function useClient(id: string | undefined) {

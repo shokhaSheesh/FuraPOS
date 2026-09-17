@@ -3,6 +3,9 @@ import { useDataStore, type Client, type CreateSaleInput } from '@/data/store'
 import { matches, paginate } from '@/data/query'
 import type { ListQuery } from '@/shared/types'
 import type { Sale, SaleStatus } from '../model/sale'
+import { applyQueryFilters } from '@/shared/lib/fieldFilters'
+import { gettersOf } from '@/shared/lib/columnFilterFields'
+import { SALE_FILTER_OVERRIDES } from '../model/saleFilterFields'
 
 export type { Client, CreateSaleInput }
 
@@ -12,7 +15,8 @@ export type { Client, CreateSaleInput }
  */
 
 function filterSales(all: Sale[], query: ListQuery, includeDeleted = false) {
-  return all.filter((sale) => {
+  const byField = applyQueryFilters(all, query.f, gettersOf(SALE_FILTER_OVERRIDES))
+  return byField.filter((sale) => {
     // A cancelled sale must not sit in the ledger inflating revenue.
     if (!query.status && !includeDeleted && sale.status === 'deleted') return false
     if (query.status && sale.status !== query.status) return false
@@ -34,39 +38,6 @@ export function useSales(query: ListQuery) {
 export function useSale(id: string) {
   const sale = useDataStore((s) => s.sales.find((item) => item.id === id))
   return { data: sale, isLoading: false, isError: !sale }
-}
-
-export interface SalesSummary {
-  count: number
-  total: number
-  units: number
-  debtCount: number
-  debtTotal: number
-  deliveryCount: number
-  deliveryTotal: number
-  clients: number
-  sellers: number
-}
-
-export function useSalesSummary(query: ListQuery) {
-  const sales = useDataStore((s) => s.sales)
-  const data = useMemo<SalesSummary>(() => {
-    const scoped = filterSales(sales, query)
-    const withDebt = scoped.filter((s) => s.debt > 0)
-    const withDelivery = scoped.filter((s) => s.delivery)
-    return {
-      count: scoped.length,
-      total: scoped.reduce((sum, s) => sum + s.total, 0),
-      units: scoped.reduce((sum, s) => sum + s.lines.reduce((n, l) => n + l.quantity, 0), 0),
-      debtCount: withDebt.length,
-      debtTotal: withDebt.reduce((sum, s) => sum + s.debt, 0),
-      deliveryCount: withDelivery.length,
-      deliveryTotal: withDelivery.reduce((sum, s) => sum + s.deliveryCost, 0),
-      clients: new Set(scoped.map((s) => s.clientId).filter(Boolean)).size,
-      sellers: new Set(scoped.map((s) => s.sellerName)).size,
-    }
-  }, [sales, query])
-  return { data, isLoading: false }
 }
 
 export function useSaleStatusCounts(query: ListQuery) {

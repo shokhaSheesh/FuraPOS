@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { Copy, Pencil, Plus, Printer, Tags, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
-import { SearchInput } from '@/shared/components/SearchInput'
+import { ColumnFilterSearch } from '@/shared/components/ColumnFilterSearch'
+import { TEMPLATE_FILTER_COLUMNS, TEMPLATE_FILTER_OVERRIDES } from '../model/templateFilterFields'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { RowActions } from '@/shared/components/RowActions'
@@ -37,7 +38,8 @@ export default function PrintTemplatesPage() {
   const navigate = useNavigate()
   const { can } = useSession()
   const { query, setQuery } = useListQuery()
-  const { data } = usePrintTemplates({ search: query.search, kind: query.kind })
+  const { data } = usePrintTemplates({ search: query.search, kind: query.kind, f: query.f })
+  const { data: everyTemplate } = usePrintTemplates()
   const counts = useTemplateCounts()
   const actions = useTemplateActions()
 
@@ -60,10 +62,12 @@ export default function PrintTemplatesPage() {
       />
 
       <div className="flex flex-wrap items-center gap-3">
-        <SearchInput
-          value={(query.search as string) ?? ''}
-          onChange={(search) => setQuery({ search })}
-          placeholder="Search templates…"
+        <ColumnFilterSearch
+          columns={TEMPLATE_FILTER_COLUMNS}
+          rows={everyTemplate.items}
+          overrides={TEMPLATE_FILTER_OVERRIDES}
+          query={query}
+          setQuery={setQuery}
         />
         <StatusChips<TemplateKind>
           ariaLabel="Filter by what it prints"

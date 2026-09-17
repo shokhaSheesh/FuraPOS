@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router'
 import { Boxes, Clock, Globe, Wallet } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
-import { SearchInput } from '@/shared/components/SearchInput'
+import { ColumnFilterSearch } from '@/shared/components/ColumnFilterSearch'
+import { ONLINE_SALE_FILTER_OVERRIDES } from '../model/onlineSaleFilterFields'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { FilterSelect } from '@/shared/components/FilterSelect'
@@ -38,6 +39,7 @@ import {
 export default function OnlineSalesListPage() {
   const navigate = useNavigate()
   const { query, setQuery } = useListQuery()
+  const allOnlineSales = useDataStore((s) => s.onlineSales)
   const locations = useDataStore((s) => s.locations)
   const { data, isLoading } = useOnlineSales(query)
   const counts = useOnlineSaleCounts(query)
@@ -168,7 +170,8 @@ export default function OnlineSalesListPage() {
     },
   ]
 
-  const filtered = query.search || query.status || query.location || query.payment || query.from
+  const filtered =
+    query.search || query.f || query.status || query.location || query.payment || query.from
 
   return (
     <>
@@ -245,10 +248,12 @@ export default function OnlineSalesListPage() {
         total={data.total}
         isLoading={isLoading}
         toolbar={
-          <SearchInput
-            value={String(query.search ?? '')}
-            onChange={(search) => setQuery({ search })}
-            placeholder="Search by order, customer, phone or part…"
+          <ColumnFilterSearch
+            columns={columns}
+            rows={allOnlineSales}
+            overrides={ONLINE_SALE_FILTER_OVERRIDES}
+            query={query}
+            setQuery={setQuery}
           />
         }
         pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}

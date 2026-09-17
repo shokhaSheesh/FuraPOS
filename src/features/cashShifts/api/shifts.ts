@@ -1,4 +1,7 @@
 import { useMemo } from 'react'
+import { applyQueryFilters } from '@/shared/lib/fieldFilters'
+import { gettersOf } from '@/shared/lib/columnFilterFields'
+import { SHIFT_FILTER_OVERRIDES } from '../model/shiftFilterFields'
 import { useDataStore } from '@/data/store'
 import { matches } from '@/data/query'
 import {
@@ -42,7 +45,7 @@ function totalsFor(sales: ReturnType<typeof useDataStore.getState>['sales'], shi
   }
 }
 
-export function useCashShifts(filters: { search?: unknown; status?: unknown } = {}) {
+export function useCashShifts(filters: { search?: unknown; status?: unknown; f?: unknown } = {}) {
   const shifts = useDataStore((s) => s.cashShifts)
   const sales = useDataStore((s) => s.sales)
 
@@ -67,8 +70,9 @@ export function useCashShifts(filters: { search?: unknown; status?: unknown } = 
         return byOpen !== 0 ? byOpen : b.openedAt.localeCompare(a.openedAt)
       })
 
-    return { data: { items, total: items.length }, isLoading: false }
-  }, [shifts, sales, filters.status, filters.search])
+    const matching = applyQueryFilters(items, filters.f, gettersOf(SHIFT_FILTER_OVERRIDES))
+    return { data: { items: matching, total: matching.length }, isLoading: false }
+  }, [shifts, sales, filters.status, filters.search, filters.f])
 }
 
 export function useCashShift(id: string | undefined) {

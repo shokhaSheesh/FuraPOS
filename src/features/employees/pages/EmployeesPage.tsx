@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router'
 import { Plus } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
-import { SearchInput } from '@/shared/components/SearchInput'
+import { ColumnFilterSearch } from '@/shared/components/ColumnFilterSearch'
+import { EMPLOYEE_FILTER_OVERRIDES } from '../model/employeeFilterFields'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { FilterSelect } from '@/shared/components/FilterSelect'
@@ -31,10 +32,12 @@ export default function EmployeesPage() {
   const navigate = useNavigate()
   const { can } = useSession()
   const { query, setQuery } = useListQuery()
+  const { data: everyEmployee } = useEmployees()
   const roles = useDataStore((s) => s.roles)
   const locations = useDataStore((s) => s.locations)
 
   const filters = {
+    f: query.f,
     search: query.search,
     role: query.role,
     location: query.location,
@@ -220,17 +223,19 @@ export default function EmployeesPage() {
         total={data.total}
         isLoading={isLoading}
         toolbar={
-          <SearchInput
-            value={String(query.search ?? '')}
-            onChange={(search) => setQuery({ search })}
-            placeholder="Search by name, phone or role…"
+          <ColumnFilterSearch
+            columns={columns}
+            rows={everyEmployee.items}
+            overrides={EMPLOYEE_FILTER_OVERRIDES}
+            query={query}
+            setQuery={setQuery}
           />
         }
         pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
         onPaginationChange={({ page, pageSize }) => setQuery({ page, pageSize })}
         onRowClick={(employee) => navigate(paths.personnel.employeeDetail(employee.id))}
         emptyState={
-          query.search || query.status || query.role || query.location ? (
+          query.search || query.f || query.status || query.role || query.location ? (
             <EmptyState title="Nobody matches these filters" />
           ) : (
             <EmptyState

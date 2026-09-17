@@ -1,11 +1,15 @@
 import { useMemo } from 'react'
+import { applyQueryFilters } from '@/shared/lib/fieldFilters'
+import { gettersOf } from '@/shared/lib/columnFilterFields'
+import { PARTNER_ORDER_FILTER_OVERRIDES } from '../model/partnerOrderFilterFields'
 import { useDataStore } from '@/data/store'
 import { matches, paginate } from '@/data/query'
 import type { ListQuery } from '@/shared/types'
 import { orderedUnits, shippedUnits, type PartnerOrder } from '../model/partnerOrder'
 
 function filterOrders(all: PartnerOrder[], query: ListQuery) {
-  return all.filter((order) => {
+  const byField = applyQueryFilters(all, query.f, gettersOf(PARTNER_ORDER_FILTER_OVERRIDES))
+  return byField.filter((order) => {
     if (query.status && order.status !== query.status) return false
     if (query.client && order.clientId !== query.client) return false
     if (query.location && order.locationId !== query.locationId) return false

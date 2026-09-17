@@ -1,9 +1,12 @@
 import { useMemo } from 'react'
+import { applyQueryFilters } from '@/shared/lib/fieldFilters'
+import { gettersOf } from '@/shared/lib/columnFilterFields'
+import { TEMPLATE_FILTER_OVERRIDES } from '../model/templateFilterFields'
 import { useDataStore, type TemplateInput } from '@/data/store'
 import { matches } from '@/data/query'
 import { kindLabel, type PrintTemplate, type TemplateKind } from '../model/template'
 
-export function usePrintTemplates(filters: { search?: unknown; kind?: unknown } = {}) {
+export function usePrintTemplates(filters: { search?: unknown; kind?: unknown; f?: unknown } = {}) {
   const templates = useDataStore((s) => s.printTemplates)
 
   return useMemo(() => {
@@ -17,8 +20,9 @@ export function usePrintTemplates(filters: { search?: unknown; kind?: unknown } 
       })
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
 
-    return { data: { items, total: items.length }, isLoading: false }
-  }, [templates, filters.kind, filters.search])
+    const matching = applyQueryFilters(items, filters.f, gettersOf(TEMPLATE_FILTER_OVERRIDES))
+    return { data: { items: matching, total: matching.length }, isLoading: false }
+  }, [templates, filters.kind, filters.search, filters.f])
 }
 
 export function usePrintTemplate(id: string | undefined) {

@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router'
 import { Plus, Truck, FileEdit, PackageCheck } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
-import { SearchInput } from '@/shared/components/SearchInput'
+import { ColumnFilterSearch } from '@/shared/components/ColumnFilterSearch'
+import { TRANSFER_FILTER_OVERRIDES } from '../model/transferFilterFields'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { FilterSelect } from '@/shared/components/FilterSelect'
@@ -39,9 +40,10 @@ export default function TransfersListPage() {
   const navigate = useNavigate()
   const { can } = useSession()
   const { query, setQuery } = useListQuery()
+  const allTransfers = useDataStore((s) => s.transfers)
   const locations = useDataStore((s) => s.locations)
 
-  const scope = { search: query.search, location: query.location }
+  const scope = { search: query.search, location: query.location, f: query.f }
   const { data, isLoading } = useTransfers(query)
   const { data: counts } = useTransferStatusCounts(scope)
   const summary = useTransferSummary(scope)
@@ -147,10 +149,12 @@ export default function TransfersListPage() {
         total={data?.total ?? 0}
         isLoading={isLoading}
         toolbar={
-          <SearchInput
-            value={String(query.search ?? '')}
-            onChange={(search) => setQuery({ search })}
-            placeholder="Search by number, location, SKU or product…"
+          <ColumnFilterSearch
+            columns={columns}
+            rows={allTransfers}
+            overrides={TRANSFER_FILTER_OVERRIDES}
+            query={query}
+            setQuery={setQuery}
           />
         }
         pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
@@ -162,7 +166,7 @@ export default function TransfersListPage() {
         }}
         onRowClick={(transfer) => navigate(paths.products.transferDetail(transfer.id))}
         emptyState={
-          query.search || query.status || query.location ? (
+          query.search || query.status || query.location || query.f ? (
             <EmptyState title="No transfers match these filters" />
           ) : (
             <EmptyState

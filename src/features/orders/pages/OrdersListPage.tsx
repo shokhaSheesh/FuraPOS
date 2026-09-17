@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router'
 import { Plus } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
-import { SearchInput } from '@/shared/components/SearchInput'
+import { ColumnFilterSearch } from '@/shared/components/ColumnFilterSearch'
+import { ORDER_FILTER_OVERRIDES } from '../model/orderFilterFields'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { FilterSelect } from '@/shared/components/FilterSelect'
@@ -45,10 +46,16 @@ export default function OrdersListPage() {
   const [creating, setCreating] = useState(false)
   const { can } = useSession()
   const { query, setQuery } = useListQuery()
+  const allOrders = useDataStore((s) => s.orders)
   const suppliers = useDataStore((s) => s.suppliers)
   const locations = useDataStore((s) => s.locations)
 
-  const scope = { search: query.search, supplier: query.supplier, location: query.location }
+  const scope = {
+    f: query.f,
+    search: query.search,
+    supplier: query.supplier,
+    location: query.location,
+  }
   const { data, isLoading } = useOrders(query)
   const { data: counts } = useOrderStatusCounts(scope)
   const canSeeCost = can('products.cost.view')
@@ -223,17 +230,19 @@ export default function OrdersListPage() {
         total={data?.total ?? 0}
         isLoading={isLoading}
         toolbar={
-          <SearchInput
-            value={String(query.search ?? '')}
-            onChange={(search) => setQuery({ search })}
-            placeholder="Search by number, supplier, SKU or product…"
+          <ColumnFilterSearch
+            columns={columns}
+            rows={allOrders}
+            overrides={ORDER_FILTER_OVERRIDES}
+            query={query}
+            setQuery={setQuery}
           />
         }
         pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
         onPaginationChange={({ page, pageSize }) => setQuery({ page, pageSize })}
         onRowClick={(order) => navigate(paths.procurement.orderDetail(order.id))}
         emptyState={
-          query.search || query.lens || query.supplier || query.location ? (
+          query.search || query.f || query.lens || query.supplier || query.location ? (
             <EmptyState title="No orders match these filters" />
           ) : (
             <EmptyState

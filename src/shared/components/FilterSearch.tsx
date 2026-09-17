@@ -5,6 +5,7 @@ import { Input } from '@/shared/ui/Input'
 import { MultiSelect } from '@/shared/ui/MultiSelect'
 import { Popover } from '@/shared/ui/Popover'
 import { Select } from '@/shared/ui/Select'
+import { DateRangePicker } from '@/shared/ui/DateRangePicker'
 import { NumberField } from '@/shared/components/NumberField'
 import { cn } from '@/shared/lib/cn'
 import {
@@ -245,6 +246,8 @@ function FieldEditor<T>({
         </div>
       )
     }
+    case 'date':
+      return <DateEditor value={value} onChange={onChange} />
     case 'boolean':
       return (
         <Select
@@ -262,4 +265,40 @@ function FieldEditor<T>({
         />
       )
   }
+}
+
+const toDay = (date: Date | null) =>
+  date
+    ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+    : null
+
+function DateEditor({
+  value,
+  onChange,
+}: {
+  value: FilterValue | undefined
+  onChange: (value: FilterValue | undefined) => void
+}) {
+  const from = value?.type === 'date' ? value.from : null
+  const to = value?.type === 'date' ? value.to : null
+  // Stable between renders: the picker re-seeds itself whenever its value changes.
+  const range = useMemo(
+    () => ({
+      from: from ? new Date(`${from}T00:00:00`) : null,
+      to: to ? new Date(`${to}T00:00:00`) : null,
+    }),
+    [from, to],
+  )
+  return (
+    <DateRangePicker
+      className="w-full"
+      placeholder="Any date"
+      value={range}
+      onChange={(next) => {
+        const start = toDay(next.from)
+        const end = toDay(next.to)
+        onChange(start || end ? { type: 'date', from: start, to: end } : undefined)
+      }}
+    />
+  )
 }

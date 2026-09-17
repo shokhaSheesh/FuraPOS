@@ -1,4 +1,7 @@
 import { useMemo } from 'react'
+import { applyQueryFilters } from '@/shared/lib/fieldFilters'
+import { gettersOf } from '@/shared/lib/columnFilterFields'
+import { RECEIPT_FILTER_OVERRIDES } from '../model/receiptFilterFields'
 import { useDataStore, type CreateReceiptInput } from '@/data/store'
 import { matches, paginate } from '@/data/query'
 import { USD_RATE } from '@/data/seed'
@@ -13,7 +16,8 @@ import {
 } from '../model/receipt'
 
 function filterReceipts(all: GoodsReceipt[], query: ListQuery) {
-  return all.filter((receipt) => {
+  const byField = applyQueryFilters(all, query.f, gettersOf(RECEIPT_FILTER_OVERRIDES))
+  return byField.filter((receipt) => {
     if (query.status && receipt.status !== query.status) return false
     if (query.location && receipt.locationId !== query.location) return false
     if (query.supplier && receipt.supplierId !== query.supplier) return false

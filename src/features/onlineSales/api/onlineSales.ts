@@ -1,4 +1,7 @@
 import { useMemo } from 'react'
+import { applyQueryFilters } from '@/shared/lib/fieldFilters'
+import { gettersOf } from '@/shared/lib/columnFilterFields'
+import { ONLINE_SALE_FILTER_OVERRIDES } from '../model/onlineSaleFilterFields'
 import { useDataStore } from '@/data/store'
 import { matches, paginate } from '@/data/query'
 import type { ListQuery } from '@/shared/types'
@@ -8,7 +11,8 @@ import { amountPaid, isOpenOnline, takesStock, unitsOf, type OnlineSale } from '
 function scope(all: OnlineSale[], query: ListQuery) {
   const from = query.from ? new Date(String(query.from)).getTime() : null
   const to = query.to ? new Date(String(query.to)).getTime() + 86_400_000 - 1 : null
-  return all.filter((sale) => {
+  const byField = applyQueryFilters(all, query.f, gettersOf(ONLINE_SALE_FILTER_OVERRIDES))
+  return byField.filter((sale) => {
     if (query.location && sale.locationId !== query.location) return false
     if (query.payment && sale.paymentStatus !== query.payment) return false
     const at = new Date(sale.createdAt).getTime()

@@ -1,10 +1,13 @@
 import { useMemo } from 'react'
+import { applyQueryFilters } from '@/shared/lib/fieldFilters'
+import { gettersOf } from '@/shared/lib/columnFilterFields'
+import { DRIVER_FILTER_OVERRIDES } from '../model/driverFilterFields'
 import { useDataStore } from '@/data/store'
 import { matches } from '@/data/query'
 import { inSection, type Driver, type DriverDraft, type DriverStatus } from '../model/driver'
 
 export function useDrivers(
-  filters: { search?: unknown; section?: unknown; status?: unknown } = {},
+  filters: { search?: unknown; section?: unknown; status?: unknown; f?: unknown } = {},
 ) {
   const drivers = useDataStore((s) => s.drivers)
 
@@ -33,8 +36,9 @@ export function useDrivers(
       })
       .sort((a, b) => a.fullName.localeCompare(b.fullName))
 
-    return { data: { items, total: items.length }, isLoading: false }
-  }, [drivers, filters.section, filters.status, filters.search])
+    const matching = applyQueryFilters(items, filters.f, gettersOf(DRIVER_FILTER_OVERRIDES))
+    return { data: { items: matching, total: matching.length }, isLoading: false }
+  }, [drivers, filters.section, filters.status, filters.search, filters.f])
 }
 
 /**

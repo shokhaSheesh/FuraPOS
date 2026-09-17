@@ -1,4 +1,7 @@
 import { useMemo } from 'react'
+import { applyQueryFilters } from '@/shared/lib/fieldFilters'
+import { gettersOf } from '@/shared/lib/columnFilterFields'
+import { CORRECTION_FILTER_OVERRIDES } from '../model/correctionFilterFields'
 import { useDataStore, type CreateCorrectionInput } from '@/data/store'
 import { matches, paginate } from '@/data/query'
 import { USD_RATE } from '@/data/seed'
@@ -6,7 +9,8 @@ import type { ListQuery } from '@/shared/types'
 import { netCostValue, writtenOff, writtenOn, type Correction } from '../model/correction'
 
 function filterCorrections(all: Correction[], query: ListQuery) {
-  return all.filter((correction) => {
+  const byField = applyQueryFilters(all, query.f, gettersOf(CORRECTION_FILTER_OVERRIDES))
+  return byField.filter((correction) => {
     if (query.status && correction.status !== query.status) return false
     if (query.location && correction.locationId !== query.location) return false
     if (query.reason && correction.reason !== query.reason) return false

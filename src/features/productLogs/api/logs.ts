@@ -1,4 +1,7 @@
 import { useMemo } from 'react'
+import { applyQueryFilters } from '@/shared/lib/fieldFilters'
+import { gettersOf } from '@/shared/lib/columnFilterFields'
+import { LOG_FILTER_OVERRIDES } from '../model/logFilterFields'
 import { useDataStore } from '@/data/store'
 import { matches, paginate } from '@/data/query'
 import { correctionReasonLabel } from '@/features/corrections/model/correction'
@@ -202,6 +205,8 @@ function withBalances(entries: StockLogEntry[], state: State): StockLogEntry[] {
 }
 
 export interface LogFilters {
+  /** The search bar's field filters. */
+  f?: unknown
   /** One product's history only — its own Log tab. */
   productId?: unknown
   variationId?: unknown
@@ -230,7 +235,8 @@ export function useStockLog(filters: LogFilters = {}) {
     // An end date means the end of that day, not midnight at the start of it.
     const to = filters.to ? new Date(String(filters.to)).getTime() + 86_400_000 - 1 : null
 
-    const items = all.filter((entry) => {
+    const byField = applyQueryFilters(all, filters.f, gettersOf(LOG_FILTER_OVERRIDES))
+    const items = byField.filter((entry) => {
       if (filters.productId && entry.productId !== filters.productId) return false
       if (filters.variationId && entry.variationId !== filters.variationId) return false
       if (filters.location && entry.locationId !== filters.location) return false
@@ -254,6 +260,7 @@ export function useStockLog(filters: LogFilters = {}) {
     transfers,
     corrections,
     onlineSales,
+    filters.f,
     filters.productId,
     filters.variationId,
     filters.search,

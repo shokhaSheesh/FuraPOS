@@ -1,4 +1,7 @@
 import { useMemo } from 'react'
+import { applyQueryFilters } from '@/shared/lib/fieldFilters'
+import { gettersOf } from '@/shared/lib/columnFilterFields'
+import { PROMOTION_FILTER_OVERRIDES } from '../model/promotionFilterFields'
 import { useDataStore, type PromotionInput } from '@/data/store'
 import { matches } from '@/data/query'
 import {
@@ -23,7 +26,7 @@ const STATUS_ORDER: Record<PromotionStatus, number> = {
   finished: 3,
 }
 
-export function usePromotions(filters: { search?: unknown; status?: unknown } = {}) {
+export function usePromotions(filters: { search?: unknown; status?: unknown; f?: unknown } = {}) {
   const promotions = useDataStore((s) => s.promotions)
 
   return useMemo(() => {
@@ -47,8 +50,9 @@ export function usePromotions(filters: { search?: unknown; status?: unknown } = 
         return b.startsAt.localeCompare(a.startsAt)
       })
 
-    return { data: { items, total: items.length }, isLoading: false }
-  }, [promotions, filters.status, filters.search])
+    const matching = applyQueryFilters(items, filters.f, gettersOf(PROMOTION_FILTER_OVERRIDES))
+    return { data: { items: matching, total: matching.length }, isLoading: false }
+  }, [promotions, filters.status, filters.search, filters.f])
 }
 
 export function usePromotion(id: string | undefined) {

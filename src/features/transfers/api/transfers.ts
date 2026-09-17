@@ -1,4 +1,7 @@
 import { useMemo } from 'react'
+import { applyQueryFilters } from '@/shared/lib/fieldFilters'
+import { gettersOf } from '@/shared/lib/columnFilterFields'
+import { TRANSFER_FILTER_OVERRIDES } from '../model/transferFilterFields'
 import { useDataStore, type CreateTransferInput } from '@/data/store'
 import { matches, paginate } from '@/data/query'
 import type { ListQuery } from '@/shared/types'
@@ -11,7 +14,8 @@ import { transferQuantity, type Transfer, type TransferStatus } from '../model/t
  */
 
 function filterTransfers(all: Transfer[], query: ListQuery) {
-  return all.filter((transfer) => {
+  const byField = applyQueryFilters(all, query.f, gettersOf(TRANSFER_FILTER_OVERRIDES))
+  return byField.filter((transfer) => {
     if (query.status && transfer.status !== query.status) return false
     // One location filter, matching either end: "show me anything involving
     // Chilonzor" is the question a shop manager actually asks, and asking them

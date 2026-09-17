@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router'
 import { Plus } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
-import { SearchInput } from '@/shared/components/SearchInput'
+import { ColumnFilterSearch } from '@/shared/components/ColumnFilterSearch'
+import { CORRECTION_FILTER_OVERRIDES } from '../model/correctionFilterFields'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { FilterSelect } from '@/shared/components/FilterSelect'
@@ -36,9 +37,11 @@ export default function CorrectionsListPage() {
   const navigate = useNavigate()
   const { can } = useSession()
   const { query, setQuery } = useListQuery()
+  const allCorrections = useDataStore((s) => s.corrections)
   const locations = useDataStore((s) => s.locations)
 
   const scope = {
+    f: query.f,
     search: query.search,
     location: query.location,
     reason: query.reason,
@@ -127,10 +130,12 @@ export default function CorrectionsListPage() {
         total={data?.total ?? 0}
         isLoading={isLoading}
         toolbar={
-          <SearchInput
-            value={String(query.search ?? '')}
-            onChange={(search) => setQuery({ search })}
-            placeholder="Search by number, location, SKU or product…"
+          <ColumnFilterSearch
+            columns={columns}
+            rows={allCorrections}
+            overrides={CORRECTION_FILTER_OVERRIDES}
+            query={query}
+            setQuery={setQuery}
           />
         }
         pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
@@ -142,7 +147,12 @@ export default function CorrectionsListPage() {
         }}
         onRowClick={(correction) => navigate(paths.products.correctionDetail(correction.id))}
         emptyState={
-          query.search || query.status || query.location || query.reason || query.direction ? (
+          query.search ||
+          query.f ||
+          query.status ||
+          query.location ||
+          query.reason ||
+          query.direction ? (
             <EmptyState title="No corrections match these filters" />
           ) : (
             <EmptyState

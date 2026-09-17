@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router'
 import { Eye, Lock, Plus, Wallet } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
-import { SearchInput } from '@/shared/components/SearchInput'
+import { ColumnFilterSearch } from '@/shared/components/ColumnFilterSearch'
+import { SHIFT_FILTER_OVERRIDES } from '../model/shiftFilterFields'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { RowActions } from '@/shared/components/RowActions'
@@ -33,7 +34,8 @@ export default function CashShiftsPage() {
   const navigate = useNavigate()
   const { can } = useSession()
   const { query, setQuery } = useListQuery()
-  const { data } = useCashShifts({ search: query.search, status: query.status })
+  const { data: everyShift } = useCashShifts()
+  const { data } = useCashShifts({ search: query.search, status: query.status, f: query.f })
   const counts = useShiftCounts()
 
   const [opening, setOpening] = useState(false)
@@ -196,10 +198,12 @@ export default function CashShiftsPage() {
       ) : null}
 
       <div className="flex flex-wrap items-center gap-3">
-        <SearchInput
-          value={(query.search as string) ?? ''}
-          onChange={(search) => setQuery({ search })}
-          placeholder="Search by shift, register or person…"
+        <ColumnFilterSearch
+          columns={columns}
+          rows={everyShift.items}
+          overrides={SHIFT_FILTER_OVERRIDES}
+          query={query}
+          setQuery={setQuery}
         />
         <StatusChips<ShiftStatus>
           ariaLabel="Filter by status"

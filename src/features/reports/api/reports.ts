@@ -1,4 +1,7 @@
 import { useMemo } from 'react'
+import { applyQueryFilters } from '@/shared/lib/fieldFilters'
+import { gettersOf } from '@/shared/lib/columnFilterFields'
+import { REPORT_FILTER_OVERRIDES } from '../model/reportFilterFields'
 import { useDataStore, type ReportInput } from '@/data/store'
 import { matches } from '@/data/query'
 import {
@@ -12,7 +15,7 @@ import {
 } from '../model/report'
 import { buildSourceRows } from './sources'
 
-export function useReports(filters: { search?: unknown; source?: unknown } = {}) {
+export function useReports(filters: { search?: unknown; source?: unknown; f?: unknown } = {}) {
   const reports = useDataStore((s) => s.reports)
 
   return useMemo(() => {
@@ -30,8 +33,9 @@ export function useReports(filters: { search?: unknown; source?: unknown } = {})
         return byPin !== 0 ? byPin : a.name.localeCompare(b.name)
       })
 
-    return { data: { items, total: items.length }, isLoading: false }
-  }, [reports, filters.source, filters.search])
+    const matching = applyQueryFilters(items, filters.f, gettersOf(REPORT_FILTER_OVERRIDES))
+    return { data: { items: matching, total: matching.length }, isLoading: false }
+  }, [reports, filters.source, filters.search, filters.f])
 }
 
 export function useReport(id: string | undefined) {

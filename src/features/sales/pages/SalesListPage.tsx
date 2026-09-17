@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router'
 import { Download, Plus } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
-import { SearchInput } from '@/shared/components/SearchInput'
+import { ColumnFilterSearch } from '@/shared/components/ColumnFilterSearch'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { Badge } from '@/shared/ui/Badge'
@@ -16,8 +16,9 @@ import { useSession } from '@/app/providers/SessionProvider'
 import { paths } from '@/shared/config/paths'
 import { downloadCsv } from '@/shared/lib/csv'
 import { formatDate, formatDateTime, formatMoney, formatNumber } from '@/shared/lib/format'
-import { useSaleStatusCounts, useSales, useSalesSummary } from '../api/sales'
-import { SalesSummaryStrip } from '../components/SalesSummaryStrip'
+import { useSaleStatusCounts, useSales } from '../api/sales'
+import { SALE_FILTER_OVERRIDES } from '../model/saleFilterFields'
+import { useDataStore } from '@/data/store'
 import {
   PAYMENT_METHODS,
   SALE_CHANNELS,
@@ -203,16 +204,11 @@ export function SalesListPage({ title, description }: { title: string; descripti
 
   const filters = useMemo(() => ({ ...query, status, from, to }), [query, status, from, to])
   const { data, isLoading } = useSales(filters)
-  const { data: counts } = useSaleStatusCounts({ search: query.search, from, to })
-  const { data: summary, isLoading: summaryLoading } = useSalesSummary({
-    search: query.search,
-    status,
-    from,
-    to,
-  })
+  const { data: counts } = useSaleStatusCounts({ search: query.search, from, to, f: query.f })
+  const allSales = useDataStore((s) => s.sales)
 
   const showCreate = can('sales.orders.create')
-  const isFiltered = Boolean(query.search || query.status || from)
+  const isFiltered = Boolean(query.search || query.status || from || query.f)
 
   const range = {
     from: from ? new Date(from) : null,
@@ -296,8 +292,6 @@ export function SalesListPage({ title, description }: { title: string; descripti
         }
       />
 
-      <SalesSummaryStrip summary={summary} loading={summaryLoading} />
-
       <DataTable
         storageKey="sales"
         columns={columns}
@@ -306,10 +300,12 @@ export function SalesListPage({ title, description }: { title: string; descripti
         total={data?.total ?? 0}
         isLoading={isLoading}
         toolbar={
-          <SearchInput
-            value={String(query.search ?? '')}
-            onChange={(search) => setQuery({ search })}
-            placeholder="Search by number, client, location or seller…"
+          <ColumnFilterSearch
+            columns={columns}
+            rows={allSales}
+            overrides={SALE_FILTER_OVERRIDES}
+            query={query}
+            setQuery={setQuery}
           />
         }
         pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
@@ -328,7 +324,9 @@ export function SalesListPage({ title, description }: { title: string; descripti
               action={
                 <Button
                   variant="secondary"
-                  onClick={() => setQuery({ search: null, status: null, from: null, to: null })}
+                  onClick={() =>
+                    setQuery({ search: null, status: null, from: null, to: null, f: null })
+                  }
                 >
                   Clear filters
                 </Button>

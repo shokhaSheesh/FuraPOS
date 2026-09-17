@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router'
 import { Download, Plus } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
-import { SearchInput } from '@/shared/components/SearchInput'
+import { ColumnFilterSearch } from '@/shared/components/ColumnFilterSearch'
+import { RECEIPT_FILTER_OVERRIDES } from '../model/receiptFilterFields'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { FilterSelect } from '@/shared/components/FilterSelect'
@@ -43,11 +44,17 @@ export default function GoodsReceiptListPage() {
   const navigate = useNavigate()
   const { can } = useSession()
   const { query, setQuery } = useListQuery()
+  const allReceipts = useDataStore((s) => s.receipts)
   const locations = useDataStore((s) => s.locations)
   const variations = useDataStore((s) => s.variations)
   const { data: suppliers } = useSuppliers()
 
-  const scope = { search: query.search, location: query.location, supplier: query.supplier }
+  const scope = {
+    f: query.f,
+    search: query.search,
+    location: query.location,
+    supplier: query.supplier,
+  }
   const { data, isLoading } = useReceipts(query)
   const { data: counts } = useReceiptStatusCounts(scope)
   const canSeeCost = can('products.cost.view')
@@ -183,10 +190,12 @@ export default function GoodsReceiptListPage() {
         total={data?.total ?? 0}
         isLoading={isLoading}
         toolbar={
-          <SearchInput
-            value={String(query.search ?? '')}
-            onChange={(search) => setQuery({ search })}
-            placeholder="Filter and search…"
+          <ColumnFilterSearch
+            columns={columns}
+            rows={allReceipts}
+            overrides={RECEIPT_FILTER_OVERRIDES}
+            query={query}
+            setQuery={setQuery}
           />
         }
         pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
@@ -198,7 +207,7 @@ export default function GoodsReceiptListPage() {
         }}
         onRowClick={(receipt) => navigate(paths.products.goodsReceiptDetail(receipt.id))}
         emptyState={
-          query.search || query.status || query.location || query.supplier ? (
+          query.search || query.f || query.status || query.location || query.supplier ? (
             <EmptyState title="No receipts match these filters" />
           ) : (
             <EmptyState

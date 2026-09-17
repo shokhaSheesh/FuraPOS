@@ -1,4 +1,7 @@
 import { useMemo } from 'react'
+import { applyQueryFilters } from '@/shared/lib/fieldFilters'
+import { gettersOf } from '@/shared/lib/columnFilterFields'
+import { STOCKTAKE_FILTER_OVERRIDES } from '../model/stocktakeFilterFields'
 import { useDataStore, type StartStocktakeInput } from '@/data/store'
 import { matches, paginate } from '@/data/query'
 import { USD_RATE } from '@/data/seed'
@@ -12,7 +15,8 @@ import {
 } from '../model/stocktake'
 
 function filterStocktakes(all: Stocktake[], query: ListQuery) {
-  return all.filter((stocktake) => {
+  const byField = applyQueryFilters(all, query.f, gettersOf(STOCKTAKE_FILTER_OVERRIDES))
+  return byField.filter((stocktake) => {
     if (query.status && stocktake.status !== query.status) return false
     if (query.location && stocktake.locationId !== query.location) return false
     return matches(

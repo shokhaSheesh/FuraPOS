@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router'
 import { Plus } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
-import { SearchInput } from '@/shared/components/SearchInput'
+import { ColumnFilterSearch } from '@/shared/components/ColumnFilterSearch'
+import { STOCKTAKE_FILTER_OVERRIDES } from '../model/stocktakeFilterFields'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { FilterSelect } from '@/shared/components/FilterSelect'
@@ -53,9 +54,10 @@ export default function StocktakingListPage() {
   const navigate = useNavigate()
   const { can } = useSession()
   const { query, setQuery } = useListQuery()
+  const allStocktakes = useDataStore((s) => s.stocktakes)
   const locations = useDataStore((s) => s.locations)
 
-  const scope = { search: query.search, location: query.location }
+  const scope = { f: query.f, search: query.search, location: query.location }
   const { data, isLoading } = useStocktakes(query)
   const { data: counts } = useStocktakeStatusCounts(scope)
   const canSeeCost = can('products.cost.view')
@@ -284,10 +286,12 @@ export default function StocktakingListPage() {
         total={data?.total ?? 0}
         isLoading={isLoading}
         toolbar={
-          <SearchInput
-            value={String(query.search ?? '')}
-            onChange={(search) => setQuery({ search })}
-            placeholder="Search by number, location or scope…"
+          <ColumnFilterSearch
+            columns={columns}
+            rows={allStocktakes}
+            overrides={STOCKTAKE_FILTER_OVERRIDES}
+            query={query}
+            setQuery={setQuery}
           />
         }
         pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
@@ -299,7 +303,7 @@ export default function StocktakingListPage() {
         }}
         onRowClick={(stocktake) => navigate(paths.products.stocktakeDetail(stocktake.id))}
         emptyState={
-          query.search || query.status || query.location ? (
+          query.search || query.f || query.status || query.location ? (
             <EmptyState title="No counts match these filters" />
           ) : (
             <EmptyState

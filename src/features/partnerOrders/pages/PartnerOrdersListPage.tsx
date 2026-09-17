@@ -2,7 +2,8 @@ import { useMemo } from 'react'
 import { useNavigate } from 'react-router'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
-import { SearchInput } from '@/shared/components/SearchInput'
+import { ColumnFilterSearch } from '@/shared/components/ColumnFilterSearch'
+import { PARTNER_ORDER_FILTER_OVERRIDES } from '../model/partnerOrderFilterFields'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { FilterSelect } from '@/shared/components/FilterSelect'
@@ -38,10 +39,11 @@ export default function PartnerOrdersListPage() {
   const navigate = useNavigate()
   const { can } = useSession()
   const { query, setQuery } = useListQuery()
+  const allPartnerOrders = useDataStore((s) => s.partnerOrders)
   const clients = useDataStore((s) => s.clients)
   const canSeeMoney = can('sales.orders.view')
 
-  const scope = { search: query.search, client: query.client }
+  const scope = { f: query.f, search: query.search, client: query.client }
   const { data, isLoading } = usePartnerOrders(query)
   const { data: counts } = usePartnerOrderStatusCounts(scope)
 
@@ -188,17 +190,19 @@ export default function PartnerOrdersListPage() {
         total={data?.total ?? 0}
         isLoading={isLoading}
         toolbar={
-          <SearchInput
-            value={String(query.search ?? '')}
-            onChange={(search) => setQuery({ search })}
-            placeholder="Search by number, business or product…"
+          <ColumnFilterSearch
+            columns={columns}
+            rows={allPartnerOrders}
+            overrides={PARTNER_ORDER_FILTER_OVERRIDES}
+            query={query}
+            setQuery={setQuery}
           />
         }
         pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
         onPaginationChange={({ page, pageSize }) => setQuery({ page, pageSize })}
         onRowClick={(order) => navigate(paths.sales.partnerOrderDetail(order.id))}
         emptyState={
-          query.search || query.status || query.client ? (
+          query.search || query.f || query.status || query.client ? (
             <EmptyState title="No orders match these filters" />
           ) : (
             <EmptyState

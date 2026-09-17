@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router'
 import { Pin, PinOff, Play, Plus, Pencil, Table2, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
-import { SearchInput } from '@/shared/components/SearchInput'
+import { ColumnFilterSearch } from '@/shared/components/ColumnFilterSearch'
+import { REPORT_FILTER_OVERRIDES } from '../model/reportFilterFields'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { RowActions } from '@/shared/components/RowActions'
@@ -30,7 +31,8 @@ export default function ReportsPage() {
   const navigate = useNavigate()
   const { can } = useSession()
   const { query, setQuery } = useListQuery()
-  const { data, isLoading } = useReports({ search: query.search, source: query.source })
+  const { data: everyReport } = useReports()
+  const { data, isLoading } = useReports({ search: query.search, source: query.source, f: query.f })
   const actions = useReportActions()
   const [deleting, setDeleting] = useState<ReportDefinition | null>(null)
 
@@ -142,17 +144,19 @@ export default function ReportsPage() {
         total={data.total}
         isLoading={isLoading}
         toolbar={
-          <SearchInput
-            value={String(query.search ?? '')}
-            onChange={(search) => setQuery({ search })}
-            placeholder="Search reports…"
+          <ColumnFilterSearch
+            columns={columns}
+            rows={everyReport.items}
+            overrides={REPORT_FILTER_OVERRIDES}
+            query={query}
+            setQuery={setQuery}
           />
         }
         pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
         onPaginationChange={({ page, pageSize }) => setQuery({ page, pageSize })}
         onRowClick={(report) => navigate(paths.analytics.reportView(report.id))}
         emptyState={
-          query.search || query.source ? (
+          query.search || query.f || query.source ? (
             <EmptyState title="No reports match these filters" />
           ) : (
             <EmptyState

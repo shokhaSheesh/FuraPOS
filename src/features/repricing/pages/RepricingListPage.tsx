@@ -3,7 +3,9 @@ import { Link, useNavigate } from 'react-router'
 import { Plus, Undo2 } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
-import { SearchInput } from '@/shared/components/SearchInput'
+import { ColumnFilterSearch } from '@/shared/components/ColumnFilterSearch'
+import { useDataStore } from '@/data/store'
+import { REPRICING_FILTER_OVERRIDES } from '../model/repricingFilterFields'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { RowActions } from '@/shared/components/RowActions'
@@ -41,8 +43,9 @@ export default function RepricingListPage() {
   const navigate = useNavigate()
   const { can } = useSession()
   const { query, setQuery } = useListQuery()
+  const allRepricings = useDataStore((s) => s.repricings)
 
-  const scope = { search: query.search, direction: query.direction }
+  const scope = { f: query.f, search: query.search, direction: query.direction }
   const { data, isLoading } = useRepricings(query)
   const { data: counts } = useRepricingStatusCounts(scope)
   const canSeeCost = can('products.cost.view')
@@ -218,10 +221,12 @@ export default function RepricingListPage() {
         total={data?.total ?? 0}
         isLoading={isLoading}
         toolbar={
-          <SearchInput
-            value={String(query.search ?? '')}
-            onChange={(search) => setQuery({ search })}
-            placeholder="Search by number, category, brand or reason…"
+          <ColumnFilterSearch
+            columns={columns}
+            rows={allRepricings}
+            overrides={REPRICING_FILTER_OVERRIDES}
+            query={query}
+            setQuery={setQuery}
           />
         }
         pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
@@ -233,7 +238,7 @@ export default function RepricingListPage() {
         }}
         onRowClick={(repricing) => navigate(paths.products.repricingDetail(repricing.id))}
         emptyState={
-          query.search || query.status || query.direction ? (
+          query.search || query.f || query.status || query.direction ? (
             <EmptyState title="No price changes match these filters" />
           ) : (
             <EmptyState

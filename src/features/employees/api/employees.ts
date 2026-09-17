@@ -1,4 +1,7 @@
 import { useMemo } from 'react'
+import { applyQueryFilters } from '@/shared/lib/fieldFilters'
+import { gettersOf } from '@/shared/lib/columnFilterFields'
+import { EMPLOYEE_FILTER_OVERRIDES } from '../model/employeeFilterFields'
 import { useDataStore, type EmployeeInput } from '@/data/store'
 import { matches } from '@/data/query'
 import { USD_RATE } from '@/data/seed'
@@ -80,6 +83,8 @@ export function buildEmployeeStats(
 }
 
 export interface EmployeeFilters {
+  /** The search bar's field filters. */
+  f?: unknown
   search?: unknown
   role?: unknown
   location?: unknown
@@ -126,8 +131,18 @@ export function useEmployees(filters: EmployeeFilters = {}) {
         return byMonth !== 0 ? byMonth : b.stats.revenue - a.stats.revenue
       })
 
-    return { data: { items, total: items.length }, isLoading: false }
-  }, [employees, sales, variations, filters.role, filters.location, filters.status, filters.search])
+    const matching = applyQueryFilters(items, filters.f, gettersOf(EMPLOYEE_FILTER_OVERRIDES))
+    return { data: { items: matching, total: matching.length }, isLoading: false }
+  }, [
+    employees,
+    sales,
+    variations,
+    filters.role,
+    filters.location,
+    filters.status,
+    filters.search,
+    filters.f,
+  ])
 }
 
 export function useEmployee(id: string | undefined) {

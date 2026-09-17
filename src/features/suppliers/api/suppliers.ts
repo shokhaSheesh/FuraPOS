@@ -1,4 +1,7 @@
 import { useMemo } from 'react'
+import { applyQueryFilters } from '@/shared/lib/fieldFilters'
+import { gettersOf } from '@/shared/lib/columnFilterFields'
+import { SUPPLIER_FILTER_OVERRIDES } from '../model/supplierFilterFields'
 import { useDataStore, type SupplierInput } from '@/data/store'
 import { matches, paginate } from '@/data/query'
 import { USD_RATE } from '@/data/seed'
@@ -106,18 +109,21 @@ export function useSuppliers(query: ListQuery) {
   const stats = useSupplierStats()
 
   const data = useMemo(() => {
-    const rows: SupplierRow[] = suppliers
-      .map((supplier) => ({ supplier, stats: stats.get(supplier.id) }))
-      .filter(({ supplier, stats: s }) => {
-        if (query.status && supplier.status !== query.status) return false
-        if (query.lens === 'owed' && supplier.debt <= 0) return false
-        if (query.lens === 'dormant' && !isDormant(s)) return false
-        if (query.zone && supplier.zone !== query.zone) return false
-        return matches(
-          [supplier.name, supplier.contactName, supplier.phone, supplier.email, supplier.zone],
-          query.search,
-        )
-      })
+    const all = suppliers.map((supplier) => ({ supplier, stats: stats.get(supplier.id) }))
+    const rows: SupplierRow[] = applyQueryFilters(
+      all as SupplierRow[],
+      query.f,
+      gettersOf(SUPPLIER_FILTER_OVERRIDES),
+    ).filter(({ supplier, stats: s }) => {
+      if (query.status && supplier.status !== query.status) return false
+      if (query.lens === 'owed' && supplier.debt <= 0) return false
+      if (query.lens === 'dormant' && !isDormant(s)) return false
+      if (query.zone && supplier.zone !== query.zone) return false
+      return matches(
+        [supplier.name, supplier.contactName, supplier.phone, supplier.email, supplier.zone],
+        query.search,
+      )
+    })
 
     const ordered = query.sort ? rows : [...rows].sort((a, b) => b.supplier.debt - a.supplier.debt)
     return paginate(ordered, query)

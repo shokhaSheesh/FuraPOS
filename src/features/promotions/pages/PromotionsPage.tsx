@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router'
 import { Plus, Pause, Pencil, Play, Tag, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
-import { SearchInput } from '@/shared/components/SearchInput'
+import { ColumnFilterSearch } from '@/shared/components/ColumnFilterSearch'
+import { PROMOTION_FILTER_OVERRIDES } from '../model/promotionFilterFields'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { RowActions } from '@/shared/components/RowActions'
@@ -40,7 +41,12 @@ export default function PromotionsPage() {
   const navigate = useNavigate()
   const { can } = useSession()
   const { query, setQuery } = useListQuery()
-  const { data, isLoading } = usePromotions({ search: query.search, status: query.status })
+  const { data: everyPromotion } = usePromotions()
+  const { data, isLoading } = usePromotions({
+    search: query.search,
+    status: query.status,
+    f: query.f,
+  })
   const { data: counts } = usePromotionCounts()
   const actions = usePromotionActions()
   const [deleting, setDeleting] = useState<PromotionRow | null>(null)
@@ -221,17 +227,19 @@ export default function PromotionsPage() {
         total={data.total}
         isLoading={isLoading}
         toolbar={
-          <SearchInput
-            value={String(query.search ?? '')}
-            onChange={(search) => setQuery({ search })}
-            placeholder="Search promotions…"
+          <ColumnFilterSearch
+            columns={columns}
+            rows={everyPromotion.items}
+            overrides={PROMOTION_FILTER_OVERRIDES}
+            query={query}
+            setQuery={setQuery}
           />
         }
         pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
         onPaginationChange={({ page, pageSize }) => setQuery({ page, pageSize })}
         onRowClick={(promotion) => navigate(paths.marketing.editPromotion(promotion.id))}
         emptyState={
-          query.search || query.status ? (
+          query.search || query.f || query.status ? (
             <EmptyState title="No promotions match these filters" />
           ) : (
             <EmptyState

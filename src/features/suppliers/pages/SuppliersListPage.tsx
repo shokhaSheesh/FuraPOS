@@ -47,6 +47,8 @@ export default function SuppliersListPage() {
   const { query, setQuery } = useListQuery()
   const { data: everySupplier } = useSuppliers(EVERY_ROW)
   const suppliers = useDataStore((s) => s.suppliers)
+  const roles = useDataStore((s) => s.roles)
+  const roleName = (id: string | null) => roles.find((role) => role.id === id)?.name ?? null
 
   const scope = { f: query.f, search: query.search, zone: query.zone }
   const { data, isLoading } = useSuppliers(query)
@@ -183,8 +185,11 @@ export default function SuppliersListPage() {
                     {/* The login underneath when there is one — a supplier with
                         no account at all has nothing to show but the status. */}
                     {row.original.supplier.username ? (
-                      <p className="text-fg-subtle text-2xs mt-0.5 truncate font-mono">
-                        {row.original.supplier.username}
+                      <p className="text-fg-subtle text-2xs mt-0.5 truncate">
+                        <span className="font-mono">{row.original.supplier.username}</span>
+                        {roleName(row.original.supplier.roleId)
+                          ? ` · ${roleName(row.original.supplier.roleId)}`
+                          : ''}
                       </p>
                     ) : null}
                   </div>
@@ -214,7 +219,8 @@ export default function SuppliersListPage() {
         cell: ({ row }) => row.original.supplier.phone ?? <span className="text-fg-subtle">—</span>,
       },
     ],
-    [canSeeCost, canSeePortal],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [canSeeCost, canSeePortal, roles],
   )
 
   return (

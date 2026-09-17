@@ -1,4 +1,5 @@
 import type { FieldOverrides } from '@/shared/lib/columnFilterFields'
+import { useDataStore } from '@/data/store'
 import type { SupplierRow } from '../api/suppliers'
 import { isDormant, portalState, portalStateLabel, type PortalState } from './supplier'
 
@@ -29,4 +30,11 @@ export const SUPPLIER_FILTER_OVERRIDES: FieldOverrides<SupplierRow> = {
     optionLabel: (value) => (value === 'dormant' ? 'Nothing in 90 days' : 'Delivered lately'),
   },
   phone: { type: 'text', get: (r) => r.supplier.phone },
+  // Not a column of its own — it sits under the login — but worth filtering by.
+  role: {
+    label: 'Portal role',
+    type: 'options',
+    get: (r) =>
+      useDataStore.getState().roles.find((role) => role.id === r.supplier.roleId)?.name ?? null,
+  },
 }

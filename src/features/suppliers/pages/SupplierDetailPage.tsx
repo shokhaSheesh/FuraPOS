@@ -57,6 +57,7 @@ export default function SupplierDetailPage() {
   const setPassword = useSetSupplierPassword(supplierId ?? '')
   const setAccess = useSetSupplierAccess(supplierId ?? '')
   const receipts = useDataStore((s) => s.receipts)
+  const roles = useDataStore((s) => s.roles)
   const [paying, setPaying] = useState(false)
   /** The change-password dialog, and what is typed in it. */
   const [changing, setChanging] = useState(false)
@@ -400,6 +401,10 @@ export default function SupplierDetailPage() {
                 ) : (
                   <div className="space-y-2">
                     <Row label="Login" value={supplier.username ?? '—'} mono />
+                    <Row
+                      label="Role"
+                      value={roles.find((role) => role.id === supplier.roleId)?.name ?? 'No role'}
+                    />
                     {/* Readable, because the person handing it over has to be
                         able to read it out when the supplier rings back. */}
                     <Row label="Password" value={supplier.password ?? '—'} mono />

@@ -48,6 +48,11 @@ export interface Supplier {
   /** What they sign in as. Kept when access is switched off, so turning it back on is the same login. */
   username: string | null
   /**
+   * What the login may reach, from Access & roles — the same list employees
+   * are given a role from. Null while the supplier has no login.
+   */
+  roleId: Id | null
+  /**
    * What they sign in with, in plain text and readable on their page.
    *
    * A once-only reveal was tried and rejected for good reason: whoever hands
@@ -209,6 +214,7 @@ export const supplierFormSchema = z
     access: z.enum(['none', 'granted', 'disabled']),
     username: z.string(),
     password: z.string(),
+    roleId: z.string(),
   })
   .superRefine((values, ctx) => {
     // None of this has to be valid if nobody is going to sign in with it.
@@ -219,6 +225,9 @@ export const supplierFormSchema = z
         path: ['contactName'],
         message: 'Name the person who will hold the login',
       })
+    }
+    if (!values.roleId) {
+      ctx.addIssue({ code: 'custom', path: ['roleId'], message: 'Every login needs a role' })
     }
     if (!USERNAME_PATTERN.test(values.username.trim())) {
       ctx.addIssue({

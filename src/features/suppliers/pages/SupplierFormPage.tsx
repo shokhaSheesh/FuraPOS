@@ -37,6 +37,7 @@ export default function SupplierFormPage() {
   const { can } = useSession()
   const { data: existing } = useSupplier(editing ? supplierId! : '')
   const suppliers = useDataStore((s) => s.suppliers)
+  const roles = useDataStore((s) => s.roles)
   const create = useCreateSupplier()
   const update = useUpdateSupplier(supplierId ?? '')
 
@@ -56,6 +57,7 @@ export default function SupplierFormPage() {
             access: existing.supplier.access,
             username: existing.supplier.username ?? '',
             password: existing.supplier.password ?? '',
+            roleId: existing.supplier.roleId ?? '',
           }
         : {
             name: '',
@@ -70,6 +72,7 @@ export default function SupplierFormPage() {
             access: 'none',
             username: '',
             password: '',
+            roleId: '',
           },
     [existing],
   )
@@ -99,6 +102,8 @@ export default function SupplierFormPage() {
         access: values.access,
         username: values.username.trim() || null,
         password: values.password.trim() || null,
+        // No login, no role: a role on a supplier nobody signs in as means nothing.
+        roleId: values.access === 'none' ? null : values.roleId || null,
       }
 
       // Two companies signing in as one name would be two companies in one
@@ -335,6 +340,29 @@ export default function SupplierFormPage() {
                     Both stay readable on the supplier’s page, so you can look them up when they
                     ring back.
                   </p>
+                  <Field
+                    label="Role"
+                    required
+                    hint="What this login may reach — set up in Access & roles"
+                    error={form.formState.errors.roleId?.message}
+                  >
+                    {(p) => (
+                      <Controller
+                        control={form.control}
+                        name="roleId"
+                        render={({ field }) => (
+                          <Select
+                            {...p}
+                            className="w-full"
+                            placeholder="Pick a role"
+                            value={field.value || undefined}
+                            onChange={field.onChange}
+                            options={roles.map((role) => ({ value: role.id, label: role.name }))}
+                          />
+                        )}
+                      />
+                    )}
+                  </Field>
                   {access === 'disabled' ? (
                     <p className="text-warning text-2xs">
                       Sign-in is switched off for this login. Turn it back on from the supplier’s

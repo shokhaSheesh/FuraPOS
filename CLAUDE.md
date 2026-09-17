@@ -103,10 +103,8 @@ These are the structural ideas worth carrying into a fresh build, not just cosme
 - **Filter-gated heavy reports.** Any report expensive to compute should not auto-load on
   navigation — show an explicit "set your filters, then Apply" state with a one-line explanation,
   not a silent spinner. Use `<FilterGate>`.
-- **Notification preferences are (event type) × (channel), not (page) × (channel).** Users toggle
-  notifications per business event (e.g. "low stock", "new purchase order", "price change")
-  independently across channels (in-app, Telegram, SMS, email), grouped and counted by module.
-  Don't collapse this into a single global on/off.
+- ~~Notification preferences~~ — built as (event × channel) under Personal data, then **cut at the
+  client's request**. If they come back, keep that shape rather than a single on/off.
 - **Badges communicate lifecycle, used sparingly.** "New" for recently shipped modules, "Beta" for
   modules still stabilizing — never decorative.
 - **AI/MCP connector as a first-class settings page.** A standout feature worth prioritizing: let

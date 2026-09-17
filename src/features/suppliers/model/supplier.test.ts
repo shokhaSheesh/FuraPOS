@@ -106,6 +106,7 @@ describe('supplierFormSchema', () => {
     access: 'none' as const,
     username: '',
     password: '',
+    roleId: '',
   }
 
   it('accepts a supplier with no login and no username', () => {
@@ -117,7 +118,14 @@ describe('supplierFormSchema', () => {
     access: 'granted' as const,
     username: 'akchaev',
     password: 'sekret123',
+    roleId: 'role-6',
   }
+
+  it('will not grant access without a role for the login', () => {
+    const result = supplierFormSchema.safeParse({ ...granted, roleId: '' })
+    expect(result.success).toBe(false)
+    expect(result.error?.issues.some((issue) => issue.path[0] === 'roleId')).toBe(true)
+  })
 
   it('will not grant access without a valid username', () => {
     const result = supplierFormSchema.safeParse({ ...granted, username: '' })

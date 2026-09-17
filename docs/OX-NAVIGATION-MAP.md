@@ -561,7 +561,7 @@ record _is_. Fura is not the only tenant of this platform: a supplier gets their
 what is ordered from them, which is also the groundwork for selecting a supplier on an order and
 being shown their products.
 
-Four decisions worth recording, because each had a worse obvious alternative:
+Five decisions worth recording, because each had a worse obvious alternative:
 
 1. **The manager _is_ the portal user.** OX's `Контакт` becomes **Manager** — one person who is both
    who you ring and who holds the login. A separate `managerName` beside `contactName` would be two
@@ -578,7 +578,12 @@ Four decisions worth recording, because each had a worse obvious alternative:
    actually wants — being able to re-issue and re-send credentials without ceremony — is satisfied
    by **Change password**, which works the same way against a hash.
 
-3. **The status is two states, and it is derived.** `access` records the grant
+3. **A login holds a role** (client request), picked from Access & roles exactly as an employee's
+   is, and required whenever sign-in is on. A **Supplier** role is seeded for the existing logins
+   — orders view only — and a role a supplier login holds cannot be deleted, as with staff. It shows
+   under the login on the list, on the supplier's page, and as a filter.
+
+4. **The status is two states, and it is derived.** `access` records the grant
    (`none` / `granted` / `disabled`) and `portalState()` collapses it with the username into
    **Active** or **Inactive** — active meaning a granted login that actually exists.
 
@@ -588,7 +593,7 @@ Four decisions worth recording, because each had a worse obvious alternative:
    first directly, and in a list they were noise dressed as information. Deriving rather than
    storing it is what made the reduction a one-line change.
 
-4. **Issuing a login is its own permission** — `products.supplierPortal`, separate from
+5. **Issuing a login is its own permission** — `products.supplierPortal`, separate from
    `products.suppliers.edit`, on the same principle as `products.cost`. Fixing an address and
    creating an account into our data are different acts, and plenty of staff should do the first
    but not the second.
@@ -1525,10 +1530,8 @@ instead, as this document has always said.
 - **Billing** — the only screen about the software rather than the business, kept because the
   balance already sits in the top bar and a number with no page behind it is a dead end. "Top up"
   is honest about being a hand-off; there is no payment processing anywhere in this build.
-- **Personal data** — profile, and **notification preferences as (event × channel)**, which is the
-  cross-cutting pattern CLAUDE.md asks for: ten business events down the side, four channels
-  across, counted per module. Somebody wants low stock by Telegram and an overdue payment by email,
-  and one master switch cannot express that.
+- **Personal data** — the profile only. Notification preferences (event × channel) were built here
+  and then **cut at the client's request**.
 
 **Worth recording about the tooling, not the product:** Radix tab triggers activate on `mousedown`,
 not `click`, so a headless `.click()` silently does nothing. That cost a wrong diagnosis — the

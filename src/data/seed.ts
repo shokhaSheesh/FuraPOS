@@ -37,7 +37,6 @@ import type {
   CategorySettings,
   CompanySettings,
   LocationSettings,
-  NotificationPreferences,
   VehicleMake,
 } from '@/features/settings/model/settings'
 
@@ -93,6 +92,9 @@ export const brands = [
  * the record rather than derived: an invoice can be paid before or after its
  * goods arrive, and the two are not the same ledger.
  */
+/** The role seeded supplier logins hold — defined with the other roles below. */
+const SUPPLIER_ROLE_ID = 'role-6'
+
 export const suppliers: Supplier[] = [
   {
     id: 'sup-1',
@@ -108,6 +110,7 @@ export const suppliers: Supplier[] = [
     // Signs in and uses it: the relationship this feature is built for.
     access: 'granted',
     username: 'akchaev',
+    roleId: SUPPLIER_ROLE_ID,
     password: 'Akchaev2026',
     passwordSetAt: new Date(Date.now() - 180 * 86_400_000).toISOString(),
     lastSignedInAt: new Date(Date.now() - 2 * 86_400_000).toISOString(),
@@ -130,6 +133,7 @@ export const suppliers: Supplier[] = [
     // Invited and never signed in — the row somebody should chase.
     access: 'granted',
     username: 'euro-parts',
+    roleId: SUPPLIER_ROLE_ID,
     password: 'kTr9mQax4vNp',
     passwordSetAt: new Date(Date.now() - 9 * 86_400_000).toISOString(),
     lastSignedInAt: null,
@@ -152,6 +156,7 @@ export const suppliers: Supplier[] = [
     // We buy from them; they have no reason to log in to anything.
     access: 'none',
     username: null,
+    roleId: null,
     password: null,
     passwordSetAt: null,
     lastSignedInAt: null,
@@ -175,6 +180,7 @@ export const suppliers: Supplier[] = [
     // The trial ended, so the login was switched off rather than deleted.
     access: 'disabled',
     username: 'dinex',
+    roleId: SUPPLIER_ROLE_ID,
     password: 'Dinex-trial-25',
     passwordSetAt: new Date(Date.now() - 220 * 86_400_000).toISOString(),
     lastSignedInAt: new Date(Date.now() - 140 * 86_400_000).toISOString(),
@@ -573,14 +579,30 @@ const roleSpecs: { id: string; name: string; keys: string[] }[] = [
   },
 ]
 
-export const roles: Role[] = roleSpecs.map((spec) => ({
-  id: spec.id,
-  name: spec.name,
-  permissions: spec.keys,
-  isSystem: spec.id === 'role-1',
-  createdAt: new Date(Date.now() - 400 * 86_400_000).toISOString(),
-  updatedAt: new Date(Date.now() - between(5, 90) * 86_400_000).toISOString(),
-}))
+export const roles: Role[] = [
+  ...roleSpecs.map((spec) => ({
+    id: spec.id,
+    name: spec.name,
+    permissions: spec.keys,
+    isSystem: spec.id === 'role-1',
+    createdAt: new Date(Date.now() - 400 * 86_400_000).toISOString(),
+    updatedAt: new Date(Date.now() - between(5, 90) * 86_400_000).toISOString(),
+  })),
+  /*
+    For the logins suppliers are given. Added after the others and with fixed
+    dates, so it takes no draw from the shared random stream and nothing seeded
+    later shifts. What a supplier's manager may reach is the orders we place
+    with them — never our sales, stock figures or prices.
+  */
+  {
+    id: SUPPLIER_ROLE_ID,
+    name: 'Supplier',
+    permissions: expand('procurement.orders', ['view']),
+    isSystem: false,
+    createdAt: new Date(Date.now() - 200 * 86_400_000).toISOString(),
+    updatedAt: new Date(Date.now() - 200 * 86_400_000).toISOString(),
+  },
+]
 
 /**
  * Staff.
@@ -2389,22 +2411,6 @@ export const categorySettings: CategorySettings[] = (() => {
     })),
   ]
 })()
-
-/**
- * Notification preferences.
- *
- * Seeded partly on, because an all-off state cannot show that the shape is
- * (event × channel) rather than one master switch.
- */
-export const notificationPreferences: NotificationPreferences = {
-  'stock.low': ['inApp', 'telegram'],
-  'stock.out': ['inApp', 'email', 'telegram'],
-  'order.late': ['inApp', 'email'],
-  'schedule.drafted': ['inApp'],
-  'sale.overdue': ['inApp', 'email'],
-  'client.overLimit': ['inApp'],
-  'stocktake.variance': ['inApp'],
-}
 
 /**
  * Orders other businesses have placed with us.

@@ -44,8 +44,6 @@ import type {
   CategorySettings,
   CompanySettings,
   LocationSettings,
-  NotificationChannel,
-  NotificationPreferences,
   VehicleMake,
 } from '@/features/settings/model/settings'
 import { sameName, vehicleUsage } from '@/features/settings/model/settings'
@@ -99,7 +97,6 @@ import {
   vehicleMakeSettings as seedVehicleMakes,
   locationSettings as seedLocationSettings,
   categorySettings as seedCategorySettings,
-  notificationPreferences as seedNotifications,
   employees as seedEmployees,
   roles as seedRoles,
   suppliers as seedSuppliers,
@@ -145,7 +142,6 @@ interface CatalogState {
   vehicleMakes: VehicleMake[]
   locationSettings: LocationSettings[]
   categorySettings: CategorySettings[]
-  notifications: NotificationPreferences
   categories: typeof categories
   brands: typeof brands
   locations: typeof locations
@@ -268,8 +264,6 @@ interface CatalogState {
   createCategory: (input: Omit<CategorySettings, 'id'>) => CategorySettings
   updateCategory: (id: string, input: Omit<CategorySettings, 'id'>) => void
   deleteCategory: (id: string) => { ok: true } | { ok: false; error: string }
-
-  toggleNotification: (event: string, channel: NotificationChannel) => void
 
   /**
    * Opens a drawer. Refuses a second one on the same register: two open shifts
@@ -729,7 +723,6 @@ export const useDataStore = create<CatalogState>((set, get) => ({
   vehicleMakes: seedVehicleMakes,
   locationSettings: seedLocationSettings,
   categorySettings: seedCategorySettings,
-  notifications: seedNotifications,
   categories,
   brands,
   locations,
@@ -1811,14 +1804,6 @@ export const useDataStore = create<CatalogState>((set, get) => ({
     return { ok: true }
   },
 
-  toggleNotification: (event, channel) => {
-    const current = get().notifications[event] ?? []
-    const next = current.includes(channel)
-      ? current.filter((entry) => entry !== channel)
-      : [...current, channel]
-    set({ notifications: { ...get().notifications, [event]: next } })
-  },
-
   openShift: ({ registerId, employeeId, openingFloat }) => {
     const register = get().cashRegisters.find((entry) => entry.id === registerId)
     if (!register) return { ok: false, error: 'That register no longer exists' }
@@ -2160,6 +2145,14 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       return {
         ok: false,
         error: `${holders} ${holders === 1 ? 'person holds' : 'people hold'} this role — move them first`,
+      }
+    }
+    // Supplier logins hold roles too, and would be left the same way.
+    const logins = get().suppliers.filter((s) => s.roleId === id).length
+    if (logins > 0) {
+      return {
+        ok: false,
+        error: `${logins} supplier ${logins === 1 ? 'login holds' : 'logins hold'} this role — move them first`,
       }
     }
     set({ roles: get().roles.filter((r) => r.id !== id) })

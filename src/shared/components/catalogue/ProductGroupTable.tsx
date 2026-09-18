@@ -94,7 +94,9 @@ export function ProductGroupTable<R extends CatalogueRow>({
               variant="primary"
               size="icon"
               className="size-7 [&_svg]:size-3.5"
-              aria-label={`Choose variations of ${row.original.productName}`}
+              aria-label={t('Choose variations of {productName}', {
+                productName: row.original.productName,
+              })}
               onClick={(event) => {
                 event.stopPropagation()
                 onOpen(row.original)

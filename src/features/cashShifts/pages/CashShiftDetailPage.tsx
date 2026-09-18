@@ -117,8 +117,9 @@ export default function CashShiftDetailPage() {
             <Badge tone={isOpen ? 'info' : 'neutral'}>{isOpen ? t('Open') : t('Closed')}</Badge>
             <span className="text-fg-subtle text-2xs">
               {t('Opened')} {formatDateTime(shift.openedAt)}
-              {shift.closedAt ? ` · closed ${formatDateTime(shift.closedAt)}` : ''} ·{' '}
-              {formatNumber(Math.round(shiftHours(shift)))} h
+              {shift.closedAt
+                ? t(' · closed {p0}', { p0: formatDateTime(shift.closedAt) })
+                : ''} · {formatNumber(Math.round(shiftHours(shift)))} h
             </span>
           </div>
         }

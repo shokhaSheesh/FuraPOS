@@ -1,6 +1,7 @@
 import { useState, type KeyboardEvent } from 'react'
 import { X } from 'lucide-react'
 import { cn } from '@/shared/lib/cn'
+import { t } from '@/shared/i18n'
 
 /**
  * Free-form tags. Enter or comma commits the tag, Backspace on an empty field
@@ -52,7 +53,7 @@ export function TagsInput({
           {tag}
           <button
             type="button"
-            aria-label={`Remove ${tag}`}
+            aria-label={t('Remove {tag}', { tag: tag })}
             onClick={() => onChange(value.filter((t) => t !== tag))}
             className="hover:text-danger text-fg-subtle"
           >

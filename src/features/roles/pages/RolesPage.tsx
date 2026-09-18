@@ -53,7 +53,7 @@ export default function RolesPage() {
     if (!parsed.success) return
     const role = actions.create(draft)
     setCreating(false)
-    toast.success(`${role.name} created — now choose what it can reach`)
+    toast.success(t('{name} created — now choose what it can reach', { name: role.name }))
     navigate(paths.users.roleDetail(role.id))
   }
 
@@ -64,7 +64,7 @@ export default function RolesPage() {
       toast.error(result.error)
       return
     }
-    toast.success(`${role.name} deleted`)
+    toast.success(t('{name} deleted', { name: role.name }))
   }
 
   const columns = useMemo<TableColumn<RoleRow>[]>(
@@ -112,7 +112,9 @@ export default function RolesPage() {
                 />
               </span>
               <span className="text-fg-muted text-2xs tabular-nums">
-                {full ? t('Everything') : `${formatNumber(granted)} of ${formatNumber(total)}`}
+                {full
+                  ? t('Everything')
+                  : t('{p0} of {p1}', { p0: formatNumber(granted), p1: formatNumber(total) })}
               </span>
             </div>
           )
@@ -228,7 +230,7 @@ export default function RolesPage() {
         onOpenChange={(open) => {
           if (!open) setDeleting(null)
         }}
-        title={`Delete the ${deleting?.name} role?`}
+        title={t('Delete the {name} role?', { name: deleting?.name })}
         body={
           deleting?.holders
             ? `${formatNumber(deleting.holders)} ${deleting.holders === 1 ? 'person holds' : 'people hold'} this role. Move them to another role first — otherwise they would be left holding a role that does not exist.`

@@ -21,10 +21,13 @@ function ruPluralIndex(count: number): 0 | 1 | 2 {
   return 2
 }
 
-const fill = (text: string, params?: Record<string, string | number>) =>
+/** A value a sentence leaves a hole for. Nothing renders as nothing. */
+export type Param = string | number | null | undefined
+
+const fill = (text: string, params?: Record<string, Param>) =>
   params
     ? text.replace(/\{(\w+)\}/g, (whole, name: string) =>
-        name in params ? String(params[name]) : whole,
+        name in params ? String(params[name] ?? '') : whole,
       )
     : text
 
@@ -36,7 +39,7 @@ const fill = (text: string, params?: Record<string, string | number>) =>
  * of `orders.list.emptyState.title`, and nothing has to be invented to add a
  * new one. Placeholders are named — `t('Only {count} here', { count })`.
  */
-export function t(key: string, params?: Record<string, string | number>): string {
+export function t(key: string, params?: Record<string, Param>): string {
   const entry = DICTIONARIES[currentLanguage()]?.[key]
   if (entry === undefined) return fill(key, params)
   if (Array.isArray(entry)) {

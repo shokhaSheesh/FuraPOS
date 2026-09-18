@@ -81,7 +81,12 @@ export default function NewCorrectionPage() {
         { ...values, lines: values.lines },
         {
           onSuccess: (correction) => {
-            toast.success(`${correction.number} applied at ${correction.locationName}`)
+            toast.success(
+              t('{number} applied at {locationName}', {
+                number: correction.number,
+                locationName: correction.locationName,
+              }),
+            )
             navigate(paths.products.correctionDetail(correction.id))
           },
         },
@@ -208,15 +213,22 @@ export default function NewCorrectionPage() {
           </CardHeader>
           <CardBody className="space-y-3">
             <ProductPicker
-              placeholder={`Search a product to recount at ${location?.name ?? t('this location')}…`}
+              placeholder={t('Search a product to recount at {p0}…', {
+                p0: location?.name ?? t('this location'),
+              })}
               disabled={!locationId}
               stockLabel={(variation) => {
                 const here = stockAt(variation.id)
-                return { text: `${formatNumber(here)} ${variation.unit} here`, muted: here > 0 }
+                return {
+                  text: t('{p0} {unit} here', { p0: formatNumber(here), unit: variation.unit }),
+                  muted: here > 0,
+                }
               }}
               onPick={(variation) => {
                 if (lines.some((line) => line.variationId === variation.id)) {
-                  toast.info(`${variation.fullName} is already on this correction`)
+                  toast.info(
+                    t('{fullName} is already on this correction', { fullName: variation.fullName }),
+                  )
                   return
                 }
                 const here = stockAt(variation.id)
@@ -292,7 +304,7 @@ export default function NewCorrectionPage() {
                                   nullable={false}
                                   min={0}
                                   aria-invalid={error ? true : undefined}
-                                  aria-label={`Counted ${line?.name}`}
+                                  aria-label={t('Counted {name}', { name: line?.name })}
                                   value={f.value}
                                   onChange={(v) => f.onChange(v ?? 0)}
                                   onBlur={f.onBlur}
@@ -319,7 +331,7 @@ export default function NewCorrectionPage() {
                               type="button"
                               variant="ghost"
                               size="icon"
-                              aria-label={`Remove ${line?.name}`}
+                              aria-label={t('Remove {name}', { name: line?.name })}
                               className="hover:text-danger"
                               onClick={() => remove(index)}
                             >

@@ -180,8 +180,8 @@ export default function CashShiftsPage() {
               <div>
                 <p className="text-fg text-sm font-medium">
                   {openNow.length === 1
-                    ? `${openNow[0]!.registerName} is open`
-                    : `${openNow.length} drawers are open`}
+                    ? t('{p0} is open', { p0: openNow[0]!.registerName })
+                    : t('{length} drawers are open', { length: openNow.length })}
                 </p>
                 <p className="text-fg-subtle text-2xs">
                   {openNow.map((shift) => shift.employeeName).join(', ')}

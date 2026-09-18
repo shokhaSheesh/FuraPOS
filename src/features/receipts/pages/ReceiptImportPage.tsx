@@ -19,7 +19,7 @@ export default function ReceiptImportPage() {
 
   return (
     <SpreadsheetImport
-      title={`Upload a spreadsheet — ${receipt.number}`}
+      title={t('Upload a spreadsheet — {number}', { number: receipt.number })}
       backTo={back}
       backLabel="Back to the receipt"
       quantityLabel="Actual quantity"
@@ -50,7 +50,9 @@ export default function ReceiptImportPage() {
           { lines: [...byVariation.values()] },
           {
             onSuccess: () => {
-              toast.success(`${imported.length} products added from the spreadsheet`)
+              toast.success(
+                t('{length} products added from the spreadsheet', { length: imported.length }),
+              )
               navigate(back)
             },
             onError: (message) => toast.error(message),

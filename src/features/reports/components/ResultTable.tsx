@@ -92,7 +92,7 @@ export function ResultTable({
                 className="text-fg-muted px-3 py-2 font-medium"
               >
                 {limit && result.rows.length > limit
-                  ? `Total across all ${formatNumber(result.rows.length)} rows`
+                  ? t('Total across all {p0} rows', { p0: formatNumber(result.rows.length) })
                   : t('Total')}
               </td>
               {measures.map((key) => (

@@ -114,7 +114,7 @@ export function ProductVariationsTable({
                       name={`variations.${index}.enabled`}
                       render={({ field }) => (
                         <Checkbox
-                          aria-label={`Sell ${name}`}
+                          aria-label={t('Sell {name}', { name: name })}
                           checked={field.value}
                           onCheckedChange={field.onChange}
                         />
@@ -151,13 +151,13 @@ export function ProductVariationsTable({
                     value={value.name}
                     sold={sold}
                     width="w-36"
-                    label={`Variation name — ${name}`}
+                    label={t('Variation name — {name}', { name: name })}
                   >
                     {() => (
                       <Input
                         className="h-8 w-36"
                         placeholder={name}
-                        aria-label={`Variation name — ${name}`}
+                        aria-label={t('Variation name — {name}', { name: name })}
                         {...form.register(`variations.${index}.name`)}
                       />
                     )}
@@ -168,45 +168,60 @@ export function ProductVariationsTable({
                     sold={sold}
                     width="w-36"
                     error={row?.sku?.message}
-                    label={`SKU — ${name}`}
+                    label={t('SKU — {name}', { name: name })}
                   >
                     {() => (
                       <Input
                         className="h-8 w-36"
-                        aria-label={`SKU — ${name}`}
+                        aria-label={t('SKU — {name}', { name: name })}
                         aria-invalid={row?.sku ? true : undefined}
                         {...form.register(`variations.${index}.sku`)}
                       />
                     )}
                   </Cell>
 
-                  <Cell value={value.barcode} sold={sold} width="w-36" label={`Barcode — ${name}`}>
+                  <Cell
+                    value={value.barcode}
+                    sold={sold}
+                    width="w-36"
+                    label={t('Barcode — {name}', { name: name })}
+                  >
                     {() => (
                       <Input
                         className="h-8 w-36"
-                        aria-label={`Barcode — ${name}`}
+                        aria-label={t('Barcode — {name}', { name: name })}
                         {...form.register(`variations.${index}.barcode`)}
                       />
                     )}
                   </Cell>
 
-                  <Cell value={value.partSide} sold={sold} width="w-28" label={`Part — ${name}`}>
+                  <Cell
+                    value={value.partSide}
+                    sold={sold}
+                    width="w-28"
+                    label={t('Part — {name}', { name: name })}
+                  >
                     {() => (
                       <Input
                         className="h-8 w-28"
                         placeholder={t('Left')}
-                        aria-label={`Part — ${name}`}
+                        aria-label={t('Part — {name}', { name: name })}
                         {...form.register(`variations.${index}.partSide`)}
                       />
                     )}
                   </Cell>
 
-                  <Cell value={value.oem} sold={sold} width="w-32" label={`OEM — ${name}`}>
+                  <Cell
+                    value={value.oem}
+                    sold={sold}
+                    width="w-32"
+                    label={t('OEM — {name}', { name: name })}
+                  >
                     {() => (
                       <Input
                         className="h-8 w-32"
                         placeholder="1234567"
-                        aria-label={`OEM — ${name}`}
+                        aria-label={t('OEM — {name}', { name: name })}
                         {...form.register(`variations.${index}.oem`)}
                       />
                     )}
@@ -216,13 +231,13 @@ export function ProductVariationsTable({
                     value={value.shelfAddress}
                     sold={sold}
                     width="w-32"
-                    label={`Storage address — ${name}`}
+                    label={t('Storage address — {name}', { name: name })}
                   >
                     {() => (
                       <Input
                         className="h-8 w-32"
                         placeholder="1-A-23-4"
-                        aria-label={`Storage address — ${name}`}
+                        aria-label={t('Storage address — {name}', { name: name })}
                         {...form.register(`variations.${index}.shelfAddress`, {
                           // Also runs on the stored value when the form loads, which is null for
                           // a variation without an address — not only on what is typed.
@@ -239,7 +254,7 @@ export function ProductVariationsTable({
                     width="w-40"
                     align="right"
                     error={row?.costPrice?.message}
-                    label={`Cost — ${name}`}
+                    label={t('Cost — {name}', { name: name })}
                   >
                     {() => (
                       <div className="flex gap-1.5">
@@ -251,7 +266,7 @@ export function ProductVariationsTable({
                               className="h-8 w-24"
                               nullable={false}
                               step="any"
-                              aria-label={`Cost — ${name}`}
+                              aria-label={t('Cost — {name}', { name: name })}
                               value={field.value}
                               onChange={(v) => field.onChange(v ?? 0)}
                               onBlur={field.onBlur}
@@ -266,7 +281,7 @@ export function ProductVariationsTable({
                               value={field.value}
                               onChange={field.onChange}
                               options={CURRENCIES}
-                              aria-label={`Cost currency — ${name}`}
+                              aria-label={t('Cost currency — {name}', { name: name })}
                               className="h-8 w-20"
                             />
                           )}
@@ -281,7 +296,7 @@ export function ProductVariationsTable({
                     width="w-44"
                     align="right"
                     error={row?.salePrice?.message}
-                    label={`Sale price — ${name}`}
+                    label={t('Sale price — {name}', { name: name })}
                   >
                     {() => (
                       <div className="flex gap-1.5">
@@ -292,7 +307,7 @@ export function ProductVariationsTable({
                             <NumberField
                               className="h-8 w-28"
                               nullable={false}
-                              aria-label={`Sale price — ${name}`}
+                              aria-label={t('Sale price — {name}', { name: name })}
                               value={field.value}
                               onChange={(v) => field.onChange(v ?? 0)}
                               onBlur={field.onBlur}
@@ -307,7 +322,7 @@ export function ProductVariationsTable({
                               value={field.value}
                               onChange={field.onChange}
                               options={CURRENCIES}
-                              aria-label={`Sale price currency — ${name}`}
+                              aria-label={t('Sale price currency — {name}', { name: name })}
                               className="h-8 w-20"
                             />
                           )}
@@ -321,7 +336,7 @@ export function ProductVariationsTable({
                     sold={sold}
                     width="w-44"
                     align="right"
-                    label={`Wholesale price — ${name}`}
+                    label={t('Wholesale price — {name}', { name: name })}
                   >
                     {() => (
                       <div className="flex gap-1.5">
@@ -331,7 +346,7 @@ export function ProductVariationsTable({
                           render={({ field }) => (
                             <NumberField
                               className="h-8 w-28"
-                              aria-label={`Wholesale price — ${name}`}
+                              aria-label={t('Wholesale price — {name}', { name: name })}
                               value={field.value}
                               onChange={field.onChange}
                               onBlur={field.onBlur}
@@ -346,7 +361,7 @@ export function ProductVariationsTable({
                               value={field.value}
                               onChange={field.onChange}
                               options={CURRENCIES}
-                              aria-label={`Wholesale price currency — ${name}`}
+                              aria-label={t('Wholesale price currency — {name}', { name: name })}
                               className="h-8 w-20"
                             />
                           )}
@@ -362,7 +377,7 @@ export function ProductVariationsTable({
                     sold={sold}
                     width="w-28"
                     align="right"
-                    label={`Cargo weight — ${name}`}
+                    label={t('Cargo weight — {name}', { name: name })}
                   >
                     {() => (
                       <Controller
@@ -372,7 +387,7 @@ export function ProductVariationsTable({
                           <NumberField
                             className="h-8 w-24"
                             step="any"
-                            aria-label={`Cargo weight — ${name}`}
+                            aria-label={t('Cargo weight — {name}', { name: name })}
                             value={field.value}
                             onChange={field.onChange}
                             onBlur={field.onBlur}
@@ -386,13 +401,13 @@ export function ProductVariationsTable({
                     value={value.cargoSize}
                     sold={sold}
                     width="w-28"
-                    label={`Cargo size — ${name}`}
+                    label={t('Cargo size — {name}', { name: name })}
                   >
                     {() => (
                       <Input
                         className="h-8 w-28"
                         placeholder="120*60*30"
-                        aria-label={`Cargo size — ${name}`}
+                        aria-label={t('Cargo size — {name}', { name: name })}
                         {...form.register(`variations.${index}.cargoSize`)}
                       />
                     )}
@@ -402,7 +417,7 @@ export function ProductVariationsTable({
                     value={value.status === 'active' ? 'Active' : 'Archived'}
                     sold={sold}
                     width="w-28"
-                    label={`Status — ${name}`}
+                    label={t('Status — {name}', { name: name })}
                   >
                     {() => (
                       <Controller
@@ -411,7 +426,7 @@ export function ProductVariationsTable({
                         render={({ field }) => (
                           <Select
                             className="h-8 w-28"
-                            aria-label={`Status — ${name}`}
+                            aria-label={t('Status — {name}', { name: name })}
                             value={field.value}
                             onChange={field.onChange}
                             options={STATUSES}
@@ -494,7 +509,7 @@ function Cell({
         <button
           type="button"
           disabled={!sold}
-          aria-label={`${label} — double-click to change`}
+          aria-label={t('{label} — double-click to change', { label: label })}
           onDoubleClick={() => setEditing(true)}
           onKeyDown={(event) => {
             if (event.key === 'Enter' || event.key === ' ') {

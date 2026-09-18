@@ -72,7 +72,7 @@ export function ProductCardGrid({
                 </span>
                 <span className="text-fg shrink-0 text-sm font-medium tabular-nums">
                   {v.saleCurrency === t('USD')
-                    ? `${formatNumber(v.salePrice)} USD`
+                    ? t('{p0} USD', { p0: formatNumber(v.salePrice) })
                     : formatMoney(v.salePrice)}
                 </span>
               </span>

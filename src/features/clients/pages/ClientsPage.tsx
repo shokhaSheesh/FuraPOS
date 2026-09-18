@@ -85,8 +85,8 @@ export default function ClientsPage() {
                 {creditLimit === null
                   ? t('no account')
                   : overLimit
-                    ? `${formatMoney(debt - creditLimit)} over limit`
-                    : `${formatMoney(headroom ?? 0)} left`}
+                    ? t('{p0} over limit', { p0: formatMoney(debt - creditLimit) })
+                    : t('{p0} left', { p0: formatMoney(headroom ?? 0) })}
               </p>
             </div>
           )

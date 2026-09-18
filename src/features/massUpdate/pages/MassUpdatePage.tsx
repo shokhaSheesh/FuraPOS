@@ -221,7 +221,7 @@ export default function MassUpdatePage() {
                         if (!preset) return
                         setHasHeader(preset.hasHeader)
                         setRoles(Array.from({ length: width }, (_, i) => preset.roles[i] ?? SKIP))
-                        toast.success(`Mapping “${preset.name}” applied`)
+                        toast.success(t('Mapping “{name}” applied', { name: preset.name }))
                       }}
                       options={presets.map((p) => ({ value: p.id, label: p.name }))}
                     />
@@ -256,7 +256,7 @@ export default function MassUpdatePage() {
                               )}
                             >
                               <p className="text-fg-subtle text-2xs mb-1 truncate">
-                                {headings[index] || `Column ${index + 1}`}
+                                {headings[index] || t('Column {p0}', { p0: index + 1 })}
                               </p>
                               <RolePicker
                                 role={role}

@@ -82,7 +82,13 @@ export default function TemplateFormPage() {
     const dropped = draft.fields.length - fields.length
     // Silently printing a price on a part label would be worse than saying so.
     if (dropped > 0)
-      toast.info(`${dropped} field${dropped > 1 ? 's' : ''} removed — not on a ${kind}`)
+      toast.info(
+        t('{dropped} field{p1} removed — not on a {kind}', {
+          dropped: dropped,
+          p1: dropped > 1 ? 's' : '',
+          kind: kind,
+        }),
+      )
     setDraft((c) => ({
       ...c,
       kind,
@@ -126,7 +132,7 @@ export default function TemplateFormPage() {
       toast.success(t('Template saved'))
     } else {
       actions.create(parsed.data)
-      toast.success(`${parsed.data.name} created`)
+      toast.success(t('{name} created', { name: parsed.data.name }))
     }
     navigate(paths.products.printTemplates)
   }
@@ -141,7 +147,9 @@ export default function TemplateFormPage() {
       </Button>
 
       <PageHeader
-        title={editing ? `Edit ${existing?.name ?? 'template'}` : t('New print template')}
+        title={
+          editing ? t('Edit {p0}', { p0: existing?.name ?? 'template' }) : t('New print template')
+        }
         description={t(
           'Choose the size, the code and what prints on it. The preview is drawn at true size.',
         )}
@@ -307,7 +315,7 @@ export default function TemplateFormPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            aria-label={`Move ${field.label} up`}
+                            aria-label={t('Move {label} up', { label: field.label })}
                             onClick={() => move(field.key, -1)}
                           >
                             <ArrowUp />
@@ -315,7 +323,7 @@ export default function TemplateFormPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            aria-label={`Move ${field.label} down`}
+                            aria-label={t('Move {label} down', { label: field.label })}
                             onClick={() => move(field.key, 1)}
                           >
                             <ArrowDown />

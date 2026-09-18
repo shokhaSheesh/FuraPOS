@@ -84,7 +84,7 @@ export default function ClientFormPage() {
         navigate(paths.users.autoparkDetail(existing.id))
       } else {
         const created = actions.create(input)
-        toast.success(`${created.name} added`)
+        toast.success(t('{name} added', { name: created.name }))
         navigate(paths.users.autoparkDetail(created.id))
       }
     },

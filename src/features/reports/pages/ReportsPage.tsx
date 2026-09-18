@@ -188,7 +188,7 @@ export default function ReportsPage() {
         onOpenChange={(open) => {
           if (!open) setDeleting(null)
         }}
-        title={`Delete "${deleting?.name}"?`}
+        title={t('Delete "{name}"?', { name: deleting?.name })}
         body="Only the saved question goes. No data is touched — you can always build it again."
         confirmLabel={t('Delete')}
         destructive

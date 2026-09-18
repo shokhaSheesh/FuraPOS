@@ -552,7 +552,7 @@ function ProductCard<R extends CatalogueRow>({
         type="button"
         onClick={onOpen}
         className="bg-surface-inset text-fg-subtle flex aspect-[3/2] items-center justify-center overflow-hidden"
-        aria-label={`Open ${group.productName}`}
+        aria-label={t('Open {productName}', { productName: group.productName })}
       >
         {first.imageUrl ? (
           <img src={first.imageUrl} alt="" className="size-full object-cover" />
@@ -601,7 +601,9 @@ function ProductCard<R extends CatalogueRow>({
               type="button"
               variant="primary"
               size="icon"
-              aria-label={`Choose variations of ${group.productName}`}
+              aria-label={t('Choose variations of {productName}', {
+                productName: group.productName,
+              })}
               onClick={onOpen}
             >
               <Plus />

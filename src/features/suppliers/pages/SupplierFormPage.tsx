@@ -121,14 +121,14 @@ export default function SupplierFormPage() {
       if (editing) {
         update.mutate(payload, {
           onSuccess: () => {
-            toast.success(`${payload.name} saved`)
+            toast.success(t('{name} saved', { name: payload.name }))
             navigate(paths.products.supplierDetail(supplierId!))
           },
         })
       } else {
         create.mutate(payload, {
           onSuccess: (supplier) => {
-            toast.success(`${supplier.name} added`)
+            toast.success(t('{name} added', { name: supplier.name }))
             navigate(paths.products.supplierDetail(supplier.id))
           },
         })
@@ -147,7 +147,9 @@ export default function SupplierFormPage() {
       </Button>
 
       <PageHeader
-        title={editing ? `Edit ${existing?.supplier.name ?? ''}` : t('Add a supplier')}
+        title={
+          editing ? t('Edit {p0}', { p0: existing?.supplier.name ?? '' }) : t('Add a supplier')
+        }
         description={t(
           'Who they are and how to reach them. What we owe comes from deliveries and payments.',
         )}

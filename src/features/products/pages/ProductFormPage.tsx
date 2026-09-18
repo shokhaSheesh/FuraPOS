@@ -317,7 +317,11 @@ export function ProductForm({
     const lost = dropped.filter((v) => v.sku.trim() || v.salePrice > 0)
     if (lost.length) {
       toast.error(
-        `${lost.length} variation${lost.length > 1 ? 's no longer match' : ' no longer matches'} the options and ${lost.length > 1 ? 'were' : 'was'} removed`,
+        t('{length} variation{p1} the options and {p2} removed', {
+          length: lost.length,
+          p1: lost.length > 1 ? 's no longer match' : ' no longer matches',
+          p2: lost.length > 1 ? 'were' : 'was',
+        }),
       )
     }
   }
@@ -402,14 +406,14 @@ export function ProductForm({
       if (editing) {
         update.mutate(payload, {
           onSuccess: () => {
-            toast.success(`${values.name} saved`)
+            toast.success(t('{name} saved', { name: values.name }))
             onSaved(productId!)
           },
         })
       } else {
         create.mutate(payload, {
           onSuccess: (product) => {
-            toast.success(`${product.name} created`)
+            toast.success(t('{name} created', { name: product.name }))
             onSaved(product.id)
           },
         })
@@ -439,7 +443,10 @@ export function ProductForm({
           ones — a grid of variations, a table of quantities — never leave you
           wondering which product you are filling in. The reference does the same.
         */
-        title={productName.trim() || (editing ? `Edit ${existing?.name ?? ''}` : t('New product'))}
+        title={
+          productName.trim() ||
+          (editing ? t('Edit {p0}', { p0: existing?.name ?? '' }) : t('New product'))
+        }
         description={
           step === 1
             ? single

@@ -107,7 +107,12 @@ export default function SupplierDetailPage() {
       },
       {
         onSuccess: () => {
-          toast.success(`${formatMoney(values.amount)} recorded against ${supplier.name}`)
+          toast.success(
+            t('{p0} recorded against {name}', {
+              p0: formatMoney(values.amount),
+              name: supplier.name,
+            }),
+          )
           setPaying(false)
           form.reset({ amount: 0, comment: '', receiptId: OLDEST_FIRST })
         },
@@ -341,7 +346,7 @@ export default function SupplierDetailPage() {
                       <td className="text-fg-muted px-4 py-2" colSpan={2}>
                         {theirReceipts.length === stats.receipts
                           ? t('All deliveries')
-                          : `These ${formatNumber(theirReceipts.length)} deliveries`}
+                          : t('These {p0} deliveries', { p0: formatNumber(theirReceipts.length) })}
                       </td>
                       <td className="text-fg px-4 py-2 text-right tabular-nums">
                         {formatMoney(listed.reduce((sum, entry) => sum + entry.invoiced, 0))}
@@ -489,8 +494,11 @@ export default function SupplierDetailPage() {
           setPaying(open)
           if (!open) form.reset({ amount: 0, comment: '' })
         }}
-        title={`Record a payment to ${supplier.name}`}
-        description={`${formatMoney(supplier.debt)} is outstanding. This records money already sent — it does not send anything.`}
+        title={t('Record a payment to {name}', { name: supplier.name })}
+        description={t(
+          '{p0} is outstanding. This records money already sent — it does not send anything.',
+          { p0: formatMoney(supplier.debt) },
+        )}
         primary={{ label: t('Record payment'), onClick: submitPayment }}
       >
         <div className="space-y-3">
@@ -517,13 +525,17 @@ export default function SupplierDetailPage() {
                 options={[
                   {
                     value: OLDEST_FIRST,
-                    label: `Oldest first — across ${unpaid.length} ${
-                      unpaid.length === 1 ? 'delivery' : 'deliveries'
-                    }`,
+                    label: t('Oldest first — across {length} {p1}', {
+                      length: unpaid.length,
+                      p1: unpaid.length === 1 ? 'delivery' : 'deliveries',
+                    }),
                   },
                   ...unpaid.map((entry) => ({
                     value: entry.receiptId,
-                    label: `${entry.number} — ${formatMoney(entry.pending)} pending`,
+                    label: t('{number} — {p1} pending', {
+                      number: entry.number,
+                      p1: formatMoney(entry.pending),
+                    }),
                   })),
                 ]}
               />
@@ -557,8 +569,11 @@ export default function SupplierDetailPage() {
       <Modal
         open={changing}
         onOpenChange={setChanging}
-        title={`Password for ${supplier.name}`}
-        description={`${supplier.contactName ?? t('Their manager')} signs in as ${supplier.username}. Type one or generate it — either way it stays readable here.`}
+        title={t('Password for {name}', { name: supplier.name })}
+        description={t(
+          '{p0} signs in as {username}. Type one or generate it — either way it stays readable here.',
+          { p0: supplier.contactName ?? t('Their manager'), username: supplier.username },
+        )}
         size="sm"
         primary={{
           label: t('Save password'),

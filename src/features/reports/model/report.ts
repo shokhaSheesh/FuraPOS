@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { Id, IsoDate } from '@/shared/types'
+import { t } from '@/shared/i18n'
 
 /**
  * A saved report: a table someone described once and can re-run.
@@ -366,6 +367,9 @@ export function chartData(
   const tail = sorted.slice(CHART_TOP_N)
   return [
     ...head,
-    { label: `Other (${tail.length})`, value: tail.reduce((s, r) => s + r.value, 0) },
+    {
+      label: t('Other ({length})', { length: tail.length }),
+      value: tail.reduce((s, r) => s + r.value, 0),
+    },
   ]
 }

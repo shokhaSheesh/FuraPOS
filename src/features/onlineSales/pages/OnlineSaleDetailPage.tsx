@@ -68,8 +68,11 @@ export default function OnlineSaleDetailPage() {
       </Button>
 
       <PageHeader
-        title={`Order ${sale.number}`}
-        description={`Placed in the e-commerce app on ${formatDateTime(sale.createdAt)} by ${sale.customerName}`}
+        title={t('Order {number}', { number: sale.number })}
+        description={t('Placed in the e-commerce app on {p0} by {customerName}', {
+          p0: formatDateTime(sale.createdAt),
+          customerName: sale.customerName,
+        })}
         below={
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone={status.tone}>{status.label}</Badge>

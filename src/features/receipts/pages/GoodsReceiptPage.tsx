@@ -106,7 +106,9 @@ export default function GoodsReceiptPage() {
     () => () => {
       const now = latest.current
       if (now?.status === 'draft' && snapshot(now) !== openedWith.current) {
-        toast.success(`${now.number} saved as unfinished — pick it up from Goods receipt`)
+        toast.success(
+          t('{number} saved as unfinished — pick it up from Goods receipt', { number: now.number }),
+        )
       }
     },
     [],
@@ -156,7 +158,7 @@ export default function GoodsReceiptPage() {
             className="ml-auto"
             onClick={() => {
               openedWith.current = snapshot(receipt)
-              toast.success(`${receipt.number} saved as unfinished`)
+              toast.success(t('{number} saved as unfinished', { number: receipt.number }))
             }}
           >
             <Save />
@@ -929,7 +931,7 @@ function PaymentStep({ receipt }: { receipt: GoodsReceipt }) {
                     <td className="py-2 pr-3">{payment.accountName}</td>
                     <td className="py-2 pr-3 text-right tabular-nums">
                       {payment.currency === t('USD')
-                        ? `${payment.amount.toFixed(2)} USD`
+                        ? t('{p0} USD', { p0: payment.amount.toFixed(2) })
                         : formatMoney(payment.amount)}
                     </td>
                     <td className="text-fg-muted py-2 pr-3">{payment.note ?? '—'}</td>
@@ -1109,7 +1111,12 @@ function ReviewStep({
             { to: 'received', quantities },
             {
               onSuccess: () => {
-                toast.success(`${receipt.number} posted into ${receipt.locationName}`)
+                toast.success(
+                  t('{number} posted into {locationName}', {
+                    number: receipt.number,
+                    locationName: receipt.locationName,
+                  }),
+                )
                 setConfirming(false)
                 onPosted()
               },

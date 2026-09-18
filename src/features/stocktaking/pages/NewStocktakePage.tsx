@@ -67,7 +67,12 @@ export default function NewStocktakePage() {
       }
       start.mutate(values, {
         onSuccess: (stocktake) => {
-          toast.success(`${stocktake.number} opened — ${formatNumber(lineCount)} lines to count`)
+          toast.success(
+            t('{number} opened — {p1} lines to count', {
+              number: stocktake.number,
+              p1: formatNumber(lineCount),
+            }),
+          )
           navigate(paths.products.stocktakeDetail(stocktake.id))
         },
       })

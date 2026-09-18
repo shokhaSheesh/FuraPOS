@@ -501,11 +501,13 @@ export function SpreadsheetImport({
                     {headings.map((heading, index) => (
                       <th key={index} className="p-2 text-left align-top font-normal">
                         <p className="text-fg-subtle text-2xs mb-1 max-w-44 truncate">
-                          {hasHeader ? heading || `Column ${index + 1}` : `Column ${index + 1}`}
+                          {hasHeader
+                            ? heading || t('Column {p0}', { p0: index + 1 })
+                            : t('Column {p0}', { p0: index + 1 })}
                         </p>
                         <Select
                           className="w-44"
-                          aria-label={`What column ${index + 1} holds`}
+                          aria-label={t('What column {p0} holds', { p0: index + 1 })}
                           value={mapping[index] ?? 'ignore'}
                           onChange={(value) =>
                             setMapping((current) =>
@@ -601,7 +603,10 @@ export function SpreadsheetImport({
         <span className="text-fg-subtle text-2xs">
           {step === 1
             ? t('Excel (.xlsx) or .csv')
-            : `${formatNumber(willAdd)} of ${formatNumber(body.length)} rows will be added`}
+            : t('{p0} of {p1} rows will be added', {
+                p0: formatNumber(willAdd),
+                p1: formatNumber(body.length),
+              })}
         </span>
         <div className="flex gap-2">
           <Button variant="secondary" asChild>

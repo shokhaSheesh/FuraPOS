@@ -158,7 +158,7 @@ export default function RegistersSettingsPage() {
       <Modal
         open={open}
         onOpenChange={setOpen}
-        title={editing ? `Edit ${editing.name}` : t('New register')}
+        title={editing ? t('Edit {name}', { name: editing.name }) : t('New register')}
         primary={{ label: editing ? 'Save changes' : 'Add register', onClick: save }}
       >
         <div className="space-y-3">
@@ -208,7 +208,7 @@ export default function RegistersSettingsPage() {
         onOpenChange={(next) => {
           if (!next) setDeleting(null)
         }}
-        title={`Delete ${deleting?.name}?`}
+        title={t('Delete {name}?', { name: deleting?.name })}
         body="A register with shifts against it cannot be deleted — those shifts are the record of who had the cash. Retire it instead."
         confirmLabel={t('Delete')}
         destructive

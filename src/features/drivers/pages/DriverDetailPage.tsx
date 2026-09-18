@@ -85,7 +85,11 @@ export default function DriverDetailPage() {
           trucks={driver.ownTrucks}
         />
         <TruckList
-          title={driver.autoparkName ? `${driver.autoparkName}'s truck` : t("Autopark's truck")}
+          title={
+            driver.autoparkName
+              ? t("{autoparkName}'s truck", { autoparkName: driver.autoparkName })
+              : t("Autopark's truck")
+          }
           empty="He drives for no autopark."
           trucks={driver.autoparkTruck ? [driver.autoparkTruck] : []}
         />

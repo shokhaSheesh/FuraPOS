@@ -140,7 +140,7 @@ export default function ReportBuilderPage() {
       navigate(paths.analytics.reportView(existing.id))
     } else {
       const created = actions.create(state)
-      toast.success(`${created.name} saved`)
+      toast.success(t('{name} saved', { name: created.name }))
       navigate(paths.analytics.reportView(created.id))
     }
   }
@@ -335,7 +335,10 @@ export default function ReportBuilderPage() {
           </div>
           <p className="text-fg-subtle text-2xs">
             {state.measures.length > 0
-              ? `${describeReport({ ...state } as never)} — first ${PREVIEW_ROWS} rows, all time.`
+              ? t('{p0} — first {PREVIEW_ROWS} rows, all time.', {
+                  p0: describeReport({ ...state } as never),
+                  PREVIEW_ROWS: PREVIEW_ROWS,
+                })
               : t('Pick something to measure and it appears here.')}
           </p>
         </CardHeader>

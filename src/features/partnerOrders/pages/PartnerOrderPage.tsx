@@ -128,7 +128,8 @@ function OrderStep({ order }: { order: PartnerOrder }) {
                 size="sm"
                 onClick={() =>
                   actions.confirm({
-                    onSuccess: () => toast.success(`${order.number} accepted`),
+                    onSuccess: () =>
+                      toast.success(t('{number} accepted', { number: order.number })),
                     onError: (message) => toast.error(message),
                   })
                 }
@@ -155,7 +156,7 @@ function OrderStep({ order }: { order: PartnerOrder }) {
         onConfirm={() =>
           actions.cancel({
             onSuccess: () => {
-              toast.success(`${order.number} declined`)
+              toast.success(t('{number} declined', { number: order.number }))
               setConfirmCancel(false)
             },
             onError: (message) => toast.error(message),
@@ -266,7 +267,7 @@ function ShipmentsStep({ order }: { order: PartnerOrder }) {
               {
                 onSuccess: () => {
                   setShipping(false)
-                  toast.success(`${formatNumber(going)} units sent`)
+                  toast.success(t('{p0} units sent', { p0: formatNumber(going) }))
                 },
                 onError: (message) => toast.error(message),
               },
@@ -320,7 +321,7 @@ function ShipmentsStep({ order }: { order: PartnerOrder }) {
                           nullable={false}
                           min={0}
                           disabled={left === 0}
-                          aria-label={`Sending ${line.name}`}
+                          aria-label={t('Sending {name}', { name: line.name })}
                           value={quantities[line.id] ?? 0}
                           onChange={(next) =>
                             setQuantities((current) => ({
@@ -342,7 +343,10 @@ function ShipmentsStep({ order }: { order: PartnerOrder }) {
           <p className="text-fg-muted text-sm">
             {going === 0
               ? t('Nothing to send.')
-              : `${formatNumber(going)} units leaving ${order.locationName}.`}
+              : t('{p0} units leaving {locationName}.', {
+                  p0: formatNumber(going),
+                  locationName: order.locationName,
+                })}
           </p>
         </div>
       </Modal>

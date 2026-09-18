@@ -211,7 +211,9 @@ export default function SuppliersListPage() {
           }
           return (
             <span className="text-fg-muted text-2xs">
-              {stats.lastReceiptAt ? `Last delivery ${formatDate(stats.lastReceiptAt)}` : '—'}
+              {stats.lastReceiptAt
+                ? t('Last delivery {p0}', { p0: formatDate(stats.lastReceiptAt) })
+                : '—'}
             </span>
           )
         },

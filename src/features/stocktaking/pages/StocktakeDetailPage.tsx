@@ -94,9 +94,11 @@ export default function StocktakeDetailPage() {
 
       <PageHeader
         title={stocktake.number}
-        description={`${formatNumber(total)} lines at ${stocktake.locationName}${
-          stocktake.categoryName ? ` · ${stocktake.categoryName} only` : ''
-        }`}
+        description={t('{p0} lines at {locationName}{p2}', {
+          p0: formatNumber(total),
+          locationName: stocktake.locationName,
+          p2: stocktake.categoryName ? ` · ${stocktake.categoryName} only` : '',
+        })}
         action={
           <div className="flex items-center gap-2">
             {open && can('products.stocktaking.delete') ? (
@@ -170,7 +172,10 @@ export default function StocktakeDetailPage() {
           </p>
           <p className="text-fg-subtle text-2xs">
             {canSeeCost
-              ? `${value < 0 ? '−' : ''}${formatMoney(Math.abs(value))} at cost`
+              ? t('{p0}{p1} at cost', {
+                  p0: value < 0 ? '−' : '',
+                  p1: formatMoney(Math.abs(value)),
+                })
               : t('units missing / found')}
           </p>
         </Card>
@@ -260,7 +265,7 @@ export default function StocktakeDetailPage() {
                             value={line.counted}
                             disabled={!open}
                             placeholder="—"
-                            aria-label={`Counted ${line.name}`}
+                            aria-label={t('Counted {name}', { name: line.name })}
                             onChange={(next) => actions.setCount(line.id, next)}
                           />
                           {open && line.counted !== null ? (
@@ -268,7 +273,7 @@ export default function StocktakeDetailPage() {
                               type="button"
                               variant="ghost"
                               size="icon"
-                              aria-label={`Clear the count for ${line.name}`}
+                              aria-label={t('Clear the count for {name}', { name: line.name })}
                               title={t('Not counted yet')}
                               onClick={() => actions.setCount(line.id, null)}
                             >
@@ -338,9 +343,15 @@ export default function StocktakeDetailPage() {
         body={
           <>
             {formatNumber(differing.length)} {t('counted lines differ from the system:')}{' '}
-            {short > 0 ? `${formatNumber(short)} missing` : t('none missing')}
-            {surplus > 0 ? `, ${formatNumber(surplus)} found` : ''}
-            {canSeeCost ? `, ${value < 0 ? '−' : ''}${formatMoney(Math.abs(value))} at cost` : ''}.
+            {short > 0 ? t('{p0} missing', { p0: formatNumber(short) }) : t('none missing')}
+            {surplus > 0 ? t(', {p0} found', { p0: formatNumber(surplus) }) : ''}
+            {canSeeCost
+              ? t(', {p0}{p1} at cost', {
+                  p0: value < 0 ? '−' : '',
+                  p1: formatMoney(Math.abs(value)),
+                })
+              : ''}
+            .
             {total - done > 0 ? (
               <>
                 {' '}
@@ -356,7 +367,7 @@ export default function StocktakeDetailPage() {
           actions.apply({
             onSuccess: () => {
               setConfirmApply(false)
-              toast.success(`${stocktake.number} applied`)
+              toast.success(t('{number} applied', { number: stocktake.number }))
             },
             onError: (message) => toast.error(message),
           })
@@ -372,7 +383,7 @@ export default function StocktakeDetailPage() {
         onConfirm={() =>
           actions.cancel({
             onSuccess: () => {
-              toast.success(`${stocktake.number} abandoned`)
+              toast.success(t('{number} abandoned', { number: stocktake.number }))
               setConfirmCancel(false)
               navigate(paths.products.stocktaking)
             },

@@ -211,7 +211,7 @@ export default function CategoriesSettingsPage() {
       <Modal
         open={open}
         onOpenChange={setOpen}
-        title={editing ? `Edit ${editing.name}` : t('New category')}
+        title={editing ? t('Edit {name}', { name: editing.name }) : t('New category')}
         primary={{ label: editing ? 'Save changes' : 'Add category', onClick: save }}
       >
         <div className="space-y-3">
@@ -256,7 +256,7 @@ export default function CategoriesSettingsPage() {
         onOpenChange={(next) => {
           if (!next) setDeleting(null)
         }}
-        title={`Delete ${deleting?.name}?`}
+        title={t('Delete {name}?', { name: deleting?.name })}
         body="A category with products in it, or with sub-categories under it, cannot be deleted — move those first."
         confirmLabel={t('Delete')}
         destructive

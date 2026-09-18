@@ -203,7 +203,7 @@ export default function PromotionFormPage() {
         toast.success(t('Saved'))
       } else {
         actions.create(input)
-        toast.success(`${draft.name} set up`)
+        toast.success(t('{name} set up', { name: draft.name }))
       }
       navigate(paths.marketing.promotions)
     },
@@ -537,17 +537,28 @@ export default function PromotionFormPage() {
             <div className="min-w-0 space-y-1">
               <p className="text-fg text-sm font-medium">
                 {values.kind === 'percentage'
-                  ? `${values.value || 0}% off ${scopeName}${audienceName}`
-                  : `${formatMoney(values.value || 0)} off ${scopeName}${audienceName}`}
+                  ? t('{p0}% off {scopeName}{audienceName}', {
+                      p0: values.value || 0,
+                      scopeName: scopeName,
+                      audienceName: audienceName,
+                    })
+                  : t('{p0} off {scopeName}{audienceName}', {
+                      p0: formatMoney(values.value || 0),
+                      scopeName: scopeName,
+                      audienceName: audienceName,
+                    })}
               </p>
               <p className="text-fg-muted text-2xs">
                 {blockedByMinimum
-                  ? `A ${formatMoney(EXAMPLE_SALE)} sale would get nothing — it is below the ${formatMoney(
-                      values.minimumSale ?? 0,
-                    )} minimum.`
-                  : `A ${formatMoney(EXAMPLE_SALE)} sale of matching goods would come down by ${formatMoney(
-                      exampleDiscount,
-                    )}, to ${formatMoney(EXAMPLE_SALE - exampleDiscount)}.`}
+                  ? t('A {p0} sale would get nothing — it is below the {p1} minimum.', {
+                      p0: formatMoney(EXAMPLE_SALE),
+                      p1: formatMoney(values.minimumSale ?? 0),
+                    })
+                  : t('A {p0} sale of matching goods would come down by {p1}, to {p2}.', {
+                      p0: formatMoney(EXAMPLE_SALE),
+                      p1: formatMoney(exampleDiscount),
+                      p2: formatMoney(EXAMPLE_SALE - exampleDiscount),
+                    })}
               </p>
               <p className="text-fg-subtle text-2xs">
                 {t('Only one promotion applies to a sale — whichever gives the customer the most.')}

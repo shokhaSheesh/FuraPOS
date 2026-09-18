@@ -1,4 +1,5 @@
 import { formatNumber, formatPercent } from '@/shared/lib/format'
+import { t } from '@/shared/i18n'
 
 /**
  * How much of a delivery has sold, as a bar and a rounded percentage — never a
@@ -22,7 +23,11 @@ export function SoldBar({
   return (
     <div
       className="flex items-center gap-2"
-      title={`About ${formatNumber(sold)} of the ${formatNumber(received)} units have sold ${place}`}
+      title={t('About {p0} of the {p1} units have sold {place}', {
+        p0: formatNumber(sold),
+        p1: formatNumber(received),
+        place: place,
+      })}
     >
       <span className="bg-surface-inset h-1.5 w-20 shrink-0 overflow-hidden rounded-full">
         <span

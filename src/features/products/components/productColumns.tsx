@@ -152,7 +152,7 @@ export function buildProductColumns({
     },
     ...stockColumnsFor.map((location): TableColumn<VariationRow> => ({
       id: `stockAt:${location.id}`,
-      header: `Qty · ${location.name}`,
+      header: t('Qty · {name}', { name: location.name }),
       enableSorting: false,
       meta: { align: 'right' },
       cell: ({ row }) => {

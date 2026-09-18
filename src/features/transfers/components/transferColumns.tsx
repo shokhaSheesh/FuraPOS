@@ -124,7 +124,9 @@ export function buildTransferColumns({
       cell: ({ row }) => (
         <SoldBar
           {...transferSoldThrough(row.original, sales)}
-          place={`at ${row.original.toLocationName} since it arrived`}
+          place={t('at {toLocationName} since it arrived', {
+            toLocationName: row.original.toLocationName,
+          })}
         />
       ),
     },

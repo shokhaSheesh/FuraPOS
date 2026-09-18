@@ -171,8 +171,11 @@ export function ReportChartView({
         {measureLabel} by {dimensionLabel.toLowerCase()}
         {result.rows.length > CHART_TOP_N && !isTimeDimension(dimension)
           ? chart === 'donut'
-            ? ` — top ${CHART_TOP_N}, the rest as "Other".`
-            : ` — top ${CHART_TOP_N} of ${formatNumber(result.rows.length)}. The table below has them all.`
+            ? t(' — top {CHART_TOP_N}, the rest as "Other".', { CHART_TOP_N: CHART_TOP_N })
+            : t(' — top {CHART_TOP_N} of {p1}. The table below has them all.', {
+                CHART_TOP_N: CHART_TOP_N,
+                p1: formatNumber(result.rows.length),
+              })
           : '.'}
       </p>
     </div>

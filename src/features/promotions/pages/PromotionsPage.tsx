@@ -91,7 +91,7 @@ export default function PromotionsPage() {
               >
                 {row.original.daysLeft === 0
                   ? t('ends today')
-                  : `${formatNumber(row.original.daysLeft)} days left`}
+                  : t('{p0} days left', { p0: formatNumber(row.original.daysLeft) })}
               </p>
             ) : null}
           </div>
@@ -271,7 +271,7 @@ export default function PromotionsPage() {
         onOpenChange={(open) => {
           if (!open) setDeleting(null)
         }}
-        title={`Delete ${deleting?.name}?`}
+        title={t('Delete {name}?', { name: deleting?.name })}
         body="Sales already made at this price are not affected — they keep the discount they were given. Only future sales change."
         confirmLabel={t('Delete')}
         destructive

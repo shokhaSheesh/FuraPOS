@@ -236,7 +236,11 @@ export default function BrandsSettingsPage() {
         onOpenChange={(next) => {
           if (!next) setMakeDialog(null)
         }}
-        title={makeDialog?.make ? `Rename ${makeDialog.make.name}` : t('New truck brand')}
+        title={
+          makeDialog?.make
+            ? t('Rename {name}', { name: makeDialog.make.name })
+            : t('New truck brand')
+        }
         description={
           makeDialog?.make
             ? t('Every product and truck that says this brand is updated to the new name.')
@@ -266,7 +270,7 @@ export default function BrandsSettingsPage() {
       <Modal
         open={open}
         onOpenChange={setOpen}
-        title={editing ? `Edit ${editing.name}` : t('New brand')}
+        title={editing ? t('Edit {name}', { name: editing.name }) : t('New brand')}
         primary={{ label: editing ? 'Save changes' : 'Add brand', onClick: save }}
       >
         <div className="space-y-3">
@@ -313,7 +317,7 @@ export default function BrandsSettingsPage() {
         onOpenChange={(next) => {
           if (!next) setDeleting(null)
         }}
-        title={`Delete ${deleting?.name}?`}
+        title={t('Delete {name}?', { name: deleting?.name })}
         body="Products already using it keep the name they were saved with."
         confirmLabel={t('Delete')}
         destructive

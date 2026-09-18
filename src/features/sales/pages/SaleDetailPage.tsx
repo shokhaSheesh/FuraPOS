@@ -99,7 +99,10 @@ export default function SaleDetailPage() {
                 onClick={() =>
                   update.mutate(
                     { status: 'open' },
-                    { onSuccess: () => toast.success(`${sale.number} restored`) },
+                    {
+                      onSuccess: () =>
+                        toast.success(t('{number} restored', { number: sale.number })),
+                    },
                   )
                 }
               >
@@ -194,7 +197,7 @@ export default function SaleDetailPage() {
             { status: 'deleted' },
             {
               onSuccess: () => {
-                toast.success(`${sale.number} deleted`)
+                toast.success(t('{number} deleted', { number: sale.number }))
                 setDeleteOpen(false)
               },
             },
@@ -212,7 +215,12 @@ export default function SaleDetailPage() {
             { paid: amount },
             {
               onSuccess: () => {
-                toast.success(`${formatMoney(amount)} recorded against ${sale.number}`)
+                toast.success(
+                  t('{p0} recorded against {number}', {
+                    p0: formatMoney(amount),
+                    number: sale.number,
+                  }),
+                )
                 setPayOpen(false)
               },
             },

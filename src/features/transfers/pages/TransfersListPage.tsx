@@ -76,7 +76,7 @@ export default function TransfersListPage() {
         line.unitPrice,
       ]),
     )
-    toast.success(`${transfer.number} downloaded`)
+    toast.success(t('{number} downloaded', { number: transfer.number }))
   }
 
   const columns = useMemo(
@@ -208,7 +208,7 @@ export default function TransfersListPage() {
             { to: 'cancelled' },
             {
               onSuccess: () => {
-                toast.success(`${pendingCancel?.number} cancelled`)
+                toast.success(t('{number} cancelled', { number: pendingCancel?.number }))
                 setPendingCancel(null)
               },
               onError: (message) => toast.error(message),

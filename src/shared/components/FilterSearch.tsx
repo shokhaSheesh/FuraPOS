@@ -117,7 +117,7 @@ export function FilterSearch<T>({
               </span>
               <button
                 type="button"
-                aria-label={`Remove filter ${chip.text}`}
+                aria-label={t('Remove filter {text}', { text: chip.text })}
                 className="hover:text-primary-hover shrink-0"
                 onClick={(event) => {
                   event.stopPropagation()
@@ -230,7 +230,7 @@ function FieldEditor<T>({
         <div className="flex items-center gap-2">
           <NumberField
             className="flex-1"
-            aria-label={`${field.label} from`}
+            aria-label={t('{label} from', { label: field.label })}
             placeholder={t('From')}
             value={current.min}
             onChange={(min) => onChange({ ...current, min })}
@@ -238,7 +238,7 @@ function FieldEditor<T>({
           <span className="text-fg-subtle">–</span>
           <NumberField
             className="flex-1"
-            aria-label={`${field.label} to`}
+            aria-label={t('{label} to', { label: field.label })}
             placeholder={t('To')}
             value={current.max}
             onChange={(max) => onChange({ ...current, max })}

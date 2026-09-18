@@ -74,7 +74,7 @@ export function PurchaseCatalogue({
     () => [
       {
         id: 'atLocation',
-        header: `At ${locationName}`,
+        header: t('At {locationName}', { locationName: locationName }),
         meta: { align: 'right' },
         cell: ({ row }) => <StockPill side="mine" units={atLocation(row.original)} />,
       },
@@ -125,9 +125,9 @@ export function PurchaseCatalogue({
     <ProductCatalogue
       rows={rows}
       storageKey={storageKey}
-      ownFieldsTitle={`This ${noun}`}
+      ownFieldsTitle={t('This {noun}', { noun: noun })}
       ownFields={[
-        { id: 'atLocation', label: `At ${locationName}` },
+        { id: 'atLocation', label: t('At {locationName}', { locationName: locationName }) },
         { id: 'everywhere', label: t('All locations') },
         ...(showExpected ? [{ id: 'expected', label: t('Expected') }] : []),
         { id: 'sales', label: t('Sold') },
@@ -151,7 +151,11 @@ export function PurchaseCatalogue({
           {has(t('atLocation')) || has('everywhere') ? (
             <div className="grid grid-cols-2 gap-1.5">
               {has(t('atLocation')) ? (
-                <StockBox side="mine" label={`At ${locationName}`} units={atLocation(group)} />
+                <StockBox
+                  side="mine"
+                  label={t('At {locationName}', { locationName: locationName })}
+                  units={atLocation(group)}
+                />
               ) : null}
               {has('everywhere') ? (
                 <StockBox side="theirs" label={t('All locations')} units={everywhere(group)} />
@@ -199,7 +203,12 @@ export function PurchaseCatalogue({
           stats={(open) => (
             <>
               <div className="min-w-32 flex-1">
-                <StockBox large side="mine" label={`At ${locationName}`} units={atLocation(open)} />
+                <StockBox
+                  large
+                  side="mine"
+                  label={t('At {locationName}', { locationName: locationName })}
+                  units={atLocation(open)}
+                />
               </div>
               <div className="min-w-32 flex-1">
                 <StockBox large side="theirs" label={t('All locations')} units={everywhere(open)} />
@@ -223,7 +232,7 @@ export function PurchaseCatalogue({
             },
             {
               id: 'atLocation',
-              header: `At ${locationName}`,
+              header: t('At {locationName}', { locationName: locationName }),
               meta: { align: 'right' },
               cell: ({ row }) => <StockPill side="mine" units={row.original.row.atLocation} />,
             },
@@ -275,7 +284,9 @@ export function PurchaseCatalogue({
                           nullable={false}
                           min={0}
                           step="any"
-                          aria-label={`Price of ${row.original.row.variation.fullName}`}
+                          aria-label={t('Price of {fullName}', {
+                            fullName: row.original.row.variation.fullName,
+                          })}
                           value={row.original.draft.unitCost}
                           onChange={(unitCost) =>
                             set(row.original.row, { unitCost: unitCost ?? 0 })
@@ -283,7 +294,9 @@ export function PurchaseCatalogue({
                         />
                         <Select
                           className="h-6 w-20 text-xs"
-                          aria-label={`Currency of ${row.original.row.variation.fullName}`}
+                          aria-label={t('Currency of {fullName}', {
+                            fullName: row.original.row.variation.fullName,
+                          })}
                           value={row.original.draft.costCurrency}
                           onChange={(costCurrency) =>
                             set(row.original.row, {

@@ -87,7 +87,7 @@ export default function OrdersListPage() {
         ...(canSeeCost ? [line.unitCost, line.costCurrency] : []),
       ]),
     )
-    toast.success(`${order.number} downloaded`)
+    toast.success(t('{number} downloaded', { number: order.number }))
   }
 
   const columns = useMemo<TableColumn<PurchaseOrder>[]>(
@@ -145,7 +145,10 @@ export default function OrdersListPage() {
           return (
             <div
               className="flex items-center gap-2"
-              title={`${receivedUnits(row.original)} of ${orderedUnits(row.original)} units`}
+              title={t('{p0} of {p1} units', {
+                p0: receivedUnits(row.original),
+                p1: orderedUnits(row.original),
+              })}
             >
               <span className="bg-surface-inset h-1.5 w-16 shrink-0 overflow-hidden rounded-full">
                 <span

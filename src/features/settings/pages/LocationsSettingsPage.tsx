@@ -223,7 +223,7 @@ export default function LocationsSettingsPage() {
       <Modal
         open={open}
         onOpenChange={setOpen}
-        title={editing ? `Edit ${editing.name}` : t('New location')}
+        title={editing ? t('Edit {name}', { name: editing.name }) : t('New location')}
         primary={{ label: editing ? 'Save changes' : 'Add location', onClick: save }}
       >
         <div className="grid gap-3 sm:grid-cols-2">
@@ -289,7 +289,7 @@ export default function LocationsSettingsPage() {
         onOpenChange={(next) => {
           if (!next) setDeleting(null)
         }}
-        title={`Delete ${deleting?.name}?`}
+        title={t('Delete {name}?', { name: deleting?.name })}
         body="Documents that mention it keep the name they were saved with. A location still holding stock cannot be deleted."
         confirmLabel={t('Delete')}
         destructive

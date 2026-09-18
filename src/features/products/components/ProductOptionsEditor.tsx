@@ -50,7 +50,9 @@ export function ProductOptionsEditor({
           <span className="text-danger ml-0.5">*</span>
         </p>
         <p className="text-fg-subtle text-2xs">
-          {full ? `${MAX_OPTIONS} is the maximum` : `Up to ${MAX_OPTIONS}`}
+          {full
+            ? t('{MAX_OPTIONS} is the maximum', { MAX_OPTIONS: MAX_OPTIONS })
+            : t('Up to {MAX_OPTIONS}', { MAX_OPTIONS: MAX_OPTIONS })}
         </p>
       </div>
 
@@ -88,7 +90,7 @@ export function ProductOptionsEditor({
               type="button"
               variant="ghost"
               size="icon"
-              aria-label={`Remove the ${option.name || 'unnamed'} option`}
+              aria-label={t('Remove the {p0} option', { p0: option.name || 'unnamed' })}
               title={t('Remove option')}
               className="hover:text-danger"
               onClick={() => onChange(options.filter((_, i) => i !== index))}

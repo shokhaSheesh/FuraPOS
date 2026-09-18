@@ -101,7 +101,10 @@ export default function RoleDetailPage() {
             <span className="text-fg-muted text-sm">
               {isFullAccess(role)
                 ? t('Everything, including modules added later')
-                : `${formatNumber(draft.size)} of ${formatNumber(role.total)} permissions`}
+                : t('{p0} of {p1} permissions', {
+                    p0: formatNumber(draft.size),
+                    p1: formatNumber(role.total),
+                  })}
             </span>
             {dirty ? (
               <span className="text-warning text-2xs">
@@ -149,7 +152,9 @@ export default function RoleDetailPage() {
                 <p className="text-fg-subtle text-2xs">
                   {holders.length === 1
                     ? t('Saving changes what this person sees.')
-                    : `Saving changes what these ${holders.length} people see.`}
+                    : t('Saving changes what these {length} people see.', {
+                        length: holders.length,
+                      })}
                 </p>
                 {holders.map((employee) => (
                   <Link

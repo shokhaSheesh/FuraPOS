@@ -480,14 +480,14 @@ export function DataTable<T extends RowData>({
                         when held near an edge. */}
                     <span className="ml-1 flex shrink-0 items-center">
                       <MoveButton
-                        label={`Move ${column.id} left`}
+                        label={t('Move {id} left', { id: column.id })}
                         disabled={position <= 0}
                         onClick={() => moveColumn(column.id, -1)}
                       >
                         <ChevronUp />
                       </MoveButton>
                       <MoveButton
-                        label={`Move ${column.id} right`}
+                        label={t('Move {id} right', { id: column.id })}
                         disabled={position === -1 || position >= movable.length - 1}
                         onClick={() => moveColumn(column.id, 1)}
                       >

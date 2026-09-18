@@ -247,7 +247,7 @@ export function SalesListPage({ title, description }: { title: string; descripti
         sale.status,
       ]),
     )
-    toast.success(`Exported ${rows.length} sales`)
+    toast.success(t('Exported {length} sales', { length: rows.length }))
   }
 
   return (

@@ -176,7 +176,7 @@ export default function NewTransferPage() {
       return
     }
     const transfer = saveDraft()
-    if (transfer) toast.success(`${transfer.number} saved as unfinished`)
+    if (transfer) toast.success(t('{number} saved as unfinished', { number: transfer.number }))
   }
 
   /*
@@ -190,7 +190,9 @@ export default function NewTransferPage() {
     if (lastSaved.current === JSON.stringify(form.getValues())) return
     const transfer = saveDraft()
     if (transfer)
-      toast.success(`${transfer.number} saved as unfinished — pick it up from Transfers`)
+      toast.success(
+        t('{number} saved as unfinished — pick it up from Transfers', { number: transfer.number }),
+      )
   }
   useEffect(() => () => saveOnLeave.current(), [])
 
@@ -221,7 +223,10 @@ export default function NewTransferPage() {
     }
     form.setValue('lines', [...current, ...added], { shouldDirty: true })
     toast.success(
-      `${formatNumber(added.length)} ${added.length === 1 ? 'product' : 'products'} added`,
+      t('{p0} {p1} added', {
+        p0: formatNumber(added.length),
+        p1: added.length === 1 ? 'product' : 'products',
+      }),
     )
   }
 
@@ -406,7 +411,7 @@ export default function NewTransferPage() {
       <PageHeader
         title={
           resuming
-            ? `${resuming.number} — unfinished`
+            ? t('{number} — unfinished', { number: resuming.number })
             : requesting
               ? t('New request')
               : t('New transfer')

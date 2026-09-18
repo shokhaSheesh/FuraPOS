@@ -127,7 +127,7 @@ export function ProductStockSection({
                       ? productName || t('This product')
                       : [productName, combinationName(variation.optionValues)]
                           .filter(Boolean)
-                          .join(' — ') || `Variation ${index + 1}`}
+                          .join(' — ') || t('Variation {p0}', { p0: index + 1 })}
                     <span className="text-fg-subtle text-2xs ml-2">
                       {variation.sku || t('no SKU')}
                     </span>
@@ -146,7 +146,7 @@ export function ProductStockSection({
                               <NumberField
                                 className="w-24"
                                 nullable={false}
-                                aria-label={`Quantity at ${location.name}`}
+                                aria-label={t('Quantity at {name}', { name: location.name })}
                                 value={field.value}
                                 onChange={(v) => field.onChange(v ?? 0)}
                                 onBlur={field.onBlur}

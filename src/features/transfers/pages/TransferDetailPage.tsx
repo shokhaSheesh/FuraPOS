@@ -79,9 +79,13 @@ export default function TransferDetailPage() {
 
   const timeline = [
     { label: t('Created'), at: transfer.createdAt, by: transfer.createdBy },
-    { label: `Sent from ${transfer.fromLocationName}`, at: transfer.sentAt, by: transfer.sentBy },
     {
-      label: `Received at ${transfer.toLocationName}`,
+      label: t('Sent from {fromLocationName}', { fromLocationName: transfer.fromLocationName }),
+      at: transfer.sentAt,
+      by: transfer.sentBy,
+    },
+    {
+      label: t('Received at {toLocationName}', { toLocationName: transfer.toLocationName }),
       at: transfer.receivedAt,
       by: transfer.receivedBy,
     },
@@ -98,9 +102,10 @@ export default function TransferDetailPage() {
 
       <PageHeader
         title={transfer.number}
-        description={`${formatNumber(transfer.lines.length)} items · ${formatNumber(
-          transferQuantity(transfer),
-        )} units`}
+        description={t('{p0} items · {p1} units', {
+          p0: formatNumber(transfer.lines.length),
+          p1: formatNumber(transferQuantity(transfer)),
+        })}
         action={
           <div className="flex items-center gap-2">
             {canCancel(transfer.status) && can('products.transfers.delete') ? (
@@ -151,7 +156,9 @@ export default function TransferDetailPage() {
             <p className="text-fg-muted text-sm">
               {transferInTransit(transfer) === 1
                 ? t('This unit has')
-                : `These ${formatNumber(transferInTransit(transfer))} units have`}{' '}
+                : t('These {p0} units have', {
+                    p0: formatNumber(transferInTransit(transfer)),
+                  })}{' '}
               left {transfer.fromLocationName} and{' '}
               {transferInTransit(transfer) === 1 ? 'is' : 'are'} {t('not yet counted at')}{' '}
               {transfer.toLocationName}
@@ -345,7 +352,7 @@ export default function TransferDetailPage() {
             { to: 'cancelled' },
             {
               onSuccess: () => {
-                toast.success(`${transfer.number} cancelled`)
+                toast.success(t('{number} cancelled', { number: transfer.number }))
                 setConfirmCancel(false)
                 navigate(paths.products.transfers)
               },

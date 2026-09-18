@@ -90,9 +90,10 @@ export default function PartnerOrdersListPage() {
           return (
             <div
               className="flex items-center gap-2"
-              title={`${formatNumber(shippedUnits(row.original))} of ${formatNumber(
-                orderedUnits(row.original),
-              )} units have gone`}
+              title={t('{p0} of {p1} units have gone', {
+                p0: formatNumber(shippedUnits(row.original)),
+                p1: formatNumber(orderedUnits(row.original)),
+              })}
             >
               <span className="bg-surface-inset h-1.5 w-20 shrink-0 overflow-hidden rounded-full">
                 <span

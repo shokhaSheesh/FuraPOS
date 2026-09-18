@@ -78,15 +78,21 @@ export function GenerateTransferModal({
     <Modal
       open={open}
       onOpenChange={onOpenChange}
-      title={`What ${toName} needs`}
-      description={`Worked out from what ${toName} sold, and what ${fromName} can spare after covering its own sales.`}
+      title={t('What {toName} needs', { toName: toName })}
+      description={t(
+        'Worked out from what {toName} sold, and what {fromName} can spare after covering its own sales.',
+        { toName: toName, fromName: fromName },
+      )}
       size="lg"
       footer={
         <div className="flex w-full items-center justify-between gap-3">
           <span className="text-fg-subtle text-2xs">
             {chosen.length === 0
               ? t('Nothing selected')
-              : `${formatNumber(chosen.length)} products · ${formatNumber(units)} units`}
+              : t('{p0} products · {p1} units', {
+                  p0: formatNumber(chosen.length),
+                  p1: formatNumber(units),
+                })}
           </span>
           <div className="flex gap-2">
             <Button variant="secondary" onClick={() => onOpenChange(false)}>
@@ -151,7 +157,7 @@ export function GenerateTransferModal({
                     <tr key={suggestion.variationId} className="border-border border-t">
                       <td className="px-3 py-2">
                         <Checkbox
-                          aria-label={`Include ${suggestion.name}`}
+                          aria-label={t('Include {name}', { name: suggestion.name })}
                           checked={on}
                           onCheckedChange={() => toggle(suggestion.variationId)}
                         />

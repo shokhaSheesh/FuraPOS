@@ -69,7 +69,10 @@ export default function ProductDetailPage() {
       <PageHeader
         title={product.name}
         description={
-          [product.categoryPath, product.variations[0]?.oem && `OEM ${product.variations[0].oem}`]
+          [
+            product.categoryPath,
+            product.variations[0]?.oem && t('OEM {p0}', { p0: product.variations[0].oem }),
+          ]
             .filter(Boolean)
             .join(' · ') || undefined
         }
@@ -193,19 +196,19 @@ function VariationsTable({ product }: { product: Product }) {
                 <td className="text-2xs px-3 py-2 font-mono">{v.shelfAddress ?? <Empty />}</td>
                 <td className="px-3 py-2 text-right tabular-nums">
                   {v.costCurrency === t('USD')
-                    ? `${formatNumber(v.costPrice)} USD`
+                    ? t('{p0} USD', { p0: formatNumber(v.costPrice) })
                     : formatMoney(v.costPrice)}
                 </td>
                 <td className="px-3 py-2 text-right tabular-nums">
                   {v.saleCurrency === t('USD')
-                    ? `${formatNumber(v.salePrice)} USD`
+                    ? t('{p0} USD', { p0: formatNumber(v.salePrice) })
                     : formatMoney(v.salePrice)}
                 </td>
                 <td className="px-3 py-2 text-right tabular-nums">
                   {v.wholesalePrice === null ? (
                     <Empty />
                   ) : v.wholesaleCurrency === t('USD') ? (
-                    `${formatNumber(v.wholesalePrice)} USD`
+                    t('{p0} USD', { p0: formatNumber(v.wholesalePrice) })
                   ) : (
                     formatMoney(v.wholesalePrice)
                   )}

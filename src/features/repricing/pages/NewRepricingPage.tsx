@@ -103,7 +103,9 @@ export default function NewRepricingPage() {
         },
         {
           onSuccess: (repricing) => {
-            toast.success(`${repricing.number} prepared — review before applying`)
+            toast.success(
+              t('{number} prepared — review before applying', { number: repricing.number }),
+            )
             navigate(paths.products.repricingDetail(repricing.id))
           },
         },

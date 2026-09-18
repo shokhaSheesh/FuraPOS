@@ -329,7 +329,7 @@ export default function DriversPage() {
       <Modal
         open={open}
         onOpenChange={setOpen}
-        title={editing ? `Edit ${editing.fullName}` : t('New driver')}
+        title={editing ? t('Edit {fullName}', { fullName: editing.fullName }) : t('New driver')}
         description={t("A driver buys for his own truck, for an autopark's, or both.")}
         primary={{ label: editing ? 'Save changes' : 'Add driver', onClick: save }}
       >
@@ -389,19 +389,19 @@ export default function DriversPage() {
                   <div key={index} className="flex items-start gap-2">
                     <div className="grid flex-1 gap-2 sm:grid-cols-3">
                       <Input
-                        aria-label={`Number plate ${index + 1}`}
+                        aria-label={t('Number plate {p0}', { p0: index + 1 })}
                         placeholder={t('40 E 678 HH')}
                         value={truck.plate}
                         onChange={(event) => setOwnTruck(index, { plate: event.target.value })}
                       />
                       <VehicleMakeSelect
-                        aria-label={`Make ${index + 1}`}
+                        aria-label={t('Make {p0}', { p0: index + 1 })}
                         value={truck.make}
                         // A model belongs to one brand, so a new brand clears it.
                         onChange={(make) => setOwnTruck(index, { make, model: null })}
                       />
                       <VehicleModelSelect
-                        aria-label={`Model ${index + 1}`}
+                        aria-label={t('Model {p0}', { p0: index + 1 })}
                         make={truck.make}
                         value={truck.model}
                         onChange={(model) => setOwnTruck(index, { model })}
@@ -411,7 +411,7 @@ export default function DriversPage() {
                       type="button"
                       variant="ghost"
                       size="icon"
-                      aria-label={`Remove truck ${index + 1}`}
+                      aria-label={t('Remove truck {p0}', { p0: index + 1 })}
                       onClick={() => removeOwnTruck(index)}
                     >
                       <Trash2 />
@@ -519,7 +519,7 @@ export default function DriversPage() {
         onOpenChange={(next) => {
           if (!next) setDeleting(null)
         }}
-        title={`Delete ${deleting?.fullName}?`}
+        title={t('Delete {fullName}?', { fullName: deleting?.fullName })}
         body="Sales he collected keep his name — a driver is a contact, not an account."
         confirmLabel={t('Delete')}
         destructive

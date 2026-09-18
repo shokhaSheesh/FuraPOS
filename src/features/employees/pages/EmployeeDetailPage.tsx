@@ -144,7 +144,7 @@ export default function EmployeeDetailPage() {
                 ·{' '}
                 {quiet === null
                   ? t('has never signed in')
-                  : `no sign-in for ${formatNumber(quiet)} days`}
+                  : t('no sign-in for {p0} days', { p0: formatNumber(quiet) })}
               </span>
             ) : null}
           </div>
@@ -303,8 +303,8 @@ export default function EmployeeDetailPage() {
         }}
         title={
           confirming === 'archived'
-            ? `Archive ${employee.fullName}?`
-            : `Suspend ${employee.fullName}?`
+            ? t('Archive {fullName}?', { fullName: employee.fullName })
+            : t('Suspend {fullName}?', { fullName: employee.fullName })
         }
         body={
           confirming === 'archived'

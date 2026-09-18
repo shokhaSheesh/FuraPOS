@@ -76,7 +76,7 @@ export function GenerateOrderModal({
     <Modal
       open={open}
       onOpenChange={onOpenChange}
-      title={`What to order from ${supplierName}`}
+      title={t('What to order from {supplierName}', { supplierName: supplierName })}
       description={`Worked out from what sold over the window and what is on the shelf now, across every location.`}
       size="lg"
       footer={
@@ -84,7 +84,10 @@ export function GenerateOrderModal({
           <span className="text-fg-subtle text-2xs">
             {chosen.length === 0
               ? t('Nothing selected')
-              : `${formatNumber(chosen.length)} products · ${formatNumber(units)} units`}
+              : t('{p0} products · {p1} units', {
+                  p0: formatNumber(chosen.length),
+                  p1: formatNumber(units),
+                })}
           </span>
           <div className="flex gap-2">
             <Button variant="secondary" onClick={() => onOpenChange(false)}>
@@ -123,7 +126,7 @@ export function GenerateOrderModal({
             <Wand2 className="text-fg-subtle mx-auto mb-2 size-5" />
             <p className="text-fg font-medium">{t('Nothing needs ordering')}</p>
             <p className="text-2xs mt-1">
-              {scope ?? `Everything ${supplierName} carries`}{' '}
+              {scope ?? t('Everything {supplierName} carries', { supplierName: supplierName })}{' '}
               {t('is either stocked deep enough for another')} {months}{' '}
               {t('months, or has not sold in that time.')}
             </p>
@@ -148,7 +151,7 @@ export function GenerateOrderModal({
                     <tr key={suggestion.supplierProductId} className="border-border border-t">
                       <td className="px-3 py-2">
                         <Checkbox
-                          aria-label={`Include ${suggestion.name}`}
+                          aria-label={t('Include {name}', { name: suggestion.name })}
                           checked={on}
                           onCheckedChange={() => toggle(suggestion.supplierProductId)}
                         />

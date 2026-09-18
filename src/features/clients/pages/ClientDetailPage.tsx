@@ -74,7 +74,7 @@ export default function ClientDetailPage() {
                   variant="secondary"
                   onClick={() => {
                     actions.setStatus(client.id, 'active')
-                    toast.success(`${client.name} can buy on account again`)
+                    toast.success(t('{name} can buy on account again', { name: client.name }))
                   }}
                 >
                   <Play />
@@ -259,14 +259,14 @@ export default function ClientDetailPage() {
       <ConfirmDialog
         open={blocking}
         onOpenChange={setBlocking}
-        title={`Block ${client.name}?`}
+        title={t('Block {name}?', { name: client.name })}
         body="They stop appearing as a choice on a new sale. Nothing about their history or their debt changes, and you can unblock them at any time."
         confirmLabel={t('Block')}
         destructive
         onConfirm={() => {
           actions.setStatus(client.id, 'blocked')
           setBlocking(false)
-          toast.success(`${client.name} blocked`)
+          toast.success(t('{name} blocked', { name: client.name }))
         }}
       />
     </>

@@ -118,7 +118,7 @@ export default function OnlineSalesListPage() {
             </p>
             <p className="text-fg-subtle text-2xs truncate">
               {row.original.deliveryMethod === 'pickup'
-                ? `At ${row.original.locationName}`
+                ? t('At {locationName}', { locationName: row.original.locationName })
                 : (row.original.pickupPoint ?? row.original.customerAddress ?? '—')}
             </p>
           </div>

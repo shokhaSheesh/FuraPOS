@@ -221,7 +221,7 @@ export function buildReceiptLineColumns({
               className="w-20"
               nullable={false}
               min={0}
-              aria-label={`Actual quantity of ${row.original.name}`}
+              aria-label={t('Actual quantity of {name}', { name: row.original.name })}
               value={row.original.quantity}
               onChange={(v) => onQuantityChange(row.original, v ?? 0)}
             />
@@ -257,13 +257,13 @@ export function buildReceiptLineColumns({
                     nullable={false}
                     min={0}
                     step="any"
-                    aria-label={`Invoiced price of ${row.original.name}`}
+                    aria-label={t('Invoiced price of {name}', { name: row.original.name })}
                     value={row.original.unitCost}
                     onChange={(v) => onCostChange(row.original, v ?? 0)}
                   />
                   <Select
                     className="w-20"
-                    aria-label={`Invoiced currency of ${row.original.name}`}
+                    aria-label={t('Invoiced currency of {name}', { name: row.original.name })}
                     value={row.original.costCurrency}
                     onChange={(v) => onCurrencyChange(row.original, v as Currency)}
                     options={CURRENCIES}
@@ -272,7 +272,7 @@ export function buildReceiptLineColumns({
               ) : (
                 <span className="tabular-nums">
                   {row.original.costCurrency === t('USD')
-                    ? `${row.original.unitCost.toFixed(2)} USD`
+                    ? t('{p0} USD', { p0: row.original.unitCost.toFixed(2) })
                     : formatMoney(row.original.unitCost)}
                 </span>
               ),
@@ -298,7 +298,7 @@ export function buildReceiptLineColumns({
                 <Button
                   variant="ghost"
                   size="icon"
-                  aria-label={`Remove ${row.original.name} from this receipt`}
+                  aria-label={t('Remove {name} from this receipt', { name: row.original.name })}
                   title={t('Remove from this receipt')}
                   className="hover:text-danger"
                   onClick={() => onRemove(row.original)}

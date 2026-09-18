@@ -45,7 +45,7 @@ export function OpenShiftModal({
       toast.error(result.error)
       return
     }
-    toast.success(`${result.shift.number} open`)
+    toast.success(t('{number} open', { number: result.shift.number }))
     setDraft(EMPTY)
     setShowErrors(false)
     onOpenChange(false)

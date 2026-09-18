@@ -93,7 +93,7 @@ export default function GoodsReceiptListPage() {
         canSeeCost ? Math.round(landedUnitCost(line, receipt, USD_RATE)) : '',
       ]),
     )
-    toast.success(`${receipt.number} downloaded`)
+    toast.success(t('{number} downloaded', { number: receipt.number }))
   }
 
   const columns = useMemo(
@@ -267,9 +267,10 @@ export default function GoodsReceiptListPage() {
               <strong className="text-fg font-medium">{pendingCancel.number}</strong> from{' '}
               {pendingCancel.supplierName ?? t('its supplier')}
               {pendingCancel.status === 'received'
-                ? ` has been posted, so its ${formatMoney(
-                    landedTotal(pendingCancel, USD_RATE),
-                  )} of stock is taken back off ${pendingCancel.locationName}.`
+                ? t(' has been posted, so its {p0} of stock is taken back off {locationName}.', {
+                    p0: formatMoney(landedTotal(pendingCancel, USD_RATE)),
+                    locationName: pendingCancel.locationName,
+                  })
                 : t(' has not been posted, so no stock changes.')}
             </>
           ) : null
@@ -279,7 +280,7 @@ export default function GoodsReceiptListPage() {
             { to: 'cancelled' },
             {
               onSuccess: () => {
-                toast.success(`${pendingCancel?.number} cancelled`)
+                toast.success(t('{number} cancelled', { number: pendingCancel?.number }))
                 setPendingCancel(null)
               },
               onError: (message) => toast.error(message),

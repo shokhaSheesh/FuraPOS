@@ -216,7 +216,7 @@ export default function NewSalePage() {
           : line,
       ),
     )
-    toast.success(`${offer.promotion.name} applied`)
+    toast.success(t('{name} applied', { name: offer.promotion.name }))
   }
   const empty = lines.length === 0
   const deliveryIncomplete = deliveryOn && address.trim().length < 3

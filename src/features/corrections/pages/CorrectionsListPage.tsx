@@ -191,7 +191,7 @@ export default function CorrectionsListPage() {
         onConfirm={() =>
           cancelCorrection.mutate({
             onSuccess: () => {
-              toast.success(`${pendingCancel?.number} reversed`)
+              toast.success(t('{number} reversed', { number: pendingCancel?.number }))
               setPendingCancel(null)
             },
             onError: (message) => toast.error(message),

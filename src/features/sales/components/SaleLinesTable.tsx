@@ -75,7 +75,7 @@ export function SaleLinesTable({ lines, onChange, onRemove }: Props) {
                   type="number"
                   min={0}
                   step="any"
-                  aria-label={`Quantity for ${line.name}`}
+                  aria-label={t('Quantity for {name}', { name: line.name })}
                   value={line.quantity}
                   onChange={(e) => onChange(line.id, { quantity: Number(e.target.value) })}
                   className="h-8 text-right"
@@ -85,7 +85,7 @@ export function SaleLinesTable({ lines, onChange, onRemove }: Props) {
                 <Input
                   type="number"
                   min={0}
-                  aria-label={`Price for ${line.name}`}
+                  aria-label={t('Price for {name}', { name: line.name })}
                   value={line.unitPrice}
                   onChange={(e) => onChange(line.id, { unitPrice: Number(e.target.value) })}
                   className="h-8 text-right"
@@ -96,7 +96,7 @@ export function SaleLinesTable({ lines, onChange, onRemove }: Props) {
                   type="number"
                   min={0}
                   max={100}
-                  aria-label={`Discount for ${line.name}`}
+                  aria-label={t('Discount for {name}', { name: line.name })}
                   value={line.discountPercent}
                   onChange={(e) =>
                     onChange(line.id, {
@@ -113,7 +113,7 @@ export function SaleLinesTable({ lines, onChange, onRemove }: Props) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  aria-label={`Remove ${line.name}`}
+                  aria-label={t('Remove {name}', { name: line.name })}
                   className="hover:text-danger"
                   onClick={() => onRemove(line.id)}
                 >

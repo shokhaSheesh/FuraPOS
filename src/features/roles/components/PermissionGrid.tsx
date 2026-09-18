@@ -188,7 +188,7 @@ function ModuleRows({
         <td className="px-3 py-2">
           <div className="flex items-center gap-2">
             <Checkbox
-              aria-label={`All of ${node.label}`}
+              aria-label={t('All of {label}', { label: node.label })}
               disabled={readOnly}
               checked={state === 'partial' ? 'indeterminate' : state === 'on'}
               onCheckedChange={onToggleModule}
@@ -221,7 +221,7 @@ function ModuleRows({
                 <td className="py-1.5 pr-3 pl-9">
                   <label className="flex cursor-pointer items-center gap-2">
                     <Checkbox
-                      aria-label={`All of ${leaf.label}`}
+                      aria-label={t('All of {label}', { label: leaf.label })}
                       disabled={readOnly}
                       checked={rowState === 'partial' ? 'indeterminate' : rowState === 'on'}
                       onCheckedChange={(on) => onToggleLeafRow(leaf, on)}

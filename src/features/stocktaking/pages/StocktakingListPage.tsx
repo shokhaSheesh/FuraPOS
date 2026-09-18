@@ -119,7 +119,10 @@ export default function StocktakingListPage() {
         cell: ({ row }) => {
           const { done, total, ratio } = progress(row.original)
           return (
-            <div className="flex items-center gap-2" title={`${done} of ${total} lines`}>
+            <div
+              className="flex items-center gap-2"
+              title={t('{done} of {total} lines', { done: done, total: total })}
+            >
               <span className="bg-surface-inset h-1.5 w-16 shrink-0 overflow-hidden rounded-full">
                 <span
                   className={`block h-full rounded-full ${ratio >= 1 ? 'bg-success' : 'bg-info'}`}
@@ -338,7 +341,7 @@ export default function StocktakingListPage() {
         onConfirm={() =>
           pendingActions.cancel({
             onSuccess: () => {
-              toast.success(`${pendingCancel?.number} abandoned`)
+              toast.success(t('{number} abandoned', { number: pendingCancel?.number }))
               setPendingCancel(null)
             },
             onError: (message) => toast.error(message),

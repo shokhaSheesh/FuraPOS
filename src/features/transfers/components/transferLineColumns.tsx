@@ -142,7 +142,7 @@ export function buildTransferLineColumns({
   const own: TableColumn<TransferRow>[] = [
     {
       id: 'atFrom',
-      header: `At ${fromName}`,
+      header: t('At {fromName}', { fromName: fromName }),
       meta: { align: 'right' },
       cell: ({ row }) => (
         <span className="text-fg-muted tabular-nums">{formatNumber(row.original.atSource)}</span>
@@ -150,7 +150,7 @@ export function buildTransferLineColumns({
     },
     {
       id: 'atTo',
-      header: `At ${toName}`,
+      header: t('At {toName}', { toName: toName }),
       meta: { align: 'right' },
       cell: ({ row }) => (
         <span className="text-fg-muted tabular-nums">
@@ -160,7 +160,7 @@ export function buildTransferLineColumns({
     },
     {
       id: 'sold',
-      header: `Sold at ${demandName}`,
+      header: t('Sold at {demandName}', { demandName: demandName }),
       meta: { align: 'right' },
       cell: ({ row }) => (
         <div className="leading-tight">
@@ -193,7 +193,7 @@ export function buildTransferLineColumns({
               variant="secondary"
               size="icon"
               className="size-6 [&_svg]:size-3.5"
-              aria-label={`One fewer ${row.original.variation.fullName}`}
+              aria-label={t('One fewer {fullName}', { fullName: row.original.variation.fullName })}
               disabled={row.original.quantity <= 0}
               onClick={() => onQuantityChange(row.original, row.original.quantity - 1)}
             >
@@ -203,7 +203,7 @@ export function buildTransferLineColumns({
               className="h-6 w-14 px-1.5 text-xs"
               nullable={false}
               min={0}
-              aria-label={`Move ${row.original.variation.fullName}`}
+              aria-label={t('Move {fullName}', { fullName: row.original.variation.fullName })}
               value={row.original.quantity}
               // Never more than the shelf holds: a transfer that cannot be
               // picked is one somebody has to unpick later.
@@ -219,7 +219,7 @@ export function buildTransferLineColumns({
               variant="secondary"
               size="icon"
               className="size-6 [&_svg]:size-3.5"
-              aria-label={`One more ${row.original.variation.fullName}`}
+              aria-label={t('One more {fullName}', { fullName: row.original.variation.fullName })}
               disabled={row.original.quantity >= row.original.atSource}
               onClick={() => onQuantityChange(row.original, row.original.quantity + 1)}
             >
@@ -245,7 +245,9 @@ export function buildTransferLineColumns({
                 <Button
                   variant="ghost"
                   size="icon"
-                  aria-label={`Remove ${row.original.variation.fullName} from this transfer`}
+                  aria-label={t('Remove {fullName} from this transfer', {
+                    fullName: row.original.variation.fullName,
+                  })}
                   title={t('Remove from this transfer')}
                   className="hover:text-danger"
                   onClick={() => onRemove(row.original)}

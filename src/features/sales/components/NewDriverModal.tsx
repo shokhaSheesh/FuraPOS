@@ -64,7 +64,7 @@ export function NewDriverModal({
       return
     }
     const created = actions.create(parsed.data)
-    toast.success(`${created.fullName} added`)
+    toast.success(t('{fullName} added', { fullName: created.fullName }))
     onCreated(created)
     onOpenChange(false)
   }

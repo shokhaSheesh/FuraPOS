@@ -111,7 +111,12 @@ export default function EmployeeFormPage() {
         navigate(paths.users.employeeDetail(existing.id))
       } else {
         const created = actions.create(input)
-        toast.success(`${created.fullName} added as ${created.roleName}`)
+        toast.success(
+          t('{fullName} added as {roleName}', {
+            fullName: created.fullName,
+            roleName: created.roleName,
+          }),
+        )
         navigate(paths.users.employeeDetail(created.id))
       }
     },

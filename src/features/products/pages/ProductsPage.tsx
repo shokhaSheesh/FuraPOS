@@ -127,7 +127,7 @@ export default function ProductsPage() {
     if (!pendingDelete) return
     deleteVariation.mutate(pendingDelete.id, {
       onSuccess: () => {
-        toast.success(`${pendingDelete.name} deleted`)
+        toast.success(t('{name} deleted', { name: pendingDelete.name }))
         setPendingDelete(null)
       },
     })
@@ -169,7 +169,7 @@ export default function ProductsPage() {
         p.status,
       ]),
     )
-    toast.success(`Exported ${rows.length} products`)
+    toast.success(t('Exported {length} products', { length: rows.length }))
   }
 
   const displaySwitch = (
@@ -203,7 +203,7 @@ export default function ProductsPage() {
         title={t('Products')}
         description={
           location
-            ? `Stock, prices and totals at ${location.name}.`
+            ? t('Stock, prices and totals at {name}.', { name: location.name })
             : t('Everything you sell, across every location.')
         }
         action={
@@ -451,7 +451,11 @@ export default function ProductsPage() {
           // Still a job, not a save: the toast promises a queued file rather
           // than a finished import, and stays put now that there is no upload
           // log to send anybody to.
-          toast.success(`${fileName} queued — the catalogue updates once it is processed`)
+          toast.success(
+            t('{fileName} queued — the catalogue updates once it is processed', {
+              fileName: fileName,
+            }),
+          )
         }}
       />
 

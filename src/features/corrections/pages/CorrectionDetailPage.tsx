@@ -53,7 +53,10 @@ export default function CorrectionDetailPage() {
 
       <PageHeader
         title={correction.number}
-        description={`${formatNumber(correction.lines.length)} items at ${correction.locationName}`}
+        description={t('{p0} items at {locationName}', {
+          p0: formatNumber(correction.lines.length),
+          locationName: correction.locationName,
+        })}
         action={
           correction.status === 'applied' && can('products.corrections.delete') ? (
             <Button variant="secondary" onClick={() => setConfirmCancel(true)}>
@@ -183,7 +186,7 @@ export default function CorrectionDetailPage() {
         onConfirm={() =>
           cancel.mutate({
             onSuccess: () => {
-              toast.success(`${correction.number} reversed`)
+              toast.success(t('{number} reversed', { number: correction.number }))
               setConfirmCancel(false)
               navigate(paths.products.corrections)
             },

@@ -168,7 +168,7 @@ export function LineItemsTable<T extends LineRow>({
             type="button"
             variant="ghost"
             size="icon"
-            aria-label={`Remove ${variationOf(row.original)?.fullName ?? 'line'}`}
+            aria-label={t('Remove {p0}', { p0: variationOf(row.original)?.fullName ?? 'line' })}
             className="hover:text-danger"
             onClick={() => onRemove(row.original)}
           >
@@ -224,7 +224,7 @@ export function LineItemsTable<T extends LineRow>({
           >
             {[
               {
-                label: `From ${catalogue.label}`,
+                label: t('From {label}', { label: catalogue.label }),
                 hint: t('Search or scan, and add straight to the list'),
                 icon: PackagePlus,
                 onSelect: () => {

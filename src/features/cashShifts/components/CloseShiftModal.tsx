@@ -60,7 +60,7 @@ export function CloseShiftModal({
       toast.error(result.error)
       return
     }
-    toast.success(`${shift.number} closed`)
+    toast.success(t('{number} closed', { number: shift.number }))
     onOpenChange(false)
   }
 
@@ -75,7 +75,7 @@ export function CloseShiftModal({
     <Modal
       open={open}
       onOpenChange={onOpenChange}
-      title={`Close ${shift.number}`}
+      title={t('Close {number}', { number: shift.number })}
       description={`${shift.registerName} · ${shift.employeeName}`}
       primary={{ label: t('Close the drawer'), onClick: submit }}
     >

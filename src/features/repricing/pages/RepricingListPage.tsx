@@ -273,7 +273,7 @@ export default function RepricingListPage() {
         onConfirm={() =>
           pendingActions.revert({
             onSuccess: () => {
-              toast.success(`${pendingRevert?.number} reverted`)
+              toast.success(t('{number} reverted', { number: pendingRevert?.number }))
               setPendingRevert(null)
             },
             onError: (message) => toast.error(message),

@@ -119,7 +119,7 @@ export default function PrintTemplatesPage() {
                         hidden: !can('products.printTemplates.create'),
                         onSelect: () => {
                           const copy = actions.duplicate(template.id)
-                          if (copy) toast.success(`${copy.name} created`)
+                          if (copy) toast.success(t('{name} created', { name: copy.name }))
                         },
                       },
                       {
@@ -166,7 +166,7 @@ export default function PrintTemplatesPage() {
         onOpenChange={(open) => {
           if (!open) setDeleting(null)
         }}
-        title={`Delete ${deleting?.name}?`}
+        title={t('Delete {name}?', { name: deleting?.name })}
         body="Labels already printed are unaffected — this only removes the template."
         confirmLabel={t('Delete')}
         destructive

@@ -107,7 +107,9 @@ export default function OrderPage() {
     () => () => {
       const now = latest.current
       if (now?.status === 'draft' && snapshot(now) !== openedWith.current) {
-        toast.success(`${now.number} saved as unfinished — pick it up from Orders`)
+        toast.success(
+          t('{number} saved as unfinished — pick it up from Orders', { number: now.number }),
+        )
       }
     },
     [],
@@ -145,7 +147,7 @@ export default function OrderPage() {
         {order.expectedAt ? (
           <span className={late ? 'text-danger text-sm font-medium' : 'text-fg-muted text-sm'}>
             {t('Expected')} {formatDate(order.expectedAt)}
-            {late ? ` — ${formatNumber(late)} days late` : ''}
+            {late ? t(' — {p0} days late', { p0: formatNumber(late) }) : ''}
           </span>
         ) : null}
         {editable ? (
@@ -154,7 +156,7 @@ export default function OrderPage() {
             className="ml-auto"
             onClick={() => {
               openedWith.current = snapshot(order)
-              toast.success(`${order.number} saved as unfinished`)
+              toast.success(t('{number} saved as unfinished', { number: order.number }))
             }}
           >
             <Save />
@@ -484,7 +486,9 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
           })
         }
         writeLines([...byVariation.values()])
-        toast.success(`${suggestions.length} products added from the suggestion`)
+        toast.success(
+          t('{length} products added from the suggestion', { length: suggestions.length }),
+        )
         setSuggesting(false)
       }}
     />
@@ -800,7 +804,7 @@ function ReviewStep({ order, editable }: { order: PurchaseOrder; editable: boole
         onConfirm={() =>
           actions.setStatus('cancelled', {
             onSuccess: () => {
-              toast.success(`${order.number} cancelled`)
+              toast.success(t('{number} cancelled', { number: order.number }))
               setConfirmCancel(false)
               navigate(paths.procurement.orders)
             },
@@ -872,7 +876,7 @@ function LineTable({ order, canSeeCost }: { order: PurchaseOrder; canSeeCost: bo
                 {canSeeCost ? (
                   <td className="text-fg-muted px-4 py-2 text-right tabular-nums">
                     {line.costCurrency === t('USD')
-                      ? `${line.unitCost.toFixed(2)} USD`
+                      ? t('{p0} USD', { p0: line.unitCost.toFixed(2) })
                       : formatMoney(line.unitCost)}
                   </td>
                 ) : null}
@@ -995,7 +999,7 @@ function DeliveriesStep({ order }: { order: PurchaseOrder }) {
               {
                 onSuccess: (receiptId) => {
                   setReceiving(false)
-                  toast.success(`${formatNumber(arriving)} units booked in`)
+                  toast.success(t('{p0} units booked in', { p0: formatNumber(arriving) }))
                   navigate(paths.products.goodsReceiptDetail(receiptId))
                 },
                 onError: (message) => toast.error(message),
@@ -1055,7 +1059,7 @@ function DeliveriesStep({ order }: { order: PurchaseOrder }) {
                           nullable={false}
                           min={0}
                           disabled={outstanding === 0}
-                          aria-label={`Arrived ${line.name}`}
+                          aria-label={t('Arrived {name}', { name: line.name })}
                           value={quantities[line.id] ?? 0}
                           onChange={(next) =>
                             setQuantities((current) => ({
@@ -1078,17 +1082,20 @@ function DeliveriesStep({ order }: { order: PurchaseOrder }) {
           <p className="text-fg-muted text-sm">
             {arriving === 0
               ? t('Nothing to book in.')
-              : `${formatNumber(arriving)} units, worth ${formatMoney(
-                  Math.round(
-                    order.lines.reduce(
-                      (sum, line) =>
-                        sum +
-                        (quantities[line.id] ?? 0) *
-                          toUzs(line.unitCost, line.costCurrency, USD_RATE),
-                      0,
+              : t('{p0} units, worth {p1} at the agreed prices.', {
+                  p0: formatNumber(arriving),
+                  p1: formatMoney(
+                    Math.round(
+                      order.lines.reduce(
+                        (sum, line) =>
+                          sum +
+                          (quantities[line.id] ?? 0) *
+                            toUzs(line.unitCost, line.costCurrency, USD_RATE),
+                        0,
+                      ),
                     ),
                   ),
-                )} at the agreed prices.`}
+                })}
           </p>
         </div>
       </Modal>

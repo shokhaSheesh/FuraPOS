@@ -126,7 +126,7 @@ function OpenProduct<R extends CatalogueRow>({
             <p className="text-fg text-sm font-medium">{v.name || v.productName}</p>
             <p className="text-fg-subtle text-2xs font-mono">
               {v.sku}
-              {v.oem ? ` · OEM ${v.oem}` : ''}
+              {v.oem ? t(' · OEM {oem}', { oem: v.oem }) : ''}
             </p>
           </div>
         </div>
@@ -229,7 +229,7 @@ export function QuantityStepper({
         variant="secondary"
         size="icon"
         className="size-6 [&_svg]:size-3.5"
-        aria-label={`One fewer ${label}`}
+        aria-label={t('One fewer {label}', { label: label })}
         disabled={value <= 0}
         onClick={() => onChange(value - 1)}
       >
@@ -239,7 +239,7 @@ export function QuantityStepper({
         className="h-6 w-14 px-1.5 text-xs"
         nullable={false}
         min={0}
-        aria-label={`Quantity of ${label}`}
+        aria-label={t('Quantity of {label}', { label: label })}
         value={value}
         onChange={(next) => onChange(next ?? 0)}
       />
@@ -248,7 +248,7 @@ export function QuantityStepper({
         variant="secondary"
         size="icon"
         className="size-6 [&_svg]:size-3.5"
-        aria-label={`One more ${label}`}
+        aria-label={t('One more {label}', { label: label })}
         disabled={max !== undefined && value >= max}
         onClick={() => onChange(value + 1)}
       >

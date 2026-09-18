@@ -78,8 +78,12 @@ export function PrintSheetModal({
     <Modal
       open={open}
       onOpenChange={onOpenChange}
-      title={`Print ${template.name}`}
-      description={`${template.widthMm} × ${template.heightMm} mm — ${columns} across a sheet of A4.`}
+      title={t('Print {name}', { name: template.name })}
+      description={t('{widthMm} × {heightMm} mm — {columns} across a sheet of A4.', {
+        widthMm: template.widthMm,
+        heightMm: template.heightMm,
+        columns: columns,
+      })}
       size="lg"
       footer={
         <div className="flex w-full items-center justify-between gap-3">

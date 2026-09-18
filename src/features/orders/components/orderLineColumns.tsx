@@ -186,7 +186,7 @@ export function buildOrderLineColumns({
               className="w-24"
               nullable={false}
               min={0}
-              aria-label={`Ordering ${row.original.name}`}
+              aria-label={t('Ordering {name}', { name: row.original.name })}
               value={row.original.quantity}
               onChange={(next) => onQuantityChange(row.original, next ?? 0)}
             />
@@ -213,13 +213,13 @@ export function buildOrderLineColumns({
                     nullable={false}
                     min={0}
                     step="any"
-                    aria-label={`Agreed price of ${row.original.name}`}
+                    aria-label={t('Agreed price of {name}', { name: row.original.name })}
                     value={row.original.unitCost}
                     onChange={(next) => onCostChange(row.original, next ?? 0)}
                   />
                   <Select
                     className="w-20"
-                    aria-label={`Agreed currency of ${row.original.name}`}
+                    aria-label={t('Agreed currency of {name}', { name: row.original.name })}
                     value={row.original.costCurrency}
                     onChange={(next) => onCurrencyChange(row.original, next as Currency)}
                     options={CURRENCIES}
@@ -228,7 +228,7 @@ export function buildOrderLineColumns({
               ) : (
                 <span className="tabular-nums">
                   {row.original.costCurrency === t('USD')
-                    ? `${row.original.unitCost.toFixed(2)} USD`
+                    ? t('{p0} USD', { p0: row.original.unitCost.toFixed(2) })
                     : formatMoney(row.original.unitCost)}
                 </span>
               ),
@@ -267,7 +267,7 @@ export function buildOrderLineColumns({
                 <Button
                   variant="ghost"
                   size="icon"
-                  aria-label={`Remove ${row.original.name} from this order`}
+                  aria-label={t('Remove {name} from this order', { name: row.original.name })}
                   title={t('Remove from this order')}
                   className="hover:text-danger"
                   onClick={() => onRemove(row.original)}

@@ -94,9 +94,10 @@ export default function RepricingDetailPage() {
 
       <PageHeader
         title={repricing.number}
-        description={`${formatNumber(repricing.lines.length)} products · ${scopeSentence(
-          repricing,
-        )}`}
+        description={t('{p0} products · {p1}', {
+          p0: formatNumber(repricing.lines.length),
+          p1: scopeSentence(repricing),
+        })}
         action={
           <div className="flex items-center gap-2">
             {canRevert(repricing.status) && can('products.repricing.delete') ? (
@@ -281,7 +282,7 @@ export default function RepricingDetailPage() {
                           <NumberField
                             className="w-36"
                             nullable={false}
-                            aria-label={`New price for ${line.name}`}
+                            aria-label={t('New price for {name}', { name: line.name })}
                             aria-invalid={below ? true : undefined}
                             value={line.newPrice}
                             onChange={(next) => actions.setPrice(line.id, next ?? 0)}
@@ -331,8 +332,14 @@ export default function RepricingDetailPage() {
             <Check className="text-fg-muted mt-0.5 size-4 shrink-0" />
             <p className="text-fg-muted text-sm">
               {repricing.status === 'applied'
-                ? `Applied on ${formatDateTime(repricing.appliedAt!)}. Putting the prices back restores exactly what each one was — not the rule in reverse, which rounding would drift away from.`
-                : `Reverted on ${formatDateTime(repricing.revertedAt!)}. Every price went back to what it was before ${repricing.number}.`}
+                ? t(
+                    'Applied on {p0}. Putting the prices back restores exactly what each one was — not the rule in reverse, which rounding would drift away from.',
+                    { p0: formatDateTime(repricing.appliedAt!) },
+                  )
+                : t('Reverted on {p0}. Every price went back to what it was before {number}.', {
+                    p0: formatDateTime(repricing.revertedAt!),
+                    number: repricing.number,
+                  })}
             </p>
           </CardBody>
         </Card>
@@ -365,7 +372,7 @@ export default function RepricingDetailPage() {
           actions.apply({
             onSuccess: () => {
               setConfirmApply(false)
-              toast.success(`${repricing.number} applied`)
+              toast.success(t('{number} applied', { number: repricing.number }))
             },
             onError: (message) => toast.error(message),
           })
@@ -383,7 +390,7 @@ export default function RepricingDetailPage() {
         onConfirm={() =>
           actions.revert({
             onSuccess: () => {
-              toast.success(`${repricing.number} reverted`)
+              toast.success(t('{number} reverted', { number: repricing.number }))
               setConfirmRevert(false)
               navigate(paths.products.repricing)
             },

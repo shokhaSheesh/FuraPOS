@@ -90,7 +90,7 @@ export function TruckBrandsPanel({ onEditMake }: { onEditMake: (make: VehicleMak
                       hidden: !can('settings.brands.delete'),
                       onSelect: () => {
                         const result = deleteMake(make.id)
-                        if (result.ok) toast.success(`${make.name} deleted`)
+                        if (result.ok) toast.success(t('{name} deleted', { name: make.name }))
                         else toast.error(result.error)
                       },
                     },
@@ -166,8 +166,8 @@ function ModelChips({
             ref={inputRef}
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
-            placeholder={`Add a ${make.name} model, then Enter`}
-            aria-label={`Add a ${make.name} model`}
+            placeholder={t('Add a {name} model, then Enter', { name: make.name })}
+            aria-label={t('Add a {name} model', { name: make.name })}
             className="h-8 flex-1 text-sm"
           />
           <Button type="submit" variant="secondary" size="sm" disabled={!draft.trim()}>
@@ -229,7 +229,7 @@ function Chip({
               setEditing(false)
             }
           }}
-          aria-label={`Rename ${make.name} ${model.name}`}
+          aria-label={t('Rename {name} {name2}', { name: make.name, name2: model.name })}
           className="h-7 w-32 text-sm"
         />
       </li>
@@ -258,10 +258,10 @@ function Chip({
       {canEdit ? (
         <button
           type="button"
-          aria-label={`Remove ${make.name} ${model.name}`}
+          aria-label={t('Remove {name} {name2}', { name: make.name, name2: model.name })}
           onClick={() => {
             const result = deleteModel(make.id, model.id)
-            if (result.ok) toast.success(`${model.name} removed`)
+            if (result.ok) toast.success(t('{name} removed', { name: model.name }))
             else toast.error(result.error)
           }}
           className="text-fg-subtle hover:text-danger rounded-r-full py-1 pr-2 pl-0.5"

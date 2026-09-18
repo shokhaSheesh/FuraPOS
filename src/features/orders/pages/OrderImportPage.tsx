@@ -19,7 +19,7 @@ export default function OrderImportPage() {
 
   return (
     <SpreadsheetImport
-      title={`Upload a spreadsheet — ${order.number}`}
+      title={t('Upload a spreadsheet — {number}', { number: order.number })}
       backTo={back}
       backLabel="Back to the order"
       quantityLabel="Ordering"
@@ -46,7 +46,9 @@ export default function OrderImportPage() {
           { lines: [...byVariation.values()] },
           {
             onSuccess: () => {
-              toast.success(`${imported.length} products added from the spreadsheet`)
+              toast.success(
+                t('{length} products added from the spreadsheet', { length: imported.length }),
+              )
               navigate(back)
             },
             onError: (message) => toast.error(message),

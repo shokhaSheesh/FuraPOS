@@ -65,13 +65,13 @@ export function TransferCatalogue({
     () => [
       ...sides.map((s): TableColumn<Group> => ({
         id: s.id === 'atSource' ? 'atFrom' : 'atTo',
-        header: `At ${s.name}`,
+        header: t('At {name}', { name: s.name }),
         meta: { align: 'right' },
         cell: ({ row }) => <StockPill side={s.side} units={s.units(row.original)} />,
       })),
       {
         id: 'sold',
-        header: `Sold at ${names.demand}, 3 / 6 mo`,
+        header: t('Sold at {demand}, 3 / 6 mo', { demand: names.demand }),
         meta: { align: 'right' },
         cell: ({ row }) => (
           <span className="text-fg-muted tabular-nums">
@@ -90,9 +90,9 @@ export function TransferCatalogue({
       storageKey="transfer"
       ownFieldsTitle={t('This transfer')}
       ownFields={[
-        { id: 'atDestination', label: `At ${names.to}` },
-        { id: 'atSource', label: `At ${names.from}` },
-        { id: 'sales', label: `Sold at ${names.demand}` },
+        { id: 'atDestination', label: t('At {to}', { to: names.to }) },
+        { id: 'atSource', label: t('At {from}', { from: names.from }) },
+        { id: 'sales', label: t('Sold at {demand}', { demand: names.demand }) },
       ]}
       defaultFields={['variations', 'atDestination', 'atSource', 'sales']}
       canSeeCost={canSeeCost}
@@ -103,14 +103,22 @@ export function TransferCatalogue({
         return shown.length ? (
           <div className="grid grid-cols-2 gap-1.5">
             {shown.map((s) => (
-              <StockBox key={s.id} side={s.side} label={`At ${s.name}`} units={s.units(group)} />
+              <StockBox
+                key={s.id}
+                side={s.side}
+                label={t('At {name}', { name: s.name })}
+                units={s.units(group)}
+              />
             ))}
           </div>
         ) : null
       }}
       renderSales={(group, has) =>
         has('sales') ? (
-          <SalesFigures demand={group.demand} title={`Sold at ${names.demand}`} />
+          <SalesFigures
+            demand={group.demand}
+            title={t('Sold at {demand}', { demand: names.demand })}
+          />
         ) : null
       }
       renderDialog={(group, close) => (
@@ -134,11 +142,16 @@ export function TransferCatalogue({
             <>
               {sides.map((s) => (
                 <div key={s.id} className="min-w-32 flex-1">
-                  <StockBox large side={s.side} label={`At ${s.name}`} units={s.units(open)} />
+                  <StockBox
+                    large
+                    side={s.side}
+                    label={t('At {name}', { name: s.name })}
+                    units={s.units(open)}
+                  />
                 </div>
               ))}
               <DialogStat
-                label={`Sold at ${names.demand}, 3 / 6 months`}
+                label={t('Sold at {demand}, 3 / 6 months', { demand: names.demand })}
                 value={`${formatNumber(open.demand[3])} / ${formatNumber(open.demand[6])}`}
               />
               <DialogStat label={t('Variations')} value={formatNumber(open.rows.length)} />
@@ -147,7 +160,7 @@ export function TransferCatalogue({
           columns={({ set }) => [
             {
               id: 'atFrom',
-              header: `At ${names.from}`,
+              header: t('At {from}', { from: names.from }),
               meta: { align: 'right' },
               cell: ({ row }) => (
                 <StockPill
@@ -158,7 +171,7 @@ export function TransferCatalogue({
             },
             {
               id: 'atTo',
-              header: `At ${names.to}`,
+              header: t('At {to}', { to: names.to }),
               meta: { align: 'right' },
               cell: ({ row }) => (
                 <StockPill
@@ -169,7 +182,7 @@ export function TransferCatalogue({
             },
             {
               id: 'sold',
-              header: `Sold at ${names.demand}, 3 / 6 mo`,
+              header: t('Sold at {demand}, 3 / 6 mo', { demand: names.demand }),
               meta: { align: 'right' },
               cell: ({ row }) => (
                 <span className="text-fg-muted tabular-nums">

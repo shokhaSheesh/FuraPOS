@@ -4,6 +4,7 @@ import { SpreadsheetImport } from '@/shared/components/SpreadsheetImport'
 import { toast } from '@/shared/ui/toast'
 import { paths } from '@/shared/config/paths'
 import { useOrder, useUpdateOrder } from '../api/orders'
+import { t } from '@/shared/i18n'
 
 /** A supplier's spreadsheet, onto an order that has not been sent. */
 export default function OrderImportPage() {
@@ -12,7 +13,7 @@ export default function OrderImportPage() {
   const { data: order } = useOrder(orderId)
   const update = useUpdateOrder(orderId)
 
-  if (!order) return <EmptyState title="That order no longer exists" />
+  if (!order) return <EmptyState title={t('That order no longer exists')} />
 
   const back = paths.procurement.orderDetail(order.id)
 

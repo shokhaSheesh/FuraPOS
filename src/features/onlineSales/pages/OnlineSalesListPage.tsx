@@ -26,6 +26,7 @@ import {
   unitsOf,
   type OnlineSale,
 } from '../model/onlineSale'
+import { t } from '@/shared/i18n'
 
 /**
  * Online sales — orders placed in the e-commerce app.
@@ -47,7 +48,7 @@ export default function OnlineSalesListPage() {
     () => [
       {
         accessorKey: 'number',
-        header: 'Order',
+        header: t('Order'),
         enableHiding: false,
         cell: ({ row }) => (
           <div>
@@ -58,7 +59,7 @@ export default function OnlineSalesListPage() {
       },
       {
         accessorKey: 'customerName',
-        header: 'Customer',
+        header: t('Customer'),
         enableHiding: false,
         cell: ({ row }) => (
           <div className="min-w-0">
@@ -69,7 +70,7 @@ export default function OnlineSalesListPage() {
       },
       {
         id: 'items',
-        header: 'Items',
+        header: t('Items'),
         meta: { align: 'right' },
         cell: ({ row }) => (
           <span className="tabular-nums">{formatNumber(unitsOf(row.original))} pcs</span>
@@ -77,7 +78,7 @@ export default function OnlineSalesListPage() {
       },
       {
         id: 'total',
-        header: 'Total',
+        header: t('Total'),
         meta: { align: 'right' },
         enableHiding: false,
         cell: ({ row }) => (
@@ -88,7 +89,7 @@ export default function OnlineSalesListPage() {
       },
       {
         id: 'payment',
-        header: 'Payment',
+        header: t('Payment'),
         enableHiding: false,
         cell: ({ row }) => {
           const meta = PAYMENT_STATUS_META[row.original.paymentStatus]
@@ -104,14 +105,14 @@ export default function OnlineSalesListPage() {
       },
       {
         id: 'delivery',
-        header: 'Delivery',
+        header: t('Delivery'),
         cell: ({ row }) => (
           <div className="min-w-0">
             <p className="text-fg truncate">
               {DELIVERY_LABEL[row.original.deliveryMethod]}
               {row.original.express ? (
                 <Badge tone="warning" className="ml-1.5">
-                  Express
+                  {t('Express')}
                 </Badge>
               ) : null}
             </p>
@@ -125,12 +126,12 @@ export default function OnlineSalesListPage() {
       },
       {
         accessorKey: 'locationName',
-        header: 'Picked from',
+        header: t('Picked from'),
         cell: ({ row }) => <span className="text-fg-muted">{row.original.locationName}</span>,
       },
       {
         accessorKey: 'status',
-        header: 'Status',
+        header: t('Status'),
         enableHiding: false,
         cell: ({ row }) => {
           const meta = onlineStatusMeta(row.original.status)
@@ -147,14 +148,16 @@ export default function OnlineSalesListPage() {
   return (
     <>
       <PageHeader
-        title="Online sales"
-        description="Orders placed in the e-commerce app. View only — they are managed in the app — but every one takes stock from the shop it is picked from."
+        title={t('Online sales')}
+        description={t(
+          'Orders placed in the e-commerce app. View only — they are managed in the app — but every one takes stock from the shop it is picked from.',
+        )}
         below={
           <div className="flex flex-wrap items-center gap-2">
             <StatusChips
-              ariaLabel="Filter by status"
+              ariaLabel={t('Filter by status')}
               options={[
-                { value: null, label: 'All' },
+                { value: null, label: t('All') },
                 ...ONLINE_SALE_STATUSES.map((s) => ({ value: s.value, label: s.label })),
               ]}
               value={(query.status as string | null) ?? null}
@@ -162,9 +165,9 @@ export default function OnlineSalesListPage() {
               counts={counts}
             />
             <FilterSelect
-              aria-label="Filter by payment"
-              label="Payment"
-              allLabel="Any"
+              aria-label={t('Filter by payment')}
+              label={t('Payment')}
+              allLabel={t('Any')}
               value={(query.payment as string | null) ?? null}
               options={Object.entries(PAYMENT_STATUS_META).map(([value, meta]) => ({
                 value,
@@ -173,9 +176,9 @@ export default function OnlineSalesListPage() {
               onChange={(next) => setQuery({ payment: next, page: null })}
             />
             <FilterSelect
-              aria-label="Filter by location"
-              label="From"
-              allLabel="Every location"
+              aria-label={t('Filter by location')}
+              label={t('From')}
+              allLabel={t('Every location')}
               value={(query.location as string | null) ?? null}
               options={locations.map((l) => ({ value: l.id, label: l.name }))}
               onChange={(next) => setQuery({ location: next, page: null })}
@@ -217,12 +220,14 @@ export default function OnlineSalesListPage() {
         onRowClick={(row) => navigate(paths.sales.onlineDetail(row.id))}
         emptyState={
           filtered ? (
-            <EmptyState title="No online orders match these filters" />
+            <EmptyState title={t('No online orders match these filters')} />
           ) : (
             <EmptyState
               icon={Globe}
-              title="No online orders yet"
-              description="Orders placed in the e-commerce app appear here as soon as they are placed."
+              title={t('No online orders yet')}
+              description={t(
+                'Orders placed in the e-commerce app appear here as soon as they are placed.',
+              )}
             />
           )
         }

@@ -6,6 +6,7 @@ import { Button } from '@/shared/ui/Button'
 import { paths } from '@/shared/config/paths'
 import { formatDateTime, formatNumber } from '@/shared/lib/format'
 import { logKindLabel, type StockLogEntry } from '../model/log'
+import { t } from '@/shared/i18n'
 
 /** Where each kind of document lives, so a row can be clicked through. */
 export const documentPath = (entry: StockLogEntry) => {
@@ -53,10 +54,10 @@ export function buildLogColumns({
         </div>
       ),
     },
-    { accessorKey: 'locationName', header: 'Location' },
+    { accessorKey: 'locationName', header: t('Location') },
     {
       id: 'delta',
-      header: 'Change',
+      header: t('Change'),
       meta: { align: 'right' },
       enableHiding: false,
       cell: ({ row }) => {
@@ -83,7 +84,7 @@ export function buildLogColumns({
     },
     {
       id: 'document',
-      header: 'Because of',
+      header: t('Because of'),
       enableHiding: false,
       cell: ({ row }) => (
         <div className="min-w-0">
@@ -100,13 +101,13 @@ export function buildLogColumns({
     },
     {
       accessorKey: 'reason',
-      header: 'Reason',
+      header: t('Reason'),
       cell: ({ row }) => row.original.reason ?? <span className="text-fg-subtle">—</span>,
     },
-    { accessorKey: 'by', header: 'Who' },
+    { accessorKey: 'by', header: t('Who') },
     {
       accessorKey: 'at',
-      header: 'When',
+      header: t('When'),
       enableHiding: false,
       cell: ({ row }) => formatDateTime(row.original.at),
     },

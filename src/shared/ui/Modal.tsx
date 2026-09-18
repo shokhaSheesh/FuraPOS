@@ -3,6 +3,7 @@ import { Dialog } from 'radix-ui'
 import { X } from 'lucide-react'
 import { cn } from '@/shared/lib/cn'
 import { Button, type ButtonProps } from './Button'
+import { t } from '@/shared/i18n'
 
 const sizes = {
   sm: 'max-w-100', // confirmations
@@ -80,7 +81,7 @@ export function Modal({
               ) : null}
             </div>
             <Dialog.Close asChild>
-              <Button variant="ghost" size="icon" aria-label="Close" disabled={submitting}>
+              <Button variant="ghost" size="icon" aria-label={t('Close')} disabled={submitting}>
                 <X />
               </Button>
             </Dialog.Close>

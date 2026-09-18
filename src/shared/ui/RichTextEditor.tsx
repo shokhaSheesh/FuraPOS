@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { Select } from './Select'
 import { cn } from '@/shared/lib/cn'
+import { t } from '@/shared/i18n'
 
 /**
  * A small formatted-text field — bold, italic, headings, lists, links.
@@ -165,51 +166,51 @@ export function RichTextEditor({
       )}
     >
       <div className="border-border bg-surface-muted flex flex-wrap items-center gap-0.5 border-b px-1.5 py-1">
-        <ToolButton label="Undo" onClick={() => run('undo')}>
+        <ToolButton label={t('Undo')} onClick={() => run('undo')}>
           <Undo2 />
         </ToolButton>
-        <ToolButton label="Redo" onClick={() => run('redo')}>
+        <ToolButton label={t('Redo')} onClick={() => run('redo')}>
           <Redo2 />
         </ToolButton>
         <Divider />
-        <ToolButton label="Bold" onClick={() => run('bold')}>
+        <ToolButton label={t('Bold')} onClick={() => run('bold')}>
           <Bold />
         </ToolButton>
-        <ToolButton label="Italic" onClick={() => run('italic')}>
+        <ToolButton label={t('Italic')} onClick={() => run('italic')}>
           <Italic />
         </ToolButton>
-        <ToolButton label="Underline" onClick={() => run('underline')}>
+        <ToolButton label={t('Underline')} onClick={() => run('underline')}>
           <Underline />
         </ToolButton>
-        <ToolButton label="Strikethrough" onClick={() => run('strikeThrough')}>
+        <ToolButton label={t('Strikethrough')} onClick={() => run('strikeThrough')}>
           <Strikethrough />
         </ToolButton>
         <Divider />
         <Select
-          aria-label="Text style"
+          aria-label={t('Text style')}
           className="h-7 w-32 text-xs"
           value={block}
           onChange={setBlockFormat}
           options={[...BLOCKS]}
         />
         <Divider />
-        <ToolButton label="Bulleted list" onClick={() => run('insertUnorderedList')}>
+        <ToolButton label={t('Bulleted list')} onClick={() => run('insertUnorderedList')}>
           <List />
         </ToolButton>
-        <ToolButton label="Numbered list" onClick={() => run('insertOrderedList')}>
+        <ToolButton label={t('Numbered list')} onClick={() => run('insertOrderedList')}>
           <ListOrdered />
         </ToolButton>
-        <ToolButton label="Link" onClick={addLink}>
+        <ToolButton label={t('Link')} onClick={addLink}>
           <Link2 />
         </ToolButton>
         <Divider />
-        <ToolButton label="Align left" onClick={() => run('justifyLeft')}>
+        <ToolButton label={t('Align left')} onClick={() => run('justifyLeft')}>
           <AlignLeft />
         </ToolButton>
-        <ToolButton label="Align centre" onClick={() => run('justifyCenter')}>
+        <ToolButton label={t('Align centre')} onClick={() => run('justifyCenter')}>
           <AlignCenter />
         </ToolButton>
-        <ToolButton label="Align right" onClick={() => run('justifyRight')}>
+        <ToolButton label={t('Align right')} onClick={() => run('justifyRight')}>
           <AlignRight />
         </ToolButton>
       </div>

@@ -11,6 +11,7 @@ import { SegmentedControl } from '@/shared/ui/SegmentedControl'
 import { boughtFromLabel, boughtFromPlaceholder, hasSupplierRecord } from '@/shared/types'
 import { useDataStore } from '@/data/store'
 import { ORDER_KINDS } from '../model/order'
+import { t } from '@/shared/i18n'
 
 /**
  * Everything decided before an order exists: who it is with, where it should
@@ -76,9 +77,9 @@ export function NewOrderDialog({
     <Modal
       open={open}
       onOpenChange={onOpenChange}
-      title="New order"
+      title={t('New order')}
       size="lg"
-      primary={{ label: 'Create', formId: 'new-order-form' }}
+      primary={{ label: t('Create'), formId: 'new-order-form' }}
       secondaryLabel="Cancel"
     >
       <form
@@ -86,7 +87,7 @@ export function NewOrderDialog({
         className="space-y-4"
         onSubmit={form.handleSubmit((values) => onCreate(values))}
       >
-        <Field label="Where this order goes" required>
+        <Field label={t('Where this order goes')} required>
           {() => (
             <Controller
               control={form.control}
@@ -94,7 +95,7 @@ export function NewOrderDialog({
               render={({ field }) => (
                 <div className="space-y-1">
                   <SegmentedControl
-                    aria-label="Where this order goes"
+                    aria-label={t('Where this order goes')}
                     value={field.value}
                     onChange={field.onChange}
                     options={ORDER_KINDS.map(({ value, label }) => ({ value, label }))}
@@ -111,10 +112,10 @@ export function NewOrderDialog({
         <div className="grid gap-4 sm:grid-cols-2">
           {hasSupplierRecord(kind) ? (
             <Field
-              label="Supplier"
+              label={t('Supplier')}
               required
               error={form.formState.errors.supplierId?.message}
-              hint="The order is built from their catalogue"
+              hint={t('The order is built from their catalogue')}
             >
               {(p) => (
                 <Controller
@@ -126,7 +127,7 @@ export function NewOrderDialog({
                       className="w-full"
                       value={field.value ?? undefined}
                       onChange={field.onChange}
-                      placeholder="Who this goes to"
+                      placeholder={t('Who this goes to')}
                       options={suppliers.map((s) => ({ value: s.id, label: s.name }))}
                     />
                   )}
@@ -138,7 +139,7 @@ export function NewOrderDialog({
               label={boughtFromLabel(kind)}
               required
               error={form.formState.errors.boughtFrom?.message}
-              hint="Picked from our own catalogue, since they have none here"
+              hint={t('Picked from our own catalogue, since they have none here')}
             >
               {(p) => (
                 <Input
@@ -150,7 +151,7 @@ export function NewOrderDialog({
             </Field>
           )}
 
-          <Field label="Location" required error={form.formState.errors.locationId?.message}>
+          <Field label={t('Location')} required error={form.formState.errors.locationId?.message}>
             {(p) => (
               <Controller
                 control={form.control}
@@ -161,7 +162,7 @@ export function NewOrderDialog({
                     className="w-full"
                     value={field.value || undefined}
                     onChange={field.onChange}
-                    placeholder="Where it should land"
+                    placeholder={t('Where it should land')}
                     options={locations.map((l) => ({ value: l.id, label: l.name }))}
                   />
                 )}
@@ -170,9 +171,11 @@ export function NewOrderDialog({
           </Field>
 
           <Field
-            label="Expected"
+            label={t('Expected')}
             className="sm:col-span-2"
-            hint="When they said it would arrive. Leave it empty if nothing was promised — an order cannot be late against a date nobody gave."
+            hint={t(
+              'When they said it would arrive. Leave it empty if nothing was promised — an order cannot be late against a date nobody gave.',
+            )}
           >
             {() => (
               <Controller
@@ -192,9 +195,13 @@ export function NewOrderDialog({
           </Field>
         </div>
 
-        <Field label="Note">
+        <Field label={t('Note')}>
           {(p) => (
-            <Input {...p} placeholder="Container 4, Q3 restock" {...form.register('comment')} />
+            <Input
+              {...p}
+              placeholder={t('Container 4, Q3 restock')}
+              {...form.register('comment')}
+            />
           )}
         </Field>
       </form>

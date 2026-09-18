@@ -5,6 +5,7 @@ import { Skeleton } from '@/shared/ui/Skeleton'
 import { paths } from '@/shared/config/paths'
 import { formatMoney, formatNumber } from '@/shared/lib/format'
 import type { DashboardSummary } from '../api/summary'
+import { t } from '@/shared/i18n'
 
 /** OX has this on the seller dashboard; it belongs on the main one. */
 export function TopProductsCard({
@@ -17,9 +18,9 @@ export function TopProductsCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Top products</CardTitle>
+        <CardTitle>{t('Top products')}</CardTitle>
         <Button variant="link" size="sm" className="h-auto px-0" asChild>
-          <Link to={paths.analytics.reports}>Full report</Link>
+          <Link to={paths.analytics.reports}>{t('Full report')}</Link>
         </Button>
       </CardHeader>
       <CardBody>
@@ -34,13 +35,13 @@ export function TopProductsCard({
             <thead>
               <tr className="text-fg-muted text-2xs tracking-wide uppercase">
                 <th scope="col" className="pb-2 text-left font-semibold">
-                  Product
+                  {t('Product')}
                 </th>
                 <th scope="col" className="pb-2 text-right font-semibold">
-                  Qty
+                  {t('Qty')}
                 </th>
                 <th scope="col" className="pb-2 text-right font-semibold">
-                  Revenue
+                  {t('Revenue')}
                 </th>
               </tr>
             </thead>

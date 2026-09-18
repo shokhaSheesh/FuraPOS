@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/shared/ui/Button'
 import { formatNumber } from '@/shared/lib/format'
 import { PAGE_SIZE_OPTIONS } from '@/shared/types'
+import { t } from '@/shared/i18n'
 
 export interface PaginationState {
   page: number
@@ -29,7 +30,7 @@ export function TablePagination({ total, pagination, onChange }: TablePagination
 
       <div className="flex items-center gap-3">
         <label className="text-fg-muted flex items-center gap-2 text-sm">
-          Rows
+          {t('Rows')}
           <select
             value={pageSize}
             onChange={(event) => onChange({ page: 1, pageSize: Number(event.target.value) })}
@@ -47,7 +48,7 @@ export function TablePagination({ total, pagination, onChange }: TablePagination
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Previous page"
+            aria-label={t('Previous page')}
             disabled={page <= 1}
             onClick={() => onChange({ ...pagination, page: page - 1 })}
           >
@@ -59,7 +60,7 @@ export function TablePagination({ total, pagination, onChange }: TablePagination
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Next page"
+            aria-label={t('Next page')}
             disabled={page >= pageCount}
             onClick={() => onChange({ ...pagination, page: page + 1 })}
           >

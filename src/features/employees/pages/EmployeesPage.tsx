@@ -19,6 +19,7 @@ import { useDataStore } from '@/data/store'
 import { useEmployeeStatusCounts, useEmployees, type EmployeeRow } from '../api/employees'
 import { Avatar } from '../components/Avatar'
 import { daysSinceActive, employeeStatusLabel, employeeStatusTone } from '../model/employee'
+import { t } from '@/shared/i18n'
 
 /**
  * Who works here.
@@ -51,7 +52,7 @@ export default function EmployeesPage() {
     () => [
       {
         accessorKey: 'fullName',
-        header: 'Name',
+        header: t('Name'),
         enableHiding: false,
         cell: ({ row }) => (
           <div className="flex min-w-0 items-center gap-2.5">
@@ -59,7 +60,7 @@ export default function EmployeesPage() {
             <div className="min-w-0">
               <p className="text-fg truncate font-medium">{row.original.fullName}</p>
               <p className="text-fg-subtle text-2xs truncate">
-                {row.original.locationName ?? 'All locations'}
+                {row.original.locationName ?? t('All locations')}
               </p>
             </div>
           </div>
@@ -67,29 +68,29 @@ export default function EmployeesPage() {
       },
       {
         accessorKey: 'roleName',
-        header: 'Role',
+        header: t('Role'),
         enableHiding: false,
         cell: ({ row }) => <Badge tone="info">{row.original.roleName}</Badge>,
       },
       {
         accessorKey: 'phone',
-        header: 'Phone',
+        header: t('Phone'),
         cell: ({ row }) => (
           <span className="tabular-nums">
             {row.original.phone ?? <span className="text-fg-subtle">—</span>}
           </span>
         ),
       },
-      { accessorKey: 'email', header: 'Email' },
+      { accessorKey: 'email', header: t('Email') },
       {
         id: 'sold',
-        header: 'Sold this month',
+        header: t('Sold this month'),
         meta: { align: 'right' },
         enableHiding: false,
         cell: ({ row }) => {
           const { stats } = row.original
           if (stats.salesThisMonth === 0) {
-            return <span className="text-fg-subtle">Nothing yet</span>
+            return <span className="text-fg-subtle">{t('Nothing yet')}</span>
           }
           return (
             <div>
@@ -105,7 +106,7 @@ export default function EmployeesPage() {
       },
       {
         id: 'averageCheck',
-        header: 'Average check',
+        header: t('Average check'),
         meta: { align: 'right' },
         cell: ({ row }) =>
           row.original.stats.sales === 0 ? (
@@ -118,11 +119,11 @@ export default function EmployeesPage() {
       },
       {
         id: 'lastActive',
-        header: 'Last active',
+        header: t('Last active'),
         enableHiding: false,
         cell: ({ row }) => {
           const days = daysSinceActive(row.original)
-          if (days === null) return <span className="text-fg-subtle">Never signed in</span>
+          if (days === null) return <span className="text-fg-subtle">{t('Never signed in')}</span>
           const label = days === 0 ? 'Today' : days === 1 ? 'Yesterday' : `${days} days ago`
           return (
             <span className={row.original.dormant ? 'text-warning' : 'text-fg-muted'}>{label}</span>
@@ -131,7 +132,7 @@ export default function EmployeesPage() {
       },
       {
         accessorKey: 'status',
-        header: 'Status',
+        header: t('Status'),
         enableHiding: false,
         cell: ({ row }) => (
           <Badge tone={employeeStatusTone(row.original.status)}>
@@ -141,14 +142,14 @@ export default function EmployeesPage() {
       },
       {
         accessorKey: 'hiredAt',
-        header: 'Hired',
+        header: t('Hired'),
         cell: ({ row }) => formatDate(row.original.hiredAt),
       },
       ...(canSeePay
         ? [
             {
               id: 'salary',
-              header: 'Base pay',
+              header: t('Base pay'),
               meta: { align: 'right' as const },
               cell: ({ row }: { row: { original: EmployeeRow } }) =>
                 row.original.salary === null ? (
@@ -156,7 +157,7 @@ export default function EmployeesPage() {
                 ) : (
                   <span className="tabular-nums">
                     {formatMoney(row.original.salary)}
-                    <span className="text-fg-subtle text-2xs"> /mo</span>
+                    <span className="text-fg-subtle text-2xs"> {t('/mo')}</span>
                   </span>
                 ),
             },
@@ -169,14 +170,16 @@ export default function EmployeesPage() {
   return (
     <>
       <PageHeader
-        title="Employees"
-        description="Everyone who works here and what they can sign in to. An account is also a sales record, so this is where you see who is carrying the shop and whose login nobody has closed."
+        title={t('Employees')}
+        description={t(
+          'Everyone who works here and what they can sign in to. An account is also a sales record, so this is where you see who is carrying the shop and whose login nobody has closed.',
+        )}
         action={
           can('users.employees.create') ? (
             <Button variant="primary" asChild>
               <Link to={paths.users.newEmployee}>
                 <Plus />
-                Add employee
+                {t('Add employee')}
               </Link>
             </Button>
           ) : null
@@ -184,29 +187,29 @@ export default function EmployeesPage() {
         below={
           <div className="flex flex-wrap items-center gap-2">
             <StatusChips
-              ariaLabel="Filter by status"
+              ariaLabel={t('Filter by status')}
               options={[
-                { value: null, label: 'All' },
-                { value: 'active', label: 'Active' },
-                { value: 'suspended', label: 'Suspended' },
-                { value: 'archived', label: 'Archived' },
+                { value: null, label: t('All') },
+                { value: 'active', label: t('Active') },
+                { value: 'suspended', label: t('Suspended') },
+                { value: 'archived', label: t('Archived') },
               ]}
               value={(query.status as string | null) ?? null}
               onChange={(status) => setQuery({ status, page: null })}
               counts={counts}
             />
             <FilterSelect
-              aria-label="Filter by role"
-              label="Role"
-              allLabel="Any role"
+              aria-label={t('Filter by role')}
+              label={t('Role')}
+              allLabel={t('Any role')}
               value={(query.role as string | null) ?? null}
               options={roles.map((role) => ({ value: role.id, label: role.name }))}
               onChange={(role) => setQuery({ role, page: null })}
             />
             <FilterSelect
-              aria-label="Filter by location"
-              label="At"
-              allLabel="Everywhere"
+              aria-label={t('Filter by location')}
+              label={t('At')}
+              allLabel={t('Everywhere')}
               value={(query.location as string | null) ?? null}
               options={locations.map((l) => ({ value: l.id, label: l.name }))}
               onChange={(location) => setQuery({ location, page: null })}
@@ -236,17 +239,19 @@ export default function EmployeesPage() {
         onRowClick={(employee) => navigate(paths.users.employeeDetail(employee.id))}
         emptyState={
           query.search || query.f || query.status || query.role || query.location ? (
-            <EmptyState title="Nobody matches these filters" />
+            <EmptyState title={t('Nobody matches these filters')} />
           ) : (
             <EmptyState
-              title="No employees yet"
-              description="Add the people who work here to give them a sign-in and start attributing sales."
+              title={t('No employees yet')}
+              description={t(
+                'Add the people who work here to give them a sign-in and start attributing sales.',
+              )}
               action={
                 can('users.employees.create') ? (
                   <Button variant="primary" asChild>
                     <Link to={paths.users.newEmployee}>
                       <Plus />
-                      Add employee
+                      {t('Add employee')}
                     </Link>
                   </Button>
                 ) : null

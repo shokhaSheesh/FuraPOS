@@ -28,6 +28,7 @@ import {
   buildProductFieldColumns,
   PRODUCT_FIELD_COLUMN_IDS,
 } from '@/features/products/components/productFieldColumns'
+import { t } from '@/shared/i18n'
 
 /**
  * The lines of a document — a transfer, an order, a goods receipt — laid out
@@ -144,7 +145,7 @@ export function LineItemsTable<T extends LineRow>({
     () => [
       {
         id: 'variationId',
-        header: 'ID',
+        header: t('ID'),
         cell: ({ row }) => (
           <span className="text-2xs text-fg-muted font-mono">{row.original.variationId}</span>
         ),
@@ -197,7 +198,7 @@ export function LineItemsTable<T extends LineRow>({
         }}
       >
         <X />
-        Close mode
+        {t('Close mode')}
       </Button>
     </>
   ) : (
@@ -205,13 +206,13 @@ export function LineItemsTable<T extends LineRow>({
       <SearchInput
         value={search}
         onChange={setSearch}
-        placeholder="Search by barcode, SKU or name…"
+        placeholder={t('Search by barcode, SKU or name…')}
       />
       <DropdownMenu.Root>
         <DropdownMenu.Trigger asChild>
           <Button type="button" variant="primary" size="sm" className="order-last">
             <Plus />
-            Add products
+            {t('Add products')}
             <ChevronDown />
           </Button>
         </DropdownMenu.Trigger>
@@ -224,7 +225,7 @@ export function LineItemsTable<T extends LineRow>({
             {[
               {
                 label: `From ${catalogue.label}`,
-                hint: 'Search or scan, and add straight to the list',
+                hint: t('Search or scan, and add straight to the list'),
                 icon: PackagePlus,
                 onSelect: () => {
                   setSearch('')
@@ -266,12 +267,14 @@ export function LineItemsTable<T extends LineRow>({
       toolbar={toolbar}
       emptyState={
         search && !adding ? (
-          <EmptyState title="No line matches that search" />
+          <EmptyState title={t('No line matches that search')} />
         ) : (
           <EmptyState
             title={emptyTitle}
             description={
-              adding ? 'Search or scan above — each product you pick lands here.' : emptyDescription
+              adding
+                ? t('Search or scan above — each product you pick lands here.')
+                : emptyDescription
             }
           />
         )
@@ -280,11 +283,11 @@ export function LineItemsTable<T extends LineRow>({
         // The totals OX keeps under its lines.
         <div className="border-border text-fg-muted flex flex-wrap items-center gap-5 border-t px-4 py-3 text-sm">
           <span className="flex items-center gap-2">
-            Total quantity
+            {t('Total quantity')}
             <Count value={totalQuantity} />
           </span>
           <span className="flex items-center gap-2">
-            Product variations
+            {t('Product variations')}
             <Count value={rows.length} />
           </span>
           {totals?.map((total) => (
@@ -373,8 +376,8 @@ function CatalogueSearch({
             setTerm('')
           }
         }}
-        placeholder="Search or scan barcode…"
-        aria-label="Search or scan a product to add"
+        placeholder={t('Search or scan barcode…')}
+        aria-label={t('Search or scan a product to add')}
         className="pl-8"
       />
 
@@ -386,7 +389,8 @@ function CatalogueSearch({
             >
               {hits.length === 0 ? (
                 <p className="text-fg-muted p-4 text-center text-sm">
-                  Nothing matches “{term.trim()}”
+                  {t('Nothing matches “')}
+                  {term.trim()}”
                 </p>
               ) : (
                 <ul className="divide-border divide-y">

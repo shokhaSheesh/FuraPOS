@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { SlidersHorizontal } from 'lucide-react'
 import { Card } from '@/shared/ui/Card'
 import { EmptyState } from './EmptyState'
+import { t } from '@/shared/i18n'
 
 interface FilterGateProps {
   /** True once the user has pressed Apply with a valid filter set. */
@@ -29,10 +30,10 @@ export function FilterGate({ applied, title, explanation, children }: FilterGate
     <Card>
       <EmptyState
         icon={SlidersHorizontal}
-        title={title ?? 'Choose your filters, then press Apply'}
+        title={title ?? t('Choose your filters, then press Apply')}
         description={
           explanation ??
-          'This report is expensive to build, so it only runs once you tell it what to cover.'
+          t('This report is expensive to build, so it only runs once you tell it what to cover.')
         }
       />
     </Card>

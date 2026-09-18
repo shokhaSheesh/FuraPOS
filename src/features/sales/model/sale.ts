@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { Id, IsoDate } from '@/shared/types'
+import { t } from '@/shared/i18n'
 
 export type PaymentMethod = 'cash' | 'card' | 'transfer' | 'credit'
 
@@ -227,14 +228,14 @@ export function nextStep(status: SaleStatus): { to: SaleStatus; label: string } 
     case 'open':
     case 'postponed':
     case 'new':
-      return { to: 'processed', label: 'Mark as processed' }
+      return { to: 'processed', label: t('Mark as processed') }
     // 'deleted' and 'completed' fall through to null: both are terminal.
     case 'processed':
-      return { to: 'delivering', label: 'Send for delivery' }
+      return { to: 'delivering', label: t('Send for delivery') }
     case 'delivering':
-      return { to: 'delivered', label: 'Mark as delivered' }
+      return { to: 'delivered', label: t('Mark as delivered') }
     case 'delivered':
-      return { to: 'completed', label: 'Complete sale' }
+      return { to: 'completed', label: t('Complete sale') }
     default:
       return null
   }

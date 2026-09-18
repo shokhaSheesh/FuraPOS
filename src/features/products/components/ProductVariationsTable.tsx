@@ -8,6 +8,7 @@ import { Select } from '@/shared/ui/Select'
 import { cn } from '@/shared/lib/cn'
 import { formatNumber } from '@/shared/lib/format'
 import { combinationName, type ProductFormValues } from '../model/product'
+import { t } from '@/shared/i18n'
 
 const CURRENCIES = [
   { value: 'USD', label: 'USD' },
@@ -61,33 +62,37 @@ export function ProductVariationsTable({
           <thead className="bg-canvas">
             <tr className="text-fg-muted text-2xs tracking-wide uppercase">
               <th className={cn(th, 'bg-canvas sticky left-0 z-10 w-10')}>
-                <span className="sr-only">Sold</span>
+                <span className="sr-only">{t('Sold')}</span>
                 <Checkbox
-                  aria-label={allSold ? 'Stop selling every combination' : 'Sell every combination'}
+                  aria-label={
+                    allSold ? t('Stop selling every combination') : t('Sell every combination')
+                  }
                   checked={someSold ? 'indeterminate' : allSold}
                   onCheckedChange={(next) => setAllSold(next)}
                 />
               </th>
               <th className={cn(th, 'bg-canvas border-border sticky left-10 z-10 border-r')}>
-                Variation
+                {t('Variation')}
               </th>
-              <th className={th}>Picture</th>
-              <th className={th}>Variation name</th>
+              <th className={th}>{t('Picture')}</th>
+              <th className={th}>{t('Variation name')}</th>
               <th className={th}>
-                SKU<span className="text-danger ml-0.5">*</span>
+                {t('SKU')}
+                <span className="text-danger ml-0.5">*</span>
               </th>
-              <th className={th}>Barcode</th>
-              <th className={th}>Part</th>
-              <th className={th}>OEM</th>
-              <th className={th}>Storage address</th>
-              <th className={th}>Cost</th>
+              <th className={th}>{t('Barcode')}</th>
+              <th className={th}>{t('Part')}</th>
+              <th className={th}>{t('OEM')}</th>
+              <th className={th}>{t('Storage address')}</th>
+              <th className={th}>{t('Cost')}</th>
               <th className={th}>
-                Sale price<span className="text-danger ml-0.5">*</span>
+                {t('Sale price')}
+                <span className="text-danger ml-0.5">*</span>
               </th>
-              <th className={th}>Wholesale price</th>
-              <th className={th}>Cargo weight</th>
-              <th className={th}>Cargo size</th>
-              <th className={th}>Status</th>
+              <th className={th}>{t('Wholesale price')}</th>
+              <th className={th}>{t('Cargo weight')}</th>
+              <th className={th}>{t('Cargo size')}</th>
+              <th className={th}>{t('Status')}</th>
             </tr>
           </thead>
           <tbody>
@@ -126,7 +131,7 @@ export function ProductVariationsTable({
                       {name}
                     </span>
                     <span className="text-fg-subtle text-2xs block whitespace-nowrap">
-                      {sold ? productName : 'not sold'}
+                      {sold ? productName : t('not sold')}
                     </span>
                   </td>
 
@@ -189,7 +194,7 @@ export function ProductVariationsTable({
                     {() => (
                       <Input
                         className="h-8 w-28"
-                        placeholder="Left"
+                        placeholder={t('Left')}
                         aria-label={`Part — ${name}`}
                         {...form.register(`variations.${index}.partSide`)}
                       />
@@ -422,7 +427,7 @@ export function ProductVariationsTable({
         </table>
       </div>
       <p className="border-border text-fg-subtle border-t px-3 py-2 text-[11px]">
-        Double-click a cell to change it. Escape leaves it as it was.
+        {t('Double-click a cell to change it. Escape leaves it as it was.')}
       </p>
     </div>
   )

@@ -3,6 +3,7 @@ import { Badge } from '@/shared/ui/Badge'
 import { cn } from '@/shared/lib/cn'
 import { formatMoney, formatNumber } from '@/shared/lib/format'
 import type { VariationRow } from '../model/product'
+import { t } from '@/shared/i18n'
 
 /**
  * The product list as boxes: the same page of variations the table shows,
@@ -42,11 +43,11 @@ export function ProductCardGrid({
                   <span className="text-fg line-clamp-2 block text-sm font-medium">
                     {v.productName}
                   </span>
-                  {v.name && v.name !== 'Standard' ? (
+                  {v.name && v.name !== t('Standard') ? (
                     <span className="text-fg-muted text-2xs block">{v.name}</span>
                   ) : null}
                 </span>
-                {v.status === 'archived' ? <Badge tone="neutral">Archived</Badge> : null}
+                {v.status === 'archived' ? <Badge tone="neutral">{t('Archived')}</Badge> : null}
               </span>
               <span className="text-fg-subtle text-2xs font-mono">
                 {v.sku}
@@ -66,11 +67,11 @@ export function ProductCardGrid({
                     className="text-fg-subtle text-2xs block truncate"
                     title={places.join(', ')}
                   >
-                    {places.length ? places.join(', ') : 'Not in stock anywhere'}
+                    {places.length ? places.join(', ') : t('Not in stock anywhere')}
                   </span>
                 </span>
                 <span className="text-fg shrink-0 text-sm font-medium tabular-nums">
-                  {v.saleCurrency === 'USD'
+                  {v.saleCurrency === t('USD')
                     ? `${formatNumber(v.salePrice)} USD`
                     : formatMoney(v.salePrice)}
                 </span>

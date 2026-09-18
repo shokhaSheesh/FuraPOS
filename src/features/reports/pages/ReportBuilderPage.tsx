@@ -30,6 +30,7 @@ import {
   type ReportPeriod,
   type ReportSource,
 } from '../model/report'
+import { t } from '@/shared/i18n'
 
 /** Enough to see the shape without turning the builder into the report. */
 const PREVIEW_ROWS = 5
@@ -99,10 +100,10 @@ export default function ReportBuilderPage() {
   if (editing && !existing) {
     return (
       <EmptyState
-        title="No such report"
+        title={t('No such report')}
         action={
           <Button variant="secondary" asChild>
-            <Link to={paths.analytics.reports}>Back to reports</Link>
+            <Link to={paths.analytics.reports}>{t('Back to reports')}</Link>
           </Button>
         }
       />
@@ -130,12 +131,12 @@ export default function ReportBuilderPage() {
   const save = () => {
     setShowErrors(true)
     if (!parsed.success) {
-      toast.error('Pick at least one thing to measure')
+      toast.error(t('Pick at least one thing to measure'))
       return
     }
     if (editing && existing) {
       actions.update(existing.id, state)
-      toast.success('Saved')
+      toast.success(t('Saved'))
       navigate(paths.analytics.reportView(existing.id))
     } else {
       const created = actions.create(state)
@@ -149,17 +150,19 @@ export default function ReportBuilderPage() {
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
         <Link to={paths.analytics.reports}>
           <ArrowLeft />
-          Report generator
+          {t('Report generator')}
         </Link>
       </Button>
 
       <PageHeader
-        title={editing ? 'Edit report' : 'New report'}
-        description="Pick what to measure and what to break it down by. The preview underneath shows what you are building as you build it."
+        title={editing ? t('Edit report') : t('New report')}
+        description={t(
+          'Pick what to measure and what to break it down by. The preview underneath shows what you are building as you build it.',
+        )}
         action={
           <Button variant="primary" onClick={save}>
             <Save />
-            {editing ? 'Save changes' : 'Save report'}
+            {editing ? t('Save changes') : t('Save report')}
           </Button>
         }
       />
@@ -167,20 +170,23 @@ export default function ReportBuilderPage() {
       <div className="grid gap-3 lg:grid-cols-3">
         <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle>The question</CardTitle>
+            <CardTitle>{t('The question')}</CardTitle>
           </CardHeader>
           <CardBody className="space-y-3">
-            <Field label="Name" required error={errors.name?.[0]}>
+            <Field label={t('Name')} required error={errors.name?.[0]}>
               {(p) => (
                 <Input
                   {...p}
-                  placeholder="Sales by product"
+                  placeholder={t('Sales by product')}
                   value={state.name}
                   onChange={(event) => setState((c) => ({ ...c, name: event.target.value }))}
                 />
               )}
             </Field>
-            <Field label="Data" hint={REPORT_SOURCES.find((s) => s.value === state.source)?.hint}>
+            <Field
+              label={t('Data')}
+              hint={REPORT_SOURCES.find((s) => s.value === state.source)?.hint}
+            >
               {(p) => (
                 <Select
                   {...p}
@@ -194,7 +200,10 @@ export default function ReportBuilderPage() {
                 />
               )}
             </Field>
-            <Field label="Opens on" hint="The period it starts with. Changeable when you run it.">
+            <Field
+              label={t('Opens on')}
+              hint={t('The period it starts with. Changeable when you run it.')}
+            >
               {(p) => (
                 <Select
                   {...p}
@@ -206,11 +215,11 @@ export default function ReportBuilderPage() {
               )}
             </Field>
             <Field
-              label="Chart"
+              label={t('Chart')}
               hint={
                 canChart(state.dimensions)
                   ? REPORT_CHARTS.find((entry) => entry.value === state.chart)?.hint
-                  : 'A chart needs exactly one break-down column — pick one and no more.'
+                  : t('A chart needs exactly one break-down column — pick one and no more.')
               }
             >
               {(p) => (
@@ -230,8 +239,8 @@ export default function ReportBuilderPage() {
 
             {state.chart !== 'none' && canChart(state.dimensions) ? (
               <Field
-                label="Draw which measure"
-                hint="One series only — measures are on different scales"
+                label={t('Draw which measure')}
+                hint={t('One series only — measures are on different scales')}
               >
                 {(p) => (
                   <Select
@@ -250,13 +259,13 @@ export default function ReportBuilderPage() {
 
             <label className="flex items-center justify-between gap-3 pt-1">
               <span className="min-w-0">
-                <span className="text-fg block text-sm font-medium">Pin to the sidebar</span>
+                <span className="text-fg block text-sm font-medium">{t('Pin to the sidebar')}</span>
                 <span className="text-fg-subtle text-2xs">
-                  For a report you run every week and should not have to find first.
+                  {t('For a report you run every week and should not have to find first.')}
                 </span>
               </span>
               <Switch
-                aria-label="Pin to the sidebar"
+                aria-label={t('Pin to the sidebar')}
                 checked={state.pinned}
                 onCheckedChange={(pinned) => setState((c) => ({ ...c, pinned }))}
               />
@@ -266,24 +275,26 @@ export default function ReportBuilderPage() {
 
         <Card className="lg:col-span-2">
           <CardHeader className="flex-col items-stretch gap-1">
-            <CardTitle>Columns</CardTitle>
+            <CardTitle>{t('Columns')}</CardTitle>
             <p className="text-fg-subtle text-2xs">
-              <span className="text-fg-muted font-medium">Measure</span> is what gets added up.{' '}
-              <span className="text-fg-muted font-medium">Break down by</span> is what each row
-              stands for — leave it empty for a single total.
+              <span className="text-fg-muted font-medium">{t('Measure')}</span>{' '}
+              {t('is what gets added up.')}{' '}
+              <span className="text-fg-muted font-medium">{t('Break down by')}</span>{' '}
+              {t('is what each row stands for — leave it empty for a single total.')}
             </p>
           </CardHeader>
           <CardBody className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <p className="text-fg-muted text-sm">
-                Measure<span className="text-danger ml-0.5">*</span>
+                {t('Measure')}
+                <span className="text-danger ml-0.5">*</span>
               </p>
               <div className="space-y-1">
                 {schema.measures.map((measure) => (
                   <Row
                     key={measure.key}
                     label={measure.label}
-                    hint={isDerived(measure.key) ? 'worked out, not summed' : undefined}
+                    hint={isDerived(measure.key) ? t('worked out, not summed') : undefined}
                     checked={state.measures.includes(measure.key)}
                     onToggle={() => toggle('measures', measure.key)}
                   />
@@ -295,7 +306,7 @@ export default function ReportBuilderPage() {
             </div>
 
             <div className="space-y-2">
-              <p className="text-fg-muted text-sm">Break down by</p>
+              <p className="text-fg-muted text-sm">{t('Break down by')}</p>
               <div className="space-y-1">
                 {schema.dimensions.map((dimension) => (
                   <Row
@@ -314,18 +325,18 @@ export default function ReportBuilderPage() {
       <Card>
         <CardHeader className="flex-col items-stretch gap-1">
           <div className="flex items-center justify-between gap-3">
-            <CardTitle>Preview</CardTitle>
+            <CardTitle>{t('Preview')}</CardTitle>
             {preview ? (
               <span className="text-fg-subtle text-2xs tabular-nums">
-                {formatNumber(preview.rows.length)} rows from {formatNumber(preview.sourceRows)}{' '}
-                records
+                {formatNumber(preview.rows.length)} {t('rows from')}{' '}
+                {formatNumber(preview.sourceRows)} records
               </span>
             ) : null}
           </div>
           <p className="text-fg-subtle text-2xs">
             {state.measures.length > 0
               ? `${describeReport({ ...state } as never)} — first ${PREVIEW_ROWS} rows, all time.`
-              : 'Pick something to measure and it appears here.'}
+              : t('Pick something to measure and it appears here.')}
           </p>
         </CardHeader>
         <CardBody>
@@ -351,8 +362,8 @@ export default function ReportBuilderPage() {
           ) : (
             <EmptyState
               icon={Table2}
-              title="Nothing to show yet"
-              description="Tick a measure on the right and the table builds itself."
+              title={t('Nothing to show yet')}
+              description={t('Tick a measure on the right and the table builds itself.')}
             />
           )}
         </CardBody>

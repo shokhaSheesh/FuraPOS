@@ -10,6 +10,7 @@ import { sumRows, type ProductGroup } from '@/shared/components/catalogue/browse
 import type { TableColumn } from '@/shared/components/table/features'
 import { formatNumber } from '@/shared/lib/format'
 import type { TransferRow } from './transferLineColumns'
+import { t } from '@/shared/i18n'
 
 interface Names {
   from: string
@@ -87,7 +88,7 @@ export function TransferCatalogue({
     <ProductCatalogue
       rows={rows}
       storageKey="transfer"
-      ownFieldsTitle="This transfer"
+      ownFieldsTitle={t('This transfer')}
       ownFields={[
         { id: 'atDestination', label: `At ${names.to}` },
         { id: 'atSource', label: `At ${names.from}` },
@@ -140,7 +141,7 @@ export function TransferCatalogue({
                 label={`Sold at ${names.demand}, 3 / 6 months`}
                 value={`${formatNumber(open.demand[3])} / ${formatNumber(open.demand[6])}`}
               />
-              <DialogStat label="Variations" value={formatNumber(open.rows.length)} />
+              <DialogStat label={t('Variations')} value={formatNumber(open.rows.length)} />
             </>
           )}
           columns={({ set }) => [
@@ -181,7 +182,7 @@ export function TransferCatalogue({
             },
             {
               id: 'move',
-              header: 'Move',
+              header: t('Move'),
               enableHiding: false,
               meta: { align: 'right' },
               cell: ({ row }) => (

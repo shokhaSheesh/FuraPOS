@@ -21,6 +21,7 @@ import { shiftHours, type ShiftStatus } from '../model/shift'
 import { VarianceBadge } from '../components/VarianceBadge'
 import { OpenShiftModal } from '../components/OpenShiftModal'
 import { CloseShiftModal } from '../components/CloseShiftModal'
+import { t } from '@/shared/i18n'
 
 /**
  * Cash shifts.
@@ -48,7 +49,7 @@ export default function CashShiftsPage() {
     () => [
       {
         accessorKey: 'number',
-        header: 'Shift',
+        header: t('Shift'),
         enableHiding: false,
         cell: ({ row }) => (
           <div className="min-w-0">
@@ -64,36 +65,36 @@ export default function CashShiftsPage() {
           </div>
         ),
       },
-      { accessorKey: 'employeeName', header: 'Who had it' },
+      { accessorKey: 'employeeName', header: t('Who had it') },
       {
         accessorKey: 'openedAt',
-        header: 'Opened',
+        header: t('Opened'),
         cell: ({ row }) => (
           <div className="min-w-0">
             <p>{formatDateTime(row.original.openedAt)}</p>
             <p className="text-fg-subtle text-2xs">
               {formatNumber(Math.round(shiftHours(row.original)))} h
-              {row.original.status === 'open' ? ' and counting' : ''}
+              {row.original.status === 'open' ? t(' and counting') : ''}
             </p>
           </div>
         ),
       },
       {
         id: 'sales',
-        header: 'Sales',
+        header: t('Sales'),
         meta: { align: 'right' },
         cell: ({ row }) => (
           <div className="tabular-nums">
             <p>{formatMoney(row.original.totals.cash)}</p>
             <p className="text-fg-subtle text-2xs">
-              {formatNumber(row.original.totals.count)} in cash
+              {formatNumber(row.original.totals.count)} {t('in cash')}
             </p>
           </div>
         ),
       },
       {
         id: 'expected',
-        header: 'Expected',
+        header: t('Expected'),
         meta: { align: 'right' },
         cell: ({ row }) => (
           <span className="tabular-nums">{formatMoney(row.original.expected)}</span>
@@ -101,7 +102,7 @@ export default function CashShiftsPage() {
       },
       {
         id: 'counted',
-        header: 'Counted',
+        header: t('Counted'),
         meta: { align: 'right' },
         cell: ({ row }) =>
           row.original.countedCash === null ? (
@@ -112,17 +113,17 @@ export default function CashShiftsPage() {
       },
       {
         id: 'variance',
-        header: 'Difference',
+        header: t('Difference'),
         enableHiding: false,
         meta: { align: 'right' },
         cell: ({ row }) => <VarianceBadge difference={row.original.difference} />,
       },
       {
         accessorKey: 'status',
-        header: 'Status',
+        header: t('Status'),
         cell: ({ row }) => (
           <Badge tone={row.original.status === 'open' ? 'info' : 'neutral'}>
-            {row.original.status === 'open' ? 'Open' : 'Closed'}
+            {row.original.status === 'open' ? t('Open') : t('Closed')}
           </Badge>
         ),
       },
@@ -135,12 +136,12 @@ export default function CashShiftsPage() {
           <RowActions
             actions={[
               {
-                label: 'Open shift',
+                label: t('Open shift'),
                 icon: Eye,
                 onSelect: () => navigate(paths.sales.shiftDetail(row.original.id)),
               },
               {
-                label: 'Close the drawer',
+                label: t('Close the drawer'),
                 icon: Lock,
                 hidden: row.original.status !== 'open' || !can('sales.cashShifts.edit'),
                 onSelect: () => setClosing(row.original),
@@ -157,13 +158,15 @@ export default function CashShiftsPage() {
   return (
     <>
       <PageHeader
-        title="Cash shifts"
-        description="Who has a drawer, what went through it, and whether it balanced. Sales are still entered on New sale — this is the cash-up, not a till."
+        title={t('Cash shifts')}
+        description={t(
+          'Who has a drawer, what went through it, and whether it balanced. Sales are still entered on New sale — this is the cash-up, not a till.',
+        )}
         action={
           can('sales.cashShifts.create') ? (
             <Button variant="primary" onClick={() => setOpening(true)}>
               <Plus />
-              Open a shift
+              {t('Open a shift')}
             </Button>
           ) : null
         }
@@ -191,7 +194,7 @@ export default function CashShiftsPage() {
               <p className="text-fg text-lg font-semibold tabular-nums">
                 {formatMoney(cashOnHand)}
               </p>
-              <p className="text-fg-subtle text-2xs">Cash that should be on hand</p>
+              <p className="text-fg-subtle text-2xs">{t('Cash that should be on hand')}</p>
             </div>
           </CardBody>
         </Card>
@@ -206,14 +209,14 @@ export default function CashShiftsPage() {
           setQuery={setQuery}
         />
         <StatusChips<ShiftStatus>
-          ariaLabel="Filter by status"
+          ariaLabel={t('Filter by status')}
           value={(query.status as ShiftStatus) ?? null}
           onChange={(status) => setQuery({ status })}
           counts={counts}
           options={[
-            { value: null, label: 'All' },
-            { value: 'open', label: 'Open' },
-            { value: 'closed', label: 'Closed' },
+            { value: null, label: t('All') },
+            { value: 'open', label: t('Open') },
+            { value: 'closed', label: t('Closed') },
           ]}
         />
       </div>
@@ -229,8 +232,10 @@ export default function CashShiftsPage() {
         emptyState={
           <EmptyState
             icon={Wallet}
-            title="No shifts yet"
-            description="Open a drawer at the start of the day, and close it with a counted amount at the end."
+            title={t('No shifts yet')}
+            description={t(
+              'Open a drawer at the start of the day, and close it with a counted amount at the end.',
+            )}
           />
         }
       />

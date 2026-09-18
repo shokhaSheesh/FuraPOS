@@ -9,6 +9,7 @@ import { toast } from '@/shared/ui/toast'
 import { useSession } from '@/app/providers/SessionProvider'
 import { useDataStore } from '@/data/store'
 import { Avatar } from '@/features/employees/components/Avatar'
+import { t } from '@/shared/i18n'
 
 /**
  * Personal data: who you are.
@@ -29,7 +30,7 @@ export default function PersonalSettingsPage() {
 
   return (
     <>
-      <PageHeader title="Personal data" description="Your own details." />
+      <PageHeader title={t('Personal data')} description={t('Your own details.')} />
 
       <Card>
         <CardHeader className="flex items-center justify-start gap-3">
@@ -37,13 +38,13 @@ export default function PersonalSettingsPage() {
           <div className="min-w-0">
             <CardTitle>{profile.name}</CardTitle>
             <p className="text-fg-subtle text-2xs">
-              {user?.role.name} · {me?.locationName ?? 'All locations'}
+              {user?.role.name} · {me?.locationName ?? t('All locations')}
             </p>
           </div>
         </CardHeader>
         <CardBody className="space-y-3">
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Name">
+            <Field label={t('Name')}>
               {(p) => (
                 <Input
                   {...p}
@@ -52,7 +53,7 @@ export default function PersonalSettingsPage() {
                 />
               )}
             </Field>
-            <Field label="Phone">
+            <Field label={t('Phone')}>
               {(p) => (
                 <Input
                   {...p}
@@ -61,7 +62,7 @@ export default function PersonalSettingsPage() {
                 />
               )}
             </Field>
-            <Field label="Email">
+            <Field label={t('Email')}>
               {(p) => (
                 <Input
                   {...p}
@@ -70,13 +71,13 @@ export default function PersonalSettingsPage() {
                 />
               )}
             </Field>
-            <Field label="Role" hint="Changed in Access & roles, not here">
+            <Field label={t('Role')} hint={t('Changed in Access & roles, not here')}>
               {(p) => <Input {...p} value={user?.role.name ?? ''} disabled />}
             </Field>
           </div>
-          <Button variant="primary" onClick={() => toast.success('Saved')}>
+          <Button variant="primary" onClick={() => toast.success(t('Saved'))}>
             <Save />
-            Save changes
+            {t('Save changes')}
           </Button>
         </CardBody>
       </Card>

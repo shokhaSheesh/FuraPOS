@@ -25,6 +25,7 @@ import {
   RULE_KINDS,
   type RepricingDraft,
 } from '../model/repricing'
+import { t } from '@/shared/i18n'
 
 /**
  * Set up a price change.
@@ -89,7 +90,7 @@ export default function NewRepricingPage() {
   const submit = form.handleSubmit(
     (values) => {
       if (scope.length === 0) {
-        toast.error('No products match that scope')
+        toast.error(t('No products match that scope'))
         return
       }
       create.mutate(
@@ -108,7 +109,7 @@ export default function NewRepricingPage() {
         },
       )
     },
-    () => toast.error('Check the highlighted fields'),
+    () => toast.error(t('Check the highlighted fields')),
   )
 
   const valueLabel =
@@ -125,13 +126,15 @@ export default function NewRepricingPage() {
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
         <Link to={paths.products.repricing}>
           <ArrowLeft />
-          Repricing
+          {t('Repricing')}
         </Link>
       </Button>
 
       <PageHeader
-        title="New price change"
-        description="Work out the new prices now, review them, then apply. Nothing changes until you do."
+        title={t('New price change')}
+        description={t(
+          'Work out the new prices now, review them, then apply. Nothing changes until you do.',
+        )}
         action={
           <div className="flex items-center gap-2">
             <Button
@@ -139,11 +142,11 @@ export default function NewRepricingPage() {
               variant="secondary"
               onClick={() => navigate(paths.products.repricing)}
             >
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button type="button" variant="primary" onClick={submit}>
               <Calculator />
-              Work out the prices
+              {t('Work out the prices')}
             </Button>
           </div>
         }
@@ -152,10 +155,10 @@ export default function NewRepricingPage() {
       <div className="mt-4 grid gap-3 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Which products</CardTitle>
+            <CardTitle>{t('Which products')}</CardTitle>
           </CardHeader>
           <CardBody className="space-y-3">
-            <Field label="Category" hint="Leave empty for the whole catalogue">
+            <Field label={t('Category')} hint={t('Leave empty for the whole catalogue')}>
               {(p) => (
                 <Controller
                   control={form.control}
@@ -166,14 +169,17 @@ export default function NewRepricingPage() {
                       className="w-full"
                       value={field.value || undefined}
                       onChange={field.onChange}
-                      placeholder="Every category"
+                      placeholder={t('Every category')}
                       options={categories.map((c) => ({ value: c.id, label: c.path }))}
                     />
                   )}
                 />
               )}
             </Field>
-            <Field label="Supplier brand" hint="Useful when one supplier raises their prices">
+            <Field
+              label={t('Supplier brand')}
+              hint={t('Useful when one supplier raises their prices')}
+            >
               {(p) => (
                 <Controller
                   control={form.control}
@@ -184,7 +190,7 @@ export default function NewRepricingPage() {
                       className="w-full"
                       value={field.value || undefined}
                       onChange={field.onChange}
-                      placeholder="Every brand"
+                      placeholder={t('Every brand')}
                       options={brands.map((b) => ({ value: b.id, label: b.name }))}
                     />
                   )}
@@ -192,8 +198,10 @@ export default function NewRepricingPage() {
               )}
             </Field>
             <Field
-              label="Location"
-              hint="Narrows to what that shelf carries — the price itself is the same everywhere"
+              label={t('Location')}
+              hint={t(
+                'Narrows to what that shelf carries — the price itself is the same everywhere',
+              )}
             >
               {(p) => (
                 <Controller
@@ -205,7 +213,7 @@ export default function NewRepricingPage() {
                       className="w-full"
                       value={field.value || undefined}
                       onChange={field.onChange}
-                      placeholder="Every location"
+                      placeholder={t('Every location')}
                       options={locations.map((l) => ({ value: l.id, label: l.name }))}
                     />
                   )}
@@ -214,18 +222,19 @@ export default function NewRepricingPage() {
             </Field>
             <p className="text-fg-muted text-sm">
               <span className="text-fg font-semibold">{formatNumber(scope.length)} products</span>{' '}
-              match. Prices that do not move are still listed, so the sheet shows what was
-              considered.
+              {t(
+                'match. Prices that do not move are still listed, so the sheet shows what was considered.',
+              )}
             </p>
           </CardBody>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>How to change them</CardTitle>
+            <CardTitle>{t('How to change them')}</CardTitle>
           </CardHeader>
           <CardBody className="space-y-3">
-            <Field label="Rule" required hint={RULE_KINDS.find((r) => r.value === kind)?.hint}>
+            <Field label={t('Rule')} required hint={RULE_KINDS.find((r) => r.value === kind)?.hint}>
               {(p) => (
                 <Controller
                   control={form.control}
@@ -254,10 +263,10 @@ export default function NewRepricingPage() {
                 required
                 hint={
                   kind === 'percent'
-                    ? 'Negative lowers prices — −5 takes five per cent off'
+                    ? t('Negative lowers prices — −5 takes five per cent off')
                     : kind === 'margin'
-                      ? 'What share of the price should be profit, as a percentage'
-                      : 'Negative subtracts'
+                      ? t('What share of the price should be profit, as a percentage')
+                      : t('Negative subtracts')
                 }
               >
                 {(p) => (
@@ -284,7 +293,10 @@ export default function NewRepricingPage() {
               </Field>
             )}
 
-            <Field label="Round to" hint="Bulk arithmetic produces prices nobody would print">
+            <Field
+              label={t('Round to')}
+              hint={t('Bulk arithmetic produces prices nobody would print')}
+            >
               {(p) => (
                 <Controller
                   control={form.control}
@@ -302,9 +314,16 @@ export default function NewRepricingPage() {
               )}
             </Field>
 
-            <Field label="Reason" hint="What prompted this — the question asked six months later">
+            <Field
+              label={t('Reason')}
+              hint={t('What prompted this — the question asked six months later')}
+            >
               {(p) => (
-                <Input {...p} placeholder="Exchange rate moved" {...form.register('comment')} />
+                <Input
+                  {...p}
+                  placeholder={t('Exchange rate moved')}
+                  {...form.register('comment')}
+                />
               )}
             </Field>
           </CardBody>
@@ -314,9 +333,9 @@ export default function NewRepricingPage() {
       {preview.length > 0 ? (
         <Card className="mt-3">
           <CardHeader className="flex-col items-stretch gap-1">
-            <CardTitle>What that does</CardTitle>
+            <CardTitle>{t('What that does')}</CardTitle>
             <p className="text-fg-subtle text-2xs">
-              Three of the {formatNumber(scope.length)} products, under this rule.
+              {t('Three of the')} {formatNumber(scope.length)} {t('products, under this rule.')}
             </p>
           </CardHeader>
           <CardBody className="p-0">
@@ -324,11 +343,11 @@ export default function NewRepricingPage() {
               <table className="w-full text-sm">
                 <thead className="bg-canvas">
                   <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-                    <th className="px-4 py-2 text-left font-semibold">Product</th>
-                    <th className="px-4 py-2 text-right font-semibold">Cost</th>
-                    <th className="px-4 py-2 text-right font-semibold">Now</th>
-                    <th className="px-4 py-2 text-right font-semibold">Would become</th>
-                    <th className="px-4 py-2 text-right font-semibold">Margin</th>
+                    <th className="px-4 py-2 text-left font-semibold">{t('Product')}</th>
+                    <th className="px-4 py-2 text-right font-semibold">{t('Cost')}</th>
+                    <th className="px-4 py-2 text-right font-semibold">{t('Now')}</th>
+                    <th className="px-4 py-2 text-right font-semibold">{t('Would become')}</th>
+                    <th className="px-4 py-2 text-right font-semibold">{t('Margin')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -351,7 +370,7 @@ export default function NewRepricingPage() {
                             below ? 'text-danger font-medium' : 'text-fg-muted'
                           }`}
                         >
-                          {below ? 'below cost' : formatPercent(marginOf(newPrice, costAtTime))}
+                          {below ? t('below cost') : formatPercent(marginOf(newPrice, costAtTime))}
                         </td>
                       </tr>
                     )

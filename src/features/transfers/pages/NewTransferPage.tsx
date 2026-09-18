@@ -26,6 +26,7 @@ import { useSession } from '@/app/providers/SessionProvider'
 import { useDataStore } from '@/data/store'
 import { TRANSFER_KINDS, transferDraftSchema, type TransferDraft } from '../model/transfer'
 import { demandAt, hasStalled } from '@/shared/lib/demand'
+import { t } from '@/shared/i18n'
 
 /**
  * Build a transfer.
@@ -170,7 +171,7 @@ export default function NewTransferPage() {
 
   const saveNow = async () => {
     if (!(await form.trigger(['kind', 'fromLocationId', 'toLocationId']))) {
-      toast.error('Pick both locations first')
+      toast.error(t('Pick both locations first'))
       setStep(1)
       return
     }
@@ -215,7 +216,7 @@ export default function NewTransferPage() {
         unitPrice: suggestion.salePrice,
       }))
     if (added.length === 0) {
-      toast.info('Everything suggested is already on this transfer')
+      toast.info(t('Everything suggested is already on this transfer'))
       return
     }
     form.setValue('lines', [...current, ...added], { shouldDirty: true })
@@ -238,12 +239,12 @@ export default function NewTransferPage() {
     }
     // The products step is the source's shelf, so it cannot exist without one.
     if (!(await form.trigger(['kind', 'fromLocationId', 'toLocationId']))) {
-      toast.error('Pick both locations first')
+      toast.error(t('Pick both locations first'))
       setStep(1)
       return
     }
     if (next === 3 && lines.length === 0) {
-      toast.error('Put something on the transfer first')
+      toast.error(t('Put something on the transfer first'))
       setStep(2)
       return
     }
@@ -285,7 +286,7 @@ export default function NewTransferPage() {
         )
         navigate(paths.products.transferDetail(transfer.id))
       },
-      () => toast.error('Check the highlighted fields'),
+      () => toast.error(t('Check the highlighted fields')),
     )
 
   const from = locations.find((l) => l.id === fromLocationId)
@@ -398,18 +399,22 @@ export default function NewTransferPage() {
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
         <Link to={paths.products.transfers}>
           <ArrowLeft />
-          Transfers
+          {t('Transfers')}
         </Link>
       </Button>
 
       <PageHeader
         title={
-          resuming ? `${resuming.number} — unfinished` : requesting ? 'New request' : 'New transfer'
+          resuming
+            ? `${resuming.number} — unfinished`
+            : requesting
+              ? t('New request')
+              : t('New transfer')
         }
         description={
           requesting
-            ? 'Ask another location to supply this one.'
-            : 'Take stock off one shelf and put it on another.'
+            ? t('Ask another location to supply this one.')
+            : t('Take stock off one shelf and put it on another.')
         }
         below={
           <Steps
@@ -427,10 +432,10 @@ export default function NewTransferPage() {
             <div className="flex items-center gap-2">
               <Button type="button" variant="secondary" onClick={saveNow}>
                 <Save />
-                Save
+                {t('Save')}
               </Button>
               <Button type="button" variant="primary" onClick={() => goTo((step + 1) as 2 | 3)}>
-                Continue
+                {t('Continue')}
                 <ArrowRight />
               </Button>
             </div>
@@ -438,11 +443,11 @@ export default function NewTransferPage() {
             <div className="flex items-center gap-2">
               <Button type="button" variant="secondary" onClick={() => setStep(2)}>
                 <ArrowLeft />
-                Back
+                {t('Back')}
               </Button>
               <Button type="button" variant="secondary" onClick={saveNow}>
                 <Save />
-                Save
+                {t('Save')}
               </Button>
               {/* A request cannot dispatch: the goods are on somebody else's
                   shelf and they have not agreed to part with them yet. */}
@@ -452,7 +457,7 @@ export default function NewTransferPage() {
                 onClick={submit(requesting ? 'draft' : 'in_transit')}
               >
                 <Truck />
-                {requesting ? 'Send the request' : 'Send now'}
+                {requesting ? t('Send the request') : t('Send now')}
               </Button>
             </div>
           )
@@ -474,14 +479,14 @@ export default function NewTransferPage() {
           <>
             <Card>
               <CardHeader className="flex-col items-stretch gap-2">
-                <CardTitle>Route</CardTitle>
+                <CardTitle>{t('Route')}</CardTitle>
                 <div className="self-start">
                   <Controller
                     control={form.control}
                     name="kind"
                     render={({ field }) => (
                       <SegmentedControl
-                        aria-label="Sending or requesting"
+                        aria-label={t('Sending or requesting')}
                         value={field.value}
                         onChange={(next) => {
                           /*
@@ -510,7 +515,7 @@ export default function NewTransferPage() {
               </CardHeader>
               <CardBody className="grid items-start gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
                 <Field
-                  label={requesting ? 'Ask' : 'From'}
+                  label={requesting ? t('Ask') : t('From')}
                   required
                   error={form.formState.errors.fromLocationId?.message}
                 >
@@ -529,7 +534,7 @@ export default function NewTransferPage() {
                             // starting over is safer than silently keeping them.
                             if (lines.length) {
                               form.setValue('lines', [])
-                              toast.info('Lines cleared — stock differs by location')
+                              toast.info(t('Lines cleared — stock differs by location'))
                             }
                           }}
                           options={locations.map((l) => ({ value: l.id, label: l.name }))}
@@ -542,7 +547,7 @@ export default function NewTransferPage() {
                   <ArrowRight className="size-4" />
                 </div>
                 <Field
-                  label={requesting ? 'Deliver to' : 'To'}
+                  label={requesting ? t('Deliver to') : t('To')}
                   required
                   error={form.formState.errors.toLocationId?.message}
                 >
@@ -556,7 +561,7 @@ export default function NewTransferPage() {
                           className="w-full"
                           value={field.value || undefined}
                           onChange={field.onChange}
-                          placeholder="Pick a destination"
+                          placeholder={t('Pick a destination')}
                           options={locations
                             // The same place at both ends is a no-op, so it is not
                             // offered rather than rejected after the fact.
@@ -569,12 +574,12 @@ export default function NewTransferPage() {
                 </Field>
                 {/* Its own row under the route, spanning both ends. */}
                 <Field
-                  label="Comment"
-                  hint="Why this is moving — useful when it is queried later"
+                  label={t('Comment')}
+                  hint={t('Why this is moving — useful when it is queried later')}
                   className="sm:col-span-3"
                 >
                   {(p) => (
-                    <Input {...p} placeholder="Weekly top-up" {...form.register('comment')} />
+                    <Input {...p} placeholder={t('Weekly top-up')} {...form.register('comment')} />
                   )}
                 </Field>
               </CardBody>
@@ -585,7 +590,9 @@ export default function NewTransferPage() {
             {/* What was decided on step 1, so the lines are picked with it in view. */}
             <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
               <div className="min-w-0">
-                <p className="text-fg-subtle text-2xs">{requesting ? 'Request' : 'Transfer'}</p>
+                <p className="text-fg-subtle text-2xs">
+                  {requesting ? t('Request') : t('Transfer')}
+                </p>
                 <RouteLine
                   fromName={from?.name ?? '—'}
                   toName={to?.name ?? '—'}
@@ -594,7 +601,7 @@ export default function NewTransferPage() {
               </div>
               <Button type="button" variant="secondary" size="sm" onClick={() => setStep(1)}>
                 <Pencil />
-                Edit details
+                {t('Edit details')}
               </Button>
             </Card>
             <TransferCatalogue
@@ -611,7 +618,7 @@ export default function NewTransferPage() {
                 requesting ? (
                   <Button type="button" variant="primary" onClick={() => setGenerating(true)}>
                     <Wand2 />
-                    Suggest
+                    {t('Suggest')}
                   </Button>
                 ) : null
               }
@@ -662,12 +669,13 @@ function ReviewStep({
     <>
       <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
         <div className="min-w-0">
-          <p className="text-fg-subtle text-2xs">{requesting ? 'Request' : 'Transfer'}</p>
+          <p className="text-fg-subtle text-2xs">{requesting ? t('Request') : t('Transfer')}</p>
           <RouteLine fromName={fromName} toName={toName} comment={comment} />
         </div>
         <p className="text-fg-muted text-sm">
-          {requesting ? 'Asking for' : 'Moving'}{' '}
-          <strong className="text-fg font-medium">{formatNumber(movingUnits)}</strong> units across{' '}
+          {requesting ? t('Asking for') : t('Moving')}{' '}
+          <strong className="text-fg font-medium">{formatNumber(movingUnits)}</strong>{' '}
+          {t('units across')}{' '}
           <strong className="text-fg font-medium">{formatNumber(rows.length)}</strong>{' '}
           {rows.length === 1 ? 'product' : 'products'}
         </p>
@@ -682,8 +690,8 @@ function ReviewStep({
         getRowId={(row) => row.key}
         emptyState={
           <EmptyState
-            title="Nothing on this transfer yet"
-            description="Go back to Products and put a quantity against what should move."
+            title={t('Nothing on this transfer yet')}
+            description={t('Go back to Products and put a quantity against what should move.')}
           />
         }
       />

@@ -20,6 +20,7 @@ import type { TableColumn } from '@/shared/components/table/features'
 import { useDataStore } from '@/data/store'
 import { USD_RATE } from '@/data/seed'
 import { LOCATION_KINDS, locationSchema, type LocationSettings } from '../model/settings'
+import { t } from '@/shared/i18n'
 
 /**
  * Locations.
@@ -94,20 +95,20 @@ export default function LocationsSettingsPage() {
     () => [
       {
         accessorKey: 'name',
-        header: 'Location',
+        header: t('Location'),
         enableHiding: false,
         cell: ({ row }) => (
           <div className="min-w-0">
             <p className="text-fg truncate font-medium">{row.original.name}</p>
             <p className="text-fg-subtle text-2xs truncate">
-              {row.original.address ?? 'No address'}
+              {row.original.address ?? t('No address')}
             </p>
           </div>
         ),
       },
       {
         accessorKey: 'kind',
-        header: 'Type',
+        header: t('Type'),
         enableHiding: false,
         cell: ({ row }) => (
           <Badge tone="neutral">
@@ -117,17 +118,18 @@ export default function LocationsSettingsPage() {
       },
       {
         id: 'holds',
-        header: 'Holds',
+        header: t('Holds'),
         meta: { align: 'right' },
         enableHiding: false,
         cell: ({ row }) => {
           const entry = held.get(row.original.id)
-          if (!entry || entry.units === 0) return <span className="text-fg-subtle">Empty</span>
+          if (!entry || entry.units === 0)
+            return <span className="text-fg-subtle">{t('Empty')}</span>
           return (
             <div>
               <p className="text-fg tabular-nums">{formatNumber(entry.units)} units</p>
               <p className="text-fg-subtle text-2xs tabular-nums">
-                {formatMoney(Math.round(entry.value))} at cost
+                {formatMoney(Math.round(entry.value))} {t('at cost')}
               </p>
             </div>
           )
@@ -135,7 +137,7 @@ export default function LocationsSettingsPage() {
       },
       {
         accessorKey: 'areaSqm',
-        header: 'Area',
+        header: t('Area'),
         meta: { align: 'right' },
         cell: ({ row }) =>
           row.original.areaSqm === null ? (
@@ -146,11 +148,11 @@ export default function LocationsSettingsPage() {
       },
       {
         accessorKey: 'active',
-        header: 'Status',
+        header: t('Status'),
         enableHiding: false,
         cell: ({ row }) => (
           <Badge tone={row.original.active ? 'success' : 'neutral'}>
-            {row.original.active ? 'Open' : 'Closed'}
+            {row.original.active ? t('Open') : t('Closed')}
           </Badge>
         ),
       },
@@ -163,13 +165,13 @@ export default function LocationsSettingsPage() {
           <RowActions
             actions={[
               {
-                label: 'Edit',
+                label: t('Edit'),
                 icon: Pencil,
                 hidden: !can('settings.locations.edit'),
                 onSelect: () => openFor(row.original),
               },
               {
-                label: 'Delete',
+                label: t('Delete'),
                 icon: Trash2,
                 destructive: true,
                 hidden: !can('settings.locations.delete'),
@@ -187,13 +189,15 @@ export default function LocationsSettingsPage() {
   return (
     <>
       <PageHeader
-        title="Locations"
-        description="Every warehouse and shop. Stock is counted per location, so this list is what transfers move between and what a stocktake counts."
+        title={t('Locations')}
+        description={t(
+          'Every warehouse and shop. Stock is counted per location, so this list is what transfers move between and what a stocktake counts.',
+        )}
         action={
           can('settings.locations.create') ? (
             <Button variant="primary" onClick={() => openFor(null)}>
               <Plus />
-              Add location
+              {t('Add location')}
             </Button>
           ) : null
         }
@@ -210,8 +214,8 @@ export default function LocationsSettingsPage() {
         emptyState={
           <EmptyState
             icon={MapPin}
-            title="No locations yet"
-            description="Stock has to live somewhere — add a warehouse or a shop."
+            title={t('No locations yet')}
+            description={t('Stock has to live somewhere — add a warehouse or a shop.')}
           />
         }
       />
@@ -219,21 +223,21 @@ export default function LocationsSettingsPage() {
       <Modal
         open={open}
         onOpenChange={setOpen}
-        title={editing ? `Edit ${editing.name}` : 'New location'}
+        title={editing ? `Edit ${editing.name}` : t('New location')}
         primary={{ label: editing ? 'Save changes' : 'Add location', onClick: save }}
       >
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Name" required error={errors.name?.[0]}>
+          <Field label={t('Name')} required error={errors.name?.[0]}>
             {(p) => (
               <Input
                 {...p}
-                placeholder="Shop — Chilonzor"
+                placeholder={t('Shop — Chilonzor')}
                 value={draft.name}
                 onChange={(event) => setDraft((c) => ({ ...c, name: event.target.value }))}
               />
             )}
           </Field>
-          <Field label="Type">
+          <Field label={t('Type')}>
             {(p) => (
               <Select
                 {...p}
@@ -244,7 +248,7 @@ export default function LocationsSettingsPage() {
               />
             )}
           </Field>
-          <Field label="Address" className="sm:col-span-2">
+          <Field label={t('Address')} className="sm:col-span-2">
             {(p) => (
               <Input
                 {...p}
@@ -254,23 +258,23 @@ export default function LocationsSettingsPage() {
               />
             )}
           </Field>
-          <Field label="Area" hint="In m², if it is worth recording">
+          <Field label={t('Area')} hint={t('In m², if it is worth recording')}>
             {(p) => (
               <NumberField
                 {...p}
                 className="w-full"
                 min={0}
-                placeholder="Not recorded"
+                placeholder={t('Not recorded')}
                 value={draft.areaSqm}
                 onChange={(areaSqm) => setDraft((c) => ({ ...c, areaSqm }))}
               />
             )}
           </Field>
-          <Field label="Open">
+          <Field label={t('Open')}>
             {() => (
               <div className="flex h-9 items-center">
                 <Switch
-                  aria-label="Open"
+                  aria-label={t('Open')}
                   checked={draft.active}
                   onCheckedChange={(active) => setDraft((c) => ({ ...c, active }))}
                 />
@@ -287,13 +291,13 @@ export default function LocationsSettingsPage() {
         }}
         title={`Delete ${deleting?.name}?`}
         body="Documents that mention it keep the name they were saved with. A location still holding stock cannot be deleted."
-        confirmLabel="Delete"
+        confirmLabel={t('Delete')}
         destructive
         onConfirm={() => {
           if (!deleting) return
           const result = remove(deleting.id)
           setDeleting(null)
-          if (result.ok) toast.success('Location deleted')
+          if (result.ok) toast.success(t('Location deleted'))
           else toast.error(result.error)
         }}
       />

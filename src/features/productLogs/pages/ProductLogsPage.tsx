@@ -14,6 +14,7 @@ import { useDataStore } from '@/data/store'
 import { useLogKindCounts, useStockLog } from '../api/logs'
 import { STOCK_LOG_KINDS } from '../model/log'
 import { buildLogColumns, documentPath } from '../components/logColumns'
+import { t } from '@/shared/i18n'
 
 /** The whole log, unfiltered — the search panel reads its pick-lists from it. */
 const EVERY_ENTRY = { page: 1, pageSize: 100_000 }
@@ -49,14 +50,16 @@ export default function ProductLogsPage() {
   return (
     <>
       <PageHeader
-        title="Product logs"
-        description="Every change to a stock number, newest first — what it went to and which document caused it. This is the screen to open when a number looks wrong."
+        title={t('Product logs')}
+        description={t(
+          'Every change to a stock number, newest first — what it went to and which document caused it. This is the screen to open when a number looks wrong.',
+        )}
         below={
           <div className="flex flex-wrap items-center gap-2">
             <StatusChips
-              ariaLabel="Filter by what caused the change"
+              ariaLabel={t('Filter by what caused the change')}
               options={[
-                { value: null, label: 'All' },
+                { value: null, label: t('All') },
                 ...STOCK_LOG_KINDS.map((entry) => ({
                   value: entry.value,
                   label: entry.label,
@@ -67,9 +70,9 @@ export default function ProductLogsPage() {
               counts={counts}
             />
             <FilterSelect
-              aria-label="Filter by location"
-              label="At"
-              allLabel="Everywhere"
+              aria-label={t('Filter by location')}
+              label={t('At')}
+              allLabel={t('Everywhere')}
               value={(query.location as string | null) ?? null}
               options={locations.map((l) => ({ value: l.id, label: l.name }))}
               onChange={(location) => setQuery({ location, page: null })}
@@ -113,8 +116,10 @@ export default function ProductLogsPage() {
         emptyState={
           <EmptyState
             icon={Package}
-            title="Nothing moved"
-            description="No stock changed in this period. Widen the dates or clear the filters."
+            title={t('Nothing moved')}
+            description={t(
+              'No stock changed in this period. Widen the dates or clear the filters.',
+            )}
           />
         }
       />

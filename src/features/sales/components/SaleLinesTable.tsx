@@ -6,6 +6,7 @@ import { ProductThumb } from '@/shared/components/ProductThumb'
 import { StorageAddress } from '@/shared/components/StorageAddress'
 import { formatMoney } from '@/shared/lib/format'
 import { lineTotal, type SaleLine } from '../model/sale'
+import { t } from '@/shared/i18n'
 
 interface Props {
   lines: SaleLine[]
@@ -22,8 +23,10 @@ export function SaleLinesTable({ lines, onChange, onRemove }: Props) {
   if (lines.length === 0) {
     return (
       <EmptyState
-        title="No products yet"
-        description="Search above to add the first line. Quantity and price stay editable afterwards."
+        title={t('No products yet')}
+        description={t(
+          'Search above to add the first line. Quantity and price stay editable afterwards.',
+        )}
       />
     )
   }
@@ -34,19 +37,19 @@ export function SaleLinesTable({ lines, onChange, onRemove }: Props) {
         <thead className="bg-surface-muted">
           <tr className="text-fg-muted text-2xs tracking-wide uppercase">
             <th scope="col" className="h-9 px-3 text-left font-semibold">
-              Product
+              {t('Product')}
             </th>
             <th scope="col" className="h-9 w-28 px-3 text-right font-semibold">
-              Qty
+              {t('Qty')}
             </th>
             <th scope="col" className="h-9 w-40 px-3 text-right font-semibold">
-              Price
+              {t('Price')}
             </th>
             <th scope="col" className="h-9 w-24 px-3 text-right font-semibold">
-              Disc %
+              {t('Disc %')}
             </th>
             <th scope="col" className="h-9 w-36 px-3 text-right font-semibold">
-              Total
+              {t('Total')}
             </th>
             <th scope="col" className="h-9 w-12 px-3" />
           </tr>

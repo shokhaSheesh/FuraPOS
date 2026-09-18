@@ -11,6 +11,7 @@ import {
 } from '@/features/products/components/productFieldColumns'
 import type { VariationRow } from '@/features/products/model/product'
 import { toUzs, type Currency, type OrderLine } from '../model/order'
+import { t } from '@/shared/i18n'
 
 const CURRENCIES = [
   { value: 'USD', label: 'USD' },
@@ -61,7 +62,7 @@ function StockCell({ row }: { row: OrderRow }) {
       title={
         row.stockHere.length
           ? row.stockHere.map((s) => `${s.locationName}: ${formatNumber(s.quantity)}`).join('\n')
-          : 'Nothing on any shelf yet'
+          : t('Nothing on any shelf yet')
       }
     >
       {formatNumber(total)}
@@ -87,7 +88,7 @@ function adapt(fields: TableColumn<OrderRow>[]) {
           row.original.variation ? (
             <span className="font-medium">{row.original.variation.productName}</span>
           ) : (
-            <span className="text-fg-muted" title="Their listing — we have never stocked this">
+            <span className="text-fg-muted" title={t('Their listing — we have never stocked this')}>
               {row.original.name}
             </span>
           ),
@@ -136,7 +137,7 @@ export function buildOrderLineColumns({
     ? [
         {
           id: 'product',
-          header: 'Product',
+          header: t('Product'),
           enableHiding: false,
           cell: ({ row }) => {
             const v = row.original.variation
@@ -163,7 +164,7 @@ export function buildOrderLineColumns({
       id: 'quantity',
       // Not just "Quantity": the catalogue's own stock column sits on this
       // table too, and two columns under that heading mean neither is read.
-      header: 'Ordering',
+      header: t('Ordering'),
       enableHiding: false,
       meta: { align: 'right' },
       cell: ({ row }) => {
@@ -171,9 +172,11 @@ export function buildOrderLineColumns({
           return (
             <span
               className="text-fg-subtle text-2xs"
-              title="They list it, we have never stocked it — add it to the catalogue before ordering any"
+              title={t(
+                'They list it, we have never stocked it — add it to the catalogue before ordering any',
+              )}
             >
-              new to us
+              {t('new to us')}
             </span>
           )
         }
@@ -197,7 +200,7 @@ export function buildOrderLineColumns({
       ? ([
           {
             id: 'agreedPrice',
-            header: 'Agreed price',
+            header: t('Agreed price'),
             enableHiding: false,
             meta: { align: 'right' as const },
             cell: ({ row }) =>
@@ -224,7 +227,7 @@ export function buildOrderLineColumns({
                 </div>
               ) : (
                 <span className="tabular-nums">
-                  {row.original.costCurrency === 'USD'
+                  {row.original.costCurrency === t('USD')
                     ? `${row.original.unitCost.toFixed(2)} USD`
                     : formatMoney(row.original.unitCost)}
                 </span>
@@ -232,7 +235,7 @@ export function buildOrderLineColumns({
           },
           {
             id: 'lineTotal',
-            header: 'Line total',
+            header: t('Line total'),
             meta: { align: 'right' as const },
             cell: ({ row }) =>
               row.original.line ? (
@@ -265,7 +268,7 @@ export function buildOrderLineColumns({
                   variant="ghost"
                   size="icon"
                   aria-label={`Remove ${row.original.name} from this order`}
-                  title="Remove from this order"
+                  title={t('Remove from this order')}
                   className="hover:text-danger"
                   onClick={() => onRemove(row.original)}
                 >

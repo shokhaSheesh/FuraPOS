@@ -9,6 +9,7 @@ import { Skeleton } from '@/shared/ui/Skeleton'
 import { EmptyState } from './EmptyState'
 import { TablePagination, type PaginationState } from './TablePagination'
 import { tableFeatureSet, type TableColumn } from './table/features'
+import { t } from '@/shared/i18n'
 
 export interface DataTableProps<T extends RowData> {
   columns: TableColumn<T>[]
@@ -434,7 +435,7 @@ export function DataTable<T extends RowData>({
       <DropdownMenu.Trigger asChild>
         <Button variant="ghost" size="sm" className="ml-auto">
           <Settings2 />
-          Columns
+          {t('Columns')}
         </Button>
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
@@ -549,7 +550,7 @@ export function DataTable<T extends RowData>({
                       }}
                       title={
                         reorderableColumns && header.column.id !== 'actions'
-                          ? 'Drag to move this column'
+                          ? t('Drag to move this column')
                           : undefined
                       }
                       className={cn(
@@ -567,7 +568,7 @@ export function DataTable<T extends RowData>({
                         <span
                           role="separator"
                           aria-orientation="vertical"
-                          aria-label="Drag to resize the column, double-click to fit it"
+                          aria-label={t('Drag to resize the column, double-click to fit it')}
                           onPointerDown={(event) => startResize(event, header.column.id)}
                           onPointerMove={moveResize}
                           onPointerUp={endResize}
@@ -602,8 +603,8 @@ export function DataTable<T extends RowData>({
                 <td colSpan={visibleColumnCount}>
                   {emptyState ?? (
                     <EmptyState
-                      title="Nothing here yet"
-                      description="Try clearing your filters, or add the first record."
+                      title={t('Nothing here yet')}
+                      description={t('Try clearing your filters, or add the first record.')}
                     />
                   )}
                 </td>

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Modal } from '@/shared/ui/Modal'
 import { Input } from '@/shared/ui/Input'
 import { formatMoney } from '@/shared/lib/format'
+import { t } from '@/shared/i18n'
 
 /**
  * Settling a debt. The amount defaults to the whole balance, which is what
@@ -31,22 +32,22 @@ export function RecordPaymentModal({
         if (!next) setAmount('')
         onOpenChange(next)
       }}
-      title="Record a payment"
+      title={t('Record a payment')}
       size="sm"
       submitting={submitting}
       primary={{
-        label: 'Record payment',
+        label: t('Record payment'),
         onClick: () => onConfirm(value),
         disabled: value <= 0,
       }}
     >
       <div className="space-y-3">
         <p className="text-fg-muted text-sm">
-          Outstanding balance is{' '}
+          {t('Outstanding balance is')}{' '}
           <strong className="text-fg font-medium">{formatMoney(debt)}</strong>.
         </p>
         <label className="block space-y-1">
-          <span className="text-fg-muted text-sm">Amount</span>
+          <span className="text-fg-muted text-sm">{t('Amount')}</span>
           <Input
             type="number"
             min={0}
@@ -60,10 +61,10 @@ export function RecordPaymentModal({
         </label>
         {remaining > 0 ? (
           <p className="text-warning text-2xs">
-            {formatMoney(remaining)} will still be owed after this payment.
+            {formatMoney(remaining)} {t('will still be owed after this payment.')}
           </p>
         ) : (
-          <p className="text-success text-2xs">This settles the sale in full.</p>
+          <p className="text-success text-2xs">{t('This settles the sale in full.')}</p>
         )}
       </div>
     </Modal>

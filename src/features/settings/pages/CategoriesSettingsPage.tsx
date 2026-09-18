@@ -19,6 +19,7 @@ import { formatNumber } from '@/shared/lib/format'
 import type { TableColumn } from '@/shared/components/table/features'
 import { useDataStore } from '@/data/store'
 import { categorySchema, type CategorySettings } from '../model/settings'
+import { t } from '@/shared/i18n'
 
 interface Row extends CategorySettings {
   depth: number
@@ -106,7 +107,7 @@ export default function CategoriesSettingsPage() {
     () => [
       {
         accessorKey: 'name',
-        header: 'Category',
+        header: t('Category'),
         enableHiding: false,
         cell: ({ row }) => (
           <div
@@ -122,19 +123,19 @@ export default function CategoriesSettingsPage() {
       },
       {
         id: 'level',
-        header: 'Level',
+        header: t('Level'),
         cell: ({ row }) => (
-          <Badge tone="neutral">{row.original.depth === 0 ? 'Group' : 'Category'}</Badge>
+          <Badge tone="neutral">{row.original.depth === 0 ? t('Group') : t('Category')}</Badge>
         ),
       },
       {
         id: 'products',
-        header: 'Products',
+        header: t('Products'),
         meta: { align: 'right' },
         enableHiding: false,
         cell: ({ row }) =>
           row.original.products === 0 ? (
-            <span className="text-fg-subtle">None</span>
+            <span className="text-fg-subtle">{t('None')}</span>
           ) : (
             <span className="tabular-nums">{formatNumber(row.original.products)}</span>
           ),
@@ -148,13 +149,13 @@ export default function CategoriesSettingsPage() {
           <RowActions
             actions={[
               {
-                label: 'Edit',
+                label: t('Edit'),
                 icon: Pencil,
                 hidden: !can('settings.products.edit'),
                 onSelect: () => openFor(row.original),
               },
               {
-                label: 'Delete',
+                label: t('Delete'),
                 icon: Trash2,
                 destructive: true,
                 hidden: !can('settings.products.delete'),
@@ -176,13 +177,15 @@ export default function CategoriesSettingsPage() {
   return (
     <>
       <PageHeader
-        title="Categories"
-        description="How the catalogue is grouped. Two levels: a group, and the categories inside it. Every product sits in one."
+        title={t('Categories')}
+        description={t(
+          'How the catalogue is grouped. Two levels: a group, and the categories inside it. Every product sits in one.',
+        )}
         action={
           can('settings.products.create') ? (
             <Button variant="primary" onClick={() => openFor(null)}>
               <Plus />
-              Add category
+              {t('Add category')}
             </Button>
           ) : null
         }
@@ -199,8 +202,8 @@ export default function CategoriesSettingsPage() {
         emptyState={
           <EmptyState
             icon={FolderTree}
-            title="No categories yet"
-            description="Group the catalogue so it can be filtered and reported on."
+            title={t('No categories yet')}
+            description={t('Group the catalogue so it can be filtered and reported on.')}
           />
         }
       />
@@ -208,13 +211,13 @@ export default function CategoriesSettingsPage() {
       <Modal
         open={open}
         onOpenChange={setOpen}
-        title={editing ? `Edit ${editing.name}` : 'New category'}
+        title={editing ? `Edit ${editing.name}` : t('New category')}
         primary={{ label: editing ? 'Save changes' : 'Add category', onClick: save }}
       >
         <div className="space-y-3">
           <Field
-            label="Picture"
-            hint="Shown wherever a category is picked, like a transfer's product step"
+            label={t('Picture')}
+            hint={t("Shown wherever a category is picked, like a transfer's product step")}
           >
             {() => (
               <ImageField
@@ -223,22 +226,22 @@ export default function CategoriesSettingsPage() {
               />
             )}
           </Field>
-          <Field label="Name" required error={errors.name?.[0]}>
+          <Field label={t('Name')} required error={errors.name?.[0]}>
             {(p) => (
               <Input
                 {...p}
-                placeholder="Brake pads"
+                placeholder={t('Brake pads')}
                 value={draft.name}
                 onChange={(event) => setDraft((c) => ({ ...c, name: event.target.value }))}
               />
             )}
           </Field>
-          <Field label="Inside" hint="Leave empty to make it a top-level group">
+          <Field label={t('Inside')} hint={t('Leave empty to make it a top-level group')}>
             {(p) => (
               <Select
                 {...p}
                 className="w-full"
-                placeholder="A group of its own"
+                placeholder={t('A group of its own')}
                 value={draft.parentId ?? undefined}
                 onChange={(parentId) => setDraft((c) => ({ ...c, parentId: parentId || null }))}
                 options={parentOptions}
@@ -255,13 +258,13 @@ export default function CategoriesSettingsPage() {
         }}
         title={`Delete ${deleting?.name}?`}
         body="A category with products in it, or with sub-categories under it, cannot be deleted — move those first."
-        confirmLabel="Delete"
+        confirmLabel={t('Delete')}
         destructive
         onConfirm={() => {
           if (!deleting) return
           const result = remove(deleting.id)
           setDeleting(null)
-          if (result.ok) toast.success('Category deleted')
+          if (result.ok) toast.success(t('Category deleted'))
           else toast.error(result.error)
         }}
       />

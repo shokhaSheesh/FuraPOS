@@ -47,6 +47,7 @@ import {
   type KeyCheck,
   type MassUpdateRecord,
 } from '../model/massUpdate'
+import { t } from '@/shared/i18n'
 
 type Step = 1 | 2 | 3
 
@@ -90,7 +91,7 @@ export default function MassUpdatePage() {
       const { grid: read } = await readSpreadsheet(file)
       const clean = read.filter((row) => row.some((cell) => cell.trim()))
       if (clean.length === 0) {
-        toast.error('The file is empty, or it could not be read')
+        toast.error(t('The file is empty, or it could not be read'))
         return
       }
       setFileName(file.name)
@@ -108,7 +109,7 @@ export default function MassUpdatePage() {
       )
       setCheck(null)
     } catch {
-      toast.error('That file could not be read — use .csv, .xlsx or .xls')
+      toast.error(t('That file could not be read — use .csv, .xlsx or .xls'))
     }
   }
 
@@ -118,10 +119,10 @@ export default function MassUpdatePage() {
   const runCheck = () => setCheck(checkKeys(rows, roles, variations))
 
   const goTo = (next: Step) => {
-    if (next >= 2 && !grid) return toast.error('Choose a file first')
+    if (next >= 2 && !grid) return toast.error(t('Choose a file first'))
     if (next === 3 && issues.length) {
       setStep(2)
-      return toast.error('Fix the columns first')
+      return toast.error(t('Fix the columns first'))
     }
     if (next === 3) setCheck(checkKeys(rows, roles, variations))
     setStep(next)
@@ -131,7 +132,7 @@ export default function MassUpdatePage() {
     const plan = planMassUpdate({ rows, roles, variations, categories, suppliers })
     const record = applyMassUpdate({ fileName, totalRows: rows.length, plan })
     setDone(record)
-    toast.success('Update finished')
+    toast.success(t('Update finished'))
   }
 
   const reset = () => {
@@ -167,8 +168,10 @@ export default function MassUpdatePage() {
   return (
     <>
       <PageHeader
-        title="Mass update"
-        description="Change many products at once from a spreadsheet — prices, names, categories, stock and more."
+        title={t('Mass update')}
+        description={t(
+          'Change many products at once from a spreadsheet — prices, names, categories, stock and more.',
+        )}
         below={
           <Steps
             steps={['File', 'Columns', 'Review and run']}
@@ -199,18 +202,19 @@ export default function MassUpdatePage() {
             <Card>
               <CardHeader className="flex flex-wrap items-center justify-between gap-2">
                 <div className="min-w-0">
-                  <CardTitle>What is in each column</CardTitle>
+                  <CardTitle>{t('What is in each column')}</CardTitle>
                   <p className="text-fg-subtle text-2xs mt-0.5">
-                    At least one key column — it finds the product — and one column of new values.
-                    Leave the rest as “Don’t use”.
+                    {t(
+                      'At least one key column — it finds the product — and one column of new values. Leave the rest as “Don’t use”.',
+                    )}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {presets.length ? (
                     <Select
                       className="w-56"
-                      aria-label="Load a saved mapping"
-                      placeholder="Load a saved mapping"
+                      aria-label={t('Load a saved mapping')}
+                      placeholder={t('Load a saved mapping')}
                       value={undefined}
                       onChange={(id) => {
                         const preset = presets.find((p) => p.id === id)
@@ -231,7 +235,7 @@ export default function MassUpdatePage() {
                       setSavingPreset(true)
                     }}
                   >
-                    Save mapping
+                    {t('Save mapping')}
                   </Button>
                 </div>
               </CardHeader>
@@ -263,21 +267,21 @@ export default function MassUpdatePage() {
                               {role.kind === 'action' && actionSpec(role.action).needsCurrency ? (
                                 <Select<Currency>
                                   className="mt-1.5 h-8 w-full"
-                                  aria-label="Currency"
-                                  placeholder="Currency"
+                                  aria-label={t('Currency')}
+                                  placeholder={t('Currency')}
                                   value={role.currency}
                                   onChange={(currency) => setRole(index, { ...role, currency })}
                                   options={[
-                                    { value: 'UZS', label: 'UZS' },
-                                    { value: 'USD', label: 'USD' },
+                                    { value: 'UZS', label: t('UZS') },
+                                    { value: 'USD', label: t('USD') },
                                   ]}
                                 />
                               ) : null}
                               {role.kind === 'action' && actionSpec(role.action).needsLocation ? (
                                 <Select
                                   className="mt-1.5 h-8 w-full"
-                                  aria-label="Location"
-                                  placeholder="At which location"
+                                  aria-label={t('Location')}
+                                  placeholder={t('At which location')}
                                   value={role.locationId}
                                   onChange={(locationId) => setRole(index, { ...role, locationId })}
                                   options={locations.map((l) => ({ value: l.id, label: l.name }))}
@@ -308,15 +312,15 @@ export default function MassUpdatePage() {
                   </table>
                 </div>
                 <p className="text-fg-subtle text-2xs">
-                  Showing {formatNumber(Math.min(8, rows.length))} of {formatNumber(rows.length)}{' '}
-                  rows
+                  {t('Showing')} {formatNumber(Math.min(8, rows.length))} of{' '}
+                  {formatNumber(rows.length)} rows
                 </p>
 
                 {issues.length ? (
                   <div className="border-warning/30 bg-warning-soft rounded-control flex gap-2 border p-3 text-sm">
                     <AlertTriangle className="text-warning mt-0.5 size-4 shrink-0" />
                     <div>
-                      <p className="text-fg font-medium">Before going on, fix:</p>
+                      <p className="text-fg font-medium">{t('Before going on, fix:')}</p>
                       <ul className="text-fg-muted mt-1 list-disc pl-4">
                         {issues.map((issue) => (
                           <li key={issue}>{issue}</li>
@@ -328,7 +332,7 @@ export default function MassUpdatePage() {
 
                 <div className="flex justify-between">
                   <Button type="button" variant="secondary" onClick={() => setStep(1)}>
-                    Back
+                    {t('Back')}
                   </Button>
                   <Button
                     type="button"
@@ -336,7 +340,7 @@ export default function MassUpdatePage() {
                     disabled={issues.length > 0}
                     onClick={() => goTo(3)}
                   >
-                    Next
+                    {t('Next')}
                   </Button>
                 </div>
               </CardBody>
@@ -350,18 +354,18 @@ export default function MassUpdatePage() {
               <>
                 <Card>
                   <CardHeader>
-                    <CardTitle>What will be done</CardTitle>
+                    <CardTitle>{t('What will be done')}</CardTitle>
                   </CardHeader>
                   <CardBody className="space-y-2 text-sm">
                     <p className="text-fg-muted">
-                      Rows: <strong className="text-fg">{formatNumber(rows.length)}</strong> from{' '}
-                      <span className="text-fg">{fileName}</span>
+                      {t('Rows:')} <strong className="text-fg">{formatNumber(rows.length)}</strong>{' '}
+                      from <span className="text-fg">{fileName}</span>
                     </p>
                     <div className="flex flex-wrap gap-1.5">
                       {keyTags.map((tag) => (
                         <Badge key={`k-${tag}`} tone="info">
                           <Search className="mr-1 inline size-3" />
-                          Find by {tag}
+                          {t('Find by')} {tag}
                         </Badge>
                       ))}
                       {actionTags.map((tag) => (
@@ -376,42 +380,45 @@ export default function MassUpdatePage() {
 
                 <Card>
                   <CardHeader className="flex items-center justify-between gap-2">
-                    <CardTitle>Key check</CardTitle>
+                    <CardTitle>{t('Key check')}</CardTitle>
                     <Button type="button" variant="ghost" size="sm" onClick={runCheck}>
                       <RefreshCw />
-                      Check again
+                      {t('Check again')}
                     </Button>
                   </CardHeader>
                   <CardBody className="space-y-3">
                     {check ? (
                       <>
                         <div className="grid gap-3 sm:grid-cols-3">
-                          <Tile label="Rows" value={check.total} />
+                          <Tile label={t('Rows')} value={check.total} />
                           <Tile
-                            label="Found"
+                            label={t('Found')}
                             value={check.found}
                             tone={check.found > 0 ? 'success' : 'danger'}
                           />
                           <Tile
-                            label="Not found"
+                            label={t('Not found')}
                             value={check.total - check.found}
                             tone={check.total - check.found > 0 ? 'warning' : undefined}
                           />
                         </div>
                         {check.found === 0 ? (
                           <p className="text-danger text-sm">
-                            No row is found by the chosen key — running now would change nothing.
-                            Check the key column and its values.
+                            {t(
+                              'No row is found by the chosen key — running now would change nothing. Check the key column and its values.',
+                            )}
                           </p>
                         ) : check.found === check.total ? (
                           <p className="text-success flex items-center gap-1.5 text-sm">
                             <CheckCircle2 className="size-4" />
-                            Every row is found — ready to run.
+                            {t('Every row is found — ready to run.')}
                           </p>
                         ) : (
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <p className="text-fg-muted text-sm">
-                              Rows that are not found are simply skipped — they do not stop the run.
+                              {t(
+                                'Rows that are not found are simply skipped — they do not stop the run.',
+                              )}
                             </p>
                             <Button
                               type="button"
@@ -426,20 +433,22 @@ export default function MassUpdatePage() {
                               }
                             >
                               <Download />
-                              Download the list
+                              {t('Download the list')}
                             </Button>
                           </div>
                         )}
                       </>
                     ) : (
-                      <p className="text-fg-subtle text-sm">Checking how many rows are found…</p>
+                      <p className="text-fg-subtle text-sm">
+                        {t('Checking how many rows are found…')}
+                      </p>
                     )}
                   </CardBody>
                 </Card>
 
                 <div className="flex justify-between">
                   <Button type="button" variant="secondary" onClick={() => setStep(2)}>
-                    Back
+                    {t('Back')}
                   </Button>
                   <Button
                     type="button"
@@ -448,7 +457,7 @@ export default function MassUpdatePage() {
                     onClick={run}
                   >
                     <RefreshCw />
-                    Update
+                    {t('Update')}
                   </Button>
                 </div>
               </>
@@ -464,22 +473,22 @@ export default function MassUpdatePage() {
       <Modal
         open={savingPreset}
         onOpenChange={setSavingPreset}
-        title="Save this mapping"
-        description="Load it next time a file arrives in the same shape."
+        title={t('Save this mapping')}
+        description={t('Load it next time a file arrives in the same shape.')}
         primary={{
-          label: 'Save',
+          label: t('Save'),
           disabled: !presetName.trim(),
           onClick: () => {
             savePreset({ name: presetName.trim(), roles, hasHeader })
             setSavingPreset(false)
-            toast.success('Mapping saved')
+            toast.success(t('Mapping saved'))
           },
         }}
       >
         <Input
           autoFocus
-          aria-label="Mapping name"
-          placeholder="Weekly price list"
+          aria-label={t('Mapping name')}
+          placeholder={t('Weekly price list')}
           value={presetName}
           onChange={(event) => setPresetName(event.target.value)}
         />
@@ -536,10 +545,10 @@ function FileStep({
         >
           <FileUp className="text-primary size-8" />
           <span className="text-fg text-sm font-medium">
-            Drop a CSV or Excel file here, or click to choose one
+            {t('Drop a CSV or Excel file here, or click to choose one')}
           </span>
           <span className="text-fg-subtle text-2xs">
-            .csv, .xlsx and .xls — the encoding and separator are worked out for you
+            {t('.csv, .xlsx and .xls — the encoding and separator are worked out for you')}
           </span>
         </button>
         <input
@@ -555,7 +564,7 @@ function FileStep({
         <div className="text-center">
           <Button type="button" variant="link" size="sm" onClick={onTemplate}>
             <Download />
-            Download a template
+            {t('Download a template')}
           </Button>
         </div>
 
@@ -567,22 +576,22 @@ function FileStep({
                 {fileName}
               </Badge>
               <span className="text-fg-muted text-sm">
-                Rows:{' '}
+                {t('Rows:')}{' '}
                 <strong className="text-fg">
                   {formatNumber(grid.length - (hasHeader ? 1 : 0))}
                 </strong>
               </span>
               <label className="text-fg flex cursor-pointer items-center gap-2 text-sm">
                 <Checkbox
-                  aria-label="The first row is a heading"
+                  aria-label={t('The first row is a heading')}
                   checked={hasHeader}
                   onCheckedChange={onHasHeader}
                 />
-                The first row is a heading
+                {t('The first row is a heading')}
               </label>
               <Button type="button" variant="ghost" size="sm" className="ml-auto" onClick={onClear}>
                 <X />
-                Remove
+                {t('Remove')}
               </Button>
             </div>
             <div className="overflow-x-auto">
@@ -608,7 +617,7 @@ function FileStep({
 
         <div className="text-right">
           <Button type="button" variant="primary" disabled={!grid} onClick={onNext}>
-            Next
+            {t('Next')}
           </Button>
         </div>
       </CardBody>
@@ -667,9 +676,9 @@ function RolePicker({
       }
     >
       <MenuItem onClick={() => pick(SKIP)} active={role.kind === 'skip'}>
-        Don’t use
+        {t('Don’t use')}
       </MenuItem>
-      <MenuHeading>Key — finds the product</MenuHeading>
+      <MenuHeading>{t('Key — finds the product')}</MenuHeading>
       {KEY_TYPES.map((key) => (
         <MenuItem
           key={key.value}
@@ -680,7 +689,7 @@ function RolePicker({
           {key.label}
         </MenuItem>
       ))}
-      <MenuHeading>Update this field</MenuHeading>
+      <MenuHeading>{t('Update this field')}</MenuHeading>
       {ACTIONS.filter((action) => canSeeCost || !action.costOnly).map((action) => {
         const allowed = actionAllowed(action.value, others)
         return (
@@ -688,7 +697,7 @@ function RolePicker({
             key={action.value}
             active={role.kind === 'action' && role.action === action.value}
             disabled={!allowed}
-            title={allowed ? undefined : 'Cannot be found by the chosen key'}
+            title={allowed ? undefined : t('Cannot be found by the chosen key')}
             onClick={() =>
               pick({
                 kind: 'action',
@@ -785,12 +794,12 @@ function ResultCard({ record, onNew }: { record: MassUpdateRecord; onNew: () => 
     <Card>
       <CardBody className="flex flex-col items-center gap-3 py-8 text-center">
         <CheckCircle2 className="text-success size-10" />
-        <p className="text-fg text-base font-semibold">Update finished</p>
+        <p className="text-fg text-base font-semibold">{t('Update finished')}</p>
         <div className="flex flex-wrap justify-center gap-1.5">
           {[
-            ['Products', record.result.products],
-            ['Variations', record.result.variations],
-            ['Stock', record.result.stock],
+            [t('Products'), record.result.products],
+            [t('Variations'), record.result.variations],
+            [t('Stock'), record.result.stock],
           ]
             .filter(([, count]) => (count as number) > 0)
             .map(([label, count]) => (
@@ -798,19 +807,21 @@ function ResultCard({ record, onNew }: { record: MassUpdateRecord; onNew: () => 
                 {label}: {formatNumber(count as number)}
               </Badge>
             ))}
-          {resultText(record.result) === 'Nothing updated' ? (
-            <Badge tone="neutral">Nothing updated</Badge>
+          {resultText(record.result) === t('Nothing updated') ? (
+            <Badge tone="neutral">{t('Nothing updated')}</Badge>
           ) : null}
         </div>
         {record.correctionNumbers.length ? (
           <p className="text-fg-muted text-sm">
-            Stock was changed through {record.correctionNumbers.join(', ')} — it shows in the
-            product logs.
+            {t('Stock was changed through')} {record.correctionNumbers.join(', ')}{' '}
+            {t('— it shows in the product logs.')}
           </p>
         ) : null}
         {record.errors.length ? (
           <div className="border-warning/30 bg-warning-soft rounded-control w-full max-w-lg border p-3 text-left text-sm">
-            <p className="text-fg font-medium">Errors: {formatNumber(record.errors.length)}</p>
+            <p className="text-fg font-medium">
+              {t('Errors:')} {formatNumber(record.errors.length)}
+            </p>
             <div className="text-fg-muted mt-1 max-h-40 space-y-0.5 overflow-y-auto">
               {record.errors.map((error) => (
                 <p key={error}>{error}</p>
@@ -819,7 +830,7 @@ function ResultCard({ record, onNew }: { record: MassUpdateRecord; onNew: () => 
           </div>
         ) : null}
         <Button type="button" variant="primary" onClick={onNew}>
-          New update
+          {t('New update')}
         </Button>
       </CardBody>
     </Card>
@@ -837,23 +848,26 @@ function HistoryCard({ records }: { records: MassUpdateRecord[] }) {
       >
         {open ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
         <History className="text-fg-muted size-4" />
-        History ({formatNumber(records.length)})
+        {t('History (')}
+        {formatNumber(records.length)})
       </button>
       {open ? (
         records.length === 0 ? (
           <p className="text-fg-subtle border-border border-t px-4 py-3 text-sm">
-            No updates have been run yet.
+            {t('No updates have been run yet.')}
           </p>
         ) : (
           <div className="border-border overflow-x-auto border-t">
             <table className="w-full text-sm">
               <thead className="bg-surface-muted">
                 <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-                  {['Date', 'User', 'File', 'Rows', 'Status', 'Result'].map((heading) => (
-                    <th key={heading} className="px-3 py-2 text-left font-semibold">
-                      {heading}
-                    </th>
-                  ))}
+                  {[t('Date'), t('User'), t('File'), t('Rows'), t('Status'), t('Result')].map(
+                    (heading) => (
+                      <th key={heading} className="px-3 py-2 text-left font-semibold">
+                        {heading}
+                      </th>
+                    ),
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -867,7 +881,7 @@ function HistoryCard({ records }: { records: MassUpdateRecord[] }) {
                     <td className="px-3 py-2 tabular-nums">{formatNumber(record.totalRows)}</td>
                     <td className="px-3 py-2">
                       <Badge tone={record.status === 'done' ? 'success' : 'danger'}>
-                        {record.status === 'done' ? 'Done' : 'Failed'}
+                        {record.status === 'done' ? t('Done') : t('Failed')}
                       </Badge>
                     </td>
                     <td className="text-fg-muted px-3 py-2">{resultText(record.result)}</td>
@@ -887,32 +901,38 @@ function InfoPanel() {
     {
       icon: FileSpreadsheet,
       tone: 'text-success bg-success-soft',
-      title: 'Update from a file',
-      text: 'Upload Excel or CSV — thousands of products change in one run, without editing each by hand.',
+      title: t('Update from a file'),
+      text: t(
+        'Upload Excel or CSV — thousands of products change in one run, without editing each by hand.',
+      ),
     },
     {
       icon: Search,
       tone: 'text-info bg-info-soft',
-      title: 'Found by a key',
-      text: 'Products are found by barcode, SKU or ID — you say which column holds it.',
+      title: t('Found by a key'),
+      text: t('Products are found by barcode, SKU or ID — you say which column holds it.'),
     },
     {
       icon: PencilLine,
       tone: 'text-primary bg-primary-soft',
-      title: 'Any field',
-      text: 'Sale and supplier prices, names, categories, suppliers, makes, storage address, stock and more.',
+      title: t('Any field'),
+      text: t(
+        'Sale and supplier prices, names, categories, suppliers, makes, storage address, stock and more.',
+      ),
     },
     {
       icon: ShieldCheck,
       tone: 'text-warning bg-warning-soft',
-      title: 'Safe to run',
-      text: 'Before anything changes you see how many rows are found. Rows not found are skipped, and every run is kept in the history.',
+      title: t('Safe to run'),
+      text: t(
+        'Before anything changes you see how many rows are found. Rows not found are skipped, and every run is kept in the history.',
+      ),
     },
   ]
   return (
     <Card className="lg:sticky lg:top-4">
       <CardHeader>
-        <CardTitle>What is this?</CardTitle>
+        <CardTitle>{t('What is this?')}</CardTitle>
       </CardHeader>
       <CardBody className="space-y-4">
         {items.map((item) => (
@@ -932,11 +952,11 @@ function InfoPanel() {
           </div>
         ))}
         <div className="border-border border-t pt-3">
-          <p className="text-fg text-sm font-medium">How it works</p>
+          <p className="text-fg text-sm font-medium">{t('How it works')}</p>
           <ol className="text-fg-muted mt-2 space-y-1.5 text-sm">
-            <li>1. Upload the file</li>
-            <li>2. Say what is in each column</li>
-            <li>3. Check, then run the update</li>
+            <li>{t('1. Upload the file')}</li>
+            <li>{t('2. Say what is in each column')}</li>
+            <li>{t('3. Check, then run the update')}</li>
           </ol>
         </div>
       </CardBody>

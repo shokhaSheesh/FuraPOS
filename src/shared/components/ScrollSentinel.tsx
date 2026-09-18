@@ -1,5 +1,6 @@
 import { Button } from '@/shared/ui/Button'
 import { formatNumber } from '@/shared/lib/format'
+import { t } from '@/shared/i18n'
 
 /**
  * The strip under a table that keeps loading as you scroll.
@@ -28,12 +29,12 @@ export function ScrollSentinel({
       ref={ref}
       className="border-border text-fg-subtle flex flex-wrap items-center justify-center gap-3 border-t px-4 py-3 text-center text-sm"
     >
-      Showing {formatNumber(shown)} of {formatNumber(total)}
+      {t('Showing')} {formatNumber(shown)} of {formatNumber(total)}
       {/* Scrolling is the ordinary way through; the button is for when it is
           not — a keyboard, a screen reader, or a browser that has decided not
           to fire the observer. */}
       <Button variant="ghost" size="sm" onClick={onShowMore}>
-        Show more
+        {t('Show more')}
       </Button>
     </div>
   )

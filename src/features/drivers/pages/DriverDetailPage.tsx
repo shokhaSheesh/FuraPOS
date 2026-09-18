@@ -9,6 +9,7 @@ import { paths } from '@/shared/config/paths'
 import { formatDate, formatDateTime, formatMoney, formatNumber } from '@/shared/lib/format'
 import { useDriver, useDriverSales } from '../api/drivers'
 import { KIND_LABEL, describeTruck, kindOf, type Truck } from '../model/driver'
+import { t } from '@/shared/i18n'
 
 /**
  * One driver.
@@ -25,7 +26,11 @@ export default function DriverDetailPage() {
 
   if (!driver) {
     return (
-      <EmptyState icon={UserRound} title="No such driver" description="He may have been removed." />
+      <EmptyState
+        icon={UserRound}
+        title={t('No such driver')}
+        description={t('He may have been removed.')}
+      />
     )
   }
 
@@ -38,7 +43,7 @@ export default function DriverDetailPage() {
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
         <Link to={paths.users.drivers}>
           <ArrowLeft />
-          Drivers
+          {t('Drivers')}
         </Link>
       </Button>
 
@@ -49,7 +54,7 @@ export default function DriverDetailPage() {
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone={kind === 'both' ? 'info' : 'neutral'}>{KIND_LABEL[kind]}</Badge>
             <Badge tone={driver.status === 'active' ? 'success' : 'neutral'}>
-              {driver.status === 'active' ? 'Driving' : 'No longer driving'}
+              {driver.status === 'active' ? t('Driving') : t('No longer driving')}
             </Badge>
             {driver.autoparkId ? (
               <Link
@@ -64,10 +69,10 @@ export default function DriverDetailPage() {
       />
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <Stat label="Purchases" value={formatNumber(sales.length)} />
-        <Stat label="Spent" value={formatMoney(spent)} />
+        <Stat label={t('Purchases')} value={formatNumber(sales.length)} />
+        <Stat label={t('Spent')} value={formatMoney(spent)} />
         <Stat
-          label="Last bought"
+          label={t('Last bought')}
           value={lastSale ? formatDate(lastSale.createdAt) : '—'}
           hint={lastSale?.truckPlate ?? undefined}
         />
@@ -75,12 +80,12 @@ export default function DriverDetailPage() {
 
       <div className="grid gap-3 lg:grid-cols-2">
         <TruckList
-          title="His own trucks"
+          title={t('His own trucks')}
           empty="He owns none — he drives only for his autopark."
           trucks={driver.ownTrucks}
         />
         <TruckList
-          title={driver.autoparkName ? `${driver.autoparkName}'s truck` : "Autopark's truck"}
+          title={driver.autoparkName ? `${driver.autoparkName}'s truck` : t("Autopark's truck")}
           empty="He drives for no autopark."
           trucks={driver.autoparkTruck ? [driver.autoparkTruck] : []}
         />
@@ -88,13 +93,13 @@ export default function DriverDetailPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Record</CardTitle>
+          <CardTitle>{t('Record')}</CardTitle>
         </CardHeader>
         <CardBody className="space-y-2">
-          <Row label="Code" value={<span className="font-mono">{driver.code}</span>} />
-          <Row label="Phone" value={driver.phone ?? '—'} />
+          <Row label={t('Code')} value={<span className="font-mono">{driver.code}</span>} />
+          <Row label={t('Phone')} value={driver.phone ?? '—'} />
           <Row
-            label="Autopark"
+            label={t('Autopark')}
             value={
               driver.autoparkId ? (
                 <Link
@@ -108,30 +113,30 @@ export default function DriverDetailPage() {
               )
             }
           />
-          <Row label="Added" value={formatDate(driver.createdAt)} />
-          {driver.comment ? <Row label="Note" value={driver.comment} /> : null}
+          <Row label={t('Added')} value={formatDate(driver.createdAt)} />
+          {driver.comment ? <Row label={t('Note')} value={driver.comment} /> : null}
         </CardBody>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Purchases</CardTitle>
+          <CardTitle>{t('Purchases')}</CardTitle>
         </CardHeader>
         <CardBody className="p-0">
           {sales.length === 0 ? (
             <p className="text-fg-subtle px-4 py-6 text-center text-sm">
-              He has collected nothing yet.
+              {t('He has collected nothing yet.')}
             </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-canvas">
                   <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-                    <th className="px-4 py-2 text-left font-semibold">Sale</th>
-                    <th className="px-4 py-2 text-left font-semibold">When</th>
-                    <th className="px-4 py-2 text-left font-semibold">Truck</th>
-                    <th className="px-4 py-2 text-left font-semibold">Bought for</th>
-                    <th className="px-4 py-2 text-right font-semibold">Total</th>
+                    <th className="px-4 py-2 text-left font-semibold">{t('Sale')}</th>
+                    <th className="px-4 py-2 text-left font-semibold">{t('When')}</th>
+                    <th className="px-4 py-2 text-left font-semibold">{t('Truck')}</th>
+                    <th className="px-4 py-2 text-left font-semibold">{t('Bought for')}</th>
+                    <th className="px-4 py-2 text-right font-semibold">{t('Total')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -150,7 +155,7 @@ export default function DriverDetailPage() {
                       {/* The client on the sale is the autopark when he bought
                           on their contract, and nobody when he bought for
                           himself — so this column says which it was. */}
-                      <td className="text-fg-muted px-4 py-2">{sale.clientName ?? 'Himself'}</td>
+                      <td className="text-fg-muted px-4 py-2">{sale.clientName ?? t('Himself')}</td>
                       <td className="text-fg px-4 py-2 text-right font-medium tabular-nums">
                         {formatMoney(sale.total)}
                       </td>
@@ -194,7 +199,7 @@ function TruckList({ title, trucks, empty }: { title: string; trucks: Truck[]; e
               <div className="min-w-0">
                 <p className="text-fg font-mono text-sm">{truck.plate}</p>
                 <p className="text-fg-subtle text-2xs">
-                  {describeTruck(truck) || 'Make not recorded'}
+                  {describeTruck(truck) || t('Make not recorded')}
                 </p>
               </div>
             </div>

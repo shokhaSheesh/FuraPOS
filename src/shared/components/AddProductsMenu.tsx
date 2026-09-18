@@ -3,6 +3,7 @@ import { DropdownMenu } from 'radix-ui'
 import { ChevronDown, Plus, Upload } from 'lucide-react'
 import { Button } from '@/shared/ui/Button'
 import { paths } from '@/shared/config/paths'
+import { t } from '@/shared/i18n'
 
 /**
  * The ways a product gets onto a document — a goods receipt, a purchase order —
@@ -27,14 +28,14 @@ export function AddProductsMenu({
   const options = [
     {
       icon: Upload,
-      label: 'Upload a spreadsheet',
-      hint: 'A supplier’s own list, mapped to our fields',
+      label: t('Upload a spreadsheet'),
+      hint: t('A supplier’s own list, mapped to our fields'),
       onSelect: onUploadSpreadsheet,
     },
     {
       icon: Plus,
-      label: 'Create a new product',
-      hint: 'For something we have never carried before',
+      label: t('Create a new product'),
+      hint: t('For something we have never carried before'),
       onSelect: () => navigate(paths.products.new),
     },
   ]

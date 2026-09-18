@@ -32,6 +32,7 @@ import {
   SALE_STATUSES,
   type Sale,
 } from '../model/sale'
+import { t } from '@/shared/i18n'
 
 /**
  * One sale, in full. Every column the list can show has a home here — the list
@@ -51,11 +52,11 @@ export default function SaleDetailPage() {
     return (
       <Card>
         <EmptyState
-          title="Sale not found"
-          description="It may have been removed, or the link is wrong."
+          title={t('Sale not found')}
+          description={t('It may have been removed, or the link is wrong.')}
           action={
             <Button variant="secondary" asChild>
-              <Link to={paths.sales.orders}>Back to all sales</Link>
+              <Link to={paths.sales.orders}>{t('Back to all sales')}</Link>
             </Button>
           }
         />
@@ -82,7 +83,7 @@ export default function SaleDetailPage() {
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
         <Link to={paths.sales.orders}>
           <ArrowLeft />
-          All sales
+          {t('All sales')}
         </Link>
       </Button>
 
@@ -103,18 +104,22 @@ export default function SaleDetailPage() {
                 }
               >
                 <RotateCcw />
-                Restore
+                {t('Restore')}
               </Button>
             ) : (
-              <Button variant="ghost" aria-label="Delete sale" onClick={() => setDeleteOpen(true)}>
+              <Button
+                variant="ghost"
+                aria-label={t('Delete sale')}
+                onClick={() => setDeleteOpen(true)}
+              >
                 <Trash2 />
-                Delete
+                {t('Delete')}
               </Button>
             )}
             {sale.debt > 0 && sale.status !== 'deleted' ? (
               <Button variant="secondary" onClick={() => setPayOpen(true)}>
                 <HandCoins />
-                Record payment
+                {t('Record payment')}
               </Button>
             ) : null}
             {step && sale.status !== 'deleted' ? (
@@ -128,38 +133,40 @@ export default function SaleDetailPage() {
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone={status?.tone ?? 'neutral'}>{status?.label ?? sale.status}</Badge>
             <Badge>{SALE_CHANNELS.find((c) => c.value === sale.channel)?.label}</Badge>
-            {sale.delivery ? <Badge tone="info">Delivery</Badge> : null}
+            {sale.delivery ? <Badge tone="info">{t('Delivery')}</Badge> : null}
             {sale.expiresAt ? (
-              <Badge tone="warning">Expires {formatDate(sale.expiresAt)}</Badge>
+              <Badge tone="warning">
+                {t('Expires')} {formatDate(sale.expiresAt)}
+              </Badge>
             ) : null}
           </div>
         }
       />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric label="Total" value={formatMoney(sale.total)} />
+        <Metric label={t('Total')} value={formatMoney(sale.total)} />
         <Metric
-          label="Paid"
+          label={t('Paid')}
           value={formatMoney(sale.paid)}
           tone={sale.paid > 0 ? 'success' : undefined}
         />
         <Metric
-          label="Debt"
+          label={t('Debt')}
           value={sale.debt > 0 ? formatMoney(sale.debt) : '—'}
           tone={sale.debt > 0 ? 'danger' : undefined}
         />
-        <Metric label="Items" value={`${formatNumber(units)} in ${sale.lines.length} lines`} />
+        <Metric label={t('Items')} value={`${formatNumber(units)} in ${sale.lines.length} lines`} />
       </div>
 
       <Tabs
         items={[
-          { value: 'overview', label: 'Overview', content: <Overview sale={sale} /> },
+          { value: 'overview', label: t('Overview'), content: <Overview sale={sale} /> },
           ...(sale.delivery
-            ? [{ value: 'delivery', label: 'Delivery', content: <Delivery sale={sale} /> }]
+            ? [{ value: 'delivery', label: t('Delivery'), content: <Delivery sale={sale} /> }]
             : []),
           {
             value: 'activity',
-            label: 'Activity',
+            label: t('Activity'),
             content: (
               <Card>
                 <CardBody className="p-4">
@@ -174,11 +181,11 @@ export default function SaleDetailPage() {
       <ConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title="Delete this sale?"
+        title={t('Delete this sale?')}
         body={
           <>
-            <strong className="text-fg font-medium">{sale.number}</strong> moves to Deleted sales.
-            It stays in the ledger for audit and can be restored.
+            <strong className="text-fg font-medium">{sale.number}</strong>{' '}
+            {t('moves to Deleted sales. It stays in the ledger for audit and can be restored.')}
           </>
         }
         submitting={update.isPending}
@@ -224,32 +231,32 @@ function Overview({ sale }: { sale: Sale }) {
     <div className="grid gap-3 lg:grid-cols-3">
       <Card className="lg:col-span-2">
         <CardHeader>
-          <CardTitle>Items</CardTitle>
+          <CardTitle>{t('Items')}</CardTitle>
         </CardHeader>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-surface-muted">
               <tr className="text-fg-muted text-2xs tracking-wide uppercase">
                 <th scope="col" className="h-9 px-3 text-left font-semibold">
-                  Product
+                  {t('Product')}
                 </th>
                 <th scope="col" className="h-9 px-3 text-left font-semibold">
-                  Brand
+                  {t('Brand')}
                 </th>
                 <th scope="col" className="h-9 px-3 text-left font-semibold">
-                  Category
+                  {t('Category')}
                 </th>
                 <th scope="col" className="h-9 px-3 text-right font-semibold">
-                  Qty
+                  {t('Qty')}
                 </th>
                 <th scope="col" className="h-9 px-3 text-right font-semibold">
-                  Price
+                  {t('Price')}
                 </th>
                 <th scope="col" className="h-9 px-3 text-right font-semibold">
-                  Disc
+                  {t('Disc')}
                 </th>
                 <th scope="col" className="h-9 px-3 text-right font-semibold">
-                  Total
+                  {t('Total')}
                 </th>
               </tr>
             </thead>
@@ -289,26 +296,28 @@ function Overview({ sale }: { sale: Sale }) {
           </table>
         </div>
         <CardBody className="border-border space-y-2 border-t p-4">
-          <Row label="Subtotal" value={formatMoney(sale.subtotal)} />
+          <Row label={t('Subtotal')} value={formatMoney(sale.subtotal)} />
           {sale.discount > 0 ? (
-            <Row label="Discount" value={`− ${formatMoney(sale.discount)}`} tone="warning" />
+            <Row label={t('Discount')} value={`− ${formatMoney(sale.discount)}`} tone="warning" />
           ) : null}
           {sale.deliveryCost > 0 ? (
-            <Row label="Delivery" value={`+ ${formatMoney(sale.deliveryCost)}`} />
+            <Row label={t('Delivery')} value={`+ ${formatMoney(sale.deliveryCost)}`} />
           ) : null}
           <div className="border-border flex items-baseline justify-between border-t pt-2">
-            <span className="text-fg text-sm font-medium">Total</span>
+            <span className="text-fg text-sm font-medium">{t('Total')}</span>
             <span className="text-fg text-lg font-semibold">{formatMoney(sale.total)}</span>
           </div>
-          <Row label="Paid" value={formatMoney(sale.paid)} tone="success" />
-          {sale.debt > 0 ? <Row label="Debt" value={formatMoney(sale.debt)} tone="danger" /> : null}
+          <Row label={t('Paid')} value={formatMoney(sale.paid)} tone="success" />
+          {sale.debt > 0 ? (
+            <Row label={t('Debt')} value={formatMoney(sale.debt)} tone="danger" />
+          ) : null}
         </CardBody>
       </Card>
 
       <div className="space-y-3">
         <Card>
           <CardHeader>
-            <CardTitle>Customer</CardTitle>
+            <CardTitle>{t('Customer')}</CardTitle>
           </CardHeader>
           <CardBody>
             {sale.clientId ? (
@@ -316,39 +325,42 @@ function Overview({ sale }: { sale: Sale }) {
                 <Link to={paths.users.autoparkDetail(sale.clientId)}>{sale.clientName}</Link>
               </Button>
             ) : (
-              <p className="text-fg-muted text-sm">Walk-in customer</p>
+              <p className="text-fg-muted text-sm">{t('Walk-in customer')}</p>
             )}
           </CardBody>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Details</CardTitle>
+            <CardTitle>{t('Details')}</CardTitle>
           </CardHeader>
           <CardBody className="space-y-2">
-            <Row label="Location" value={sale.locationName} />
-            <Row label="Seller" value={sale.sellerName} />
+            <Row label={t('Location')} value={sale.locationName} />
+            <Row label={t('Seller')} value={sale.sellerName} />
             {/* Only shown when there is one: most counter sales have no
                 driver, and an empty row would just be noise. */}
-            {sale.driverName ? <Row label="Collected by" value={sale.driverName} /> : null}
-            {sale.truckPlate ? <Row label="Truck" value={sale.truckPlate} /> : null}
+            {sale.driverName ? <Row label={t('Collected by')} value={sale.driverName} /> : null}
+            {sale.truckPlate ? <Row label={t('Truck')} value={sale.truckPlate} /> : null}
             {promotion ? (
               // Answers "why is this discounted" without anybody having to
               // work backwards from a percentage.
-              <Row label="Promotion" value={promotion.name} />
+              <Row label={t('Promotion')} value={promotion.name} />
             ) : null}
             <Row
-              label="Source"
+              label={t('Source')}
               value={SALE_CHANNELS.find((c) => c.value === sale.channel)?.label ?? '—'}
             />
             <Row
-              label="Payment"
+              label={t('Payment')}
               value={PAYMENT_METHODS.find((m) => m.value === sale.paymentMethod)?.label ?? '—'}
             />
-            <Row label="Created" value={formatDateTime(sale.createdAt)} />
-            <Row label="Updated" value={formatDateTime(sale.updatedAt)} />
-            <Row label="Finished" value={sale.finishedAt ? formatDateTime(sale.finishedAt) : '—'} />
-            {sale.comment ? <Row label="Comment" value={sale.comment} /> : null}
+            <Row label={t('Created')} value={formatDateTime(sale.createdAt)} />
+            <Row label={t('Updated')} value={formatDateTime(sale.updatedAt)} />
+            <Row
+              label={t('Finished')}
+              value={sale.finishedAt ? formatDateTime(sale.finishedAt) : '—'}
+            />
+            {sale.comment ? <Row label={t('Comment')} value={sale.comment} /> : null}
           </CardBody>
         </Card>
       </div>
@@ -361,7 +373,7 @@ function Delivery({ sale }: { sale: Sale }) {
   return (
     <Card className="max-w-2xl">
       <CardHeader>
-        <CardTitle>Delivery</CardTitle>
+        <CardTitle>{t('Delivery')}</CardTitle>
       </CardHeader>
       <CardBody className="space-y-3">
         <p className="text-fg flex items-start gap-2 text-sm">
@@ -369,16 +381,16 @@ function Delivery({ sale }: { sale: Sale }) {
           {sale.delivery.address}
         </p>
         <div className="space-y-2">
-          <Row label="Cost" value={formatMoney(sale.delivery.cost)} />
+          <Row label={t('Cost')} value={formatMoney(sale.delivery.cost)} />
           <Row
-            label="Scheduled for"
+            label={t('Scheduled for')}
             value={sale.delivery.scheduledFor ? formatDate(sale.delivery.scheduledFor) : 'Not set'}
           />
-          <Row label="Courier" value={sale.delivery.courier ?? 'Not assigned'} />
+          <Row label={t('Courier')} value={sale.delivery.courier ?? 'Not assigned'} />
         </div>
         <p className="text-fg-subtle text-2xs flex items-center gap-2">
           <Truck className="size-3.5" />
-          The sale completes once it has been delivered and settled.
+          {t('The sale completes once it has been delivered and settled.')}
         </p>
       </CardBody>
     </Card>

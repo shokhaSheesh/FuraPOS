@@ -24,6 +24,7 @@ import {
   TRANSFER_COLUMNS_HIDDEN_BY_DEFAULT,
 } from '../components/transferColumns'
 import { transferQuantity, type Transfer } from '../model/transfer'
+import { t } from '@/shared/i18n'
 
 /**
  * Stock moving between locations. The list is a log of documents, so the
@@ -95,14 +96,16 @@ export default function TransfersListPage() {
   return (
     <>
       <PageHeader
-        title="Transfers"
-        description="Move stock between warehouses and shops. Goods in transit belong to neither."
+        title={t('Transfers')}
+        description={t(
+          'Move stock between warehouses and shops. Goods in transit belong to neither.',
+        )}
         action={
           can('products.transfers.create') ? (
             <Button variant="primary" asChild>
               <Link to={paths.products.newTransfer}>
                 <Plus />
-                New transfer
+                {t('New transfer')}
               </Link>
             </Button>
           ) : null
@@ -111,20 +114,20 @@ export default function TransfersListPage() {
           <div className="flex flex-wrap items-center gap-2">
             <StatusChips
               options={[
-                { value: null, label: 'All' },
-                { value: 'draft', label: 'Unfinished' },
-                { value: 'in_transit', label: 'In transit' },
-                { value: 'received', label: 'Received' },
-                { value: 'cancelled', label: 'Cancelled' },
+                { value: null, label: t('All') },
+                { value: 'draft', label: t('Unfinished') },
+                { value: 'in_transit', label: t('In transit') },
+                { value: 'received', label: t('Received') },
+                { value: 'cancelled', label: t('Cancelled') },
               ]}
               value={(query.status as string | null) ?? null}
               onChange={(next) => setQuery({ status: next, page: null })}
               counts={counts}
             />
             <FilterSelect
-              aria-label="Filter by location"
-              label="Involving"
-              allLabel="Any location"
+              aria-label={t('Filter by location')}
+              label={t('Involving')}
+              allLabel={t('Any location')}
               value={locationId}
               options={locations.map((item) => ({ value: item.id, label: item.name }))}
               onChange={(next) => setQuery({ location: next, page: null })}
@@ -161,17 +164,19 @@ export default function TransfersListPage() {
         }
         emptyState={
           query.search || query.status || query.location || query.f ? (
-            <EmptyState title="No transfers match these filters" />
+            <EmptyState title={t('No transfers match these filters')} />
           ) : (
             <EmptyState
-              title="Nothing has moved yet"
-              description="A transfer takes stock off one shelf and puts it on another, leaving a document behind."
+              title={t('Nothing has moved yet')}
+              description={t(
+                'A transfer takes stock off one shelf and puts it on another, leaving a document behind.',
+              )}
               action={
                 can('products.transfers.create') ? (
                   <Button variant="primary" asChild>
                     <Link to={paths.products.newTransfer}>
                       <Plus />
-                      New transfer
+                      {t('New transfer')}
                     </Link>
                   </Button>
                 ) : null
@@ -184,17 +189,17 @@ export default function TransfersListPage() {
       <ConfirmDialog
         open={pendingCancel !== null}
         onOpenChange={(open) => !open && setPendingCancel(null)}
-        title="Cancel this transfer?"
-        confirmLabel="Cancel transfer"
+        title={t('Cancel this transfer?')}
+        confirmLabel={t('Cancel transfer')}
         body={
           pendingCancel ? (
             <>
               <strong className="text-fg font-medium">{pendingCancel.number}</strong> moves{' '}
-              {formatNumber(transferQuantity(pendingCancel))} units from{' '}
+              {formatNumber(transferQuantity(pendingCancel))} {t('units from')}{' '}
               {pendingCancel.fromLocationName} to {pendingCancel.toLocationName}.
               {pendingCancel.status === 'in_transit'
-                ? ' It has already been sent, so the stock goes back to where it came from.'
-                : ' Nothing has moved yet, so no stock changes.'}
+                ? t(' It has already been sent, so the stock goes back to where it came from.')
+                : t(' Nothing has moved yet, so no stock changes.')}
             </>
           ) : null
         }

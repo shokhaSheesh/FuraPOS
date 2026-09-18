@@ -23,6 +23,7 @@ import {
   suggestLogin,
   type EmployeeDraft,
 } from '../model/employee'
+import { t } from '@/shared/i18n'
 
 /**
  * Adding or editing a person.
@@ -77,10 +78,10 @@ export default function EmployeeFormPage() {
   if (editing && !existing) {
     return (
       <EmptyState
-        title="No such employee"
+        title={t('No such employee')}
         action={
           <Button variant="secondary" asChild>
-            <Link to={paths.users.employees}>Back to employees</Link>
+            <Link to={paths.users.employees}>{t('Back to employees')}</Link>
           </Button>
         }
       />
@@ -93,7 +94,7 @@ export default function EmployeeFormPage() {
       // and the schema cannot see the other employees to catch it.
       if (isLoginTaken(employees, values.login, existing?.id)) {
         form.setError('login', { message: 'Someone else already signs in with this login' })
-        toast.error('That login is already taken')
+        toast.error(t('That login is already taken'))
         return
       }
       const input = {
@@ -106,7 +107,7 @@ export default function EmployeeFormPage() {
       }
       if (editing && existing) {
         actions.update(existing.id, input)
-        toast.success('Saved')
+        toast.success(t('Saved'))
         navigate(paths.users.employeeDetail(existing.id))
       } else {
         const created = actions.create(input)
@@ -114,7 +115,7 @@ export default function EmployeeFormPage() {
         navigate(paths.users.employeeDetail(created.id))
       }
     },
-    () => toast.error('Check the highlighted fields'),
+    () => toast.error(t('Check the highlighted fields')),
   )
 
   return (
@@ -124,17 +125,19 @@ export default function EmployeeFormPage() {
           to={editing && existing ? paths.users.employeeDetail(existing.id) : paths.users.employees}
         >
           <ArrowLeft />
-          {editing && existing ? existing.fullName : 'Employees'}
+          {editing && existing ? existing.fullName : t('Employees')}
         </Link>
       </Button>
 
       <PageHeader
-        title={editing ? 'Edit employee' : 'Add employee'}
-        description="A person's role decides what they can reach in the system. Their sales are attributed to them from the moment the account exists."
+        title={editing ? t('Edit employee') : t('Add employee')}
+        description={t(
+          "A person's role decides what they can reach in the system. Their sales are attributed to them from the moment the account exists.",
+        )}
         action={
           <Button type="submit" variant="primary">
             <Save />
-            {editing ? 'Save changes' : 'Add employee'}
+            {editing ? t('Save changes') : t('Add employee')}
           </Button>
         }
       />
@@ -142,10 +145,10 @@ export default function EmployeeFormPage() {
       <div className="mt-4 space-y-3">
         <Card>
           <CardHeader>
-            <CardTitle>Access</CardTitle>
+            <CardTitle>{t('Access')}</CardTitle>
           </CardHeader>
           <CardBody className="grid gap-3 sm:grid-cols-3">
-            <Field label="Role" required error={form.formState.errors.roleId?.message}>
+            <Field label={t('Role')} required error={form.formState.errors.roleId?.message}>
               {(p) => (
                 <Controller
                   control={form.control}
@@ -154,7 +157,7 @@ export default function EmployeeFormPage() {
                     <Select
                       {...p}
                       className="w-full"
-                      placeholder="Pick a role"
+                      placeholder={t('Pick a role')}
                       value={field.value || undefined}
                       onChange={field.onChange}
                       options={roles.map((role) => ({ value: role.id, label: role.name }))}
@@ -164,8 +167,8 @@ export default function EmployeeFormPage() {
               )}
             </Field>
             <Field
-              label="Works at"
-              hint="Leave empty for someone who covers every location"
+              label={t('Works at')}
+              hint={t('Leave empty for someone who covers every location')}
               error={form.formState.errors.locationId?.message}
             >
               {(p) => (
@@ -176,7 +179,7 @@ export default function EmployeeFormPage() {
                     <Select
                       {...p}
                       className="w-full"
-                      placeholder="All locations"
+                      placeholder={t('All locations')}
                       value={field.value ?? undefined}
                       onChange={(value) => field.onChange(value || null)}
                       options={locations.map((l) => ({ value: l.id, label: l.name }))}
@@ -185,7 +188,7 @@ export default function EmployeeFormPage() {
                 />
               )}
             </Field>
-            <Field label="Status">
+            <Field label={t('Status')}>
               {(p) => (
                 <Controller
                   control={form.control}
@@ -212,22 +215,23 @@ export default function EmployeeFormPage() {
             is only useful to someone who can sign in to use it. */}
         <Card>
           <CardHeader className="flex-col items-stretch gap-1">
-            <CardTitle>Sign-in</CardTitle>
+            <CardTitle>{t('Sign-in')}</CardTitle>
             <p className="text-fg-subtle text-2xs">
-              What they type on the sign-in page. The password is shown so you can pass it on;
-              change it here whenever it needs resetting.
+              {t(
+                'What they type on the sign-in page. The password is shown so you can pass it on; change it here whenever it needs resetting.',
+              )}
             </p>
           </CardHeader>
           <CardBody className="grid gap-3 sm:grid-cols-2">
             <Field
-              label="Login"
+              label={t('Login')}
               required
-              hint="Lowercase, no spaces"
+              hint={t('Lowercase, no spaces')}
               error={form.formState.errors.login?.message}
             >
               {(p) => <Input {...p} placeholder="nodira" {...form.register('login')} />}
             </Field>
-            <Field label="Password" required error={form.formState.errors.password?.message}>
+            <Field label={t('Password')} required error={form.formState.errors.password?.message}>
               {(p) => (
                 <div className="flex gap-2">
                   <Input {...p} className="flex-1 font-mono" {...form.register('password')} />
@@ -239,14 +243,15 @@ export default function EmployeeFormPage() {
                     }
                   >
                     <Wand2 />
-                    Generate
+                    {t('Generate')}
                   </Button>
                 </div>
               )}
             </Field>
             {existing?.status && existing.status !== 'active' ? (
               <p className="text-warning text-2xs sm:col-span-2">
-                This account is {existing.status}, so it cannot sign in whatever the password is.
+                {t('This account is')} {existing.status}
+                {t(', so it cannot sign in whatever the password is.')}
               </p>
             ) : null}
           </CardBody>
@@ -254,14 +259,14 @@ export default function EmployeeFormPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Person</CardTitle>
+            <CardTitle>{t('Person')}</CardTitle>
           </CardHeader>
           <CardBody className="grid gap-3 sm:grid-cols-2">
-            <Field label="Full name" required error={form.formState.errors.fullName?.message}>
+            <Field label={t('Full name')} required error={form.formState.errors.fullName?.message}>
               {(p) => (
                 <Input
                   {...p}
-                  placeholder="Nodira Rasulova"
+                  placeholder={t('Nodira Rasulova')}
                   {...form.register('fullName', {
                     // Propose a login from the first name the first time one is typed.
                     onBlur: (event) => {
@@ -273,13 +278,15 @@ export default function EmployeeFormPage() {
                 />
               )}
             </Field>
-            <Field label="Phone">
+            <Field label={t('Phone')}>
               {(p) => <Input {...p} placeholder="+998 90 123-45-67" {...form.register('phone')} />}
             </Field>
-            <Field label="Email" error={form.formState.errors.email?.message}>
-              {(p) => <Input {...p} placeholder="nodira@fura.uz" {...form.register('email')} />}
+            <Field label={t('Email')} error={form.formState.errors.email?.message}>
+              {(p) => (
+                <Input {...p} placeholder={t('nodira@fura.uz')} {...form.register('email')} />
+              )}
             </Field>
-            <Field label="Hired">
+            <Field label={t('Hired')}>
               {() => (
                 <Controller
                   control={form.control}
@@ -299,10 +306,14 @@ export default function EmployeeFormPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Pay</CardTitle>
+            <CardTitle>{t('Pay')}</CardTitle>
           </CardHeader>
           <CardBody className="grid gap-3 sm:grid-cols-2">
-            <Field label="Base pay" hint="Per month" error={form.formState.errors.salary?.message}>
+            <Field
+              label={t('Base pay')}
+              hint={t('Per month')}
+              error={form.formState.errors.salary?.message}
+            >
               {(p) => (
                 <Controller
                   control={form.control}
@@ -312,7 +323,7 @@ export default function EmployeeFormPage() {
                       {...p}
                       className="w-full"
                       min={0}
-                      placeholder="Not set"
+                      placeholder={t('Not set')}
                       value={field.value}
                       onChange={field.onChange}
                       onBlur={field.onBlur}
@@ -321,9 +332,13 @@ export default function EmployeeFormPage() {
                 />
               )}
             </Field>
-            <Field label="Note">
+            <Field label={t('Note')}>
               {(p) => (
-                <Input {...p} placeholder="Anything worth knowing" {...form.register('comment')} />
+                <Input
+                  {...p}
+                  placeholder={t('Anything worth knowing')}
+                  {...form.register('comment')}
+                />
               )}
             </Field>
           </CardBody>

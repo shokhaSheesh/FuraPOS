@@ -27,6 +27,7 @@ import {
   employeeStatusTone,
   type EmployeeStatus,
 } from '../model/employee'
+import { t } from '@/shared/i18n'
 
 export default function EmployeeDetailPage() {
   const { employeeId } = useParams()
@@ -48,11 +49,11 @@ export default function EmployeeDetailPage() {
   if (!employee) {
     return (
       <EmptyState
-        title="No such employee"
-        description="They may have been removed."
+        title={t('No such employee')}
+        description={t('They may have been removed.')}
         action={
           <Button variant="secondary" asChild>
-            <Link to={paths.users.employees}>Back to employees</Link>
+            <Link to={paths.users.employees}>{t('Back to employees')}</Link>
           </Button>
         }
       />
@@ -85,42 +86,42 @@ export default function EmployeeDetailPage() {
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
         <Link to={paths.users.employees}>
           <ArrowLeft />
-          Employees
+          {t('Employees')}
         </Link>
       </Button>
 
       <PageHeader
         title={employee.fullName}
-        description={`${employee.roleName} · ${employee.locationName ?? 'All locations'}`}
+        description={`${employee.roleName} · ${employee.locationName ?? t('All locations')}`}
         action={
           canEdit ? (
             <div className="flex items-center gap-2">
               {employee.status === 'active' ? (
                 <Button variant="secondary" onClick={() => setConfirming('suspended')}>
                   <Ban />
-                  Suspend
+                  {t('Suspend')}
                 </Button>
               ) : employee.status === 'suspended' ? (
                 <Button variant="secondary" onClick={() => changeStatus('active')}>
                   <Play />
-                  Reinstate
+                  {t('Reinstate')}
                 </Button>
               ) : null}
               {employee.status !== 'archived' ? (
                 <Button variant="secondary" onClick={() => setConfirming('archived')}>
                   <Archive />
-                  Archive
+                  {t('Archive')}
                 </Button>
               ) : (
                 <Button variant="secondary" onClick={() => changeStatus('active')}>
                   <Play />
-                  Bring back
+                  {t('Bring back')}
                 </Button>
               )}
               <Button variant="primary" asChild>
                 <Link to={paths.users.editEmployee(employee.id)}>
                   <Pencil />
-                  Edit
+                  {t('Edit')}
                 </Link>
               </Button>
             </div>
@@ -142,7 +143,7 @@ export default function EmployeeDetailPage() {
               <span className="text-warning text-2xs">
                 ·{' '}
                 {quiet === null
-                  ? 'has never signed in'
+                  ? t('has never signed in')
                   : `no sign-in for ${formatNumber(quiet)} days`}
               </span>
             ) : null}
@@ -152,22 +153,22 @@ export default function EmployeeDetailPage() {
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Figure
-          label="Sold this month"
+          label={t('Sold this month')}
           value={formatMoney(Math.round(stats.revenueThisMonth))}
           meta={`${formatNumber(stats.salesThisMonth)} sales`}
         />
         <Figure
-          label="Sold all time"
+          label={t('Sold all time')}
           value={formatMoney(Math.round(stats.revenue))}
           meta={`${formatNumber(stats.sales)} sales · ${formatNumber(stats.units)} units`}
         />
         <Figure
-          label="Average check"
+          label={t('Average check')}
           value={stats.sales ? formatMoney(Math.round(stats.averageCheck)) : '—'}
           meta={stats.sales ? 'across every sale they made' : 'no sales yet'}
         />
         <Figure
-          label="Margin brought in"
+          label={t('Margin brought in')}
           value={stats.revenue ? formatPercent(stats.marginRatio) : '—'}
           meta={
             stats.revenue
@@ -180,24 +181,24 @@ export default function EmployeeDetailPage() {
       <div className="grid gap-3 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Recent sales</CardTitle>
+            <CardTitle>{t('Recent sales')}</CardTitle>
           </CardHeader>
           <CardBody className="p-0">
             {recentSales.length === 0 ? (
               <p className="text-fg-subtle p-4 text-sm">
-                {employee.roleName === 'Seller'
-                  ? 'They have not taken a sale yet.'
-                  : 'This role does not usually take sales.'}
+                {employee.roleName === t('Seller')
+                  ? t('They have not taken a sale yet.')
+                  : t('This role does not usually take sales.')}
               </p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-canvas">
                     <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-                      <th className="px-4 py-2 text-left font-semibold">Sale</th>
-                      <th className="px-4 py-2 text-left font-semibold">Client</th>
-                      <th className="px-4 py-2 text-left font-semibold">Where</th>
-                      <th className="px-4 py-2 text-right font-semibold">Total</th>
+                      <th className="px-4 py-2 text-left font-semibold">{t('Sale')}</th>
+                      <th className="px-4 py-2 text-left font-semibold">{t('Client')}</th>
+                      <th className="px-4 py-2 text-left font-semibold">{t('Where')}</th>
+                      <th className="px-4 py-2 text-right font-semibold">{t('Total')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -211,7 +212,9 @@ export default function EmployeeDetailPage() {
                           <p className="text-2xs font-mono">{sale.number}</p>
                           <p className="text-fg-subtle text-2xs">{formatDate(sale.createdAt)}</p>
                         </td>
-                        <td className="text-fg-muted px-4 py-2">{sale.clientName ?? 'Walk-in'}</td>
+                        <td className="text-fg-muted px-4 py-2">
+                          {sale.clientName ?? t('Walk-in')}
+                        </td>
                         <td className="text-fg-muted px-4 py-2">{sale.locationName}</td>
                         <td className="text-fg px-4 py-2 text-right font-medium tabular-nums">
                           {formatMoney(Math.round(sale.total))}
@@ -227,31 +230,31 @@ export default function EmployeeDetailPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Record</CardTitle>
+            <CardTitle>{t('Record')}</CardTitle>
           </CardHeader>
           <CardBody className="space-y-2 text-sm">
-            <Row label="Role" value={employee.roleName} />
-            <Row label="Works at" value={employee.locationName ?? 'All locations'} />
+            <Row label={t('Role')} value={employee.roleName} />
+            <Row label={t('Works at')} value={employee.locationName ?? 'All locations'} />
             {canEdit ? (
               <>
-                <Row label="Login" value={employee.login} />
-                <Row label="Password" value={employee.password} />
+                <Row label={t('Login')} value={employee.login} />
+                <Row label={t('Password')} value={employee.password} />
               </>
             ) : null}
-            <Row label="Hired" value={formatDate(employee.hiredAt)} />
+            <Row label={t('Hired')} value={formatDate(employee.hiredAt)} />
             <Row
-              label="Last signed in"
+              label={t('Last signed in')}
               value={
                 employee.lastActiveAt ? formatDateTime(employee.lastActiveAt) : 'Never signed in'
               }
             />
             {canEdit ? (
               <Row
-                label="Base pay"
+                label={t('Base pay')}
                 value={employee.salary === null ? '—' : `${formatMoney(employee.salary)} /mo`}
               />
             ) : null}
-            {employee.comment ? <Row label="Note" value={employee.comment} /> : null}
+            {employee.comment ? <Row label={t('Note')} value={employee.comment} /> : null}
           </CardBody>
         </Card>
       </div>
@@ -282,7 +285,7 @@ export default function EmployeeDetailPage() {
               ? [
                   {
                     id: 'advance',
-                    title: 'An advance is still outstanding',
+                    title: t('An advance is still outstanding'),
                     body: `${formatMoney(owedByThem)} was taken against pay that has not been earned yet. It comes off the next payroll run unless someone writes it off.`,
                     tone: 'neutral',
                     generatedAt: new Date().toISOString(),
@@ -308,7 +311,7 @@ export default function EmployeeDetailPage() {
             ? 'They stop appearing in the active list and cannot sign in. Every sale they made stays exactly as it is.'
             : `They cannot sign in until someone reinstates them. Use this for leave or while something is being looked into — nothing about their history changes.`
         }
-        confirmLabel={confirming === 'archived' ? 'Archive' : 'Suspend'}
+        confirmLabel={confirming === 'archived' ? t('Archive') : t('Suspend')}
         destructive
         onConfirm={() => confirming && changeStatus(confirming)}
       />

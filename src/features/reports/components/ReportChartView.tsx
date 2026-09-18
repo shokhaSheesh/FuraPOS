@@ -24,6 +24,7 @@ import {
   type ReportResult,
   type ReportSource,
 } from '../model/report'
+import { t } from '@/shared/i18n'
 
 const TICK_FONT = 11
 
@@ -84,7 +85,9 @@ export function ReportChartView({
 
   if (data.length === 0) {
     return (
-      <p className="text-fg-subtle py-10 text-center text-sm">Nothing to draw in this period.</p>
+      <p className="text-fg-subtle py-10 text-center text-sm">
+        {t('Nothing to draw in this period.')}
+      </p>
     )
   }
 

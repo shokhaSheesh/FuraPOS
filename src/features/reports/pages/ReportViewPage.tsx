@@ -21,6 +21,7 @@ import {
   sourceLabel,
   type ReportPeriod,
 } from '../model/report'
+import { t } from '@/shared/i18n'
 
 /**
  * Running a saved report.
@@ -43,10 +44,10 @@ export default function ReportViewPage() {
   if (!report) {
     return (
       <EmptyState
-        title="No such report"
+        title={t('No such report')}
         action={
           <Button variant="secondary" asChild>
-            <Link to={paths.analytics.reports}>Back to reports</Link>
+            <Link to={paths.analytics.reports}>{t('Back to reports')}</Link>
           </Button>
         }
       />
@@ -58,7 +59,7 @@ export default function ReportViewPage() {
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
         <Link to={paths.analytics.reports}>
           <ArrowLeft />
-          Report generator
+          {t('Report generator')}
         </Link>
       </Button>
 
@@ -68,7 +69,7 @@ export default function ReportViewPage() {
         action={
           <div className="flex items-center gap-2">
             <Select
-              aria-label="Period"
+              aria-label={t('Period')}
               className="w-44"
               value={active}
               onChange={(next) => {
@@ -82,13 +83,13 @@ export default function ReportViewPage() {
             />
             <Button variant="primary" onClick={() => setRan(true)}>
               <Play />
-              Run
+              {t('Run')}
             </Button>
-            {can('analytics.reportBuilder.edit') ? (
+            {can(t('analytics.reportBuilder.edit')) ? (
               <Button variant="secondary" asChild>
                 <Link to={paths.analytics.editReport(report.id)}>
                   <Pencil />
-                  Edit
+                  {t('Edit')}
                 </Link>
               </Button>
             ) : null}
@@ -97,11 +98,11 @@ export default function ReportViewPage() {
         below={
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone="info">{sourceLabel(report.source)}</Badge>
-            {report.pinned ? <Badge tone="neutral">Pinned</Badge> : null}
+            {report.pinned ? <Badge tone="neutral">{t('Pinned')}</Badge> : null}
             {result ? (
               <span className="text-fg-subtle text-2xs tabular-nums">
-                {formatNumber(result.rows.length)} rows from {formatNumber(result.sourceRows)}{' '}
-                records
+                {formatNumber(result.rows.length)} {t('rows from')}{' '}
+                {formatNumber(result.sourceRows)} records
               </span>
             ) : null}
           </div>
@@ -110,7 +111,7 @@ export default function ReportViewPage() {
 
       <FilterGate
         applied={ran && result !== null}
-        title="Choose a period, then press Run"
+        title={t('Choose a period, then press Run')}
         explanation="Reports read every record in the period, so this one waits until you press Run."
       >
         {result ? (

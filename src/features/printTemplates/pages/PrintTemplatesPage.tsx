@@ -26,6 +26,7 @@ import {
 } from '../model/template'
 import { TemplatePreview, fitScale } from '../components/TemplatePreview'
 import { PrintSheetModal } from '../components/PrintSheetModal'
+import { t } from '@/shared/i18n'
 
 /**
  * Print templates.
@@ -49,13 +50,13 @@ export default function PrintTemplatesPage() {
   return (
     <>
       <PageHeader
-        title="Print templates"
-        description="What goes on the part, on the shelf and in the customer's hand."
+        title={t('Print templates')}
+        description={t("What goes on the part, on the shelf and in the customer's hand.")}
         action={
           can('products.printTemplates.create') ? (
             <Button variant="primary" onClick={() => navigate(paths.products.newPrintTemplate)}>
               <Plus />
-              Add template
+              {t('Add template')}
             </Button>
           ) : null
         }
@@ -70,12 +71,12 @@ export default function PrintTemplatesPage() {
           setQuery={setQuery}
         />
         <StatusChips<TemplateKind>
-          ariaLabel="Filter by what it prints"
+          ariaLabel={t('Filter by what it prints')}
           value={(query.kind as TemplateKind) ?? null}
           onChange={(kind) => setQuery({ kind })}
           counts={counts}
           options={[
-            { value: null, label: 'All' },
+            { value: null, label: t('All') },
             ...TEMPLATE_KINDS.map((kind) => ({ value: kind.value, label: kind.label })),
           ]}
         />
@@ -84,8 +85,10 @@ export default function PrintTemplatesPage() {
       {data.items.length === 0 ? (
         <EmptyState
           icon={Tags}
-          title="No templates yet"
-          description="A template is a size, a code and the fields that print on it. Make one and every part can be labelled from it."
+          title={t('No templates yet')}
+          description={t(
+            'A template is a size, a code and the fields that print on it. Make one and every part can be labelled from it.',
+          )}
         />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -100,18 +103,18 @@ export default function PrintTemplatesPage() {
                   <RowActions
                     actions={[
                       {
-                        label: 'Print',
+                        label: t('Print'),
                         icon: Printer,
                         onSelect: () => setPrinting(template),
                       },
                       {
-                        label: 'Edit',
+                        label: t('Edit'),
                         icon: Pencil,
                         hidden: !can('products.printTemplates.edit'),
                         onSelect: () => navigate(paths.products.editPrintTemplate(template.id)),
                       },
                       {
-                        label: 'Duplicate',
+                        label: t('Duplicate'),
                         icon: Copy,
                         hidden: !can('products.printTemplates.create'),
                         onSelect: () => {
@@ -120,7 +123,7 @@ export default function PrintTemplatesPage() {
                         },
                       },
                       {
-                        label: 'Delete',
+                        label: t('Delete'),
                         icon: Trash2,
                         destructive: true,
                         hidden: !can('products.printTemplates.delete'),
@@ -141,7 +144,7 @@ export default function PrintTemplatesPage() {
                 <div className="flex items-center justify-between gap-2">
                   <Badge tone="info">{sizeLabel(template)}</Badge>
                   <span className="text-fg-subtle text-2xs">
-                    Changed {formatDate(template.updatedAt)}
+                    {t('Changed')} {formatDate(template.updatedAt)}
                   </span>
                 </div>
               </CardBody>
@@ -165,13 +168,13 @@ export default function PrintTemplatesPage() {
         }}
         title={`Delete ${deleting?.name}?`}
         body="Labels already printed are unaffected — this only removes the template."
-        confirmLabel="Delete"
+        confirmLabel={t('Delete')}
         destructive
         onConfirm={() => {
           if (!deleting) return
           actions.remove(deleting.id)
           setDeleting(null)
-          toast.success('Template deleted')
+          toast.success(t('Template deleted'))
         }}
       />
     </>

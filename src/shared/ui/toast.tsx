@@ -3,6 +3,7 @@ import { create } from 'zustand'
 import { Check, TriangleAlert, X } from 'lucide-react'
 import { cn } from '@/shared/lib/cn'
 import { Button } from './Button'
+import { t } from '@/shared/i18n'
 
 type ToastTone = 'success' | 'danger' | 'info'
 
@@ -83,14 +84,14 @@ function ToastRow({ toast: item }: { toast: Toast }) {
             dismiss(item.id)
           }}
         >
-          Undo
+          {t('Undo')}
         </Button>
       ) : null}
       <Button
         variant="ghost"
         size="icon"
         className="size-6"
-        aria-label="Dismiss"
+        aria-label={t('Dismiss')}
         onClick={() => dismiss(item.id)}
       >
         <X />

@@ -50,6 +50,7 @@ import {
   EditedOperationSheet,
   OperationSheet,
 } from '../components/OperationSheets'
+import { t } from '@/shared/i18n'
 
 /*
   A mock of the fleet app's "my truck" screen — a different product from this
@@ -386,8 +387,10 @@ export default function MobileAppPage() {
   return (
     <>
       <PageHeader
-        title="Mobile app"
-        description="A design mock of the fleet app — a separate product from this back office. Tap an operation to open its record."
+        title={t('Mobile app')}
+        description={t(
+          'A design mock of the fleet app — a separate product from this back office. Tap an operation to open its record.',
+        )}
       />
 
       <div className="mt-4 flex justify-center pb-10">

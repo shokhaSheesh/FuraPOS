@@ -17,6 +17,7 @@ import { useDataStore } from '@/data/store'
 import { USD_RATE } from '@/data/seed'
 import { newReceiptSchema, type NewReceiptDraft } from '../model/receipt'
 import { useSuppliers } from '../api/receipts'
+import { t } from '@/shared/i18n'
 
 /**
  * Everything the reference product asks before a receipt exists: where the
@@ -67,9 +68,9 @@ export function NewReceiptDialog({
     <Modal
       open={open}
       onOpenChange={onOpenChange}
-      title="New receipt"
+      title={t('New receipt')}
       size="lg"
-      primary={{ label: 'Create', formId: 'new-receipt-form' }}
+      primary={{ label: t('Create'), formId: 'new-receipt-form' }}
       secondaryLabel="Cancel"
     >
       <form
@@ -77,7 +78,7 @@ export function NewReceiptDialog({
         className="space-y-4"
         onSubmit={form.handleSubmit((values) => onCreate(values))}
       >
-        <Field label="Where these goods came from" required>
+        <Field label={t('Where these goods came from')} required>
           {() => (
             <Controller
               control={form.control}
@@ -85,7 +86,7 @@ export function NewReceiptDialog({
               render={({ field }) => (
                 <div className="space-y-1">
                   <SegmentedControl
-                    aria-label="Where these goods came from"
+                    aria-label={t('Where these goods came from')}
                     value={field.value}
                     onChange={field.onChange}
                     options={PROCUREMENT_KINDS.map(({ value, label }) => ({ value, label }))}
@@ -100,7 +101,7 @@ export function NewReceiptDialog({
         </Field>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Zone" required error={form.formState.errors.zone?.message}>
+          <Field label={t('Zone')} required error={form.formState.errors.zone?.message}>
             {(p) => (
               <Controller
                 control={form.control}
@@ -111,7 +112,7 @@ export function NewReceiptDialog({
                     className="w-full"
                     value={field.value || undefined}
                     onChange={field.onChange}
-                    placeholder="Where the goods ship from"
+                    placeholder={t('Where the goods ship from')}
                     options={zones.map((zone) => ({ value: zone, label: zone }))}
                   />
                 )}
@@ -119,7 +120,7 @@ export function NewReceiptDialog({
             )}
           </Field>
 
-          <Field label="Location" required error={form.formState.errors.locationId?.message}>
+          <Field label={t('Location')} required error={form.formState.errors.locationId?.message}>
             {(p) => (
               <Controller
                 control={form.control}
@@ -130,7 +131,7 @@ export function NewReceiptDialog({
                     className="w-full"
                     value={field.value || undefined}
                     onChange={field.onChange}
-                    placeholder="Where they land"
+                    placeholder={t('Where they land')}
                     options={locations.map((l) => ({ value: l.id, label: l.name }))}
                   />
                 )}
@@ -139,10 +140,10 @@ export function NewReceiptDialog({
           </Field>
 
           <Field
-            label="Supplier price rate"
+            label={t('Supplier price rate')}
             required
             error={form.formState.errors.usdRate?.message}
-            hint="Frozen on this receipt, so posting it later cannot re-price it"
+            hint={t('Frozen on this receipt, so posting it later cannot re-price it')}
           >
             {(p) => (
               <Controller
@@ -151,7 +152,7 @@ export function NewReceiptDialog({
                 render={({ field }) => (
                   <div className="rounded-control border-border bg-surface flex h-9 items-center overflow-hidden border">
                     <span className="text-fg-muted bg-surface-inset border-border h-full shrink-0 border-r px-3 text-sm leading-9">
-                      1 USD =
+                      {t('1 USD =')}
                     </span>
                     <NumberField
                       {...p}
@@ -163,7 +164,7 @@ export function NewReceiptDialog({
                       onBlur={field.onBlur}
                     />
                     <span className="text-fg-muted bg-surface-inset border-border h-full shrink-0 border-l px-3 text-sm leading-9">
-                      UZS
+                      {t('UZS')}
                     </span>
                   </div>
                 )}
@@ -172,9 +173,9 @@ export function NewReceiptDialog({
           </Field>
 
           <Field
-            label="Count the shelf when posting these products?"
+            label={t('Count the shelf when posting these products?')}
             required
-            hint="Posts what is actually there, not what the paperwork says"
+            hint={t('Posts what is actually there, not what the paperwork says')}
           >
             {() => (
               <Controller
@@ -182,12 +183,12 @@ export function NewReceiptDialog({
                 name="stocktakeOnPost"
                 render={({ field }) => (
                   <SegmentedControl
-                    aria-label="Count the shelf when posting"
+                    aria-label={t('Count the shelf when posting')}
                     value={field.value ? 'yes' : 'no'}
                     onChange={(v) => field.onChange(v === 'yes')}
                     options={[
-                      { value: 'yes', label: 'Yes' },
-                      { value: 'no', label: 'No' },
+                      { value: 'yes', label: t('Yes') },
+                      { value: 'no', label: t('No') },
                     ]}
                   />
                 )}
@@ -199,7 +200,7 @@ export function NewReceiptDialog({
               hold, the bazaar and a factory are a name somebody types. */}
           {hasSupplierRecord(kind) ? (
             <Field
-              label="Supplier"
+              label={t('Supplier')}
               required
               error={form.formState.errors.supplierId?.message}
               className="sm:col-span-2"
@@ -214,7 +215,7 @@ export function NewReceiptDialog({
                       className="w-full"
                       value={field.value ?? undefined}
                       onChange={field.onChange}
-                      placeholder="Supplier of your choice"
+                      placeholder={t('Supplier of your choice')}
                       options={suppliers.items.map((s) => ({ value: s.id, label: s.name }))}
                     />
                   )}
@@ -227,7 +228,9 @@ export function NewReceiptDialog({
               required
               error={form.formState.errors.boughtFrom?.message}
               className="sm:col-span-2"
-              hint="There is no account to build a debt against — a market buy is paid on the spot"
+              hint={t(
+                'There is no account to build a debt against — a market buy is paid on the spot',
+              )}
             >
               {(p) => (
                 <Input
@@ -240,11 +243,11 @@ export function NewReceiptDialog({
           )}
         </div>
 
-        <Field label="Note">
+        <Field label={t('Note')}>
           {(p) => (
             <Input
               {...p}
-              placeholder="Container 3, air freight — anything worth knowing later"
+              placeholder={t('Container 3, air freight — anything worth knowing later')}
               {...form.register('comment')}
             />
           )}

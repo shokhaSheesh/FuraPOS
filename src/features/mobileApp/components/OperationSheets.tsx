@@ -1,6 +1,7 @@
 import { Fuel, Milestone, Pencil, SquareParking, Trash2, type LucideIcon } from 'lucide-react'
 import { IconTile, PhoneSheet, SheetBadge, SheetButtons, SheetNote } from './phone'
 import { M, TONES, type MobileTone } from './palette'
+import { t } from '@/shared/i18n'
 
 /*
   The three states a spend record can be opened in: as entered, after it was
@@ -251,7 +252,7 @@ export function EditedOperationSheet({ onClose }: { onClose: () => void }) {
   return (
     <PhoneSheet
       onClose={onClose}
-      title="Расход #EXP-002481"
+      title={t('Расход #EXP-002481')}
       badge={<SheetBadge label="Изменено" tone="yellow" />}
       footer={
         <SheetButtons

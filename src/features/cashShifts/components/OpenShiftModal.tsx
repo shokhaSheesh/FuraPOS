@@ -7,6 +7,7 @@ import { toast } from '@/shared/ui/toast'
 import { useDataStore } from '@/data/store'
 import { useCashRegisters, useShiftActions } from '../api/shifts'
 import { openShiftFor, openShiftSchema, type OpenShiftDraft } from '../model/shift'
+import { t } from '@/shared/i18n'
 
 const EMPTY: OpenShiftDraft = { registerId: '', employeeId: '', openingFloat: 200_000 }
 
@@ -54,17 +55,17 @@ export function OpenShiftModal({
     <Modal
       open={open}
       onOpenChange={onOpenChange}
-      title="Open a shift"
-      description="Until a drawer is open, a cash sale cannot be taken at that location."
-      primary={{ label: 'Open the drawer', onClick: submit }}
+      title={t('Open a shift')}
+      description={t('Until a drawer is open, a cash sale cannot be taken at that location.')}
+      primary={{ label: t('Open the drawer'), onClick: submit }}
     >
       <div className="space-y-3">
-        <Field label="Register" required error={errors.registerId?.[0]}>
+        <Field label={t('Register')} required error={errors.registerId?.[0]}>
           {(p) => (
             <Select
               {...p}
               className="w-full"
-              placeholder="Choose a register"
+              placeholder={t('Choose a register')}
               value={draft.registerId || undefined}
               onChange={(registerId) => setDraft((c) => ({ ...c, registerId }))}
               // A register somebody already has open is shown and disabled,
@@ -79,12 +80,12 @@ export function OpenShiftModal({
           )}
         </Field>
 
-        <Field label="Who is answerable" required error={errors.employeeId?.[0]}>
+        <Field label={t('Who is answerable')} required error={errors.employeeId?.[0]}>
           {(p) => (
             <Select
               {...p}
               className="w-full"
-              placeholder="Choose a person"
+              placeholder={t('Choose a person')}
               value={draft.employeeId || undefined}
               onChange={(employeeId) => setDraft((c) => ({ ...c, employeeId }))}
               options={employees
@@ -99,8 +100,8 @@ export function OpenShiftModal({
         </Field>
 
         <Field
-          label="Opening float"
-          hint="The cash already in the drawer, for giving change"
+          label={t('Opening float')}
+          hint={t('The cash already in the drawer, for giving change')}
           error={errors.openingFloat?.[0]}
         >
           {(p) => (
@@ -119,8 +120,9 @@ export function OpenShiftModal({
         {openShiftFor(shifts, registers.find((r) => r.id === draft.registerId)?.locationId ?? '') &&
         draft.registerId ? (
           <p className="text-fg-muted text-2xs">
-            Another drawer is already open at this location. That is allowed — cash sales there will
-            be attributed to whichever opened first.
+            {t(
+              'Another drawer is already open at this location. That is allowed — cash sales there will be attributed to whichever opened first.',
+            )}
           </p>
         ) : null}
       </div>

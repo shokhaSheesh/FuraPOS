@@ -35,6 +35,7 @@ import {
   receivedUnits,
   type PurchaseOrder,
 } from '../model/order'
+import { t } from '@/shared/i18n'
 
 /**
  * What has been ordered and has not arrived.
@@ -93,7 +94,7 @@ export default function OrdersListPage() {
     () => [
       {
         accessorKey: 'number',
-        header: 'Order',
+        header: t('Order'),
         enableHiding: false,
         cell: ({ row }) => (
           <div className="min-w-0">
@@ -104,35 +105,40 @@ export default function OrdersListPage() {
       },
       {
         accessorKey: 'supplierName',
-        header: 'From',
+        header: t('From'),
         enableHiding: false,
         // A market run has no supplier; it says where it was bought instead.
         cell: ({ row }) => orderSource(row.original),
       },
       {
         accessorKey: 'locationName',
-        header: 'Landing at',
+        header: t('Landing at'),
       },
       {
         id: 'expected',
-        header: 'Expected',
+        header: t('Expected'),
         enableHiding: false,
         cell: ({ row }) => {
           const late = daysLate(row.original)
-          if (!row.original.expectedAt) return <span className="text-fg-subtle">Not promised</span>
+          if (!row.original.expectedAt)
+            return <span className="text-fg-subtle">{t('Not promised')}</span>
           return (
             <div className="min-w-0">
               <p className={late ? 'text-danger font-medium' : 'text-fg'}>
                 {formatDate(row.original.expectedAt)}
               </p>
-              {late ? <p className="text-danger text-2xs">{formatNumber(late)} days late</p> : null}
+              {late ? (
+                <p className="text-danger text-2xs">
+                  {formatNumber(late)} {t('days late')}
+                </p>
+              ) : null}
             </div>
           )
         },
       },
       {
         id: 'delivered',
-        header: 'Delivered',
+        header: t('Delivered'),
         enableHiding: false,
         cell: ({ row }) => {
           const ratio = deliveredRatio(row.original)
@@ -157,7 +163,7 @@ export default function OrdersListPage() {
       },
       {
         id: 'outstanding',
-        header: 'Still coming',
+        header: t('Still coming'),
         meta: { align: 'right' },
         enableHiding: false,
         cell: ({ row }) => {
@@ -179,7 +185,7 @@ export default function OrdersListPage() {
         ? [
             {
               id: 'value',
-              header: 'Order value',
+              header: t('Order value'),
               meta: { align: 'right' as const },
               cell: ({ row }: { row: { original: PurchaseOrder } }) =>
                 formatMoney(Math.round(orderValue(row.original, USD_RATE))),
@@ -188,17 +194,17 @@ export default function OrdersListPage() {
         : []),
       {
         accessorKey: 'status',
-        header: 'Status',
+        header: t('Status'),
         cell: ({ row }) => (
           <Badge tone={orderStatusTone(row.original.status)}>
             {orderStatusLabel(row.original.status)}
           </Badge>
         ),
       },
-      { accessorKey: 'createdBy', header: 'Raised by' },
+      { accessorKey: 'createdBy', header: t('Raised by') },
       {
         accessorKey: 'comment',
-        header: 'Note',
+        header: t('Note'),
         cell: ({ row }) => row.original.comment ?? <span className="text-fg-subtle">—</span>,
       },
       {
@@ -209,7 +215,7 @@ export default function OrdersListPage() {
           <RowActions
             actions={[
               {
-                label: 'Download',
+                label: t('Download'),
                 icon: Download,
                 onSelect: () => downloadOrder(row.original),
               },
@@ -225,41 +231,43 @@ export default function OrdersListPage() {
   return (
     <>
       <PageHeader
-        title="Orders"
-        description="What has been ordered from suppliers and has not arrived yet. Deliveries are booked against an order, which is how a goods receipt gets checked rather than just recorded."
+        title={t('Orders')}
+        description={t(
+          'What has been ordered from suppliers and has not arrived yet. Deliveries are booked against an order, which is how a goods receipt gets checked rather than just recorded.',
+        )}
         action={
           can('procurement.orders.create') ? (
             <Button variant="primary" onClick={() => setCreating(true)}>
               <Plus />
-              Add
+              {t('Add')}
             </Button>
           ) : null
         }
         below={
           <div className="flex flex-wrap items-center gap-2">
             <StatusChips
-              ariaLabel="Which orders to show"
+              ariaLabel={t('Which orders to show')}
               options={[
-                { value: null, label: 'All' },
-                { value: 'open', label: 'Still open' },
-                { value: 'late', label: 'Late' },
+                { value: null, label: t('All') },
+                { value: 'open', label: t('Still open') },
+                { value: 'late', label: t('Late') },
               ]}
               value={(query.lens as string | null) ?? null}
               onChange={(next) => setQuery({ lens: next, status: null, page: null })}
               counts={counts}
             />
             <FilterSelect
-              aria-label="Filter by supplier"
-              label="From"
-              allLabel="Any supplier"
+              aria-label={t('Filter by supplier')}
+              label={t('From')}
+              allLabel={t('Any supplier')}
               value={(query.supplier as string | null) ?? null}
               options={suppliers.map((s) => ({ value: s.id, label: s.name }))}
               onChange={(next) => setQuery({ supplier: next, page: null })}
             />
             <FilterSelect
-              aria-label="Filter by location"
-              label="Into"
-              allLabel="Everywhere"
+              aria-label={t('Filter by location')}
+              label={t('Into')}
+              allLabel={t('Everywhere')}
               value={(query.location as string | null) ?? null}
               options={locations.map((l) => ({ value: l.id, label: l.name }))}
               onChange={(next) => setQuery({ location: next, page: null })}
@@ -290,16 +298,18 @@ export default function OrdersListPage() {
         onRowClick={(order) => navigate(paths.procurement.orderDetail(order.id))}
         emptyState={
           query.search || query.f || query.lens || query.supplier || query.location ? (
-            <EmptyState title="No orders match these filters" />
+            <EmptyState title={t('No orders match these filters')} />
           ) : (
             <EmptyState
-              title="Nothing on order"
-              description="An order records what you asked a supplier for, so a delivery can be checked against it instead of taken on trust."
+              title={t('Nothing on order')}
+              description={t(
+                'An order records what you asked a supplier for, so a delivery can be checked against it instead of taken on trust.',
+              )}
               action={
                 can('procurement.orders.create') ? (
                   <Button variant="primary" onClick={() => setCreating(true)}>
                     <Plus />
-                    Add
+                    {t('Add')}
                   </Button>
                 ) : null
               }

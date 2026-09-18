@@ -19,6 +19,7 @@ import {
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/shared/lib/cn'
 import { locale } from '@/shared/lib/format'
+import { t } from '@/shared/i18n'
 
 export interface DateRange {
   from: Date | null
@@ -86,7 +87,7 @@ export function Calendar({
   return (
     <div className="w-70 p-3">
       <header className="mb-2 flex items-center gap-1">
-        <NavButton label="Previous" onClick={() => step(-1)}>
+        <NavButton label={t('Previous')} onClick={() => step(-1)}>
           <ChevronLeft className="size-4" />
         </NavButton>
 
@@ -98,7 +99,7 @@ export function Calendar({
           {title}
         </button>
 
-        <NavButton label="Next" onClick={() => step(1)}>
+        <NavButton label={t('Next')} onClick={() => step(1)}>
           <ChevronRight className="size-4" />
         </NavButton>
       </header>

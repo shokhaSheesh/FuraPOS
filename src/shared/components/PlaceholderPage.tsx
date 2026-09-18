@@ -2,6 +2,7 @@ import { Construction } from 'lucide-react'
 import { Card } from '@/shared/ui/Card'
 import { PageHeader } from './PageHeader'
 import { EmptyState } from './EmptyState'
+import { t } from '@/shared/i18n'
 
 /**
  * Every screen in the information architecture is routed from day one, so the
@@ -23,8 +24,10 @@ export function PlaceholderPage({
       <Card>
         <EmptyState
           icon={Construction}
-          title="Not built yet"
-          description={note ?? 'This screen is part of the planned scope and has a route reserved.'}
+          title={t('Not built yet')}
+          description={
+            note ?? t('This screen is part of the planned scope and has a route reserved.')
+          }
         />
       </Card>
     </>

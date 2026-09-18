@@ -34,6 +34,7 @@ import {
   type DriverDraft,
   type DriverStatus,
 } from '../model/driver'
+import { t } from '@/shared/i18n'
 
 const EMPTY: DriverDraft = {
   fullName: '',
@@ -126,7 +127,7 @@ export default function DriversPage() {
     const all: TableColumn<Driver>[] = [
       {
         accessorKey: 'fullName',
-        header: 'Driver',
+        header: t('Driver'),
         enableHiding: false,
         cell: ({ row }) => (
           <div className="min-w-0">
@@ -145,7 +146,7 @@ export default function DriversPage() {
       },
       {
         id: 'autopark',
-        header: 'Autopark',
+        header: t('Autopark'),
         enableHiding: false,
         cell: ({ row }) =>
           row.original.autoparkId ? (
@@ -163,7 +164,7 @@ export default function DriversPage() {
       },
       {
         id: 'trucks',
-        header: 'Trucks',
+        header: t('Trucks'),
         enableHiding: false,
         // Only the trucks belonging to this tab. A man's own lorry shown
         // under his autopark — or theirs shown under him — reads as the
@@ -180,7 +181,7 @@ export default function DriversPage() {
       },
       {
         id: 'make',
-        header: 'Make',
+        header: t('Make'),
         enableHiding: false,
         // Stacked in the same order as the plates beside them, so a driver
         // with two lorries reads across rather than down.
@@ -196,7 +197,7 @@ export default function DriversPage() {
       },
       {
         id: 'model',
-        header: 'Model',
+        header: t('Model'),
         enableHiding: false,
         cell: ({ row }) => (
           <div className="space-y-0.5">
@@ -210,10 +211,10 @@ export default function DriversPage() {
       },
       {
         accessorKey: 'status',
-        header: 'Status',
+        header: t('Status'),
         cell: ({ row }) => (
           <Badge tone={row.original.status === 'active' ? 'success' : 'neutral'}>
-            {row.original.status === 'active' ? 'Driving' : 'No longer driving'}
+            {row.original.status === 'active' ? t('Driving') : t('No longer driving')}
           </Badge>
         ),
       },
@@ -226,13 +227,13 @@ export default function DriversPage() {
           <RowActions
             actions={[
               {
-                label: 'Edit',
+                label: t('Edit'),
                 icon: Pencil,
                 hidden: !can('users.drivers.edit'),
                 onSelect: () => openFor(row.original),
               },
               {
-                label: 'Delete',
+                label: t('Delete'),
                 icon: Trash2,
                 destructive: true,
                 hidden: !can('users.drivers.delete'),
@@ -266,8 +267,10 @@ export default function DriversPage() {
       emptyState={
         <EmptyState
           icon={Truck}
-          title="No drivers here"
-          description="Add the people who collect parts — owner-drivers, and the drivers of the autoparks you have contracts with."
+          title={t('No drivers here')}
+          description={t(
+            'Add the people who collect parts — owner-drivers, and the drivers of the autoparks you have contracts with.',
+          )}
         />
       }
     />
@@ -276,13 +279,15 @@ export default function DriversPage() {
   return (
     <>
       <PageHeader
-        title="Drivers"
-        description="Who collects parts at the counter. Scanning a driver puts the purchase in his own app, and on the right truck in his autopark's."
+        title={t('Drivers')}
+        description={t(
+          "Who collects parts at the counter. Scanning a driver puts the purchase in his own app, and on the right truck in his autopark's.",
+        )}
         action={
           can('users.drivers.create') ? (
             <Button variant="primary" onClick={() => openFor(null)}>
               <Plus />
-              Add driver
+              {t('Add driver')}
             </Button>
           ) : null
         }
@@ -298,11 +303,11 @@ export default function DriversPage() {
         />
         <Select
           className="w-44"
-          aria-label="Filter by status"
-          placeholder="Any status"
+          aria-label={t('Filter by status')}
+          placeholder={t('Any status')}
           value={(query.status as string) || undefined}
           onChange={(status) => setQuery({ status })}
-          options={[{ value: '', label: 'Any status' }, ...DRIVER_STATUSES]}
+          options={[{ value: '', label: t('Any status') }, ...DRIVER_STATUSES]}
         />
       </div>
 
@@ -324,23 +329,28 @@ export default function DriversPage() {
       <Modal
         open={open}
         onOpenChange={setOpen}
-        title={editing ? `Edit ${editing.fullName}` : 'New driver'}
-        description="A driver buys for his own truck, for an autopark's, or both."
+        title={editing ? `Edit ${editing.fullName}` : t('New driver')}
+        description={t("A driver buys for his own truck, for an autopark's, or both.")}
         primary={{ label: editing ? 'Save changes' : 'Add driver', onClick: save }}
       >
         <div className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Name" required error={errors.fullName?.[0]} className="sm:col-span-2">
+            <Field
+              label={t('Name')}
+              required
+              error={errors.fullName?.[0]}
+              className="sm:col-span-2"
+            >
               {(p) => (
                 <Input
                   {...p}
-                  placeholder="Bekzod Normatov"
+                  placeholder={t('Bekzod Normatov')}
                   value={draft.fullName}
                   onChange={(event) => setDraft((c) => ({ ...c, fullName: event.target.value }))}
                 />
               )}
             </Field>
-            <Field label="Phone">
+            <Field label={t('Phone')}>
               {(p) => (
                 <Input
                   {...p}
@@ -356,31 +366,31 @@ export default function DriversPage() {
 
           <div className="border-border rounded-card space-y-3 border p-3">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-fg text-sm font-medium">His own trucks</p>
+              <p className="text-fg text-sm font-medium">{t('His own trucks')}</p>
               <Button type="button" variant="secondary" size="sm" onClick={addOwnTruck}>
                 <Plus />
-                Add truck
+                {t('Add truck')}
               </Button>
             </div>
             {draft.ownTrucks.length === 0 ? (
               <p className="text-fg-subtle text-2xs">
-                None — leave it so if he only drives for an autopark.
+                {t('None — leave it so if he only drives for an autopark.')}
               </p>
             ) : (
               <div className="space-y-2">
                 {/* Captioned once rather than per row: three labelled inputs
                     repeated five times is a wall of text. */}
                 <div className="text-fg-subtle text-2xs grid gap-2 pr-10 sm:grid-cols-3">
-                  <span>Number plate</span>
-                  <span>Make</span>
-                  <span>Model</span>
+                  <span>{t('Number plate')}</span>
+                  <span>{t('Make')}</span>
+                  <span>{t('Model')}</span>
                 </div>
                 {draft.ownTrucks.map((truck, index) => (
                   <div key={index} className="flex items-start gap-2">
                     <div className="grid flex-1 gap-2 sm:grid-cols-3">
                       <Input
                         aria-label={`Number plate ${index + 1}`}
-                        placeholder="40 E 678 HH"
+                        placeholder={t('40 E 678 HH')}
                         value={truck.plate}
                         onChange={(event) => setOwnTruck(index, { plate: event.target.value })}
                       />
@@ -416,13 +426,13 @@ export default function DriversPage() {
           </div>
 
           <div className="border-border rounded-card space-y-3 border p-3">
-            <p className="text-fg text-sm font-medium">Autopark</p>
-            <Field label="Company" hint="Leave empty for an owner-driver">
+            <p className="text-fg text-sm font-medium">{t('Autopark')}</p>
+            <Field label={t('Company')} hint={t('Leave empty for an owner-driver')}>
               {(p) => (
                 <Select
                   {...p}
                   className="w-full"
-                  placeholder="None"
+                  placeholder={t('None')}
                   value={draft.autoparkId ?? undefined}
                   onChange={(autoparkId) =>
                     setDraft((c) => ({
@@ -440,21 +450,21 @@ export default function DriversPage() {
             </Field>
             <div className="grid gap-3 sm:grid-cols-3">
               <Field
-                label="Their truck"
+                label={t('Their truck')}
                 required={draft.autoparkId !== null}
                 error={errors.autoparkTruck?.[0]}
               >
                 {(p) => (
                   <Input
                     {...p}
-                    placeholder="01 A 123 AA"
+                    placeholder={t('01 A 123 AA')}
                     disabled={draft.autoparkId === null}
                     value={draft.autoparkTruck?.plate ?? ''}
                     onChange={(event) => setAutoparkTruck({ plate: event.target.value })}
                   />
                 )}
               </Field>
-              <Field label="Make">
+              <Field label={t('Make')}>
                 {(p) => (
                   <VehicleMakeSelect
                     id={p.id}
@@ -464,7 +474,7 @@ export default function DriversPage() {
                   />
                 )}
               </Field>
-              <Field label="Model">
+              <Field label={t('Model')}>
                 {() => (
                   <VehicleModelSelect
                     disabled={draft.autoparkId === null}
@@ -478,7 +488,7 @@ export default function DriversPage() {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Status">
+            <Field label={t('Status')}>
               {(p) => (
                 <Select
                   {...p}
@@ -489,7 +499,7 @@ export default function DriversPage() {
                 />
               )}
             </Field>
-            <Field label="Note">
+            <Field label={t('Note')}>
               {(p) => (
                 <Input
                   {...p}
@@ -511,13 +521,13 @@ export default function DriversPage() {
         }}
         title={`Delete ${deleting?.fullName}?`}
         body="Sales he collected keep his name — a driver is a contact, not an account."
-        confirmLabel="Delete"
+        confirmLabel={t('Delete')}
         destructive
         onConfirm={() => {
           if (!deleting) return
           actions.remove(deleting.id)
           setDeleting(null)
-          toast.success('Driver deleted')
+          toast.success(t('Driver deleted'))
         }}
       />
     </>

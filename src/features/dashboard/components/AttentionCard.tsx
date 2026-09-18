@@ -6,6 +6,7 @@ import { EmptyState } from '@/shared/components/EmptyState'
 import { paths } from '@/shared/config/paths'
 import { cn } from '@/shared/lib/cn'
 import type { DashboardSummary } from '../api/summary'
+import { t } from '@/shared/i18n'
 
 /**
  * Replaces OX's welcome banner, which spends the best space on the page on a
@@ -26,7 +27,7 @@ export function AttentionCard({
       icon: PackageX,
       tone: 'danger' as const,
       count: attention?.outOfStock ?? 0,
-      label: 'products out of stock',
+      label: t('products out of stock'),
       to: `${paths.products.list}?stock=zero`,
     },
     {
@@ -34,7 +35,7 @@ export function AttentionCard({
       icon: TrendingDown,
       tone: 'warning' as const,
       count: attention?.lowStock ?? 0,
-      label: 'products below their reorder point',
+      label: t('products below their reorder point'),
       to: `${paths.products.list}?stock=low`,
     },
     {
@@ -42,7 +43,7 @@ export function AttentionCard({
       icon: AlertTriangle,
       tone: 'danger' as const,
       count: attention?.overduePayables ?? 0,
-      label: 'overdue supplier payments',
+      label: t('overdue supplier payments'),
       to: `${paths.products.suppliers}?lens=owed`,
     },
     {
@@ -50,7 +51,7 @@ export function AttentionCard({
       icon: ReceiptText,
       tone: 'warning' as const,
       count: attention?.draftSales ?? 0,
-      label: 'sales left open',
+      label: t('sales left open'),
       to: paths.sales.ordersByStatus('open'),
     },
   ].filter((row) => row.count > 0)
@@ -58,7 +59,7 @@ export function AttentionCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Needs attention</CardTitle>
+        <CardTitle>{t('Needs attention')}</CardTitle>
       </CardHeader>
       <CardBody>
         {loading ? (
@@ -68,7 +69,10 @@ export function AttentionCard({
             ))}
           </div>
         ) : rows.length === 0 ? (
-          <EmptyState title="Nothing needs you" description="No alerts across your locations." />
+          <EmptyState
+            title={t('Nothing needs you')}
+            description={t('No alerts across your locations.')}
+          />
         ) : (
           <ul className="divide-border divide-y">
             {rows.map((row) => (

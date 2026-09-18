@@ -1,5 +1,6 @@
 import { Check } from 'lucide-react'
 import { cn } from '@/shared/lib/cn'
+import { t } from '@/shared/i18n'
 
 /**
  * Where you are in a two-step create screen — details first, then products.
@@ -42,7 +43,7 @@ export function Steps({
         'flex flex-wrap items-center gap-2 text-sm',
         wide && 'border-border w-full flex-nowrap border-b pb-3',
       )}
-      aria-label="Steps"
+      aria-label={t('Steps')}
     >
       {steps.map((label, index) => {
         const number = index + 1

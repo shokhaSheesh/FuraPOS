@@ -13,6 +13,7 @@ import {
 } from './VariationsDialog'
 import { sumRows, type ProductGroup } from './browse'
 import type { PurchaseRow } from './purchaseRows'
+import { t } from '@/shared/i18n'
 
 type Group = ProductGroup<PurchaseRow>
 
@@ -79,7 +80,7 @@ export function PurchaseCatalogue({
       },
       {
         id: 'everywhere',
-        header: 'All locations',
+        header: t('All locations'),
         meta: { align: 'right' },
         cell: ({ row }) => <StockPill side="theirs" units={everywhere(row.original)} />,
       },
@@ -87,7 +88,7 @@ export function PurchaseCatalogue({
         ? [
             {
               id: 'expected',
-              header: 'Expected',
+              header: t('Expected'),
               meta: { align: 'right' },
               cell: ({ row }) => formatNumber(expected(row.original)),
             } satisfies TableColumn<Group>,
@@ -95,7 +96,7 @@ export function PurchaseCatalogue({
         : []),
       {
         id: 'sold',
-        header: 'Sold, 3 / 6 mo',
+        header: t('Sold, 3 / 6 mo'),
         meta: { align: 'right' },
         cell: ({ row }) => (
           <span className="text-fg-muted tabular-nums">
@@ -108,7 +109,7 @@ export function PurchaseCatalogue({
         ? [
             {
               id: 'price',
-              header: 'Price',
+              header: t('Price'),
               meta: { align: 'right' },
               cell: ({ row }) => <span className="tabular-nums">{priceRange(row.original)}</span>,
             } satisfies TableColumn<Group>,
@@ -127,10 +128,10 @@ export function PurchaseCatalogue({
       ownFieldsTitle={`This ${noun}`}
       ownFields={[
         { id: 'atLocation', label: `At ${locationName}` },
-        { id: 'everywhere', label: 'All locations' },
-        ...(showExpected ? [{ id: 'expected', label: 'Expected' }] : []),
-        { id: 'sales', label: 'Sold' },
-        ...(canSeeCost ? [{ id: 'price', label: 'Price' }] : []),
+        { id: 'everywhere', label: t('All locations') },
+        ...(showExpected ? [{ id: 'expected', label: t('Expected') }] : []),
+        { id: 'sales', label: t('Sold') },
+        ...(canSeeCost ? [{ id: 'price', label: t('Price') }] : []),
       ]}
       defaultFields={[
         'variations',
@@ -147,13 +148,13 @@ export function PurchaseCatalogue({
       summary={summary}
       renderStats={(group, has) => (
         <>
-          {has('atLocation') || has('everywhere') ? (
+          {has(t('atLocation')) || has('everywhere') ? (
             <div className="grid grid-cols-2 gap-1.5">
-              {has('atLocation') ? (
+              {has(t('atLocation')) ? (
                 <StockBox side="mine" label={`At ${locationName}`} units={atLocation(group)} />
               ) : null}
               {has('everywhere') ? (
-                <StockBox side="theirs" label="All locations" units={everywhere(group)} />
+                <StockBox side="theirs" label={t('All locations')} units={everywhere(group)} />
               ) : null}
             </div>
           ) : null}
@@ -161,7 +162,7 @@ export function PurchaseCatalogue({
             <dl className="text-2xs space-y-0.5">
               {showExpected && has('expected') && expected(group) > 0 ? (
                 <div className="flex gap-2">
-                  <dt className="text-fg-subtle">Expected</dt>
+                  <dt className="text-fg-subtle">{t('Expected')}</dt>
                   <dd className="text-fg font-medium tabular-nums">
                     {formatNumber(expected(group))}
                   </dd>
@@ -169,7 +170,7 @@ export function PurchaseCatalogue({
               ) : null}
               {canSeeCost && has('price') ? (
                 <div className="flex gap-2">
-                  <dt className="text-fg-subtle">Price</dt>
+                  <dt className="text-fg-subtle">{t('Price')}</dt>
                   <dd className="text-fg truncate font-medium tabular-nums">{priceRange(group)}</dd>
                 </div>
               ) : null}
@@ -178,7 +179,9 @@ export function PurchaseCatalogue({
         </>
       )}
       renderSales={(group, has) =>
-        has('sales') ? <SalesFigures demand={group.demand} title="Sold, all locations" /> : null
+        has('sales') ? (
+          <SalesFigures demand={group.demand} title={t('Sold, all locations')} />
+        ) : null
       }
       renderDialog={(group, close) => (
         <VariationsDialog
@@ -199,19 +202,19 @@ export function PurchaseCatalogue({
                 <StockBox large side="mine" label={`At ${locationName}`} units={atLocation(open)} />
               </div>
               <div className="min-w-32 flex-1">
-                <StockBox large side="theirs" label="All locations" units={everywhere(open)} />
+                <StockBox large side="theirs" label={t('All locations')} units={everywhere(open)} />
               </div>
               <DialogStat
-                label="Sold, 3 / 6 months"
+                label={t('Sold, 3 / 6 months')}
                 value={`${formatNumber(open.demand[3])} / ${formatNumber(open.demand[6])}`}
               />
-              <DialogStat label="Variations" value={formatNumber(open.rows.length)} />
+              <DialogStat label={t('Variations')} value={formatNumber(open.rows.length)} />
             </>
           )}
           columns={({ set }) => [
             {
               id: 'supplierSku',
-              header: 'Their code',
+              header: t('Their code'),
               cell: ({ row }) => (
                 <span className="text-fg-muted text-2xs font-mono">
                   {row.original.row.supplierSku ?? '—'}
@@ -226,7 +229,7 @@ export function PurchaseCatalogue({
             },
             {
               id: 'everywhere',
-              header: 'All locations',
+              header: t('All locations'),
               meta: { align: 'right' },
               cell: ({ row }) => (
                 <StockPill side="theirs" units={row.original.row.variation.stock} />
@@ -234,7 +237,7 @@ export function PurchaseCatalogue({
             },
             {
               id: 'sold',
-              header: 'Sold, 3 / 6 mo',
+              header: t('Sold, 3 / 6 mo'),
               meta: { align: 'right' },
               cell: ({ row }) => (
                 <span className="text-fg-muted tabular-nums">
@@ -249,7 +252,7 @@ export function PurchaseCatalogue({
               ? [
                   {
                     id: 'expected',
-                    header: 'Expected',
+                    header: t('Expected'),
                     meta: { align: 'right' },
                     cell: ({ row }) =>
                       row.original.row.expected === null
@@ -262,7 +265,7 @@ export function PurchaseCatalogue({
               ? [
                   {
                     id: 'price',
-                    header: 'Price',
+                    header: t('Price'),
                     enableHiding: false,
                     meta: { align: 'right' },
                     cell: ({ row }) => (

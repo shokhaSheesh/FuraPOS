@@ -6,6 +6,7 @@ import { Button } from '@/shared/ui/Button'
 import { cn } from '@/shared/lib/cn'
 import { useActiveDrivers } from '@/features/drivers/api/drivers'
 import { capacityOfSection, trucksFor, type Driver } from '@/features/drivers/model/driver'
+import { t } from '@/shared/i18n'
 
 /**
  * Who collected the parts.
@@ -63,7 +64,7 @@ export function DriverPicker({
         >
           <ScanLine />
           <span className={cn('flex-1 truncate text-left', !value && 'text-fg-muted')}>
-            {value ? value.fullName : 'No driver'}
+            {value ? value.fullName : t('No driver')}
           </span>
           <ChevronDown className="text-fg-subtle" />
         </Button>
@@ -74,8 +75,8 @@ export function DriverPicker({
           autoFocus
           value={term}
           onChange={(event) => setTerm(event.target.value)}
-          placeholder="Scan the QR, or search name or plate…"
-          aria-label="Search drivers"
+          placeholder={t('Scan the QR, or search name or plate…')}
+          aria-label={t('Search drivers')}
           className="h-8"
         />
       </div>
@@ -89,7 +90,7 @@ export function DriverPicker({
             }}
             className="hover:bg-canvas flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm"
           >
-            <span className="flex-1">No driver</span>
+            <span className="flex-1">{t('No driver')}</span>
             {value === null ? <Check className="text-fg-subtle size-4" /> : null}
           </button>
         </li>
@@ -129,10 +130,10 @@ export function DriverPicker({
         {drivers.length === 0 ? (
           <li className="text-fg-subtle px-2 py-4 text-center text-sm">
             {section === 'autopark'
-              ? 'No autopark driver matches'
+              ? t('No autopark driver matches')
               : section === 'independent'
-                ? 'No owner-driver matches'
-                : 'No driver matches'}
+                ? t('No owner-driver matches')
+                : t('No driver matches')}
           </li>
         ) : null}
         {onAddNew && section === 'independent' ? (
@@ -146,7 +147,7 @@ export function DriverPicker({
               className="hover:bg-canvas text-fg flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm"
             >
               <Plus className="size-4" />
-              Add a new owner-driver
+              {t('Add a new owner-driver')}
             </button>
           </li>
         ) : null}

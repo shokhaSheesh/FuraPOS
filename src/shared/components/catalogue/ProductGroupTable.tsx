@@ -7,6 +7,7 @@ import { Button } from '@/shared/ui/Button'
 import { formatNumber } from '@/shared/lib/format'
 import { CATALOGUE_CARD_FIELDS } from './cardFields'
 import type { CatalogueRow, ProductGroup } from './browse'
+import { t } from '@/shared/i18n'
 
 /**
  * The list view of a product step: the cards as rows.
@@ -44,20 +45,20 @@ export function ProductGroupTable<R extends CatalogueRow>({
     () => [
       {
         id: 'image',
-        header: 'Image',
+        header: t('Image'),
         cell: ({ row }) => (
           <ProductThumb src={row.original.rows[0]?.variation.imageUrl ?? null} size="sm" />
         ),
       },
       {
         id: 'productName',
-        header: 'Product name',
+        header: t('Product name'),
         enableHiding: false,
         cell: ({ row }) => <span className="font-medium">{row.original.productName}</span>,
       },
       {
         id: 'variations',
-        header: 'Variations',
+        header: t('Variations'),
         meta: { align: 'right' },
         cell: ({ row }) => formatNumber(row.original.rows.length),
       },
@@ -78,7 +79,7 @@ export function ProductGroupTable<R extends CatalogueRow>({
       ),
       {
         id: 'choose',
-        header: 'Choose',
+        header: t('Choose'),
         enableHiding: false,
         meta: { align: 'right' },
         cell: ({ row }) => (

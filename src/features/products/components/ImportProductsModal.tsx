@@ -3,6 +3,7 @@ import { FileSpreadsheet, Upload, X } from 'lucide-react'
 import { Modal } from '@/shared/ui/Modal'
 import { Button } from '@/shared/ui/Button'
 import { cn } from '@/shared/lib/cn'
+import { t } from '@/shared/i18n'
 
 const ACCEPTED = '.csv,.xlsx,.xls'
 
@@ -67,10 +68,12 @@ export function ImportProductsModal({
     <Modal
       open={open}
       onOpenChange={close}
-      title="Import products"
-      description="One row per variation. The import runs in the background — you can leave this page."
+      title={t('Import products')}
+      description={t(
+        'One row per variation. The import runs in the background — you can leave this page.',
+      )}
       primary={{
-        label: 'Start import',
+        label: t('Start import'),
         disabled: !file,
         onClick: () => {
           if (!file) return
@@ -103,20 +106,20 @@ export function ImportProductsModal({
               <p className="text-fg text-sm font-medium">{file.name}</p>
               <Button type="button" variant="ghost" size="sm" onClick={() => setFile(null)}>
                 <X />
-                Choose a different file
+                {t('Choose a different file')}
               </Button>
             </>
           ) : (
             <>
               <Upload className="text-fg-subtle size-6" />
-              <p className="text-fg-muted text-sm">Drop a CSV or Excel file here</p>
+              <p className="text-fg-muted text-sm">{t('Drop a CSV or Excel file here')}</p>
               <Button
                 type="button"
                 variant="secondary"
                 size="sm"
                 onClick={() => inputRef.current?.click()}
               >
-                Choose a file
+                {t('Choose a file')}
               </Button>
             </>
           )}
@@ -132,13 +135,13 @@ export function ImportProductsModal({
         <div className="border-border rounded-card border p-3">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-fg text-sm font-medium">Not sure about the columns?</p>
+              <p className="text-fg text-sm font-medium">{t('Not sure about the columns?')}</p>
               <p className="text-fg-subtle text-2xs">
-                Start from the template rather than guessing the header names.
+                {t('Start from the template rather than guessing the header names.')}
               </p>
             </div>
             <Button type="button" variant="secondary" size="sm" onClick={downloadTemplate}>
-              Download template
+              {t('Download template')}
             </Button>
           </div>
           <div className="mt-3 flex flex-wrap gap-1">

@@ -1,4 +1,5 @@
 import { useDataStore } from '@/data/store'
+import { t } from '@/shared/i18n'
 
 /**
  * Where a variation lives on the shelf — "1-A-23-4" — as a suffix for the SKU
@@ -16,7 +17,7 @@ export function StorageAddress({ variationId }: { variationId: string }) {
   )
   if (!address) return null
   return (
-    <span className="text-fg-muted" title="Storage address">
+    <span className="text-fg-muted" title={t('Storage address')}>
       {' · '}
       {address}
     </span>

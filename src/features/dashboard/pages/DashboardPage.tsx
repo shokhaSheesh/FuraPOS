@@ -13,6 +13,7 @@ import { ChartLegend, RevenueByLocationChart } from '../components/RevenueByLoca
 import { CurrencyRatesCard } from '../components/CurrencyRatesCard'
 import { TopProductsCard } from '../components/TopProductsCard'
 import { AttentionCard } from '../components/AttentionCard'
+import { t } from '@/shared/i18n'
 
 /**
  * Read-only overview. Every number links out to the screen that owns it — the
@@ -32,11 +33,11 @@ export default function DashboardPage() {
   return (
     <>
       <PageHeader
-        title="Dashboard"
-        description="Today at a glance, across all locations."
+        title={t('Dashboard')}
+        description={t('Today at a glance, across all locations.')}
         action={
           <Button variant="primary" asChild>
-            <Link to={paths.sales.newSale}>New sale</Link>
+            <Link to={paths.sales.newSale}>{t('New sale')}</Link>
           </Button>
         }
         below={
@@ -53,42 +54,42 @@ export default function DashboardPage() {
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
-          label="Revenue"
+          label={t('Revenue')}
           value={data ? formatMoney(data.revenue.value) : '—'}
           change={data?.revenue.change}
           comparedTo={data?.comparedTo}
           loading={loading}
         />
         <StatCard
-          label="Sales"
+          label={t('Sales')}
           value={data ? formatNumber(data.salesCount.value) : '—'}
           change={data?.salesCount.change}
           comparedTo={data?.comparedTo}
           loading={loading}
         />
         <StatCard
-          label="Average check"
+          label={t('Average check')}
           value={data ? formatMoney(data.averageCheck.value) : '—'}
           change={data?.averageCheck.change}
           comparedTo={data?.comparedTo}
           loading={loading}
         />
         <StatCard
-          label="Gross margin"
+          label={t('Gross margin')}
           value={data ? formatPercent(data.grossMargin.value) : '—'}
           change={data?.grossMargin.change}
           comparedTo={data?.comparedTo}
           loading={loading}
         />
         <StatCard
-          label="Visitors"
+          label={t('Visitors')}
           value={data ? formatNumber(data.visitors.value) : '—'}
           change={data?.visitors.change}
           comparedTo={data?.comparedTo}
           loading={loading}
         />
         <StatCard
-          label="New clients"
+          label={t('New clients')}
           value={data ? formatNumber(data.newClients.value) : '—'}
           change={data?.newClients.change}
           comparedTo={data?.comparedTo}
@@ -100,7 +101,8 @@ export default function DashboardPage() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>
-              Revenue by location&ensp;<span className="text-fg-subtle font-normal">UZS</span>
+              {t('Revenue by location&ensp;')}
+              <span className="text-fg-subtle font-normal">{t('UZS')}</span>
             </CardTitle>
             {data ? <ChartLegend locations={data.locations} data={data.revenueByLocation} /> : null}
           </CardHeader>

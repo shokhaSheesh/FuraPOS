@@ -23,6 +23,7 @@ import {
   CORRECTION_COLUMNS_HIDDEN_BY_DEFAULT,
 } from '../components/correctionColumns'
 import { CORRECTION_REASONS, netUnits, type Correction } from '../model/correction'
+import { t } from '@/shared/i18n'
 
 /**
  * Stock that changed when nothing was sold, received or moved: breakage,
@@ -68,14 +69,14 @@ export default function CorrectionsListPage() {
   return (
     <>
       <PageHeader
-        title="Corrections"
-        description="Why a number changed when nothing was sold, received or moved."
+        title={t('Corrections')}
+        description={t('Why a number changed when nothing was sold, received or moved.')}
         action={
           can('products.corrections.create') ? (
             <Button variant="primary" asChild>
               <Link to={paths.products.newCorrection}>
                 <Plus />
-                New correction
+                {t('New correction')}
               </Link>
             </Button>
           ) : null
@@ -84,36 +85,36 @@ export default function CorrectionsListPage() {
           <div className="flex flex-wrap items-center gap-2">
             <StatusChips
               options={[
-                { value: null, label: 'All' },
-                { value: 'applied', label: 'Applied' },
-                { value: 'cancelled', label: 'Cancelled' },
+                { value: null, label: t('All') },
+                { value: 'applied', label: t('Applied') },
+                { value: 'cancelled', label: t('Cancelled') },
               ]}
               value={(query.status as string | null) ?? null}
               onChange={(next) => setQuery({ status: next, page: null })}
               counts={counts}
             />
             <StatusChips
-              ariaLabel="Filter by direction"
+              ariaLabel={t('Filter by direction')}
               options={[
-                { value: null, label: 'Both ways' },
-                { value: 'off', label: 'Written off' },
-                { value: 'on', label: 'Written on' },
+                { value: null, label: t('Both ways') },
+                { value: 'off', label: t('Written off') },
+                { value: 'on', label: t('Written on') },
               ]}
               value={(query.direction as string | null) ?? null}
               onChange={(next) => setQuery({ direction: next, page: null })}
             />
             <FilterSelect
-              aria-label="Filter by reason"
-              label="Because"
-              allLabel="Any reason"
+              aria-label={t('Filter by reason')}
+              label={t('Because')}
+              allLabel={t('Any reason')}
               value={(query.reason as string | null) ?? null}
               options={CORRECTION_REASONS.map((r) => ({ value: r.value, label: r.label }))}
               onChange={(next) => setQuery({ reason: next, page: null })}
             />
             <FilterSelect
-              aria-label="Filter by location"
-              label="At"
-              allLabel="All locations"
+              aria-label={t('Filter by location')}
+              label={t('At')}
+              allLabel={t('All locations')}
               value={(query.location as string | null) ?? null}
               options={locations.map((item) => ({ value: item.id, label: item.name }))}
               onChange={(next) => setQuery({ location: next, page: null })}
@@ -149,17 +150,19 @@ export default function CorrectionsListPage() {
           query.location ||
           query.reason ||
           query.direction ? (
-            <EmptyState title="No corrections match these filters" />
+            <EmptyState title={t('No corrections match these filters')} />
           ) : (
             <EmptyState
-              title="Nothing has been corrected"
-              description="When the shelf and the system disagree, a correction records the new count and why it changed."
+              title={t('Nothing has been corrected')}
+              description={t(
+                'When the shelf and the system disagree, a correction records the new count and why it changed.',
+              )}
               action={
                 can('products.corrections.create') ? (
                   <Button variant="primary" asChild>
                     <Link to={paths.products.newCorrection}>
                       <Plus />
-                      New correction
+                      {t('New correction')}
                     </Link>
                   </Button>
                 ) : null
@@ -172,15 +175,16 @@ export default function CorrectionsListPage() {
       <ConfirmDialog
         open={pendingCancel !== null}
         onOpenChange={(open) => !open && setPendingCancel(null)}
-        title="Reverse this correction?"
-        confirmLabel="Reverse"
+        title={t('Reverse this correction?')}
+        confirmLabel={t('Reverse')}
         body={
           pendingCancel ? (
             <>
-              <strong className="text-fg font-medium">{pendingCancel.number}</strong> changed stock
-              at {pendingCancel.locationName} by {netUnits(pendingCancel) > 0 ? '+' : '−'}
-              {formatNumber(Math.abs(netUnits(pendingCancel)))} units. Reversing puts that back and
-              keeps both entries in the history.
+              <strong className="text-fg font-medium">{pendingCancel.number}</strong>{' '}
+              {t('changed stock at')} {pendingCancel.locationName} by{' '}
+              {netUnits(pendingCancel) > 0 ? '+' : '−'}
+              {formatNumber(Math.abs(netUnits(pendingCancel)))}{' '}
+              {t('units. Reversing puts that back and keeps both entries in the history.')}
             </>
           ) : null
         }

@@ -13,6 +13,7 @@ import {
   writtenOn,
   type Correction,
 } from '../model/correction'
+import { t } from '@/shared/i18n'
 
 const Empty = () => <span className="text-fg-subtle">—</span>
 
@@ -42,34 +43,34 @@ export function buildCorrectionColumns({
   return [
     {
       accessorKey: 'number',
-      header: 'Number',
+      header: t('Number'),
       cell: ({ row }) => <span className="text-2xs font-mono">{row.original.number}</span>,
       enableHiding: false,
     },
     {
       accessorKey: 'createdAt',
-      header: 'Created',
+      header: t('Created'),
       cell: ({ row }) => formatDate(row.original.createdAt),
     },
     {
       accessorKey: 'locationName',
-      header: 'Location',
+      header: t('Location'),
     },
     {
       accessorKey: 'reason',
-      header: 'Reason',
+      header: t('Reason'),
       enableHiding: false,
       cell: ({ row }) => correctionReasonLabel(row.original.reason),
     },
     {
       id: 'items',
-      header: 'Items',
+      header: t('Items'),
       meta: { align: 'right' },
       cell: ({ row }) => formatNumber(row.original.lines.length),
     },
     {
       id: 'net',
-      header: 'Change',
+      header: t('Change'),
       meta: { align: 'right' },
       enableHiding: false,
       cell: ({ row }) => <Delta value={netUnits(row.original)} />,
@@ -79,7 +80,7 @@ export function buildCorrectionColumns({
     // hide it, so the two are available as their own columns.
     {
       id: 'writtenOff',
-      header: 'Written off',
+      header: t('Written off'),
       meta: { align: 'right' },
       cell: ({ row }) => {
         const off = writtenOff(row.original)
@@ -88,7 +89,7 @@ export function buildCorrectionColumns({
     },
     {
       id: 'writtenOn',
-      header: 'Written on',
+      header: t('Written on'),
       meta: { align: 'right' },
       cell: ({ row }) => {
         const on = writtenOn(row.original)
@@ -99,7 +100,7 @@ export function buildCorrectionColumns({
       ? [
           {
             id: 'value',
-            header: 'Value at cost',
+            header: t('Value at cost'),
             meta: { align: 'right' as const },
             cell: ({ row }: { row: { original: Correction } }) => {
               const value = netCostValue(row.original, usdRate)
@@ -115,7 +116,7 @@ export function buildCorrectionColumns({
       : []),
     {
       accessorKey: 'status',
-      header: 'Status',
+      header: t('Status'),
       cell: ({ row }) => (
         <Badge tone={correctionStatusTone(row.original.status)}>
           {correctionStatusLabel(row.original.status)}
@@ -124,11 +125,11 @@ export function buildCorrectionColumns({
     },
     {
       accessorKey: 'createdBy',
-      header: 'Created by',
+      header: t('Created by'),
     },
     {
       accessorKey: 'comment',
-      header: 'Comment',
+      header: t('Comment'),
       cell: ({ row }) => row.original.comment ?? <Empty />,
     },
     {
@@ -141,7 +142,7 @@ export function buildCorrectionColumns({
             canCancel && row.original.status === 'applied'
               ? [
                   {
-                    label: 'Reverse correction',
+                    label: t('Reverse correction'),
                     icon: Undo2,
                     destructive: true,
                     onSelect: () => onCancel(row.original),

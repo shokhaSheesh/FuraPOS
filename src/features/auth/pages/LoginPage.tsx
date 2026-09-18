@@ -8,6 +8,7 @@ import { Field } from '@/shared/components/Field'
 import { useSession } from '@/app/providers/SessionProvider'
 import { paths } from '@/shared/config/paths'
 import { DEMO_PASSWORD } from '../model/auth'
+import { t } from '@/shared/i18n'
 
 /**
  * Sign in.
@@ -47,14 +48,16 @@ export default function LoginPage() {
           <img src="/brand/logo-256.png" alt="" width={44} height={44} className="size-11" />
         </span>
         <div>
-          <h1 className="text-fg text-xl font-semibold tracking-tight">Sign in to Fura Sentr</h1>
-          <p className="text-fg-muted text-sm">Use the login your administrator gave you.</p>
+          <h1 className="text-fg text-xl font-semibold tracking-tight">
+            {t('Sign in to Fura Sentr')}
+          </h1>
+          <p className="text-fg-muted text-sm">{t('Use the login your administrator gave you.')}</p>
         </div>
       </div>
 
       <Card className="p-5">
         <form onSubmit={submit} className="space-y-3" noValidate>
-          <Field label="Login">
+          <Field label={t('Login')}>
             {(p) => (
               <Input
                 {...p}
@@ -70,7 +73,7 @@ export default function LoginPage() {
             )}
           </Field>
 
-          <Field label="Password">
+          <Field label={t('Password')}>
             {(p) => (
               <div className="relative">
                 <Input
@@ -87,7 +90,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((shown) => !shown)}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-label={showPassword ? t('Hide password') : t('Show password')}
                   className="text-fg-subtle hover:text-fg absolute top-1/2 right-2.5 -translate-y-1/2"
                 >
                   {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
@@ -107,11 +110,11 @@ export default function LoginPage() {
 
           <Button type="submit" variant="primary" className="w-full">
             <LogIn />
-            Sign in
+            {t('Sign in')}
           </Button>
 
           <p className="text-fg-subtle text-2xs text-center">
-            Forgotten your password? Ask your administrator to reset it.
+            {t('Forgotten your password? Ask your administrator to reset it.')}
           </p>
         </form>
       </Card>
@@ -119,9 +122,9 @@ export default function LoginPage() {
       {/* A design build with no backend: say how to get in, rather than leave a
           reviewer guessing at a password. */}
       <p className="text-fg-subtle text-2xs text-center">
-        Demo: <span className="font-mono">akhmet</span> (Owner),{' '}
-        <span className="font-mono">nodira</span> (Manager),{' '}
-        <span className="font-mono">mansurbek</span> (Seller) — password{' '}
+        {t('Demo:')} <span className="font-mono">akhmet</span> {t('(Owner),')}{' '}
+        <span className="font-mono">nodira</span> {t('(Manager),')}{' '}
+        <span className="font-mono">mansurbek</span> {t('(Seller) — password')}{' '}
         <span className="font-mono">{DEMO_PASSWORD}</span>
       </p>
     </div>

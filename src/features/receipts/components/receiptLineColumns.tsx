@@ -11,6 +11,7 @@ import {
 } from '@/features/products/components/productFieldColumns'
 import type { VariationRow } from '@/features/products/model/product'
 import type { Currency, ReceiptLine } from '../model/receipt'
+import { t } from '@/shared/i18n'
 
 const CURRENCIES = [
   { value: 'USD', label: 'USD' },
@@ -78,7 +79,7 @@ function StockCell({ row }: { row: LineRow }) {
       title={
         row.stockHere.length
           ? row.stockHere.map((s) => `${s.locationName}: ${formatNumber(s.quantity)}`).join('\n')
-          : 'Nothing on any shelf yet'
+          : t('Nothing on any shelf yet')
       }
     >
       {formatNumber(totalStock(row))}
@@ -116,7 +117,7 @@ function withStockBreakdown(fields: TableColumn<LineRow>[]) {
           row.original.variation ? (
             <span className="font-medium">{row.original.variation.productName}</span>
           ) : (
-            <span className="text-fg-muted" title="Their listing — we have never stocked this">
+            <span className="text-fg-muted" title={t('Their listing — we have never stocked this')}>
               {row.original.name}
             </span>
           ),
@@ -173,7 +174,7 @@ export function buildReceiptLineColumns({
     ? [
         {
           id: 'product',
-          header: 'Product',
+          header: t('Product'),
           enableHiding: false,
           cell: ({ row }) => {
             const v = row.original.variation
@@ -198,7 +199,7 @@ export function buildReceiptLineColumns({
   const own: TableColumn<LineRow>[] = [
     {
       id: 'count',
-      header: 'Actual quantity',
+      header: t('Actual quantity'),
       enableHiding: false,
       meta: { align: 'right' },
       cell: ({ row }) => {
@@ -206,9 +207,11 @@ export function buildReceiptLineColumns({
           return (
             <span
               className="text-fg-subtle text-2xs"
-              title="They list it, we have never stocked it — add it to the catalogue before receiving any"
+              title={t(
+                'They list it, we have never stocked it — add it to the catalogue before receiving any',
+              )}
             >
-              new to us
+              {t('new to us')}
             </span>
           )
         }
@@ -240,7 +243,7 @@ export function buildReceiptLineColumns({
       ? ([
           {
             id: 'lineCost',
-            header: 'Invoiced price',
+            header: t('Invoiced price'),
             enableHiding: false,
             meta: { align: 'right' as const },
             cell: ({ row }) =>
@@ -268,7 +271,7 @@ export function buildReceiptLineColumns({
                 </div>
               ) : (
                 <span className="tabular-nums">
-                  {row.original.costCurrency === 'USD'
+                  {row.original.costCurrency === t('USD')
                     ? `${row.original.unitCost.toFixed(2)} USD`
                     : formatMoney(row.original.unitCost)}
                 </span>
@@ -296,7 +299,7 @@ export function buildReceiptLineColumns({
                   variant="ghost"
                   size="icon"
                   aria-label={`Remove ${row.original.name} from this receipt`}
-                  title="Remove from this receipt"
+                  title={t('Remove from this receipt')}
                   className="hover:text-danger"
                   onClick={() => onRemove(row.original)}
                 >
@@ -333,13 +336,13 @@ export function buildReceiptReviewColumns({
   const own: TableColumn<LineRow>[] = [
     {
       id: 'count',
-      header: 'Actual quantity',
+      header: t('Actual quantity'),
       meta: { align: 'right' },
       cell: ({ row }) => formatNumber(row.original.quantity),
     },
     {
       id: 'expected',
-      header: 'Expected quantity',
+      header: t('Expected quantity'),
       meta: { align: 'right' },
       cell: ({ row }) => formatNumber(row.original.expected),
     },

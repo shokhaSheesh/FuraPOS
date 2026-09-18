@@ -19,6 +19,7 @@ import {
 } from '@/shared/lib/importFields'
 import { useDataStore, type ProductInput } from '@/data/store'
 import type { VariationRow } from '@/features/products/model/product'
+import { t } from '@/shared/i18n'
 
 export interface ImportedLine {
   /** The product this row landed on, matched or just created. */
@@ -312,13 +313,13 @@ export function SpreadsheetImport({
         <>
           <Card>
             <CardHeader>
-              <CardTitle>Settings</CardTitle>
+              <CardTitle>{t('Settings')}</CardTitle>
             </CardHeader>
             <CardBody className="grid gap-4 sm:grid-cols-2">
               <Field
-                label="Supplier price currency"
+                label={t('Supplier price currency')}
                 required
-                hint="What a price is read as when the file has no currency column of its own"
+                hint={t('What a price is read as when the file has no currency column of its own')}
               >
                 {(p) => (
                   <Select
@@ -327,18 +328,21 @@ export function SpreadsheetImport({
                     value={fallbackCurrency}
                     onChange={(value) => setFallbackCurrency(value as 'USD' | 'UZS')}
                     options={[
-                      { value: 'USD', label: 'USD' },
-                      { value: 'UZS', label: 'UZS' },
+                      { value: 'USD', label: t('USD') },
+                      { value: 'UZS', label: t('UZS') },
                     ]}
                   />
                 )}
               </Field>
 
-              <Field label="Example file" hint="The columns we can read, ready to fill in">
+              <Field
+                label={t('Example file')}
+                hint={t('The columns we can read, ready to fill in')}
+              >
                 {() => (
                   <Button variant="secondary" className="w-full" onClick={downloadTemplate}>
                     <FileDown />
-                    Download a template
+                    {t('Download a template')}
                   </Button>
                 )}
               </Field>
@@ -347,9 +351,11 @@ export function SpreadsheetImport({
                   own inside the file. */}
               {isCsv ? (
                 <Field
-                  label="Encoding"
+                  label={t('Encoding')}
                   className="sm:col-span-2"
-                  hint="Excel on a Russian Windows saves CSV as windows-1251; read as UTF-8 that file is a column of question marks"
+                  hint={t(
+                    'Excel on a Russian Windows saves CSV as windows-1251; read as UTF-8 that file is a column of question marks',
+                  )}
                 >
                   {(p) => (
                     <Select
@@ -370,14 +376,14 @@ export function SpreadsheetImport({
               ) : null}
 
               <div className="sm:col-span-2">
-                <p className="text-fg-muted mb-1 text-sm">Upload a spreadsheet</p>
+                <p className="text-fg-muted mb-1 text-sm">{t('Upload a spreadsheet')}</p>
                 <label className="border-border hover:border-border-strong rounded-card flex cursor-pointer flex-col items-center gap-2 border border-dashed p-10 text-center">
                   <Upload className="text-fg-subtle size-6" />
                   <span className="text-fg text-sm font-medium">
-                    Drop a file here, or click to choose one
+                    {t('Drop a file here, or click to choose one')}
                   </span>
                   <span className="text-fg-subtle text-2xs">
-                    Excel (.xlsx), or a comma-, semicolon- or tab-separated .csv
+                    {t('Excel (.xlsx), or a comma-, semicolon- or tab-separated .csv')}
                   </span>
                   <input
                     type="file"
@@ -407,31 +413,35 @@ export function SpreadsheetImport({
 
           <Card>
             <CardHeader>
-              <CardTitle>Spreadsheet settings</CardTitle>
+              <CardTitle>{t('Spreadsheet settings')}</CardTitle>
             </CardHeader>
             <CardBody className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <Toggle
-                label="First row is a heading"
-                hint="Turn this on when the first row names the columns rather than holding a product."
+                label={t('First row is a heading')}
+                hint={t(
+                  'Turn this on when the first row names the columns rather than holding a product.',
+                )}
                 checked={hasHeader}
                 onChange={setHasHeader}
               />
               <Toggle
-                label="Create products we do not carry"
-                hint="Rows matching nothing become new products. Off, they are listed and skipped."
+                label={t('Create products we do not carry')}
+                hint={t(
+                  'Rows matching nothing become new products. Off, they are listed and skipped.',
+                )}
                 checked={createMissing}
                 onChange={setCreateMissing}
               />
               <Toggle
-                label="Generate a barcode"
-                hint="For a product being created whose row has no barcode of its own."
+                label={t('Generate a barcode')}
+                hint={t('For a product being created whose row has no barcode of its own.')}
                 checked={generateBarcode}
                 onChange={setGenerateBarcode}
                 disabled={!createMissing}
               />
               <Toggle
-                label="Generate an SKU"
-                hint="For a product being created whose row has no SKU of its own."
+                label={t('Generate an SKU')}
+                hint={t('For a product being created whose row has no SKU of its own.')}
                 checked={generateSku}
                 onChange={setGenerateSku}
                 disabled={!createMissing}
@@ -439,9 +449,9 @@ export function SpreadsheetImport({
 
               {createMissing ? (
                 <Field
-                  label="Category for new products"
+                  label={t('Category for new products')}
                   className="sm:col-span-2 xl:col-span-4"
-                  hint="Used when the file has no category column, or names one we do not have"
+                  hint={t('Used when the file has no category column, or names one we do not have')}
                 >
                   {(p) => (
                     <Select
@@ -463,14 +473,14 @@ export function SpreadsheetImport({
         <Card>
           <CardHeader className="flex-col items-stretch gap-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <CardTitle>What each column holds</CardTitle>
+              <CardTitle>{t('What each column holds')}</CardTitle>
               <span className="text-fg-muted text-sm">
-                {formatNumber(willAdd)} of {formatNumber(body.length)} rows will be added
+                {formatNumber(willAdd)} of {formatNumber(body.length)} {t('rows will be added')}
               </span>
             </div>
             {unmapped.length > 0 ? (
               <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-fg-subtle text-2xs">Not mapped yet:</span>
+                <span className="text-fg-subtle text-2xs">{t('Not mapped yet:')}</span>
                 {unmapped.map((field) => (
                   <span
                     key={field.value}
@@ -532,7 +542,9 @@ export function SpreadsheetImport({
             {!identified ? (
               <p className="text-warning border-border flex items-center gap-2 border-t px-4 py-3 text-sm">
                 <AlertTriangle className="size-4" />
-                Mark the column holding the barcode or the SKU — it is what a row is matched on.
+                {t(
+                  'Mark the column holding the barcode or the SKU — it is what a row is matched on.',
+                )}
               </p>
             ) : null}
           </CardBody>
@@ -542,18 +554,18 @@ export function SpreadsheetImport({
       {step === 3 ? (
         <Card>
           <CardHeader>
-            <CardTitle>Ready to import</CardTitle>
+            <CardTitle>{t('Ready to import')}</CardTitle>
           </CardHeader>
           <CardBody className="space-y-3">
             <p className="text-fg flex items-center gap-2 text-sm">
               <Check className="text-success size-4" />
-              {formatNumber(plan.matched.length)} rows matched a product we already carry.
+              {formatNumber(plan.matched.length)} {t('rows matched a product we already carry.')}
             </p>
 
             {willCreate > 0 ? (
               <p className="text-fg flex items-center gap-2 text-sm">
                 <Plus className="text-info size-4" />
-                {formatNumber(willCreate)} rows will create a new product first.
+                {formatNumber(willCreate)} {t('rows will create a new product first.')}
               </p>
             ) : null}
 
@@ -561,18 +573,20 @@ export function SpreadsheetImport({
               <div className="border-border rounded-card border p-3">
                 <p className="text-warning flex items-center gap-2 text-sm font-medium">
                   <AlertTriangle className="size-4" />
-                  {formatNumber(skipped)} rows will be skipped
+                  {formatNumber(skipped)} {t('rows will be skipped')}
                 </p>
                 {!createMissing && plan.creatable.length > 0 ? (
                   <p className="text-fg-subtle text-2xs mt-1">
-                    {formatNumber(plan.creatable.length)} of them could be created — turn on
-                    &ldquo;Create products we do not carry&rdquo; on the first step.
+                    {formatNumber(plan.creatable.length)}{' '}
+                    {t(
+                      'of them could be created — turn on &ldquo;Create products we do not carry&rdquo; on the first step.',
+                    )}
                   </p>
                 ) : null}
                 <ul className="text-fg-muted mt-2 max-h-56 space-y-0.5 overflow-y-auto text-sm">
                   {plan.rejected.slice(0, 100).map((miss) => (
                     <li key={`${miss.row}-${miss.code}`}>
-                      Row {miss.row}: <span className="font-mono">{miss.code || '—'}</span> —{' '}
+                      {t('Row')} {miss.row}: <span className="font-mono">{miss.code || '—'}</span> —{' '}
                       {miss.reason}
                     </li>
                   ))}
@@ -586,27 +600,29 @@ export function SpreadsheetImport({
       <div className="border-border bg-surface rounded-card flex flex-wrap items-center justify-between gap-3 border p-3">
         <span className="text-fg-subtle text-2xs">
           {step === 1
-            ? 'Excel (.xlsx) or .csv'
+            ? t('Excel (.xlsx) or .csv')
             : `${formatNumber(willAdd)} of ${formatNumber(body.length)} rows will be added`}
         </span>
         <div className="flex gap-2">
           <Button variant="secondary" asChild>
-            <Link to={backTo}>Cancel</Link>
+            <Link to={backTo}>{t('Cancel')}</Link>
           </Button>
           {step < 3 ? (
             <Button
               variant="primary"
               disabled={grid.length === 0 || (step === 2 && !identified)}
               title={
-                step === 2 && !identified ? 'Say which column holds the barcode or SKU' : undefined
+                step === 2 && !identified
+                  ? t('Say which column holds the barcode or SKU')
+                  : undefined
               }
               onClick={() => setStep(step + 1)}
             >
-              Continue
+              {t('Continue')}
             </Button>
           ) : (
             <Button variant="primary" disabled={willAdd === 0} onClick={run}>
-              Add {formatNumber(willAdd)} products
+              {t('Add')} {formatNumber(willAdd)} products
             </Button>
           )}
         </div>

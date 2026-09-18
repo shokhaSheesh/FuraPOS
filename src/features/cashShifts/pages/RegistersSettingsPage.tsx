@@ -18,6 +18,7 @@ import type { TableColumn } from '@/shared/components/table/features'
 import { useDataStore } from '@/data/store'
 import { useCashRegisters, useRegisterActions } from '../api/shifts'
 import { registerSchema, type CashRegister, type RegisterDraft } from '../model/shift'
+import { t } from '@/shared/i18n'
 
 /**
  * Cash registers.
@@ -64,16 +65,16 @@ export default function RegistersSettingsPage() {
 
   const columns = useMemo<TableColumn<CashRegister>[]>(
     () => [
-      { accessorKey: 'name', header: 'Register', enableHiding: false },
-      { accessorKey: 'locationName', header: 'Location' },
+      { accessorKey: 'name', header: t('Register'), enableHiding: false },
+      { accessorKey: 'locationName', header: t('Location') },
       {
         id: 'shifts',
-        header: 'Shifts',
+        header: t('Shifts'),
         meta: { align: 'right' },
         cell: ({ row }) => {
           const count = shifts.filter((shift) => shift.registerId === row.original.id).length
           return count === 0 ? (
-            <span className="text-fg-subtle">None yet</span>
+            <span className="text-fg-subtle">{t('None yet')}</span>
           ) : (
             <span className="tabular-nums">{count}</span>
           )
@@ -81,10 +82,10 @@ export default function RegistersSettingsPage() {
       },
       {
         accessorKey: 'active',
-        header: 'Status',
+        header: t('Status'),
         cell: ({ row }) => (
           <Badge tone={row.original.active ? 'success' : 'neutral'}>
-            {row.original.active ? 'In use' : 'Retired'}
+            {row.original.active ? t('In use') : t('Retired')}
           </Badge>
         ),
       },
@@ -97,13 +98,13 @@ export default function RegistersSettingsPage() {
           <RowActions
             actions={[
               {
-                label: 'Edit',
+                label: t('Edit'),
                 icon: Pencil,
                 hidden: !can('settings.registers.edit'),
                 onSelect: () => openFor(row.original),
               },
               {
-                label: 'Delete',
+                label: t('Delete'),
                 icon: Trash2,
                 destructive: true,
                 hidden: !can('settings.registers.delete'),
@@ -121,13 +122,15 @@ export default function RegistersSettingsPage() {
   return (
     <>
       <PageHeader
-        title="Cash registers"
-        description="The drawers a shift can be opened on. One per counter, not one per person."
+        title={t('Cash registers')}
+        description={t(
+          'The drawers a shift can be opened on. One per counter, not one per person.',
+        )}
         action={
           can('settings.registers.create') ? (
             <Button variant="primary" onClick={() => openFor(null)}>
               <Plus />
-              Add register
+              {t('Add register')}
             </Button>
           ) : null
         }
@@ -144,8 +147,10 @@ export default function RegistersSettingsPage() {
         emptyState={
           <EmptyState
             icon={Wallet}
-            title="No registers yet"
-            description="Add one per counter. A cash shift is opened on a register, and a cash sale needs an open shift."
+            title={t('No registers yet')}
+            description={t(
+              'Add one per counter. A cash shift is opened on a register, and a cash sale needs an open shift.',
+            )}
           />
         }
       />
@@ -153,26 +158,26 @@ export default function RegistersSettingsPage() {
       <Modal
         open={open}
         onOpenChange={setOpen}
-        title={editing ? `Edit ${editing.name}` : 'New register'}
+        title={editing ? `Edit ${editing.name}` : t('New register')}
         primary={{ label: editing ? 'Save changes' : 'Add register', onClick: save }}
       >
         <div className="space-y-3">
-          <Field label="Name" required error={errors.name?.[0]}>
+          <Field label={t('Name')} required error={errors.name?.[0]}>
             {(p) => (
               <Input
                 {...p}
-                placeholder="Main desk"
+                placeholder={t('Main desk')}
                 value={draft.name}
                 onChange={(event) => setDraft((c) => ({ ...c, name: event.target.value }))}
               />
             )}
           </Field>
-          <Field label="Location" required error={errors.locationId?.[0]}>
+          <Field label={t('Location')} required error={errors.locationId?.[0]}>
             {(p) => (
               <Select
                 {...p}
                 className="w-full"
-                placeholder="Choose a location"
+                placeholder={t('Choose a location')}
                 value={draft.locationId || undefined}
                 onChange={(locationId) => setDraft((c) => ({ ...c, locationId }))}
                 options={locations.map((location) => ({
@@ -184,13 +189,13 @@ export default function RegistersSettingsPage() {
           </Field>
           <label className="flex items-center justify-between gap-3">
             <span>
-              <span className="text-fg block text-sm font-medium">In use</span>
+              <span className="text-fg block text-sm font-medium">{t('In use')}</span>
               <span className="text-fg-subtle text-2xs">
-                A retired register keeps its history but cannot be opened again.
+                {t('A retired register keeps its history but cannot be opened again.')}
               </span>
             </span>
             <Switch
-              aria-label="In use"
+              aria-label={t('In use')}
               checked={draft.active}
               onCheckedChange={(active) => setDraft((c) => ({ ...c, active }))}
             />
@@ -205,13 +210,13 @@ export default function RegistersSettingsPage() {
         }}
         title={`Delete ${deleting?.name}?`}
         body="A register with shifts against it cannot be deleted — those shifts are the record of who had the cash. Retire it instead."
-        confirmLabel="Delete"
+        confirmLabel={t('Delete')}
         destructive
         onConfirm={() => {
           if (!deleting) return
           const result = actions.remove(deleting.id)
           setDeleting(null)
-          if (result.ok) toast.success('Register deleted')
+          if (result.ok) toast.success(t('Register deleted'))
           else toast.error(result.error)
         }}
       />

@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import type { Id, IsoDate, ProcurementKind } from '@/shared/types'
 import { procurementSource } from '@/shared/types'
+import { t } from '@/shared/i18n'
 
 /**
  * A purchase order: what we asked a supplier to send, before it arrives.
@@ -193,12 +194,12 @@ export function nextStep(
     case 'draft':
       // Nobody to send a market list to — it is simply agreed and goes out.
       return kind === 'market'
-        ? { to: 'confirmed', label: 'Confirm purchase' }
+        ? { to: 'confirmed', label: t('Confirm purchase') }
         : kind === 'china'
-          ? { to: 'sent', label: 'Send to factory' }
-          : { to: 'sent', label: 'Send to supplier' }
+          ? { to: 'sent', label: t('Send to factory') }
+          : { to: 'sent', label: t('Send to supplier') }
     case 'sent':
-      return { to: 'confirmed', label: 'Mark as confirmed' }
+      return { to: 'confirmed', label: t('Mark as confirmed') }
     default:
       return null
   }

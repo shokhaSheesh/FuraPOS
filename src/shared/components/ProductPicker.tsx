@@ -8,6 +8,7 @@ import { formatMoney, formatNumber } from '@/shared/lib/format'
 import { useDataStore } from '@/data/store'
 import { matches } from '@/data/query'
 import type { VariationRow } from '@/features/products/model/product'
+import { t } from '@/shared/i18n'
 
 /**
  * Searchable product picker. `Select` is for a short fixed list; a catalog of
@@ -94,7 +95,7 @@ export function ProductPicker({
         onChange={(event) => setTerm(event.target.value)}
         onKeyDown={onKeyDown}
         placeholder={placeholder}
-        aria-label="Add a product"
+        aria-label={t('Add a product')}
         disabled={disabled}
         className="pl-8"
       />
@@ -108,7 +109,9 @@ export function ProductPicker({
             </div>
           ) : results.length === 0 ? (
             <p className="text-fg-muted p-3 text-sm">
-              Nothing matches “{debounced}”. Check the spelling, or add the product first.
+              {t('Nothing matches “')}
+              {debounced}
+              {t('”. Check the spelling, or add the product first.')}
             </p>
           ) : (
             <ul>
@@ -132,7 +135,7 @@ export function ProductPicker({
                       // Where to walk to for it, while it is still a search result.
                       <span
                         className="text-fg-subtle text-2xs shrink-0 font-mono"
-                        title="Storage address"
+                        title={t('Storage address')}
                       >
                         {product.shelfAddress}
                       </span>

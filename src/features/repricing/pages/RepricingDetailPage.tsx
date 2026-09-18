@@ -32,6 +32,7 @@ import {
   repricingStatusTone,
   scopeSentence,
 } from '../model/repricing'
+import { t } from '@/shared/i18n'
 
 type Lens = 'all' | 'changed' | 'risky'
 
@@ -68,7 +69,12 @@ export default function RepricingDetailPage() {
   }, [repricing, lens, term])
 
   if (!repricing) {
-    return <EmptyState title="Price change not found" description="It may have been deleted." />
+    return (
+      <EmptyState
+        title={t('Price change not found')}
+        description={t('It may have been deleted.')}
+      />
+    )
   }
 
   const draft = canApply(repricing.status)
@@ -82,7 +88,7 @@ export default function RepricingDetailPage() {
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
         <Link to={paths.products.repricing}>
           <ArrowLeft />
-          Repricing
+          {t('Repricing')}
         </Link>
       </Button>
 
@@ -96,7 +102,7 @@ export default function RepricingDetailPage() {
             {canRevert(repricing.status) && can('products.repricing.delete') ? (
               <Button variant="secondary" onClick={() => setConfirmRevert(true)}>
                 <Undo2 />
-                Put prices back
+                {t('Put prices back')}
               </Button>
             ) : null}
             {draft && can('products.repricing.edit') ? (
@@ -106,7 +112,7 @@ export default function RepricingDetailPage() {
                 onClick={() => setConfirmApply(true)}
               >
                 <Check />
-                Apply to {formatNumber(changed.length)} products
+                {t('Apply to')} {formatNumber(changed.length)} products
               </Button>
             ) : null}
           </div>
@@ -130,16 +136,16 @@ export default function RepricingDetailPage() {
             <AlertTriangle className="text-danger mt-0.5 size-4 shrink-0" />
             <p className="text-fg-muted text-sm">
               {formatNumber(risky.length)}{' '}
-              {risky.length === 1 ? 'product would sell' : 'products would sell'} for less than{' '}
-              {risky.length === 1 ? 'it' : 'they'} cost. Use the{' '}
+              {risky.length === 1 ? t('product would sell') : t('products would sell')}{' '}
+              {t('for less than')} {risky.length === 1 ? 'it' : 'they'} {t('cost. Use the')}{' '}
               <button
                 type="button"
                 className="text-fg font-medium underline"
                 onClick={() => setLens('risky')}
               >
-                Below cost
+                {t('Below cost')}
               </button>{' '}
-              filter and fix {risky.length === 1 ? 'it' : 'them'} before applying.
+              {t('filter and fix')} {risky.length === 1 ? 'it' : 'them'} {t('before applying.')}
             </p>
           </CardBody>
         </Card>
@@ -147,7 +153,7 @@ export default function RepricingDetailPage() {
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Card className="p-4">
-          <p className="text-fg-muted text-sm">Prices changing</p>
+          <p className="text-fg-muted text-sm">{t('Prices changing')}</p>
           <p className="text-fg mt-0.5 text-lg font-semibold">
             {formatNumber(changed.length)}{' '}
             <span className="text-fg-subtle text-sm">
@@ -159,7 +165,7 @@ export default function RepricingDetailPage() {
           </p>
         </Card>
         <Card className="p-4">
-          <p className="text-fg-muted text-sm">Average move</p>
+          <p className="text-fg-muted text-sm">{t('Average move')}</p>
           <p
             className={`mt-0.5 text-lg font-semibold ${
               averageChange(repricing) < 0 ? 'text-danger' : 'text-fg'
@@ -168,32 +174,32 @@ export default function RepricingDetailPage() {
             {averageChange(repricing) > 0 ? '+' : ''}
             {formatPercent(averageChange(repricing))}
           </p>
-          <p className="text-fg-subtle text-2xs">across the prices that change</p>
+          <p className="text-fg-subtle text-2xs">{t('across the prices that change')}</p>
         </Card>
         {canSeeCost ? (
           <Card className="p-4">
-            <p className="text-fg-muted text-sm">Margin</p>
+            <p className="text-fg-muted text-sm">{t('Margin')}</p>
             <p className="text-fg mt-0.5 text-lg font-semibold">
               {formatPercent(shift.before)} <span className="text-fg-subtle text-sm">→</span>{' '}
               <span className={shift.after < shift.before ? 'text-danger' : 'text-success'}>
                 {formatPercent(shift.after)}
               </span>
             </p>
-            <p className="text-fg-subtle text-2xs">average, against what each part cost</p>
+            <p className="text-fg-subtle text-2xs">{t('average, against what each part cost')}</p>
           </Card>
         ) : null}
       </div>
 
       <Card>
         <CardHeader className="flex-col items-stretch gap-2 sm:flex-row sm:items-center">
-          <CardTitle>Prices</CardTitle>
+          <CardTitle>{t('Prices')}</CardTitle>
           <div className="flex flex-wrap items-center gap-2">
             <StatusChips
-              ariaLabel="Which prices to show"
+              ariaLabel={t('Which prices to show')}
               options={[
-                { value: null, label: 'All' },
-                { value: 'changed', label: 'Changing' },
-                { value: 'risky', label: 'Below cost' },
+                { value: null, label: t('All') },
+                { value: 'changed', label: t('Changing') },
+                { value: 'risky', label: t('Below cost') },
               ]}
               value={lens === 'all' ? null : lens}
               onChange={(next) => setLens((next as Lens) ?? 'all')}
@@ -208,8 +214,8 @@ export default function RepricingDetailPage() {
               <Input
                 value={term}
                 onChange={(event) => setTerm(event.target.value)}
-                placeholder="Find by name or SKU…"
-                aria-label="Find a product"
+                placeholder={t('Find by name or SKU…')}
+                aria-label={t('Find a product')}
                 className="h-8 pl-8"
               />
             </div>
@@ -220,13 +226,15 @@ export default function RepricingDetailPage() {
             <table className="w-full text-sm">
               <thead className="bg-canvas">
                 <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-                  <th className="px-4 py-2 text-left font-semibold">Product</th>
-                  {canSeeCost ? <th className="px-4 py-2 text-right font-semibold">Cost</th> : null}
-                  <th className="px-4 py-2 text-right font-semibold">Now</th>
-                  <th className="px-4 py-2 text-right font-semibold">New price</th>
-                  <th className="px-4 py-2 text-right font-semibold">Change</th>
+                  <th className="px-4 py-2 text-left font-semibold">{t('Product')}</th>
                   {canSeeCost ? (
-                    <th className="px-4 py-2 text-right font-semibold">Margin</th>
+                    <th className="px-4 py-2 text-right font-semibold">{t('Cost')}</th>
+                  ) : null}
+                  <th className="px-4 py-2 text-right font-semibold">{t('Now')}</th>
+                  <th className="px-4 py-2 text-right font-semibold">{t('New price')}</th>
+                  <th className="px-4 py-2 text-right font-semibold">{t('Change')}</th>
+                  {canSeeCost ? (
+                    <th className="px-4 py-2 text-right font-semibold">{t('Margin')}</th>
                   ) : null}
                 </tr>
               </thead>
@@ -235,10 +243,10 @@ export default function RepricingDetailPage() {
                   <tr>
                     <td colSpan={6} className="text-fg-subtle px-4 py-6 text-center text-sm">
                       {lens === 'risky'
-                        ? 'No product would sell below what it cost.'
+                        ? t('No product would sell below what it cost.')
                         : lens === 'changed'
-                          ? 'No price is changing.'
-                          : 'Nothing matches that search.'}
+                          ? t('No price is changing.')
+                          : t('Nothing matches that search.')}
                     </td>
                   </tr>
                 ) : null}
@@ -305,7 +313,7 @@ export default function RepricingDetailPage() {
                             below ? 'text-danger font-medium' : 'text-fg-muted'
                           }`}
                         >
-                          {below ? 'below cost' : formatPercent(newMargin)}
+                          {below ? t('below cost') : formatPercent(newMargin)}
                         </td>
                       ) : null}
                     </tr>
@@ -333,24 +341,24 @@ export default function RepricingDetailPage() {
       <ConfirmDialog
         open={confirmApply}
         onOpenChange={setConfirmApply}
-        title="Apply these prices?"
-        confirmLabel="Apply"
+        title={t('Apply these prices?')}
+        confirmLabel={t('Apply')}
         destructive={risky.length > 0}
         body={
           <>
-            {formatNumber(changed.length)} products change price:{' '}
-            {formatNumber(raisedCount(repricing))} up, {formatNumber(loweredCount(repricing))} down,{' '}
-            {averageChange(repricing) > 0 ? '+' : ''}
-            {formatPercent(averageChange(repricing))} on average.
+            {formatNumber(changed.length)} {t('products change price:')}{' '}
+            {formatNumber(raisedCount(repricing))} up, {formatNumber(loweredCount(repricing))}{' '}
+            {t('down,')} {averageChange(repricing) > 0 ? '+' : ''}
+            {formatPercent(averageChange(repricing))} {t('on average.')}
             {risky.length > 0 ? (
               <>
                 {' '}
                 <strong className="text-danger font-medium">
-                  {formatNumber(risky.length)} would sell below cost.
+                  {formatNumber(risky.length)} {t('would sell below cost.')}
                 </strong>
               </>
             ) : null}{' '}
-            It can be put back afterwards.
+            {t('It can be put back afterwards.')}
           </>
         }
         onConfirm={() =>
@@ -367,8 +375,8 @@ export default function RepricingDetailPage() {
       <ConfirmDialog
         open={confirmRevert}
         onOpenChange={setConfirmRevert}
-        title="Put these prices back?"
-        confirmLabel="Put back"
+        title={t('Put these prices back?')}
+        confirmLabel={t('Put back')}
         body={`Every one of the ${formatNumber(
           changed.length,
         )} products ${repricing.number} changed goes back to exactly the price it had before.`}

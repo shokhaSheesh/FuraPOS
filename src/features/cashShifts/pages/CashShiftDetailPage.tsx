@@ -26,6 +26,7 @@ import {
 } from '../model/shift'
 import { VarianceBadge } from '../components/VarianceBadge'
 import { CloseShiftModal } from '../components/CloseShiftModal'
+import { t } from '@/shared/i18n'
 
 /**
  * One shift, end to end: what it took, what moved through it by hand, which
@@ -52,7 +53,13 @@ export default function CashShiftDetailPage() {
   )
 
   if (!shift) {
-    return <EmptyState icon={Lock} title="No such shift" description="It may have been removed." />
+    return (
+      <EmptyState
+        icon={Lock}
+        title={t('No such shift')}
+        description={t('It may have been removed.')}
+      />
+    )
   }
 
   const isOpen = shift.status === 'open'
@@ -60,7 +67,7 @@ export default function CashShiftDetailPage() {
 
   const saveMovement = () => {
     if (!movement.amount || movement.amount <= 0) {
-      toast.error('An amount is required')
+      toast.error(t('An amount is required'))
       return
     }
     const result = actions.move(shift.id, {
@@ -73,7 +80,7 @@ export default function CashShiftDetailPage() {
       toast.error(result.error)
       return
     }
-    toast.success('Recorded')
+    toast.success(t('Recorded'))
     setMovement({ reason: 'expense', amount: null, comment: '' })
     setMoving(false)
   }
@@ -90,7 +97,7 @@ export default function CashShiftDetailPage() {
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
         <Link to={paths.sales.shifts}>
           <ArrowLeft />
-          Cash shifts
+          {t('Cash shifts')}
         </Link>
       </Button>
 
@@ -101,15 +108,15 @@ export default function CashShiftDetailPage() {
           isOpen && can('sales.cashShifts.edit') ? (
             <Button variant="primary" onClick={() => setClosing(true)}>
               <Lock />
-              Close the drawer
+              {t('Close the drawer')}
             </Button>
           ) : null
         }
         below={
           <div className="flex flex-wrap items-center gap-2">
-            <Badge tone={isOpen ? 'info' : 'neutral'}>{isOpen ? 'Open' : 'Closed'}</Badge>
+            <Badge tone={isOpen ? 'info' : 'neutral'}>{isOpen ? t('Open') : t('Closed')}</Badge>
             <span className="text-fg-subtle text-2xs">
-              Opened {formatDateTime(shift.openedAt)}
+              {t('Opened')} {formatDateTime(shift.openedAt)}
               {shift.closedAt ? ` · closed ${formatDateTime(shift.closedAt)}` : ''} ·{' '}
               {formatNumber(Math.round(shiftHours(shift)))} h
             </span>
@@ -120,7 +127,7 @@ export default function CashShiftDetailPage() {
       <div className="grid gap-3 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>The drawer</CardTitle>
+            <CardTitle>{t('The drawer')}</CardTitle>
           </CardHeader>
           <CardBody className="p-0">
             <div className="divide-border divide-y">
@@ -132,7 +139,7 @@ export default function CashShiftDetailPage() {
               ))}
               <div className="bg-canvas flex items-center justify-between gap-3 px-4 py-2.5">
                 <span className="text-fg text-sm font-medium">
-                  {isOpen ? 'Should be in the drawer now' : 'Should have been in the drawer'}
+                  {isOpen ? t('Should be in the drawer now') : t('Should have been in the drawer')}
                 </span>
                 <span className="text-fg font-semibold tabular-nums">
                   {formatMoney(shift.expected)}
@@ -141,13 +148,13 @@ export default function CashShiftDetailPage() {
               {shift.countedCash !== null ? (
                 <>
                   <div className="flex items-center justify-between gap-3 px-4 py-2">
-                    <span className="text-fg-muted text-sm">Counted</span>
+                    <span className="text-fg-muted text-sm">{t('Counted')}</span>
                     <span className="text-fg text-sm tabular-nums">
                       {formatMoney(shift.countedCash)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between gap-3 px-4 py-2.5">
-                    <span className="text-fg text-sm font-medium">Difference</span>
+                    <span className="text-fg text-sm font-medium">{t('Difference')}</span>
                     <VarianceBadge difference={shift.difference} />
                   </div>
                 </>
@@ -163,17 +170,17 @@ export default function CashShiftDetailPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Taken this shift</CardTitle>
+            <CardTitle>{t('Taken this shift')}</CardTitle>
           </CardHeader>
           <CardBody className="space-y-2 text-sm">
             {/* Card and transfer are shown but never counted into the drawer —
                 stating both is what stops somebody adding them to the cash-up. */}
             {(
               [
-                ['Cash', shift.totals.cash, true],
-                ['Card', shift.totals.card, false],
-                ['Transfer', shift.totals.transfer, false],
-                ['On account', shift.totals.credit, false],
+                [t('Cash'), shift.totals.cash, true],
+                [t('Card'), shift.totals.card, false],
+                [t('Transfer'), shift.totals.transfer, false],
+                [t('On account'), shift.totals.credit, false],
               ] as [string, number, boolean][]
             ).map(([label, value, inDrawer]) => (
               <div key={label} className="flex items-baseline justify-between gap-3">
@@ -182,7 +189,7 @@ export default function CashShiftDetailPage() {
                   {inDrawer ? (
                     ''
                   ) : (
-                    <span className="text-fg-subtle text-2xs"> · not in the drawer</span>
+                    <span className="text-fg-subtle text-2xs"> {t('· not in the drawer')}</span>
                   )}
                 </span>
                 <span className="text-fg tabular-nums">{formatMoney(value)}</span>
@@ -194,18 +201,18 @@ export default function CashShiftDetailPage() {
 
       <Card>
         <CardHeader className="flex items-center justify-between gap-3">
-          <CardTitle>Cash in and out</CardTitle>
-          {isOpen && can('sales.cashShifts.edit') ? (
+          <CardTitle>{t('Cash in and out')}</CardTitle>
+          {isOpen && can(t('sales.cashShifts.edit')) ? (
             <Button variant="secondary" size="sm" onClick={() => setMoving(true)}>
               <Plus />
-              Record money
+              {t('Record money')}
             </Button>
           ) : null}
         </CardHeader>
         <CardBody className="p-0">
           {shift.movements.length === 0 ? (
             <p className="text-fg-subtle px-4 py-6 text-center text-sm">
-              Nothing beyond sales has moved through this drawer.
+              {t('Nothing beyond sales has moved through this drawer.')}
             </p>
           ) : (
             <div className="divide-border divide-y">
@@ -236,11 +243,13 @@ export default function CashShiftDetailPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Cash sales in this shift</CardTitle>
+          <CardTitle>{t('Cash sales in this shift')}</CardTitle>
         </CardHeader>
         <CardBody className="p-0">
           {shiftSales.length === 0 ? (
-            <p className="text-fg-subtle px-4 py-6 text-center text-sm">No cash sales yet.</p>
+            <p className="text-fg-subtle px-4 py-6 text-center text-sm">
+              {t('No cash sales yet.')}
+            </p>
           ) : (
             <div className="divide-border divide-y">
               {shiftSales.map((sale) => (
@@ -252,7 +261,7 @@ export default function CashShiftDetailPage() {
                     {sale.number}
                   </Link>
                   <span className="text-fg-subtle text-2xs truncate">
-                    {sale.clientName ?? 'Walk-in'} · {formatDateTime(sale.createdAt)}
+                    {sale.clientName ?? t('Walk-in')} · {formatDateTime(sale.createdAt)}
                   </span>
                   <span className="text-fg ml-auto text-sm tabular-nums">
                     {formatMoney(sale.paid)}
@@ -269,12 +278,14 @@ export default function CashShiftDetailPage() {
       <Modal
         open={moving}
         onOpenChange={setMoving}
-        title="Record money in or out"
-        description="Anything that moves cash without being a sale — a refund, petty cash, a collection to the safe."
-        primary={{ label: 'Record it', onClick: saveMovement }}
+        title={t('Record money in or out')}
+        description={t(
+          'Anything that moves cash without being a sale — a refund, petty cash, a collection to the safe.',
+        )}
+        primary={{ label: t('Record it'), onClick: saveMovement }}
       >
         <div className="space-y-3">
-          <Field label="Why" required>
+          <Field label={t('Why')} required>
             {(p) => (
               <Select
                 {...p}
@@ -289,7 +300,7 @@ export default function CashShiftDetailPage() {
               />
             )}
           </Field>
-          <Field label="Amount" required>
+          <Field label={t('Amount')} required>
             {(p) => (
               <NumberField
                 {...p}
@@ -299,7 +310,10 @@ export default function CashShiftDetailPage() {
               />
             )}
           </Field>
-          <Field label="Note" hint="Optional, but it is what makes the log readable later">
+          <Field
+            label={t('Note')}
+            hint={t('Optional, but it is what makes the log readable later')}
+          >
             {(p) => (
               <Input
                 {...p}

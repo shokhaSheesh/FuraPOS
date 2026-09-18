@@ -16,6 +16,7 @@ import { formatDate, formatMoney, formatNumber } from '@/shared/lib/format'
 import type { TableColumn } from '@/shared/components/table/features'
 import { useClientCounts, useClients, type ClientRow } from '../api/clients'
 import { clientStatusLabel, clientStatusTone, daysSinceLastSale } from '../model/client'
+import { t } from '@/shared/i18n'
 
 /**
  * Autoparks.
@@ -49,7 +50,7 @@ export default function ClientsPage() {
     () => [
       {
         accessorKey: 'name',
-        header: 'Autopark',
+        header: t('Autopark'),
         enableHiding: false,
         cell: ({ row }) => (
           <div className="flex min-w-0 items-center gap-2.5">
@@ -59,7 +60,7 @@ export default function ClientsPage() {
             <div className="min-w-0">
               <p className="text-fg truncate font-medium">{row.original.name}</p>
               <p className="text-fg-subtle text-2xs truncate tabular-nums">
-                {row.original.phone ?? 'No phone'}
+                {row.original.phone ?? t('No phone')}
               </p>
             </div>
           </div>
@@ -67,13 +68,13 @@ export default function ClientsPage() {
       },
       {
         id: 'debt',
-        header: 'Owes us',
+        header: t('Owes us'),
         meta: { align: 'right' },
         enableHiding: false,
         cell: ({ row }) => {
           const { debt, creditLimit, headroom, overLimit } = row.original
           if (debt <= 0) {
-            return <span className="text-fg-subtle">Nothing</span>
+            return <span className="text-fg-subtle">{t('Nothing')}</span>
           }
           return (
             <div>
@@ -82,7 +83,7 @@ export default function ClientsPage() {
               </p>
               <p className="text-fg-subtle text-2xs tabular-nums">
                 {creditLimit === null
-                  ? 'no account'
+                  ? t('no account')
                   : overLimit
                     ? `${formatMoney(debt - creditLimit)} over limit`
                     : `${formatMoney(headroom ?? 0)} left`}
@@ -93,25 +94,25 @@ export default function ClientsPage() {
       },
       {
         id: 'creditLimit',
-        header: 'Credit limit',
+        header: t('Credit limit'),
         meta: { align: 'right' },
         cell: ({ row }) =>
           row.original.creditLimit === null ? (
             // Different from a limit of zero, and the difference matters: one
             // pays up front, the other has an account they have used up.
-            <span className="text-fg-subtle">Pays up front</span>
+            <span className="text-fg-subtle">{t('Pays up front')}</span>
           ) : (
             <span className="tabular-nums">{formatMoney(row.original.creditLimit)}</span>
           ),
       },
       {
         id: 'bought',
-        header: 'Bought',
+        header: t('Bought'),
         meta: { align: 'right' },
         enableHiding: false,
         cell: ({ row }) =>
           row.original.stats.sales === 0 ? (
-            <span className="text-fg-subtle">Never</span>
+            <span className="text-fg-subtle">{t('Never')}</span>
           ) : (
             <div>
               <p className="text-fg tabular-nums">
@@ -125,11 +126,11 @@ export default function ClientsPage() {
       },
       {
         id: 'lastSale',
-        header: 'Last bought',
+        header: t('Last bought'),
         enableHiding: false,
         cell: ({ row }) => {
           const days = daysSinceLastSale(row.original.stats)
-          if (days === null) return <span className="text-fg-subtle">Never</span>
+          if (days === null) return <span className="text-fg-subtle">{t('Never')}</span>
           const label = days === 0 ? 'Today' : days === 1 ? 'Yesterday' : `${days} days ago`
           return (
             <span className={row.original.dormant ? 'text-warning' : 'text-fg-muted'}>{label}</span>
@@ -138,7 +139,7 @@ export default function ClientsPage() {
       },
       {
         id: 'cashback',
-        header: 'Cashback',
+        header: t('Cashback'),
         meta: { align: 'right' },
         cell: ({ row }) =>
           row.original.cashback > 0 ? (
@@ -149,7 +150,7 @@ export default function ClientsPage() {
       },
       {
         accessorKey: 'status',
-        header: 'Status',
+        header: t('Status'),
         cell: ({ row }) => (
           <Badge tone={clientStatusTone(row.original.status)}>
             {clientStatusLabel(row.original.status)}
@@ -158,7 +159,7 @@ export default function ClientsPage() {
       },
       {
         accessorKey: 'createdAt',
-        header: 'Client since',
+        header: t('Client since'),
         cell: ({ row }) => formatDate(row.original.createdAt),
       },
     ],
@@ -168,14 +169,16 @@ export default function ClientsPage() {
   return (
     <>
       <PageHeader
-        title="Autoparks"
-        description="The haulage companies you hold contracts with — what they owe, how much account they have left, and whether they have stopped coming."
+        title={t('Autoparks')}
+        description={t(
+          'The haulage companies you hold contracts with — what they owe, how much account they have left, and whether they have stopped coming.',
+        )}
         action={
           can('users.autoparks.create') ? (
             <Button variant="primary" asChild>
               <Link to={paths.users.newAutopark}>
                 <Plus />
-                Add autopark
+                {t('Add autopark')}
               </Link>
             </Button>
           ) : null
@@ -183,12 +186,12 @@ export default function ClientsPage() {
         below={
           <div className="flex flex-wrap items-center gap-2">
             <StatusChips
-              ariaLabel="Which autoparks to show"
+              ariaLabel={t('Which autoparks to show')}
               options={[
-                { value: null, label: 'All' },
-                { value: 'owing', label: 'Owe us' },
-                { value: 'overLimit', label: 'Over limit' },
-                { value: 'dormant', label: 'Gone quiet' },
+                { value: null, label: t('All') },
+                { value: 'owing', label: t('Owe us') },
+                { value: 'overLimit', label: t('Over limit') },
+                { value: 'dormant', label: t('Gone quiet') },
               ]}
               value={(query.lens as string | null) ?? null}
               onChange={(lens) => setQuery({ lens, page: null })}
@@ -219,17 +222,19 @@ export default function ClientsPage() {
         onRowClick={(client) => navigate(paths.users.autoparkDetail(client.id))}
         emptyState={
           query.search || query.f || query.lens || query.type ? (
-            <EmptyState title="Nobody matches these filters" />
+            <EmptyState title={t('Nobody matches these filters')} />
           ) : (
             <EmptyState
-              title="No clients yet"
-              description="Add the garages and buyers you sell to. A sale can then be put on their account rather than paid up front."
+              title={t('No clients yet')}
+              description={t(
+                'Add the garages and buyers you sell to. A sale can then be put on their account rather than paid up front.',
+              )}
               action={
                 can('users.autoparks.create') ? (
                   <Button variant="primary" asChild>
                     <Link to={paths.users.newAutopark}>
                       <Plus />
-                      Add client
+                      {t('Add client')}
                     </Link>
                   </Button>
                 ) : null

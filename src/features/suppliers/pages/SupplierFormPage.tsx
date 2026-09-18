@@ -23,6 +23,7 @@ import {
   supplierFormSchema,
   type SupplierFormValues,
 } from '../model/supplier'
+import { t } from '@/shared/i18n'
 
 /**
  * Create and edit a supplier. Contact details only — what we owe them comes
@@ -110,7 +111,7 @@ export default function SupplierFormPage() {
       // account, and the schema cannot see the other suppliers to catch it.
       if (payload.username && isUsernameTaken(suppliers, payload.username, supplierId)) {
         form.setError('username', { message: 'Another supplier already signs in with this login' })
-        toast.error('That login is already taken')
+        toast.error(t('That login is already taken'))
         return
       }
 
@@ -133,7 +134,7 @@ export default function SupplierFormPage() {
         })
       }
     },
-    () => toast.error('Check the highlighted fields'),
+    () => toast.error(t('Check the highlighted fields')),
   )
 
   return (
@@ -141,13 +142,15 @@ export default function SupplierFormPage() {
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
         <Link to={editing ? paths.products.supplierDetail(supplierId!) : paths.products.suppliers}>
           <ArrowLeft />
-          {editing ? 'Back to supplier' : 'Suppliers'}
+          {editing ? t('Back to supplier') : t('Suppliers')}
         </Link>
       </Button>
 
       <PageHeader
-        title={editing ? `Edit ${existing?.supplier.name ?? ''}` : 'Add a supplier'}
-        description="Who they are and how to reach them. What we owe comes from deliveries and payments."
+        title={editing ? `Edit ${existing?.supplier.name ?? ''}` : t('Add a supplier')}
+        description={t(
+          'Who they are and how to reach them. What we owe comes from deliveries and payments.',
+        )}
         action={
           <div className="flex items-center gap-2">
             <Button
@@ -159,10 +162,10 @@ export default function SupplierFormPage() {
                 )
               }
             >
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button type="button" variant="primary" onClick={submit}>
-              {editing ? 'Save changes' : 'Add supplier'}
+              {editing ? t('Save changes') : t('Add supplier')}
             </Button>
           </div>
         }
@@ -171,18 +174,20 @@ export default function SupplierFormPage() {
       <div className="mt-4 max-w-3xl space-y-3">
         <Card>
           <CardHeader>
-            <CardTitle>Company</CardTitle>
+            <CardTitle>{t('Company')}</CardTitle>
           </CardHeader>
           <CardBody className="grid gap-3 sm:grid-cols-2">
-            <Field label="Name" required error={form.formState.errors.name?.message}>
-              {(p) => <Input {...p} placeholder="AKCHAEV INC" {...form.register('name')} />}
+            <Field label={t('Name')} required error={form.formState.errors.name?.message}>
+              {(p) => <Input {...p} placeholder={t('AKCHAEV INC')} {...form.register('name')} />}
             </Field>
-            <Field label="Zone" hint="Country or region, for grouping">
-              {(p) => <Input {...p} placeholder="Uzbekistan" {...form.register('zone')} />}
+            <Field label={t('Zone')} hint={t('Country or region, for grouping')}>
+              {(p) => <Input {...p} placeholder={t('Uzbekistan')} {...form.register('zone')} />}
             </Field>
             <Field
-              label="Payment terms"
-              hint="Days to pay. Leave empty when nothing was agreed — nothing can be overdue without it."
+              label={t('Payment terms')}
+              hint={t(
+                'Days to pay. Leave empty when nothing was agreed — nothing can be overdue without it.',
+              )}
             >
               {(p) => (
                 <Controller
@@ -201,7 +206,7 @@ export default function SupplierFormPage() {
                 />
               )}
             </Field>
-            <Field label="Status">
+            <Field label={t('Status')}>
               {(p) => (
                 <Controller
                   control={form.control}
@@ -213,8 +218,8 @@ export default function SupplierFormPage() {
                       value={field.value}
                       onChange={field.onChange}
                       options={[
-                        { value: 'active', label: 'Active' },
-                        { value: 'archived', label: 'Archived' },
+                        { value: 'active', label: t('Active') },
+                        { value: 'archived', label: t('Archived') },
                       ]}
                     />
                   )}
@@ -226,32 +231,36 @@ export default function SupplierFormPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Manager</CardTitle>
+            <CardTitle>{t('Manager')}</CardTitle>
           </CardHeader>
           <CardBody className="grid gap-3 sm:grid-cols-2">
             <Field
-              label="Name"
-              hint="The person answerable for this company — who you ring, and who holds the login"
+              label={t('Name')}
+              hint={t(
+                'The person answerable for this company — who you ring, and who holds the login',
+              )}
               error={form.formState.errors.contactName?.message}
             >
               {(p) => (
-                <Input {...p} placeholder="Rustam Akchaev" {...form.register('contactName')} />
+                <Input {...p} placeholder={t('Rustam Akchaev')} {...form.register('contactName')} />
               )}
             </Field>
-            <Field label="Phone">
+            <Field label={t('Phone')}>
               {(p) => <Input {...p} placeholder="+998 90 123 45 67" {...form.register('phone')} />}
             </Field>
-            <Field label="Email" error={form.formState.errors.email?.message}>
+            <Field label={t('Email')} error={form.formState.errors.email?.message}>
               {(p) => (
-                <Input {...p} placeholder="orders@supplier.com" {...form.register('email')} />
+                <Input {...p} placeholder={t('orders@supplier.com')} {...form.register('email')} />
               )}
             </Field>
-            <Field label="Address">{(p) => <Input {...p} {...form.register('address')} />}</Field>
-            <Field label="Note" className="sm:col-span-2">
+            <Field label={t('Address')}>
+              {(p) => <Input {...p} {...form.register('address')} />}
+            </Field>
+            <Field label={t('Note')} className="sm:col-span-2">
               {(p) => (
                 <Input
                   {...p}
-                  placeholder="Anything worth knowing about this relationship"
+                  placeholder={t('Anything worth knowing about this relationship')}
                   {...form.register('comment')}
                 />
               )}
@@ -262,18 +271,19 @@ export default function SupplierFormPage() {
         {/* Handing out an account is its own permission: plenty of people
             should be able to fix a supplier's address without being able to
             create a login to our data. */}
-        {can('products.supplierPortal.edit') ? (
+        {can(t('products.supplierPortal.edit')) ? (
           <Card>
             <CardHeader>
-              <CardTitle>Supplier portal</CardTitle>
+              <CardTitle>{t('Supplier portal')}</CardTitle>
             </CardHeader>
             <CardBody className="space-y-3">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <p className="text-fg text-sm font-medium">Let their manager sign in</p>
+                  <p className="text-fg text-sm font-medium">{t('Let their manager sign in')}</p>
                   <p className="text-fg-subtle text-2xs">
-                    They get their own login to the supplier portal, where they see what we order
-                    from them. They never see our sales, stock or prices.
+                    {t(
+                      'They get their own login to the supplier portal, where they see what we order from them. They never see our sales, stock or prices.',
+                    )}
                   </p>
                 </div>
                 <Controller
@@ -281,7 +291,7 @@ export default function SupplierFormPage() {
                   name="access"
                   render={({ field }) => (
                     <Switch
-                      aria-label="Let their manager sign in"
+                      aria-label={t('Let their manager sign in')}
                       checked={field.value !== 'none'}
                       onCheckedChange={(on) => {
                         field.onChange(on ? 'granted' : 'none')
@@ -299,9 +309,11 @@ export default function SupplierFormPage() {
               {access !== 'none' ? (
                 <>
                   <Field
-                    label="Password"
+                    label={t('Password')}
                     required
-                    hint="Shown in plain text on purpose, so you can read it out or paste it to them"
+                    hint={t(
+                      'Shown in plain text on purpose, so you can read it out or paste it to them',
+                    )}
                     error={form.formState.errors.password?.message}
                   >
                     {(p) => (
@@ -309,7 +321,7 @@ export default function SupplierFormPage() {
                         <Input
                           {...p}
                           className="flex-1 font-mono"
-                          placeholder="At least 8 characters"
+                          placeholder={t('At least 8 characters')}
                           {...form.register('password')}
                         />
                         {/* For when you would rather not invent one. */}
@@ -323,27 +335,28 @@ export default function SupplierFormPage() {
                           }
                         >
                           <Wand2 />
-                          Generate
+                          {t('Generate')}
                         </Button>
                       </div>
                     )}
                   </Field>
                   <Field
-                    label="Login"
+                    label={t('Login')}
                     required
-                    hint="Lowercase, no spaces — it gets read down a phone line"
+                    hint={t('Lowercase, no spaces — it gets read down a phone line')}
                     error={form.formState.errors.username?.message}
                   >
                     {(p) => <Input {...p} placeholder="akchaev" {...form.register('username')} />}
                   </Field>
                   <p className="text-fg-subtle text-2xs">
-                    Both stay readable on the supplier’s page, so you can look them up when they
-                    ring back.
+                    {t(
+                      'Both stay readable on the supplier’s page, so you can look them up when they ring back.',
+                    )}
                   </p>
                   <Field
-                    label="Role"
+                    label={t('Role')}
                     required
-                    hint="What this login may reach — set up in Access & roles"
+                    hint={t('What this login may reach — set up in Access & roles')}
                     error={form.formState.errors.roleId?.message}
                   >
                     {(p) => (
@@ -354,7 +367,7 @@ export default function SupplierFormPage() {
                           <Select
                             {...p}
                             className="w-full"
-                            placeholder="Pick a role"
+                            placeholder={t('Pick a role')}
                             value={field.value || undefined}
                             onChange={field.onChange}
                             options={roles.map((role) => ({ value: role.id, label: role.name }))}
@@ -365,8 +378,9 @@ export default function SupplierFormPage() {
                   </Field>
                   {access === 'disabled' ? (
                     <p className="text-warning text-2xs">
-                      Sign-in is switched off for this login. Turn it back on from the supplier’s
-                      page.
+                      {t(
+                        'Sign-in is switched off for this login. Turn it back on from the supplier’s page.',
+                      )}
                     </p>
                   ) : null}
                 </>

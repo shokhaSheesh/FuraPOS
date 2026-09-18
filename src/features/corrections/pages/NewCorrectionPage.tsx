@@ -24,6 +24,7 @@ import {
   correctionDraftSchema,
   type CorrectionDraft,
 } from '../model/correction'
+import { t } from '@/shared/i18n'
 
 /**
  * Record a correction.
@@ -86,7 +87,7 @@ export default function NewCorrectionPage() {
         },
       )
     },
-    () => toast.error('Check the highlighted fields'),
+    () => toast.error(t('Check the highlighted fields')),
   )
 
   return (
@@ -94,13 +95,13 @@ export default function NewCorrectionPage() {
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
         <Link to={paths.products.corrections}>
           <ArrowLeft />
-          Corrections
+          {t('Corrections')}
         </Link>
       </Button>
 
       <PageHeader
-        title="New correction"
-        description="Record what is really on the shelf, and why it differs."
+        title={t('New correction')}
+        description={t('Record what is really on the shelf, and why it differs.')}
         action={
           <div className="flex items-center gap-2">
             <Button
@@ -108,10 +109,10 @@ export default function NewCorrectionPage() {
               variant="secondary"
               onClick={() => navigate(paths.products.corrections)}
             >
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button type="button" variant="primary" onClick={submit}>
-              Apply correction
+              {t('Apply correction')}
             </Button>
           </div>
         }
@@ -120,10 +121,10 @@ export default function NewCorrectionPage() {
       <div className="mt-4 space-y-3">
         <Card>
           <CardHeader>
-            <CardTitle>What and where</CardTitle>
+            <CardTitle>{t('What and where')}</CardTitle>
           </CardHeader>
           <CardBody className="grid gap-3 sm:grid-cols-2">
-            <Field label="Location" required error={form.formState.errors.locationId?.message}>
+            <Field label={t('Location')} required error={form.formState.errors.locationId?.message}>
               {(p) => (
                 <Controller
                   control={form.control}
@@ -139,7 +140,7 @@ export default function NewCorrectionPage() {
                         // mean nothing here.
                         if (lines.length) {
                           form.setValue('lines', [])
-                          toast.info('Lines cleared — counts are per location')
+                          toast.info(t('Lines cleared — counts are per location'))
                         }
                       }}
                       options={locations.map((l) => ({ value: l.id, label: l.name }))}
@@ -149,9 +150,11 @@ export default function NewCorrectionPage() {
               )}
             </Field>
             <Field
-              label="Reason"
+              label={t('Reason')}
               required
-              hint="The whole point of the document — “stock went from 9 to 7” is not information"
+              hint={t(
+                'The whole point of the document — “stock went from 9 to 7” is not information',
+              )}
               error={form.formState.errors.reason?.message}
             >
               {(p) => (
@@ -179,7 +182,7 @@ export default function NewCorrectionPage() {
         <Card>
           <CardHeader className="flex-col items-stretch gap-1">
             <div className="flex items-center justify-between gap-3">
-              <CardTitle>Counts</CardTitle>
+              <CardTitle>{t('Counts')}</CardTitle>
               {lines.length ? (
                 <span
                   className={`text-sm font-medium tabular-nums ${
@@ -191,19 +194,21 @@ export default function NewCorrectionPage() {
                   }`}
                 >
                   {totals.units > 0 ? '+' : totals.units < 0 ? '−' : ''}
-                  {formatNumber(Math.abs(totals.units))} units · {totals.value < 0 ? '−' : ''}
+                  {formatNumber(Math.abs(totals.units))} {t('units ·')}{' '}
+                  {totals.value < 0 ? '−' : ''}
                   {formatMoney(Math.abs(totals.value))}
                 </span>
               ) : null}
             </div>
             <p className="text-fg-subtle text-2xs">
-              Enter what you counted, not the difference. {location?.name ?? 'The location'}&rsquo;s
-              current figure is shown beside it.
+              {t('Enter what you counted, not the difference.')}{' '}
+              {location?.name ?? t('The location')}
+              {t('&rsquo;s current figure is shown beside it.')}
             </p>
           </CardHeader>
           <CardBody className="space-y-3">
             <ProductPicker
-              placeholder={`Search a product to recount at ${location?.name ?? 'this location'}…`}
+              placeholder={`Search a product to recount at ${location?.name ?? t('this location')}…`}
               disabled={!locationId}
               stockLabel={(variation) => {
                 const here = stockAt(variation.id)
@@ -241,17 +246,17 @@ export default function NewCorrectionPage() {
 
             {fields.length === 0 ? (
               <p className="text-fg-subtle text-sm">
-                Nothing added yet. Search above to recount a product.
+                {t('Nothing added yet. Search above to recount a product.')}
               </p>
             ) : (
               <div className="border-border rounded-card overflow-x-auto border">
                 <table className="w-full text-sm">
                   <thead className="bg-canvas">
                     <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-                      <th className="px-3 py-2 text-left font-semibold">Product</th>
-                      <th className="px-3 py-2 text-right font-semibold">System says</th>
-                      <th className="px-3 py-2 text-right font-semibold">Counted</th>
-                      <th className="px-3 py-2 text-right font-semibold">Change</th>
+                      <th className="px-3 py-2 text-left font-semibold">{t('Product')}</th>
+                      <th className="px-3 py-2 text-right font-semibold">{t('System says')}</th>
+                      <th className="px-3 py-2 text-right font-semibold">{t('Counted')}</th>
+                      <th className="px-3 py-2 text-right font-semibold">{t('Change')}</th>
                       <th className="w-10" />
                     </tr>
                   </thead>
@@ -306,7 +311,7 @@ export default function NewCorrectionPage() {
                             }`}
                           >
                             {delta === 0
-                              ? 'no change'
+                              ? t('no change')
                               : `${delta > 0 ? '+' : '−'}${formatNumber(Math.abs(delta))}`}
                           </td>
                           <td className="px-2">
@@ -333,14 +338,17 @@ export default function NewCorrectionPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Note</CardTitle>
+            <CardTitle>{t('Note')}</CardTitle>
           </CardHeader>
           <CardBody>
-            <Field label="Comment" hint="What happened, in the words you would use to explain it">
+            <Field
+              label={t('Comment')}
+              hint={t('What happened, in the words you would use to explain it')}
+            >
               {(p) => (
                 <Input
                   {...p}
-                  placeholder="Dropped during unloading"
+                  placeholder={t('Dropped during unloading')}
                   {...form.register('comment')}
                 />
               )}

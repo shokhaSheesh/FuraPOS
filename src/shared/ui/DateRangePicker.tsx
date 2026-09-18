@@ -17,6 +17,7 @@ import { Button } from './Button'
 import { Input } from './Input'
 import { Popover } from './Popover'
 import { Calendar, type DateRange } from './Calendar'
+import { t } from '@/shared/i18n'
 
 const INPUT_FORMAT = 'dd.MM.yyyy'
 
@@ -133,7 +134,7 @@ export function DateRangePicker({
                 syncFromText(e.target.value, 'from')
               }}
               placeholder={INPUT_FORMAT.toUpperCase()}
-              aria-label="From"
+              aria-label={t('From')}
               className="h-8 w-32 text-center"
             />
             <span className="text-fg-subtle text-sm">–</span>
@@ -144,7 +145,7 @@ export function DateRangePicker({
                 syncFromText(e.target.value, 'to')
               }}
               placeholder={INPUT_FORMAT.toUpperCase()}
-              aria-label="To"
+              aria-label={t('To')}
               className="h-8 w-32 text-center"
             />
           </div>
@@ -163,7 +164,7 @@ export function DateRangePicker({
 
           <div className="border-border flex items-center justify-end gap-2 border-t p-3">
             <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button
               variant="primary"
@@ -174,7 +175,7 @@ export function DateRangePicker({
                 setOpen(false)
               }}
             >
-              Apply
+              {t('Apply')}
             </Button>
           </div>
         </div>

@@ -5,6 +5,7 @@ import { Checkbox } from './Checkbox'
 import { Button } from './Button'
 import { cn } from '@/shared/lib/cn'
 import type { SelectOption } from '@/shared/types'
+import { t } from '@/shared/i18n'
 
 export interface MultiSelectOption<T extends string> extends SelectOption<T> {
   /**
@@ -119,7 +120,7 @@ export function MultiSelect<T extends string>({
         {term ? (
           <button
             type="button"
-            aria-label="Clear search"
+            aria-label={t('Clear search')}
             onClick={() => {
               setTerm('')
               inputRef.current?.focus()
@@ -147,7 +148,7 @@ export function MultiSelect<T extends string>({
                   checked={on}
                   onCheckedChange={() => toggle(option.value)}
                 />
-                {'imageUrl' in option ? <Thumb src={option.imageUrl} /> : null}
+                {t('imageUrl') in option ? <Thumb src={option.imageUrl} /> : null}
                 <span className="min-w-0 flex-1">
                   <span className="text-fg block truncate">{option.label}</span>
                   {option.meta ? (
@@ -171,7 +172,7 @@ export function MultiSelect<T extends string>({
             className="h-auto px-0"
             onClick={() => onChange([])}
           >
-            Clear all
+            {t('Clear all')}
           </Button>
         </div>
       ) : null}

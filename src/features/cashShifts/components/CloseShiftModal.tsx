@@ -8,6 +8,7 @@ import { formatMoney } from '@/shared/lib/format'
 import { useShiftActions, type ShiftRow } from '../api/shifts'
 import { movementsIn, movementsOut, verdictOf } from '../model/shift'
 import { VarianceBadge } from './VarianceBadge'
+import { t } from '@/shared/i18n'
 
 /**
  * Closing a drawer.
@@ -45,13 +46,13 @@ export function CloseShiftModal({
 
   const submit = () => {
     if (counted === null) {
-      toast.error('Count the drawer before closing it')
+      toast.error(t('Count the drawer before closing it'))
       return
     }
     if (needsWords && comment.trim().length === 0) {
       // A large difference with no explanation is the thing this whole
       // feature exists to stop being normal.
-      toast.error('A difference this size needs a note')
+      toast.error(t('A difference this size needs a note'))
       return
     }
     const result = actions.close(shift.id, counted, comment.trim() || null)
@@ -76,7 +77,7 @@ export function CloseShiftModal({
       onOpenChange={onOpenChange}
       title={`Close ${shift.number}`}
       description={`${shift.registerName} · ${shift.employeeName}`}
-      primary={{ label: 'Close the drawer', onClick: submit }}
+      primary={{ label: t('Close the drawer'), onClick: submit }}
     >
       <div className="space-y-4">
         <div className="border-border rounded-card divide-border divide-y border">
@@ -87,20 +88,20 @@ export function CloseShiftModal({
             </div>
           ))}
           <div className="bg-canvas flex items-center justify-between gap-3 px-3 py-2 text-sm">
-            <span className="text-fg font-medium">Should be in the drawer</span>
+            <span className="text-fg font-medium">{t('Should be in the drawer')}</span>
             <span className="text-fg font-semibold tabular-nums">
               {formatMoney(shift.expected)}
             </span>
           </div>
         </div>
 
-        <Field label="Counted in the drawer" required>
+        <Field label={t('Counted in the drawer')} required>
           {(p) => (
             <NumberField
               {...p}
               className="w-full"
               value={counted}
-              placeholder="Count it, then type the total"
+              placeholder={t('Count it, then type the total')}
               onChange={setCounted}
             />
           )}
@@ -108,21 +109,21 @@ export function CloseShiftModal({
 
         {difference !== null ? (
           <div className="flex items-center justify-between gap-3">
-            <span className="text-fg-muted text-sm">Difference</span>
+            <span className="text-fg-muted text-sm">{t('Difference')}</span>
             <VarianceBadge difference={difference} />
           </div>
         ) : null}
 
         <Field
-          label={needsWords ? 'What happened' : 'Note'}
+          label={needsWords ? t('What happened') : t('Note')}
           required={needsWords}
-          hint={needsWords ? undefined : 'Optional'}
+          hint={needsWords ? undefined : t('Optional')}
         >
           {(p) => (
             <Input
               {...p}
               value={comment}
-              placeholder={needsWords ? 'A note is required for a difference this size' : ''}
+              placeholder={needsWords ? t('A note is required for a difference this size') : ''}
               onChange={(event) => setComment(event.target.value)}
             />
           )}

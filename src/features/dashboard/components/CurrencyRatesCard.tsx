@@ -2,6 +2,7 @@ import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
 import { Skeleton } from '@/shared/ui/Skeleton'
 import { formatNumber } from '@/shared/lib/format'
 import type { DashboardSummary } from '../api/summary'
+import { t } from '@/shared/i18n'
 
 /**
  * OX parity. It pages through one currency at a time behind arrows; all three
@@ -17,7 +18,7 @@ export function CurrencyRatesCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Exchange rates</CardTitle>
+        <CardTitle>{t('Exchange rates')}</CardTitle>
       </CardHeader>
       <CardBody>
         {loading ? (

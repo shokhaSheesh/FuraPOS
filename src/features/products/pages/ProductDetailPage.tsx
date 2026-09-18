@@ -23,6 +23,7 @@ import {
   type Product,
   type ProductVariation,
 } from '../model/product'
+import { t } from '@/shared/i18n'
 
 const Empty = () => <span className="text-fg-subtle">—</span>
 
@@ -40,11 +41,11 @@ export default function ProductDetailPage() {
     return (
       <Card>
         <EmptyState
-          title="Product not found"
-          description="It may have been removed, or the link is wrong."
+          title={t('Product not found')}
+          description={t('It may have been removed, or the link is wrong.')}
           action={
             <Button variant="secondary" asChild>
-              <Link to={paths.products.list}>Back to products</Link>
+              <Link to={paths.products.list}>{t('Back to products')}</Link>
             </Button>
           }
         />
@@ -61,7 +62,7 @@ export default function ProductDetailPage() {
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
         <Link to={paths.products.list}>
           <ArrowLeft />
-          Products
+          {t('Products')}
         </Link>
       </Button>
 
@@ -76,14 +77,14 @@ export default function ProductDetailPage() {
           <Button variant="primary" asChild>
             <Link to={paths.products.edit(product.id)}>
               <Pencil />
-              Edit
+              {t('Edit')}
             </Link>
           </Button>
         }
         below={
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone={product.status === 'active' ? 'success' : 'neutral'}>
-              {product.status === 'active' ? 'Active' : 'Archived'}
+              {product.status === 'active' ? t('Active') : t('Archived')}
             </Badge>
             {product.vehicleMakes.length ? (
               <Badge tone="info">
@@ -96,21 +97,21 @@ export default function ProductDetailPage() {
       />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric label="Variations" value={formatNumber(product.variations.length)} />
+        <Metric label={t('Variations')} value={formatNumber(product.variations.length)} />
         <Metric
-          label="In stock"
+          label={t('In stock')}
           value={`${formatNumber(stock)} ${product.unit}`}
           tone={stock === 0 ? 'danger' : undefined}
         />
-        <Metric label="Stock at sale" value={formatMoney(saleValue)} />
-        <Metric label="Stock at cost" value={formatMoney(costValue)} />
+        <Metric label={t('Stock at sale')} value={formatMoney(saleValue)} />
+        <Metric label={t('Stock at cost')} value={formatMoney(costValue)} />
       </div>
 
       <Tabs
         items={[
           {
             value: 'variations',
-            label: 'Variations',
+            label: t('Variations'),
             badge: (
               <span className="bg-surface-inset text-fg-muted text-2xs rounded-full px-1.5">
                 {product.variations.length}
@@ -118,14 +119,18 @@ export default function ProductDetailPage() {
             ),
             content: <VariationsTable product={product} />,
           },
-          { value: 'details', label: 'Details', content: <Details product={product} /> },
-          { value: 'stock', label: 'Stock by location', content: <StockTable product={product} /> },
+          { value: 'details', label: t('Details'), content: <Details product={product} /> },
+          {
+            value: 'stock',
+            label: t('Stock by location'),
+            content: <StockTable product={product} />,
+          },
           // Product logs narrowed to this product, for whoever may read the log.
           ...(can('analytics.productLogs.view')
             ? [
                 {
                   value: 'log',
-                  label: 'Product log',
+                  label: t('Product log'),
                   content: (
                     <ProductLog
                       productId={product.id}
@@ -148,18 +153,27 @@ function VariationsTable({ product }: { product: Product }) {
         <table className="w-full text-sm">
           <thead className="bg-surface-muted">
             <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-              {['Variation', 'SKU', 'Barcode', 'Part', 'OEM', 'Storage address'].map((h) => (
+              {[
+                t('Variation'),
+                t('SKU'),
+                t('Barcode'),
+                t('Part'),
+                t('OEM'),
+                t('Storage address'),
+              ].map((h) => (
                 <th key={h} scope="col" className="h-9 px-3 text-left font-semibold">
                   {h}
                 </th>
               ))}
-              {['Supplier price', 'Sale price', 'Wholesale', 'Margin', 'Stock'].map((h) => (
-                <th key={h} scope="col" className="h-9 px-3 text-right font-semibold">
-                  {h}
-                </th>
-              ))}
+              {[t('Supplier price'), t('Sale price'), t('Wholesale'), t('Margin'), t('Stock')].map(
+                (h) => (
+                  <th key={h} scope="col" className="h-9 px-3 text-right font-semibold">
+                    {h}
+                  </th>
+                ),
+              )}
               <th scope="col" className="h-9 px-3 text-left font-semibold">
-                Status
+                {t('Status')}
               </th>
             </tr>
           </thead>
@@ -178,19 +192,19 @@ function VariationsTable({ product }: { product: Product }) {
                 <td className="text-2xs px-3 py-2 font-mono">{v.oem ?? <Empty />}</td>
                 <td className="text-2xs px-3 py-2 font-mono">{v.shelfAddress ?? <Empty />}</td>
                 <td className="px-3 py-2 text-right tabular-nums">
-                  {v.costCurrency === 'USD'
+                  {v.costCurrency === t('USD')
                     ? `${formatNumber(v.costPrice)} USD`
                     : formatMoney(v.costPrice)}
                 </td>
                 <td className="px-3 py-2 text-right tabular-nums">
-                  {v.saleCurrency === 'USD'
+                  {v.saleCurrency === t('USD')
                     ? `${formatNumber(v.salePrice)} USD`
                     : formatMoney(v.salePrice)}
                 </td>
                 <td className="px-3 py-2 text-right tabular-nums">
                   {v.wholesalePrice === null ? (
                     <Empty />
-                  ) : v.wholesaleCurrency === 'USD' ? (
+                  ) : v.wholesaleCurrency === t('USD') ? (
                     `${formatNumber(v.wholesalePrice)} USD`
                   ) : (
                     formatMoney(v.wholesalePrice)
@@ -206,7 +220,7 @@ function VariationsTable({ product }: { product: Product }) {
                 </td>
                 <td className="px-3 py-2">
                   <Badge tone={v.status === 'active' ? 'success' : 'neutral'}>
-                    {v.status === 'active' ? 'Active' : 'Archived'}
+                    {v.status === 'active' ? t('Active') : t('Archived')}
                   </Badge>
                 </td>
               </tr>
@@ -245,7 +259,7 @@ function Details({ product }: { product: Product }) {
   return (
     <Card className="max-w-2xl">
       <CardHeader>
-        <CardTitle>Product details</CardTitle>
+        <CardTitle>{t('Product details')}</CardTitle>
       </CardHeader>
       <CardBody className="space-y-2">
         {rows.map(([label, value]) => (
@@ -273,8 +287,8 @@ function StockTable({ product }: { product: Product }) {
     return (
       <Card>
         <EmptyState
-          title="No stock anywhere"
-          description="Stock arrives through Goods receipt, not through the product form."
+          title={t('No stock anywhere')}
+          description={t('Stock arrives through Goods receipt, not through the product form.')}
         />
       </Card>
     )
@@ -287,7 +301,7 @@ function StockTable({ product }: { product: Product }) {
           <thead className="bg-surface-muted">
             <tr className="text-fg-muted text-2xs tracking-wide uppercase">
               <th scope="col" className="h-9 px-3 text-left font-semibold">
-                Location
+                {t('Location')}
               </th>
               {product.variations.map((v) => (
                 <th key={v.id} scope="col" className="h-9 px-3 text-right font-semibold">
@@ -295,7 +309,7 @@ function StockTable({ product }: { product: Product }) {
                 </th>
               ))}
               <th scope="col" className="h-9 px-3 text-right font-semibold">
-                Total
+                {t('Total')}
               </th>
             </tr>
           </thead>

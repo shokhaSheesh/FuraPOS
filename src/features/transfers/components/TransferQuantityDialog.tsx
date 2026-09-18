@@ -6,6 +6,7 @@ import { StorageAddress } from '@/shared/components/StorageAddress'
 import { Button } from '@/shared/ui/Button'
 import { formatNumber } from '@/shared/lib/format'
 import type { Transfer } from '../model/transfer'
+import { t } from '@/shared/i18n'
 
 type Mode = 'send' | 'receive'
 
@@ -106,12 +107,12 @@ export function TransferQuantityDialog({
           <table className="w-full text-sm">
             <thead className="bg-canvas">
               <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-                <th className="px-3 py-2 text-left font-semibold">Product</th>
+                <th className="px-3 py-2 text-left font-semibold">{t('Product')}</th>
                 <th className="px-3 py-2 text-right font-semibold">
-                  {mode === 'send' ? 'Ordered' : 'Sent'}
+                  {mode === 'send' ? t('Ordered') : t('Sent')}
                 </th>
                 {mode === 'send' ? (
-                  <th className="px-3 py-2 text-right font-semibold">On the shelf</th>
+                  <th className="px-3 py-2 text-right font-semibold">{t('On the shelf')}</th>
                 ) : null}
                 <th className="px-3 py-2 text-right font-semibold">{copy.column}</th>
               </tr>
@@ -159,7 +160,7 @@ export function TransferQuantityDialog({
                             className="text-2xs"
                             onClick={() => setValues((v) => ({ ...v, [line.id]: max }))}
                           >
-                            All
+                            {t('All')}
                           </Button>
                         ) : null}
                         <NumberField
@@ -183,12 +184,12 @@ export function TransferQuantityDialog({
 
         {gap > 0 ? (
           <p className="text-danger text-sm">
-            {formatNumber(gap)} {gap === 1 ? 'unit is' : 'units are'} {copy.shortfall}.
+            {formatNumber(gap)} {gap === 1 ? t('unit is') : t('units are')} {copy.shortfall}.
           </p>
         ) : (
           <p className="text-fg-subtle text-sm">
-            {formatNumber(totalActual)} units, matching the {mode === 'send' ? 'order' : 'dispatch'}
-            .
+            {formatNumber(totalActual)} {t('units, matching the')}{' '}
+            {mode === 'send' ? 'order' : 'dispatch'}.
           </p>
         )}
       </div>

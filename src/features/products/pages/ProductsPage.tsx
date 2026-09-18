@@ -35,6 +35,7 @@ import {
 } from '../components/productColumns'
 import { ImportProductsModal } from '../components/ImportProductsModal'
 import { effectivePrice, type VariationRow } from '../model/product'
+import { t } from '@/shared/i18n'
 
 /**
  * The catalogue. Reference implementation of the list-page pattern: PageHeader
@@ -134,7 +135,7 @@ export default function ProductsPage() {
 
   const exportCsv = () => {
     const rows = data?.items ?? []
-    if (!rows.length) return toast.error('Nothing to export with these filters')
+    if (!rows.length) return toast.error(t('Nothing to export with these filters'))
     downloadCsv(
       `products-${new Date().toISOString().slice(0, 10)}.csv`,
       [
@@ -177,7 +178,7 @@ export default function ProductsPage() {
         type="button"
         variant={display === 'cards' ? 'secondary' : 'ghost'}
         size="icon"
-        aria-label="Show products as boxes"
+        aria-label={t('Show products as boxes')}
         aria-pressed={display === 'cards'}
         onClick={() => chooseDisplay('cards')}
       >
@@ -187,7 +188,7 @@ export default function ProductsPage() {
         type="button"
         variant={display === 'table' ? 'secondary' : 'ghost'}
         size="icon"
-        aria-label="Show products as a list"
+        aria-label={t('Show products as a list')}
         aria-pressed={display === 'table'}
         onClick={() => chooseDisplay('table')}
       >
@@ -199,17 +200,17 @@ export default function ProductsPage() {
   return (
     <>
       <PageHeader
-        title="Products"
+        title={t('Products')}
         description={
           location
             ? `Stock, prices and totals at ${location.name}.`
-            : 'Everything you sell, across every location.'
+            : t('Everything you sell, across every location.')
         }
         action={
           <div className="flex items-center gap-2">
             <Button variant="secondary" onClick={exportCsv}>
               <Download />
-              Export
+              {t('Export')}
             </Button>
             {can('products.list.create') ? (
               /*
@@ -222,7 +223,7 @@ export default function ProductsPage() {
                 <Button variant="primary" className="rounded-r-none" asChild>
                   <Link to={paths.products.new}>
                     <Plus />
-                    Add product
+                    {t('Add product')}
                   </Link>
                 </Button>
                 <DropdownMenu.Root>
@@ -230,7 +231,7 @@ export default function ProductsPage() {
                     <Button
                       variant="primary"
                       size="icon"
-                      aria-label="Other ways to add products"
+                      aria-label={t('Other ways to add products')}
                       className="border-primary-fg/20 rounded-l-none border-l"
                     >
                       <ChevronDown />
@@ -249,9 +250,9 @@ export default function ProductsPage() {
                         >
                           <PencilLine className="text-fg-muted mt-0.5 size-4 shrink-0" />
                           <span>
-                            Enter manually
+                            {t('Enter manually')}
                             <span className="text-fg-subtle text-2xs block">
-                              One product and its variations
+                              {t('One product and its variations')}
                             </span>
                           </span>
                         </Link>
@@ -262,9 +263,9 @@ export default function ProductsPage() {
                       >
                         <FileUp className="text-fg-muted mt-0.5 size-4 shrink-0" />
                         <span>
-                          Import from a file
+                          {t('Import from a file')}
                           <span className="text-fg-subtle text-2xs block">
-                            CSV or Excel, one row per variation
+                            {t('CSV or Excel, one row per variation')}
                           </span>
                         </span>
                       </DropdownMenu.Item>
@@ -278,7 +279,7 @@ export default function ProductsPage() {
         below={
           <div className="flex flex-wrap items-center gap-2">
             <SegmentedControl
-              aria-label="How to list products"
+              aria-label={t('How to list products')}
               value={view}
               onChange={(next) =>
                 setQuery({ view: next === 'variations' ? null : next, page: null, sort: null })
@@ -287,17 +288,17 @@ export default function ProductsPage() {
             />
             <StatusChips
               options={[
-                { value: null, label: 'All' },
-                { value: 'active', label: 'Active' },
-                { value: 'archived', label: 'Archived' },
+                { value: null, label: t('All') },
+                { value: 'active', label: t('Active') },
+                { value: 'archived', label: t('Archived') },
               ]}
               value={(query.status as string | null) ?? null}
               onChange={(next) => setQuery({ status: next })}
             />
             <FilterSelect
-              aria-label="Filter by location"
-              label="At"
-              allLabel="All locations"
+              aria-label={t('Filter by location')}
+              label={t('At')}
+              allLabel={t('All locations')}
               value={locationId}
               options={locationData.items.map((item) => ({
                 value: item.id,
@@ -306,11 +307,11 @@ export default function ProductsPage() {
               onChange={(next) => setQuery({ location: next, page: null })}
             />
             <StatusChips
-              ariaLabel="Filter by stock"
+              ariaLabel={t('Filter by stock')}
               options={[
-                { value: null, label: 'Any stock' },
-                { value: 'zero', label: 'Out of stock' },
-                { value: 'low', label: 'Low stock' },
+                { value: null, label: t('Any stock') },
+                { value: 'zero', label: t('Out of stock') },
+                { value: 'low', label: t('Low stock') },
               ]}
               value={(query.stock as string | null) ?? null}
               onChange={(next) => setQuery({ stock: next })}
@@ -328,7 +329,7 @@ export default function ProductsPage() {
               onApply={(next) => setQuery({ f: encodeFilters(next) })}
               search={String(query.search ?? '')}
               onSearchChange={(search) => setQuery({ search })}
-              placeholder="Filter and search"
+              placeholder={t('Filter and search')}
             />
             <div className="flex-1" />
             {displaySwitch}
@@ -336,26 +337,30 @@ export default function ProductsPage() {
           {(data?.items.length ?? 0) === 0 ? (
             isFiltered ? (
               <EmptyState
-                title="No products match these filters"
-                description="Try a different search term, or clear the filters to see everything."
+                title={t('No products match these filters')}
+                description={t(
+                  'Try a different search term, or clear the filters to see everything.',
+                )}
                 action={
                   <Button
                     variant="secondary"
                     onClick={() => setQuery({ search: null, status: null, stock: null, f: null })}
                   >
-                    Clear filters
+                    {t('Clear filters')}
                   </Button>
                 }
               />
             ) : (
               <EmptyState
-                title="No products yet"
-                description="Products are everything you sell. Add the first one to start tracking stock and sales."
+                title={t('No products yet')}
+                description={t(
+                  'Products are everything you sell. Add the first one to start tracking stock and sales.',
+                )}
                 action={
                   can('products.list.create') ? (
                     <Button variant="primary">
                       <Plus />
-                      Add product
+                      {t('Add product')}
                     </Button>
                   ) : null
                 }
@@ -394,7 +399,7 @@ export default function ProductsPage() {
                 onApply={(next) => setQuery({ f: encodeFilters(next) })}
                 search={String(query.search ?? '')}
                 onSearchChange={(search) => setQuery({ search })}
-                placeholder="Filter and search"
+                placeholder={t('Filter and search')}
               />
               <div className="flex-1" />
               {displaySwitch}
@@ -406,26 +411,30 @@ export default function ProductsPage() {
           emptyState={
             isFiltered ? (
               <EmptyState
-                title="No products match these filters"
-                description="Try a different search term, or clear the filters to see everything."
+                title={t('No products match these filters')}
+                description={t(
+                  'Try a different search term, or clear the filters to see everything.',
+                )}
                 action={
                   <Button
                     variant="secondary"
                     onClick={() => setQuery({ search: null, status: null, stock: null, f: null })}
                   >
-                    Clear filters
+                    {t('Clear filters')}
                   </Button>
                 }
               />
             ) : (
               <EmptyState
-                title="No products yet"
-                description="Products are everything you sell. Add the first one to start tracking stock and sales."
+                title={t('No products yet')}
+                description={t(
+                  'Products are everything you sell. Add the first one to start tracking stock and sales.',
+                )}
                 action={
                   can('products.list.create') ? (
                     <Button variant="primary">
                       <Plus />
-                      Add product
+                      {t('Add product')}
                     </Button>
                   ) : null
                 }
@@ -449,11 +458,11 @@ export default function ProductsPage() {
       <ConfirmDialog
         open={pendingDelete !== null}
         onOpenChange={(open) => !open && setPendingDelete(null)}
-        title="Delete product?"
+        title={t('Delete product?')}
         body={
           <>
-            <strong className="text-fg font-medium">{pendingDelete?.name}</strong> will be removed
-            from the catalog. Sales history that references it is kept.
+            <strong className="text-fg font-medium">{pendingDelete?.name}</strong>{' '}
+            {t('will be removed from the catalog. Sales history that references it is kept.')}
           </>
         }
         submitting={deleteVariation.isPending}

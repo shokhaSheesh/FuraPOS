@@ -19,6 +19,7 @@ import { formatDate } from '@/shared/lib/format'
 import type { TableColumn } from '@/shared/components/table/features'
 import { useReportActions, useReports } from '../api/reports'
 import { REPORT_SOURCES, describeReport, sourceLabel, type ReportDefinition } from '../model/report'
+import { t } from '@/shared/i18n'
 
 /**
  * Saved reports.
@@ -40,14 +41,14 @@ export default function ReportsPage() {
     () => [
       {
         accessorKey: 'name',
-        header: 'Report',
+        header: t('Report'),
         enableHiding: false,
         cell: ({ row }) => (
           <div className="min-w-0">
             <p className="text-fg flex items-center gap-1.5 truncate font-medium">
               {row.original.name}
               {row.original.pinned ? (
-                <Pin className="text-fg-subtle size-3" aria-label="Pinned to the sidebar" />
+                <Pin className="text-fg-subtle size-3" aria-label={t('Pinned to the sidebar')} />
               ) : null}
             </p>
             <p className="text-fg-subtle text-2xs truncate">{describeReport(row.original)}</p>
@@ -56,14 +57,14 @@ export default function ReportsPage() {
       },
       {
         accessorKey: 'source',
-        header: 'Data',
+        header: t('Data'),
         enableHiding: false,
         cell: ({ row }) => <Badge tone="info">{sourceLabel(row.original.source)}</Badge>,
       },
-      { accessorKey: 'createdBy', header: 'Made by' },
+      { accessorKey: 'createdBy', header: t('Made by') },
       {
         accessorKey: 'updatedAt',
-        header: 'Last changed',
+        header: t('Last changed'),
         cell: ({ row }) => formatDate(row.original.updatedAt),
       },
       {
@@ -75,7 +76,7 @@ export default function ReportsPage() {
           <RowActions
             actions={[
               {
-                label: 'Run',
+                label: t('Run'),
                 icon: Play,
                 onSelect: () => navigate(paths.analytics.reportView(row.original.id)),
               },
@@ -89,13 +90,13 @@ export default function ReportsPage() {
                 },
               },
               {
-                label: 'Edit',
+                label: t('Edit'),
                 icon: Pencil,
                 hidden: !can('analytics.reportBuilder.edit'),
                 onSelect: () => navigate(paths.analytics.editReport(row.original.id)),
               },
               {
-                label: 'Delete',
+                label: t('Delete'),
                 icon: Trash2,
                 destructive: true,
                 hidden: !can('analytics.reportBuilder.delete'),
@@ -112,23 +113,25 @@ export default function ReportsPage() {
   return (
     <>
       <PageHeader
-        title="Report generator"
-        description="Build a table once — what to measure, what to split it by — then save it and re-run it whenever you like. Reports read the data as it stands, so they are always current."
+        title={t('Report generator')}
+        description={t(
+          'Build a table once — what to measure, what to split it by — then save it and re-run it whenever you like. Reports read the data as it stands, so they are always current.',
+        )}
         action={
           can('analytics.reportBuilder.create') ? (
             <Button variant="primary" asChild>
               <Link to={paths.analytics.newReport}>
                 <Plus />
-                New report
+                {t('New report')}
               </Link>
             </Button>
           ) : null
         }
         below={
           <StatusChips
-            ariaLabel="Filter by data source"
+            ariaLabel={t('Filter by data source')}
             options={[
-              { value: null, label: 'All' },
+              { value: null, label: t('All') },
               ...REPORT_SOURCES.map((entry) => ({ value: entry.value, label: entry.label })),
             ]}
             value={(query.source as string | null) ?? null}
@@ -157,18 +160,20 @@ export default function ReportsPage() {
         onRowClick={(report) => navigate(paths.analytics.reportView(report.id))}
         emptyState={
           query.search || query.f || query.source ? (
-            <EmptyState title="No reports match these filters" />
+            <EmptyState title={t('No reports match these filters')} />
           ) : (
             <EmptyState
               icon={Table2}
-              title="No reports yet"
-              description="A report saves you rebuilding the same table every month. Pick what to measure and what to break it down by, and it is there next time."
+              title={t('No reports yet')}
+              description={t(
+                'A report saves you rebuilding the same table every month. Pick what to measure and what to break it down by, and it is there next time.',
+              )}
               action={
                 can('analytics.reportBuilder.create') ? (
                   <Button variant="primary" asChild>
                     <Link to={paths.analytics.newReport}>
                       <Plus />
-                      New report
+                      {t('New report')}
                     </Link>
                   </Button>
                 ) : null
@@ -185,12 +190,12 @@ export default function ReportsPage() {
         }}
         title={`Delete "${deleting?.name}"?`}
         body="Only the saved question goes. No data is touched — you can always build it again."
-        confirmLabel="Delete"
+        confirmLabel={t('Delete')}
         destructive
         onConfirm={() => {
           if (deleting) actions.remove(deleting.id)
           setDeleting(null)
-          toast.success('Report deleted')
+          toast.success(t('Report deleted'))
         }}
       />
     </>

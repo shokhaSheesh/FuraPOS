@@ -9,6 +9,7 @@ import { formatMoney, formatDate } from '@/shared/lib/format'
 import { useDataStore } from '@/data/store'
 import { perRow, perSheet, plural, type PrintTemplate } from '../model/template'
 import { TemplatePreview, type PreviewValues } from './TemplatePreview'
+import { t } from '@/shared/i18n'
 
 /**
  * Print a sheet of labels.
@@ -84,7 +85,7 @@ export function PrintSheetModal({
         <div className="flex w-full items-center justify-between gap-3">
           <span className="text-fg-subtle text-2xs">
             {labels.length === 0
-              ? 'Nothing chosen yet'
+              ? t('Nothing chosen yet')
               : `${plural(labels.length, 'label')} · ${plural(
                   Math.ceil(labels.length / perSheet(template.widthMm, template.heightMm)),
                   'sheet',
@@ -92,11 +93,11 @@ export function PrintSheetModal({
           </span>
           <div className="flex gap-2">
             <Button variant="secondary" onClick={() => onOpenChange(false)}>
-              Close
+              {t('Close')}
             </Button>
             <Button variant="primary" disabled={labels.length === 0} onClick={() => window.print()}>
               <Printer />
-              Print
+              {t('Print')}
             </Button>
           </div>
         </div>
@@ -104,7 +105,7 @@ export function PrintSheetModal({
     >
       <div className="space-y-3">
         <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-          <Field label="Parts" hint="Search by name, SKU or OEM code">
+          <Field label={t('Parts')} hint={t('Search by name, SKU or OEM code')}>
             {(p) => (
               <MultiSelect
                 {...p}
@@ -112,11 +113,11 @@ export function PrintSheetModal({
                 value={selected}
                 onChange={setSelected}
                 options={options}
-                placeholder="Choose parts to print"
+                placeholder={t('Choose parts to print')}
               />
             )}
           </Field>
-          <Field label="Copies each">
+          <Field label={t('Copies each')}>
             {(p) => (
               <NumberField
                 {...p}
@@ -132,7 +133,7 @@ export function PrintSheetModal({
 
         {labels.length === 0 ? (
           <p className="border-border text-fg-subtle rounded-card border border-dashed p-6 text-center text-sm">
-            Pick a part to see the sheet.
+            {t('Pick a part to see the sheet.')}
           </p>
         ) : (
           <div

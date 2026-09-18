@@ -6,7 +6,7 @@ import { Badge } from '@/shared/ui/Badge'
 import { useUiStore } from '@/shared/hooks/useUiStore'
 import { useSession } from '@/app/providers/SessionProvider'
 import { useTheme } from '@/app/providers/ThemeProvider'
-import { LanguageMenu } from '@/shared/i18n'
+import { LanguageMenu, t } from '@/shared/i18n'
 import { paths } from '@/shared/config/paths'
 
 const menuContentClass =
@@ -21,7 +21,7 @@ export function Topbar() {
 
   return (
     <header className="border-border bg-surface flex h-14 shrink-0 items-center gap-2 border-b px-3">
-      <Button variant="ghost" size="icon" aria-label="Toggle sidebar" onClick={toggleSidebar}>
+      <Button variant="ghost" size="icon" aria-label={t('Toggle sidebar')} onClick={toggleSidebar}>
         <PanelLeft />
       </Button>
 
@@ -30,7 +30,7 @@ export function Topbar() {
         <Button
           variant="ghost"
           size="icon"
-          aria-label="Toggle theme"
+          aria-label={t('Toggle theme')}
           onClick={() => setTheme(resolved === 'dark' ? 'light' : 'dark')}
         >
           {resolved === 'dark' ? <Sun /> : <Moon />}
@@ -66,13 +66,13 @@ function UserMenu({ name, role, email }: { name: string; role: string; email: st
           </div>
           <DropdownMenu.Separator className="bg-border my-1 h-px" />
           <DropdownMenu.Item asChild className={menuItemClass}>
-            <Link to={paths.settings.personal}>Profile</Link>
+            <Link to={paths.settings.personal}>{t('Profile')}</Link>
           </DropdownMenu.Item>
           <DropdownMenu.Item asChild className={menuItemClass}>
-            <Link to={paths.settings.root}>Settings</Link>
+            <Link to={paths.settings.root}>{t('Settings')}</Link>
           </DropdownMenu.Item>
           <DropdownMenu.Item asChild className={menuItemClass}>
-            <Link to={paths.activityLog}>Activity log</Link>
+            <Link to={paths.activityLog}>{t('Activity log')}</Link>
           </DropdownMenu.Item>
           <DropdownMenu.Separator className="bg-border my-1 h-px" />
           <DropdownMenu.Item
@@ -83,7 +83,7 @@ function UserMenu({ name, role, email }: { name: string; role: string; email: st
             }}
           >
             <LogOut className="size-4" />
-            Sign out
+            {t('Sign out')}
           </DropdownMenu.Item>
         </DropdownMenu.Content>
       </DropdownMenu.Portal>

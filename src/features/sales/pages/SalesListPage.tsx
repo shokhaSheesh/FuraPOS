@@ -26,6 +26,7 @@ import {
   type Sale,
   type SaleStatus,
 } from '../model/sale'
+import { t } from '@/shared/i18n'
 
 const Empty = () => <span className="text-fg-subtle">—</span>
 
@@ -61,7 +62,8 @@ const columns: TableColumn<Sale>[] = [
   {
     accessorKey: 'clientName',
     header: 'Client',
-    cell: ({ row }) => row.original.clientName ?? <span className="text-fg-subtle">Walk-in</span>,
+    cell: ({ row }) =>
+      row.original.clientName ?? <span className="text-fg-subtle">{t('Walk-in')}</span>,
   },
   { accessorKey: 'locationName', header: 'Location' },
   { accessorKey: 'sellerName', header: 'Seller' },
@@ -217,7 +219,7 @@ export function SalesListPage({ title, description }: { title: string; descripti
 
   const exportCsv = () => {
     const rows = data?.items ?? []
-    if (!rows.length) return toast.error('Nothing to export with these filters')
+    if (!rows.length) return toast.error(t('Nothing to export with these filters'))
     downloadCsv(
       `sales-${new Date().toISOString().slice(0, 10)}.csv`,
       [
@@ -257,13 +259,13 @@ export function SalesListPage({ title, description }: { title: string; descripti
           <div className="flex items-center gap-2">
             <Button variant="secondary" onClick={exportCsv}>
               <Download />
-              Export
+              {t('Export')}
             </Button>
             {showCreate ? (
               <Button variant="primary" asChild>
                 <Link to={paths.sales.newSale}>
                   <Plus />
-                  New sale
+                  {t('New sale')}
                 </Link>
               </Button>
             ) : null}
@@ -286,7 +288,7 @@ export function SalesListPage({ title, description }: { title: string; descripti
                 })
               }
               className="h-8"
-              placeholder="Any date"
+              placeholder={t('Any date')}
             />
           </div>
         }
@@ -314,8 +316,10 @@ export function SalesListPage({ title, description }: { title: string; descripti
         emptyState={
           isFiltered ? (
             <EmptyState
-              title="No sales match these filters"
-              description="Try a different search term or period, or clear the filters to see everything."
+              title={t('No sales match these filters')}
+              description={t(
+                'Try a different search term or period, or clear the filters to see everything.',
+              )}
               action={
                 <Button
                   variant="secondary"
@@ -323,20 +327,20 @@ export function SalesListPage({ title, description }: { title: string; descripti
                     setQuery({ search: null, status: null, from: null, to: null, f: null })
                   }
                 >
-                  Clear filters
+                  {t('Clear filters')}
                 </Button>
               }
             />
           ) : (
             <EmptyState
-              title="No sales yet"
-              description="Record the first sale taken at the desk, by phone or on delivery."
+              title={t('No sales yet')}
+              description={t('Record the first sale taken at the desk, by phone or on delivery.')}
               action={
                 showCreate ? (
                   <Button variant="primary" asChild>
                     <Link to={paths.sales.newSale}>
                       <Plus />
-                      New sale
+                      {t('New sale')}
                     </Link>
                   </Button>
                 ) : null
@@ -350,5 +354,7 @@ export function SalesListPage({ title, description }: { title: string; descripti
 }
 
 export default function AllSalesPage() {
-  return <SalesListPage title="All sales" description="Every sale, across every location." />
+  return (
+    <SalesListPage title={t('All sales')} description={t('Every sale, across every location.')} />
+  )
 }

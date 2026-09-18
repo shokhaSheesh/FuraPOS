@@ -1,5 +1,6 @@
 import { formatMoney, formatNumber, formatPercent } from '@/shared/lib/format'
 import { findDimension, findMeasure, type ReportResult, type ReportSource } from '../model/report'
+import { t } from '@/shared/i18n'
 
 const render = (value: number, format: 'money' | 'number' | 'percent') => {
   if (format === 'money') return formatMoney(Math.round(value))
@@ -45,7 +46,7 @@ export function ResultTable({
               </th>
             ))}
             {dimensions.length === 0 ? (
-              <th className="px-3 py-2 text-left font-semibold">Everything</th>
+              <th className="px-3 py-2 text-left font-semibold">{t('Everything')}</th>
             ) : null}
             {measures.map((key) => (
               <th key={key} className="px-3 py-2 text-right font-semibold">
@@ -63,7 +64,7 @@ export function ResultTable({
                 </td>
               ))}
               {dimensions.length === 0 ? (
-                <td className="text-fg-muted px-3 py-2">All rows</td>
+                <td className="text-fg-muted px-3 py-2">{t('All rows')}</td>
               ) : null}
               {measures.map((key) => (
                 <td key={key} className="text-fg px-3 py-2 text-right tabular-nums">
@@ -78,7 +79,7 @@ export function ResultTable({
                 colSpan={Math.max(1, dimensions.length) + measures.length}
                 className="text-fg-subtle px-3 py-8 text-center"
               >
-                Nothing in this period.
+                {t('Nothing in this period.')}
               </td>
             </tr>
           ) : null}
@@ -92,7 +93,7 @@ export function ResultTable({
               >
                 {limit && result.rows.length > limit
                   ? `Total across all ${formatNumber(result.rows.length)} rows`
-                  : 'Total'}
+                  : t('Total')}
               </td>
               {measures.map((key) => (
                 <td key={key} className="text-fg px-3 py-2 text-right font-semibold tabular-nums">

@@ -43,6 +43,7 @@ import {
   type ProductFormValues,
   type VariationMode,
 } from '../model/product'
+import { t } from '@/shared/i18n'
 
 const CURRENCIES: { value: 'USD' | 'UZS'; label: string }[] = [
   { value: 'USD', label: 'USD' },
@@ -417,7 +418,7 @@ export function ProductForm({
     () => {
       // A rejected save used to do nothing visible when the offending field was
       // below the fold or had no error slot. Never fail silently.
-      toast.error('Check the highlighted fields')
+      toast.error(t('Check the highlighted fields'))
     },
   )
 
@@ -427,7 +428,7 @@ export function ProductForm({
         <Button variant="link" size="sm" className="h-auto px-0" asChild>
           <Link to={editing ? paths.products.detail(productId!) : paths.products.list}>
             <ArrowLeft />
-            {editing ? 'Back to product' : 'Products'}
+            {editing ? t('Back to product') : t('Products')}
           </Link>
         </Button>
       )}
@@ -438,24 +439,24 @@ export function ProductForm({
           ones — a grid of variations, a table of quantities — never leave you
           wondering which product you are filling in. The reference does the same.
         */
-        title={productName.trim() || (editing ? `Edit ${existing?.name ?? ''}` : 'New product')}
+        title={productName.trim() || (editing ? `Edit ${existing?.name ?? ''}` : t('New product'))}
         description={
           step === 1
             ? single
-              ? 'One barcode, one price, one line on a sale.'
-              : 'A product describes the part. Its variations are what actually get sold.'
+              ? t('One barcode, one price, one line on a sale.')
+              : t('A product describes the part. Its variations are what actually get sold.')
             : editing
-              ? 'Editing'
-              : 'New product'
+              ? t('Editing')
+              : t('New product')
         }
         action={
           <div className="flex items-center gap-2">
             <Button type="button" variant="secondary" onClick={onCancel}>
-              Cancel
+              {t('Cancel')}
             </Button>
             {step === 3 ? (
               <Button key="save" type="submit" variant="primary">
-                {editing ? 'Save changes' : 'Create product'}
+                {editing ? t('Save changes') : t('Create product')}
               </Button>
             ) : (
               <Button
@@ -468,7 +469,7 @@ export function ProductForm({
                 variant="primary"
                 onClick={() => goTo((step + 1) as 2 | 3)}
               >
-                Continue
+                {t('Continue')}
               </Button>
             )}
           </div>
@@ -496,20 +497,20 @@ export function ProductForm({
             <div className="grid gap-3 lg:grid-cols-3">
               <Card className="lg:col-span-2">
                 <CardHeader>
-                  <CardTitle>Product</CardTitle>
+                  <CardTitle>{t('Product')}</CardTitle>
                 </CardHeader>
                 <CardBody className="grid gap-3 sm:grid-cols-2">
                   <Field
-                    label="Product name"
+                    label={t('Product name')}
                     required
-                    hint={single ? undefined : 'Shared by every variation'}
+                    hint={single ? undefined : t('Shared by every variation')}
                     error={form.formState.errors.name?.message}
                   >
                     {(p) => (
-                      <Input {...p} placeholder="Brake disc HD72" {...form.register('name')} />
+                      <Input {...p} placeholder={t('Brake disc HD72')} {...form.register('name')} />
                     )}
                   </Field>
-                  <Field label="Unit">
+                  <Field label={t('Unit')}>
                     {(p) => (
                       <Controller
                         control={form.control}
@@ -527,8 +528,8 @@ export function ProductForm({
                     )}
                   </Field>
                   <Field
-                    label="Description"
-                    hint="Shown to customers online — headings, lists and links are kept"
+                    label={t('Description')}
+                    hint={t('Shown to customers online — headings, lists and links are kept')}
                     className="sm:col-span-2"
                   >
                     {(p) => (
@@ -541,7 +542,7 @@ export function ProductForm({
                       />
                     )}
                   </Field>
-                  <Field label="Media" className="sm:col-span-2">
+                  <Field label={t('Media')} className="sm:col-span-2">
                     {() =>
                       single ? (
                         <Controller
@@ -553,8 +554,9 @@ export function ProductForm({
                         />
                       ) : (
                         <p className="text-fg-subtle text-sm">
-                          Each variation has its own picture — they are on the next step, beside the
-                          variation they belong to.
+                          {t(
+                            'Each variation has its own picture — they are on the next step, beside the variation they belong to.',
+                          )}
                         </p>
                       )
                     }
@@ -565,10 +567,10 @@ export function ProductForm({
               <div className="space-y-3">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Where it belongs</CardTitle>
+                    <CardTitle>{t('Where it belongs')}</CardTitle>
                   </CardHeader>
                   <CardBody>
-                    <Field label="Supplier" hint="Who we buy it from">
+                    <Field label={t('Supplier')} hint={t('Who we buy it from')}>
                       {(p) => (
                         <Controller
                           control={form.control}
@@ -583,7 +585,7 @@ export function ProductForm({
                                 value: b.id,
                                 label: b.name,
                               }))}
-                              placeholder="None"
+                              placeholder={t('None')}
                             />
                           )}
                         />
@@ -594,11 +596,11 @@ export function ProductForm({
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Category</CardTitle>
+                    <CardTitle>{t('Category')}</CardTitle>
                   </CardHeader>
                   <CardBody>
                     <Field
-                      label="Category"
+                      label={t('Category')}
                       required
                       error={form.formState.errors.categoryId?.message}
                     >
@@ -642,15 +644,15 @@ export function ProductForm({
             <Card>
               <CardBody className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-fg text-sm font-semibold">This product is sold as</p>
+                  <p className="text-fg text-sm font-semibold">{t('This product is sold as')}</p>
                   <p className="text-fg-subtle text-2xs">
                     {single
-                      ? 'One sellable thing — it carries its own SKU, price and stock.'
-                      : 'Several sellable things, generated from the options below.'}
+                      ? t('One sellable thing — it carries its own SKU, price and stock.')
+                      : t('Several sellable things, generated from the options below.')}
                   </p>
                 </div>
                 <SegmentedControl
-                  aria-label="How many variations"
+                  aria-label={t('How many variations')}
                   value={mode}
                   onChange={setMode}
                   options={MODES}
@@ -661,10 +663,10 @@ export function ProductForm({
             <Card>
               <CardHeader className="flex-col items-stretch gap-2 sm:flex-row sm:items-center">
                 <div>
-                  <CardTitle>{single ? 'Variation' : 'Variations'}</CardTitle>
+                  <CardTitle>{single ? t('Variation') : t('Variations')}</CardTitle>
                   <p className="text-fg-subtle text-2xs">
                     {single
-                      ? 'This product is one sellable thing, so these belong to it directly.'
+                      ? t('This product is one sellable thing, so these belong to it directly.')
                       : gridSummary}
                   </p>
                 </div>
@@ -673,25 +675,25 @@ export function ProductForm({
                 {single ? (
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     <Field
-                      label="Variation name"
-                      hint="What this one is called — leave empty if it has no name"
+                      label={t('Variation name')}
+                      hint={t('What this one is called — leave empty if it has no name')}
                     >
                       {(p) => (
                         <Input
                           {...p}
-                          placeholder="Standard"
+                          placeholder={t('Standard')}
                           {...form.register('variations.0.name')}
                         />
                       )}
                     </Field>
                     <Field
-                      label="SKU"
+                      label={t('SKU')}
                       required
                       error={form.formState.errors.variations?.[0]?.sku?.message}
                     >
                       {(p) => <Input {...p} {...form.register('variations.0.sku')} />}
                     </Field>
-                    <Field label="Barcode">
+                    <Field label={t('Barcode')}>
                       {(p) => <Input {...p} {...form.register('variations.0.barcode')} />}
                     </Field>
                   </div>
@@ -702,7 +704,7 @@ export function ProductForm({
                       <ProductVariationsTable form={form} productName={productName.trim()} />
                     ) : (
                       <p className="text-fg-subtle text-sm">
-                        Name an option and give it values — the variations appear here.
+                        {t('Name an option and give it values — the variations appear here.')}
                       </p>
                     )}
                   </>
@@ -713,12 +715,12 @@ export function ProductForm({
             {/* OX's «Характеристика»: what the part is, beyond its identity. */}
             <Card>
               <CardHeader>
-                <CardTitle>Attributes</CardTitle>
+                <CardTitle>{t('Attributes')}</CardTitle>
               </CardHeader>
               <CardBody className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {single ? (
                   <>
-                    <Field label="OEM">
+                    <Field label={t('OEM')}>
                       {(p) => (
                         <Input
                           {...p}
@@ -728,7 +730,10 @@ export function ProductForm({
                       )}
                     </Field>
                     {/* OX's «Адрес товара»: the exact bin somebody walks to. */}
-                    <Field label="Storage address" hint="Row, rack, shelf and bin — e.g. 1-A-23-4">
+                    <Field
+                      label={t('Storage address')}
+                      hint={t('Row, rack, shelf and bin — e.g. 1-A-23-4')}
+                    >
                       {(p) => (
                         <Input
                           {...p}
@@ -744,12 +749,12 @@ export function ProductForm({
                     </Field>
                   </>
                 ) : null}
-                <Field label="Product brand" hint="Who made the part">
+                <Field label={t('Product brand')} hint={t('Who made the part')}>
                   {(p) => <Input {...p} {...form.register('manufacturer')} />}
                 </Field>
                 {/* Picked from Settings → Brands → Truck brands, so one model is
                     never spelled three ways across the catalogue. */}
-                <Field label="Truck brands" hint="The lorries this part fits">
+                <Field label={t('Truck brands')} hint={t('The lorries this part fits')}>
                   {(p) => (
                     <Controller
                       control={form.control}
@@ -778,7 +783,7 @@ export function ProductForm({
                     />
                   )}
                 </Field>
-                <Field label="Models it fits" hint="Leave empty if it fits every model">
+                <Field label={t('Models it fits')} hint={t('Leave empty if it fits every model')}>
                   {() => (
                     <Controller
                       control={form.control}
@@ -795,16 +800,16 @@ export function ProductForm({
                 </Field>
                 {single ? (
                   <>
-                    <Field label="Part" hint="Which part of the vehicle it fits">
+                    <Field label={t('Part')} hint={t('Which part of the vehicle it fits')}>
                       {(p) => (
                         <Input
                           {...p}
-                          placeholder="Left"
+                          placeholder={t('Left')}
                           {...form.register('variations.0.partSide')}
                         />
                       )}
                     </Field>
-                    <Field label="Cargo weight (kg)">
+                    <Field label={t('Cargo weight (kg)')}>
                       {(p) => (
                         <Controller
                           control={form.control}
@@ -822,7 +827,7 @@ export function ProductForm({
                         />
                       )}
                     </Field>
-                    <Field label="Cargo size">
+                    <Field label={t('Cargo size')}>
                       {(p) => (
                         <Input
                           {...p}
@@ -834,8 +839,9 @@ export function ProductForm({
                   </>
                 ) : (
                   <p className="text-fg-subtle text-sm sm:col-span-2 lg:col-span-3">
-                    OEM, part, cargo weight and cargo size differ between variations, so they are
-                    asked for in the table above.
+                    {t(
+                      'OEM, part, cargo weight and cargo size differ between variations, so they are asked for in the table above.',
+                    )}
                   </p>
                 )}
               </CardBody>
@@ -849,12 +855,12 @@ export function ProductForm({
               {single ? (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Amount</CardTitle>
+                    <CardTitle>{t('Amount')}</CardTitle>
                   </CardHeader>
                   <CardBody className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     <Field
-                      label="Supplier price"
-                      hint="What the supplier invoices"
+                      label={t('Supplier price')}
+                      hint={t('What the supplier invoices')}
                       error={form.formState.errors.variations?.[0]?.costPrice?.message}
                     >
                       {(p) => (
@@ -881,7 +887,7 @@ export function ProductForm({
                                 value={f.value}
                                 onChange={f.onChange}
                                 options={CURRENCIES}
-                                aria-label="Supplier price currency"
+                                aria-label={t('Supplier price currency')}
                                 className="w-24"
                               />
                             )}
@@ -890,7 +896,7 @@ export function ProductForm({
                       )}
                     </Field>
                     <Field
-                      label="Sale price"
+                      label={t('Sale price')}
                       required
                       error={form.formState.errors.variations?.[0]?.salePrice?.message}
                     >
@@ -917,7 +923,7 @@ export function ProductForm({
                                 value={f.value}
                                 onChange={f.onChange}
                                 options={CURRENCIES}
-                                aria-label="Sale price currency"
+                                aria-label={t('Sale price currency')}
                                 className="w-24"
                               />
                             )}
@@ -925,7 +931,7 @@ export function ProductForm({
                         </div>
                       )}
                     </Field>
-                    <Field label="Wholesale price" hint="What a trade customer pays">
+                    <Field label={t('Wholesale price')} hint={t('What a trade customer pays')}>
                       {(p) => (
                         <div className="flex gap-1.5">
                           <Controller
@@ -948,7 +954,7 @@ export function ProductForm({
                                 value={f.value}
                                 onChange={f.onChange}
                                 options={CURRENCIES}
-                                aria-label="Wholesale price currency"
+                                aria-label={t('Wholesale price currency')}
                                 className="w-24"
                               />
                             )}
@@ -962,8 +968,9 @@ export function ProductForm({
                 <Card>
                   <CardBody className="p-4">
                     <p className="text-fg-subtle text-sm">
-                      Each variation is priced on the previous step, beside the variation it belongs
-                      to.
+                      {t(
+                        'Each variation is priced on the previous step, beside the variation it belongs to.',
+                      )}
                     </p>
                   </CardBody>
                 </Card>
@@ -979,10 +986,10 @@ export function ProductForm({
 
             <Card className="h-fit">
               <CardHeader>
-                <CardTitle>Status</CardTitle>
+                <CardTitle>{t('Status')}</CardTitle>
               </CardHeader>
               <CardBody>
-                <Field label="Status">
+                <Field label={t('Status')}>
                   {(p) => (
                     <Controller
                       control={form.control}
@@ -994,8 +1001,8 @@ export function ProductForm({
                           value={f.value}
                           onChange={f.onChange}
                           options={[
-                            { value: 'active', label: 'Active' },
-                            { value: 'archived', label: 'Archived' },
+                            { value: 'active', label: t('Active') },
+                            { value: 'archived', label: t('Archived') },
                           ]}
                         />
                       )}
@@ -1011,14 +1018,14 @@ export function ProductForm({
           {step > 1 ? (
             <Button type="button" variant="secondary" onClick={() => setStep((step - 1) as 1 | 2)}>
               <ArrowLeft />
-              Back
+              {t('Back')}
             </Button>
           ) : (
             <span />
           )}
           {step === 3 ? (
             <Button key="save" type="submit" variant="primary">
-              {editing ? 'Save changes' : 'Create product'}
+              {editing ? t('Save changes') : t('Create product')}
             </Button>
           ) : (
             <Button
@@ -1027,7 +1034,7 @@ export function ProductForm({
               variant="primary"
               onClick={() => goTo((step + 1) as 2 | 3)}
             >
-              Continue
+              {t('Continue')}
             </Button>
           )}
         </div>
@@ -1036,8 +1043,8 @@ export function ProductForm({
       <ConfirmDialog
         open={confirmCollapse}
         onOpenChange={setConfirmCollapse}
-        title="Sell this as one thing?"
-        confirmLabel="Keep the first"
+        title={t('Sell this as one thing?')}
+        confirmLabel={t('Keep the first')}
         body={`This drops the ${options.map((o) => o.name.trim() || 'unnamed').join(' and ')} option${
           options.length > 1 ? 's' : ''
         } and every variation but “${

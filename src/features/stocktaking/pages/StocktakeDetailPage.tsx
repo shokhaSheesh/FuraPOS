@@ -31,6 +31,7 @@ import {
   stocktakeStatusTone,
   surplusUnits,
 } from '../model/stocktake'
+import { t } from '@/shared/i18n'
 
 type Lens = 'all' | 'uncounted' | 'differs'
 
@@ -69,7 +70,9 @@ export default function StocktakeDetailPage() {
   }, [stocktake, lens, term])
 
   if (!stocktake) {
-    return <EmptyState title="Stocktake not found" description="It may have been deleted." />
+    return (
+      <EmptyState title={t('Stocktake not found')} description={t('It may have been deleted.')} />
+    )
   }
 
   const open = canCount(stocktake.status)
@@ -85,7 +88,7 @@ export default function StocktakeDetailPage() {
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
         <Link to={paths.products.stocktaking}>
           <ArrowLeft />
-          Stocktaking
+          {t('Stocktaking')}
         </Link>
       </Button>
 
@@ -99,7 +102,7 @@ export default function StocktakeDetailPage() {
             {open && can('products.stocktaking.delete') ? (
               <Button variant="secondary" onClick={() => setConfirmCancel(true)}>
                 <Ban />
-                Abandon
+                {t('Abandon')}
               </Button>
             ) : null}
             {open && can('products.stocktaking.edit') ? (
@@ -107,12 +110,14 @@ export default function StocktakeDetailPage() {
                 variant="primary"
                 disabled={differing.length === 0}
                 title={
-                  differing.length === 0 ? 'Nothing counted differs from the system yet' : undefined
+                  differing.length === 0
+                    ? t('Nothing counted differs from the system yet')
+                    : undefined
                 }
                 onClick={() => setConfirmApply(true)}
               >
                 <Check />
-                Apply {formatNumber(differing.length)} changes
+                {t('Apply')} {formatNumber(differing.length)} changes
               </Button>
             ) : null}
           </div>
@@ -132,7 +137,7 @@ export default function StocktakeDetailPage() {
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Card className="p-4">
-          <p className="text-fg-muted text-sm">Counted</p>
+          <p className="text-fg-muted text-sm">{t('Counted')}</p>
           <p className="text-fg mt-0.5 text-lg font-semibold">
             {formatNumber(done)}{' '}
             <span className="text-fg-subtle text-sm">of {formatNumber(total)}</span>
@@ -145,16 +150,16 @@ export default function StocktakeDetailPage() {
           </span>
         </Card>
         <Card className="p-4">
-          <p className="text-fg-muted text-sm">System was right</p>
+          <p className="text-fg-muted text-sm">{t('System was right')}</p>
           <p className="text-fg mt-0.5 text-lg font-semibold">
             {formatPercent(accuracy(stocktake))}
           </p>
           <p className="text-fg-subtle text-2xs">
-            {formatNumber(differing.length)} of {formatNumber(done)} counted lines differ
+            {formatNumber(differing.length)} of {formatNumber(done)} {t('counted lines differ')}
           </p>
         </Card>
         <Card className="p-4">
-          <p className="text-fg-muted text-sm">Missing / found</p>
+          <p className="text-fg-muted text-sm">{t('Missing / found')}</p>
           <p
             className={`mt-0.5 text-lg font-semibold ${
               netUnits(stocktake) < 0 ? 'text-danger' : 'text-fg'
@@ -166,21 +171,21 @@ export default function StocktakeDetailPage() {
           <p className="text-fg-subtle text-2xs">
             {canSeeCost
               ? `${value < 0 ? '−' : ''}${formatMoney(Math.abs(value))} at cost`
-              : 'units missing / found'}
+              : t('units missing / found')}
           </p>
         </Card>
       </div>
 
       <Card>
         <CardHeader className="flex-col items-stretch gap-2 sm:flex-row sm:items-center">
-          <CardTitle>Counting sheet</CardTitle>
+          <CardTitle>{t('Counting sheet')}</CardTitle>
           <div className="flex flex-wrap items-center gap-2">
             <StatusChips
-              ariaLabel="Which lines to show"
+              ariaLabel={t('Which lines to show')}
               options={[
-                { value: null, label: 'All' },
-                { value: 'uncounted', label: 'Left to count' },
-                { value: 'differs', label: 'Differs' },
+                { value: null, label: t('All') },
+                { value: 'uncounted', label: t('Left to count') },
+                { value: 'differs', label: t('Differs') },
               ]}
               value={lens === 'all' ? null : lens}
               onChange={(next) => setLens((next as Lens) ?? 'all')}
@@ -195,8 +200,8 @@ export default function StocktakeDetailPage() {
               <Input
                 value={term}
                 onChange={(event) => setTerm(event.target.value)}
-                placeholder="Find by name, SKU or shelf…"
-                aria-label="Find a line"
+                placeholder={t('Find by name, SKU or shelf…')}
+                aria-label={t('Find a line')}
                 className="h-8 pl-8"
               />
             </div>
@@ -207,11 +212,11 @@ export default function StocktakeDetailPage() {
             <table className="w-full text-sm">
               <thead className="bg-canvas">
                 <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-                  <th className="px-4 py-2 text-left font-semibold">Product</th>
-                  <th className="px-4 py-2 text-left font-semibold">Shelf</th>
-                  <th className="px-4 py-2 text-right font-semibold">System says</th>
-                  <th className="px-4 py-2 text-right font-semibold">Counted</th>
-                  <th className="px-4 py-2 text-right font-semibold">Difference</th>
+                  <th className="px-4 py-2 text-left font-semibold">{t('Product')}</th>
+                  <th className="px-4 py-2 text-left font-semibold">{t('Shelf')}</th>
+                  <th className="px-4 py-2 text-right font-semibold">{t('System says')}</th>
+                  <th className="px-4 py-2 text-right font-semibold">{t('Counted')}</th>
+                  <th className="px-4 py-2 text-right font-semibold">{t('Difference')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -219,10 +224,10 @@ export default function StocktakeDetailPage() {
                   <tr>
                     <td colSpan={5} className="text-fg-subtle px-4 py-6 text-center text-sm">
                       {lens === 'uncounted'
-                        ? 'Every line has been counted.'
+                        ? t('Every line has been counted.')
                         : lens === 'differs'
-                          ? 'Nothing counted so far disagrees with the system.'
-                          : 'No lines match that search.'}
+                          ? t('Nothing counted so far disagrees with the system.')
+                          : t('No lines match that search.')}
                     </td>
                   </tr>
                 ) : null}
@@ -264,7 +269,7 @@ export default function StocktakeDetailPage() {
                               variant="ghost"
                               size="icon"
                               aria-label={`Clear the count for ${line.name}`}
-                              title="Not counted yet"
+                              title={t('Not counted yet')}
                               onClick={() => actions.setCount(line.id, null)}
                             >
                               <X />
@@ -284,7 +289,7 @@ export default function StocktakeDetailPage() {
                         }`}
                       >
                         {variance === null
-                          ? 'not counted'
+                          ? t('not counted')
                           : variance === 0
                             ? 'agrees'
                             : `${variance > 0 ? '+' : '−'}${formatNumber(Math.abs(variance))}`}
@@ -303,8 +308,10 @@ export default function StocktakeDetailPage() {
           <CardBody className="flex items-start gap-3 p-4">
             <Check className="text-success mt-0.5 size-4 shrink-0" />
             <p className="text-fg-muted text-sm">
-              Applied on {formatDateTime(stocktake.appliedAt!)}. The differences were committed as a
-              correction, so they sit in the same ledger as every other adjustment
+              {t('Applied on')} {formatDateTime(stocktake.appliedAt!)}
+              {t(
+                '. The differences were committed as a correction, so they sit in the same ledger as every other adjustment',
+              )}
               {stocktake.correctionId ? (
                 <>
                   {' — '}
@@ -312,11 +319,11 @@ export default function StocktakeDetailPage() {
                     className="text-fg font-medium underline"
                     to={paths.products.correctionDetail(stocktake.correctionId)}
                   >
-                    see it
+                    {t('see it')}
                   </Link>
                 </>
               ) : null}
-              . Reversing that correction undoes this count.
+              {t('. Reversing that correction undoes this count.')}
             </p>
           </CardBody>
         </Card>
@@ -325,22 +332,22 @@ export default function StocktakeDetailPage() {
       <ConfirmDialog
         open={confirmApply}
         onOpenChange={setConfirmApply}
-        title="Apply this count?"
-        confirmLabel="Apply"
+        title={t('Apply this count?')}
+        confirmLabel={t('Apply')}
         destructive={false}
         body={
           <>
-            {formatNumber(differing.length)} counted lines differ from the system:{' '}
-            {short > 0 ? `${formatNumber(short)} missing` : 'none missing'}
+            {formatNumber(differing.length)} {t('counted lines differ from the system:')}{' '}
+            {short > 0 ? `${formatNumber(short)} missing` : t('none missing')}
             {surplus > 0 ? `, ${formatNumber(surplus)} found` : ''}
             {canSeeCost ? `, ${value < 0 ? '−' : ''}${formatMoney(Math.abs(value))} at cost` : ''}.
             {total - done > 0 ? (
               <>
                 {' '}
                 <strong className="text-fg font-medium">
-                  {formatNumber(total - done)} lines have not been counted
+                  {formatNumber(total - done)} {t('lines have not been counted')}
                 </strong>{' '}
-                and will be left exactly as they are — nothing is written off for them.
+                {t('and will be left exactly as they are — nothing is written off for them.')}
               </>
             ) : null}
           </>
@@ -359,8 +366,8 @@ export default function StocktakeDetailPage() {
       <ConfirmDialog
         open={confirmCancel}
         onOpenChange={setConfirmCancel}
-        title="Abandon this count?"
-        confirmLabel="Abandon"
+        title={t('Abandon this count?')}
+        confirmLabel={t('Abandon')}
         body={`Everything counted so far on ${stocktake.number} is discarded and no stock changes. The count would have to be started again.`}
         onConfirm={() =>
           actions.cancel({

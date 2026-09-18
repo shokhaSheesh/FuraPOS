@@ -15,6 +15,7 @@ import { formatDate, formatDateTime, formatMoney, formatNumber } from '@/shared/
 import { useDataStore } from '@/data/store'
 import { useClient, useClientActions, useClientSales } from '../api/clients'
 import { clientStatusLabel, clientStatusTone, daysSinceLastSale } from '../model/client'
+import { t } from '@/shared/i18n'
 
 export default function ClientDetailPage() {
   const { clientId } = useParams()
@@ -34,10 +35,10 @@ export default function ClientDetailPage() {
   if (!client) {
     return (
       <EmptyState
-        title="No such autopark"
+        title={t('No such autopark')}
         action={
           <Button variant="secondary" asChild>
-            <Link to={paths.users.autoparks}>Back to autoparks</Link>
+            <Link to={paths.users.autoparks}>{t('Back to autoparks')}</Link>
           </Button>
         }
       />
@@ -53,20 +54,20 @@ export default function ClientDetailPage() {
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
         <Link to={paths.users.autoparks}>
           <ArrowLeft />
-          Autoparks
+          {t('Autoparks')}
         </Link>
       </Button>
 
       <PageHeader
         title={client.name}
-        description={client.type === 'business' ? 'Business account' : 'Individual buyer'}
+        description={client.type === 'business' ? t('Business account') : t('Individual buyer')}
         action={
           canEdit ? (
             <div className="flex items-center gap-2">
               {client.status === 'active' ? (
                 <Button variant="secondary" onClick={() => setBlocking(true)}>
                   <Ban />
-                  Block
+                  {t('Block')}
                 </Button>
               ) : (
                 <Button
@@ -77,13 +78,13 @@ export default function ClientDetailPage() {
                   }}
                 >
                   <Play />
-                  Unblock
+                  {t('Unblock')}
                 </Button>
               )}
               <Button variant="primary" asChild>
                 <Link to={paths.users.editAutopark(client.id)}>
                   <Pencil />
-                  Edit
+                  {t('Edit')}
                 </Link>
               </Button>
             </div>
@@ -99,14 +100,14 @@ export default function ClientDetailPage() {
               )}
             </span>
             <Badge tone={clientStatusTone(client.status)}>{clientStatusLabel(client.status)}</Badge>
-            {client.overLimit ? <Badge tone="danger">Over credit limit</Badge> : null}
+            {client.overLimit ? <Badge tone="danger">{t('Over credit limit')}</Badge> : null}
             {client.phone ? (
               <span className="text-fg-muted text-sm tabular-nums">{client.phone}</span>
             ) : null}
             {client.email ? <span className="text-fg-subtle text-sm">· {client.email}</span> : null}
             {client.dormant ? (
               <span className="text-warning text-2xs">
-                · last bought {formatNumber(quiet ?? 0)} days ago
+                {t('· last bought')} {formatNumber(quiet ?? 0)} {t('days ago')}
               </span>
             ) : null}
           </div>
@@ -115,7 +116,7 @@ export default function ClientDetailPage() {
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Figure
-          label="Owes us"
+          label={t('Owes us')}
           value={client.debt > 0 ? formatMoney(client.debt) : 'Nothing'}
           meta={
             client.creditLimit === null
@@ -127,17 +128,17 @@ export default function ClientDetailPage() {
           tone={client.overLimit ? 'danger' : undefined}
         />
         <Figure
-          label="Bought all time"
+          label={t('Bought all time')}
           value={formatMoney(Math.round(stats.revenue))}
           meta={`${formatNumber(stats.sales)} sales · ${formatNumber(stats.units)} units`}
         />
         <Figure
-          label="Average check"
+          label={t('Average check')}
           value={stats.sales ? formatMoney(Math.round(stats.averageCheck)) : '—'}
           meta={stats.sales ? 'across every sale' : 'has not bought yet'}
         />
         <Figure
-          label="Different products"
+          label={t('Different products')}
           value={formatNumber(stats.products)}
           meta="how broad the relationship is"
         />
@@ -146,20 +147,22 @@ export default function ClientDetailPage() {
       <div className="grid gap-3 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Recent sales</CardTitle>
+            <CardTitle>{t('Recent sales')}</CardTitle>
           </CardHeader>
           <CardBody className="p-0">
             {recentSales.length === 0 ? (
-              <p className="text-fg-subtle p-4 text-sm">They have not bought anything yet.</p>
+              <p className="text-fg-subtle p-4 text-sm">
+                {t('They have not bought anything yet.')}
+              </p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-canvas">
                     <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-                      <th className="px-4 py-2 text-left font-semibold">Sale</th>
-                      <th className="px-4 py-2 text-left font-semibold">Seller</th>
-                      <th className="px-4 py-2 text-right font-semibold">Total</th>
-                      <th className="px-4 py-2 text-right font-semibold">Still owed</th>
+                      <th className="px-4 py-2 text-left font-semibold">{t('Sale')}</th>
+                      <th className="px-4 py-2 text-left font-semibold">{t('Seller')}</th>
+                      <th className="px-4 py-2 text-right font-semibold">{t('Total')}</th>
+                      <th className="px-4 py-2 text-right font-semibold">{t('Still owed')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -183,7 +186,7 @@ export default function ClientDetailPage() {
                               {formatMoney(Math.round(sale.debt))}
                             </span>
                           ) : (
-                            <span className="text-fg-subtle">Paid</span>
+                            <span className="text-fg-subtle">{t('Paid')}</span>
                           )}
                         </td>
                       </tr>
@@ -197,23 +200,23 @@ export default function ClientDetailPage() {
 
         <Card className="h-fit">
           <CardHeader>
-            <CardTitle>Record</CardTitle>
+            <CardTitle>{t('Record')}</CardTitle>
           </CardHeader>
           <CardBody className="space-y-2 text-sm">
-            <Row label="Type" value={client.type === 'business' ? 'Business' : 'Person'} />
+            <Row label={t('Type')} value={client.type === 'business' ? 'Business' : 'Person'} />
             <Row
-              label="Credit limit"
+              label={t('Credit limit')}
               value={
                 client.creditLimit === null ? 'Pays up front' : formatMoney(client.creditLimit)
               }
             />
-            <Row label="Client since" value={formatDate(client.createdAt)} />
+            <Row label={t('Client since')} value={formatDate(client.createdAt)} />
             <Row
-              label="Last bought"
+              label={t('Last bought')}
               value={stats.lastSaleAt ? formatDateTime(stats.lastSaleAt) : 'Never'}
             />
-            {client.address ? <Row label="Address" value={client.address} /> : null}
-            {client.comment ? <Row label="Note" value={client.comment} /> : null}
+            {client.address ? <Row label={t('Address')} value={client.address} /> : null}
+            {client.comment ? <Row label={t('Note')} value={client.comment} /> : null}
           </CardBody>
         </Card>
       </div>
@@ -241,7 +244,7 @@ export default function ClientDetailPage() {
             ? [
                 {
                   id: 'over-limit',
-                  title: 'They are past their credit limit',
+                  title: t('They are past their credit limit'),
                   body: `${formatMoney(client.debt)} outstanding against a limit of ${formatMoney(
                     client.creditLimit ?? 0,
                   )}. Another sale on account takes them further out, and the limit exists because somebody once decided this is as far as they should go.`,
@@ -258,7 +261,7 @@ export default function ClientDetailPage() {
         onOpenChange={setBlocking}
         title={`Block ${client.name}?`}
         body="They stop appearing as a choice on a new sale. Nothing about their history or their debt changes, and you can unblock them at any time."
-        confirmLabel="Block"
+        confirmLabel={t('Block')}
         destructive
         onConfirm={() => {
           actions.setStatus(client.id, 'blocked')

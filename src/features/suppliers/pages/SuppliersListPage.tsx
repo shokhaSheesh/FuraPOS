@@ -30,6 +30,7 @@ import {
   portalStateLabel,
   portalStateTone,
 } from '../model/supplier'
+import { t } from '@/shared/i18n'
 
 /**
  * Who we buy from — and, mostly, what that relationship is costing.
@@ -66,7 +67,7 @@ export default function SuppliersListPage() {
     () => [
       {
         id: 'name',
-        header: 'Supplier',
+        header: t('Supplier'),
         enableHiding: false,
         cell: ({ row }) => (
           <div className="min-w-0">
@@ -79,19 +80,21 @@ export default function SuppliersListPage() {
       },
       {
         id: 'debt',
-        header: 'We owe',
+        header: t('We owe'),
         meta: { align: 'right' },
         enableHiding: false,
         cell: ({ row }) => {
           const { supplier } = row.original
-          if (supplier.debt <= 0) return <Badge tone="success">Nothing owed</Badge>
+          if (supplier.debt <= 0) return <Badge tone="success">{t('Nothing owed')}</Badge>
           const overdue = daysOverdue(supplier)
           return (
             <div>
               <p className="text-danger font-medium tabular-nums">{formatMoney(supplier.debt)}</p>
               {/* Overdue only means something once terms were agreed. */}
               {overdue ? (
-                <p className="text-danger text-2xs">{formatNumber(overdue)} days past terms</p>
+                <p className="text-danger text-2xs">
+                  {formatNumber(overdue)} {t('days past terms')}
+                </p>
               ) : null}
             </div>
           )
@@ -99,17 +102,17 @@ export default function SuppliersListPage() {
       },
       {
         id: 'lastPayment',
-        header: 'Last paid',
+        header: t('Last paid'),
         cell: ({ row }) =>
           row.original.supplier.lastPaymentAt ? (
             formatDate(row.original.supplier.lastPaymentAt)
           ) : (
-            <span className="text-fg-subtle">Never</span>
+            <span className="text-fg-subtle">{t('Never')}</span>
           ),
       },
       {
         id: 'sold',
-        header: 'Sold on',
+        header: t('Sold on'),
         enableHiding: false,
         cell: ({ row }) => {
           const { soldRatio, purchased } = row.original.stats
@@ -131,7 +134,7 @@ export default function SuppliersListPage() {
       },
       {
         id: 'onHand',
-        header: 'Still on the shelf',
+        header: t('Still on the shelf'),
         meta: { align: 'right' },
         cell: ({ row }) => {
           const { onHandUnits, onHandValue } = row.original.stats
@@ -150,7 +153,7 @@ export default function SuppliersListPage() {
         ? [
             {
               id: 'purchased',
-              header: 'Bought from them',
+              header: t('Bought from them'),
               meta: { align: 'right' as const },
               cell: ({ row }: { row: { original: SupplierRow } }) =>
                 row.original.stats.purchased === 0 ? (
@@ -163,20 +166,20 @@ export default function SuppliersListPage() {
         : []),
       {
         id: 'products',
-        header: 'Products',
+        header: t('Products'),
         meta: { align: 'right' },
         cell: ({ row }) => formatNumber(row.original.stats.products),
       },
       {
         id: 'zone',
-        header: 'Zone',
+        header: t('Zone'),
         cell: ({ row }) => row.original.supplier.zone ?? <span className="text-fg-subtle">—</span>,
       },
       ...(canSeePortal
         ? [
             {
               id: 'portal',
-              header: 'Portal login',
+              header: t('Portal login'),
               cell: ({ row }: { row: { original: SupplierRow } }) => {
                 const state = portalState(row.original.supplier)
                 return (
@@ -200,11 +203,11 @@ export default function SuppliersListPage() {
         : []),
       {
         id: 'activity',
-        header: 'Activity',
+        header: t('Activity'),
         cell: ({ row }) => {
           const { stats } = row.original
           if (isDormant(stats)) {
-            return <Badge tone="warning">Nothing in 90 days</Badge>
+            return <Badge tone="warning">{t('Nothing in 90 days')}</Badge>
           }
           return (
             <span className="text-fg-muted text-2xs">
@@ -215,7 +218,7 @@ export default function SuppliersListPage() {
       },
       {
         accessorKey: 'phone',
-        header: 'Phone',
+        header: t('Phone'),
         cell: ({ row }) => row.original.supplier.phone ?? <span className="text-fg-subtle">—</span>,
       },
     ],
@@ -226,14 +229,16 @@ export default function SuppliersListPage() {
   return (
     <>
       <PageHeader
-        title="Suppliers"
-        description="Who we buy from, what we still owe them, and how much of what they sent us has actually sold."
+        title={t('Suppliers')}
+        description={t(
+          'Who we buy from, what we still owe them, and how much of what they sent us has actually sold.',
+        )}
         action={
           can('products.suppliers.create') ? (
             <Button variant="primary" asChild>
               <Link to={paths.products.newSupplier}>
                 <Plus />
-                Add supplier
+                {t('Add supplier')}
               </Link>
             </Button>
           ) : null
@@ -241,11 +246,11 @@ export default function SuppliersListPage() {
         below={
           <div className="flex flex-wrap items-center gap-2">
             <StatusChips
-              ariaLabel="Which suppliers to show"
+              ariaLabel={t('Which suppliers to show')}
               options={[
-                { value: null, label: 'All' },
-                { value: 'owed', label: 'We owe them' },
-                { value: 'dormant', label: 'Gone quiet' },
+                { value: null, label: t('All') },
+                { value: 'owed', label: t('We owe them') },
+                { value: 'dormant', label: t('Gone quiet') },
               ]}
               value={(query.lens as string | null) ?? null}
               onChange={(next) => setQuery({ lens: next, page: null })}
@@ -253,9 +258,9 @@ export default function SuppliersListPage() {
             />
             {zones.length > 1 ? (
               <FilterSelect
-                aria-label="Filter by zone"
-                label="In"
-                allLabel="Every zone"
+                aria-label={t('Filter by zone')}
+                label={t('In')}
+                allLabel={t('Every zone')}
                 value={(query.zone as string | null) ?? null}
                 options={zones.map((zone) => ({ value: zone, label: zone }))}
                 onChange={(next) => setQuery({ zone: next, page: null })}
@@ -270,8 +275,10 @@ export default function SuppliersListPage() {
       {canSeeCost && summary.unattributedValue > 0 ? (
         <Card>
           <div className="text-fg-muted p-4 text-sm">
-            {formatMoney(summary.unattributedValue)} of stock came in on receipts with no supplier
-            recorded, so none of the figures above can account for it.
+            {formatMoney(summary.unattributedValue)}{' '}
+            {t(
+              'of stock came in on receipts with no supplier recorded, so none of the figures above can account for it.',
+            )}
           </div>
         </Card>
       ) : null}
@@ -298,17 +305,19 @@ export default function SuppliersListPage() {
         onRowClick={(row) => navigate(paths.products.supplierDetail(row.supplier.id))}
         emptyState={
           query.search || query.f || query.lens || query.zone ? (
-            <EmptyState title="No suppliers match these filters" />
+            <EmptyState title={t('No suppliers match these filters')} />
           ) : (
             <EmptyState
-              title="No suppliers yet"
-              description="A supplier is who a goods receipt came from. Adding them is what lets the app answer what you owe and what you bought."
+              title={t('No suppliers yet')}
+              description={t(
+                'A supplier is who a goods receipt came from. Adding them is what lets the app answer what you owe and what you bought.',
+              )}
               action={
                 can('products.suppliers.create') ? (
                   <Button variant="primary" asChild>
                     <Link to={paths.products.newSupplier}>
                       <Plus />
-                      Add supplier
+                      {t('Add supplier')}
                     </Link>
                   </Button>
                 ) : null

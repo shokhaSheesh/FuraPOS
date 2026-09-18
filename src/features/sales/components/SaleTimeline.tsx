@@ -1,6 +1,7 @@
 import { CheckCircle2, Circle, Clock } from 'lucide-react'
 import { formatDateTime } from '@/shared/lib/format'
 import type { Sale } from '../model/sale'
+import { t } from '@/shared/i18n'
 
 /**
  * What has actually happened to this sale, from the timestamps we hold. It is
@@ -9,9 +10,9 @@ import type { Sale } from '../model/sale'
  */
 export function SaleTimeline({ sale }: { sale: Sale }) {
   const events = [
-    { label: 'Created', at: sale.createdAt, done: true },
+    { label: t('Created'), at: sale.createdAt, done: true },
     {
-      label: 'Last updated',
+      label: t('Last updated'),
       at: sale.updatedAt !== sale.createdAt ? sale.updatedAt : null,
       done: sale.updatedAt !== sale.createdAt,
     },
@@ -21,7 +22,7 @@ export function SaleTimeline({ sale }: { sale: Sale }) {
       done: false,
       pending: true,
     },
-    { label: 'Finished', at: sale.finishedAt, done: Boolean(sale.finishedAt) },
+    { label: t('Finished'), at: sale.finishedAt, done: Boolean(sale.finishedAt) },
   ].filter((event) => event.label)
 
   return (
@@ -42,7 +43,7 @@ export function SaleTimeline({ sale }: { sale: Sale }) {
             <div>
               <p className="text-fg text-sm">{event.label}</p>
               <p className="text-fg-subtle text-2xs">
-                {event.at ? formatDateTime(event.at) : 'Not yet'}
+                {event.at ? formatDateTime(event.at) : t('Not yet')}
               </p>
             </div>
           </li>

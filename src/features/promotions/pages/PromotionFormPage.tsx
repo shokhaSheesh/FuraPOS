@@ -26,6 +26,7 @@ import {
   promotionDraftSchema,
   type PromotionDraft,
 } from '../model/promotion'
+import { t } from '@/shared/i18n'
 
 /** A basket to show the rule against, so the numbers mean something. */
 const EXAMPLE_SALE = 3_000_000
@@ -142,10 +143,10 @@ export default function PromotionFormPage() {
   if (editing && !existing) {
     return (
       <EmptyState
-        title="No such promotion"
+        title={t('No such promotion')}
         action={
           <Button variant="secondary" asChild>
-            <Link to={paths.marketing.promotions}>Back to promotions</Link>
+            <Link to={paths.marketing.promotions}>{t('Back to promotions')}</Link>
           </Button>
         }
       />
@@ -199,14 +200,14 @@ export default function PromotionFormPage() {
       }
       if (editing && existing) {
         actions.update(existing.id, input)
-        toast.success('Saved')
+        toast.success(t('Saved'))
       } else {
         actions.create(input)
         toast.success(`${draft.name} set up`)
       }
       navigate(paths.marketing.promotions)
     },
-    () => toast.error('Check the highlighted fields'),
+    () => toast.error(t('Check the highlighted fields')),
   )
 
   return (
@@ -214,17 +215,19 @@ export default function PromotionFormPage() {
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
         <Link to={paths.marketing.promotions}>
           <ArrowLeft />
-          Promotions
+          {t('Promotions')}
         </Link>
       </Button>
 
       <PageHeader
-        title={editing ? 'Edit promotion' : 'New promotion'}
-        description="A discount with a reason and an end date. While it runs, the New sale screen applies it for the seller."
+        title={editing ? t('Edit promotion') : t('New promotion')}
+        description={t(
+          'A discount with a reason and an end date. While it runs, the New sale screen applies it for the seller.',
+        )}
         action={
           <Button type="submit" variant="primary">
             <Save />
-            {editing ? 'Save changes' : 'Set it up'}
+            {editing ? t('Save changes') : t('Set it up')}
           </Button>
         }
       />
@@ -232,22 +235,22 @@ export default function PromotionFormPage() {
       <div className="mt-4 space-y-3">
         <Card>
           <CardHeader>
-            <CardTitle>The offer</CardTitle>
+            <CardTitle>{t('The offer')}</CardTitle>
           </CardHeader>
           <CardBody className="grid gap-3 sm:grid-cols-2">
-            <Field label="Name" required error={form.formState.errors.name?.message}>
+            <Field label={t('Name')} required error={form.formState.errors.name?.message}>
               {(p) => (
-                <Input {...p} placeholder="Autumn service check" {...form.register('name')} />
+                <Input {...p} placeholder={t('Autumn service check')} {...form.register('name')} />
               )}
             </Field>
-            <Field label="Discount type">
+            <Field label={t('Discount type')}>
               {() => (
                 <Controller
                   control={form.control}
                   name="kind"
                   render={({ field }) => (
                     <SegmentedControl
-                      aria-label="Discount type"
+                      aria-label={t('Discount type')}
                       value={field.value}
                       onChange={field.onChange}
                       options={PROMOTION_KINDS.map((entry) => ({
@@ -260,7 +263,7 @@ export default function PromotionFormPage() {
               )}
             </Field>
             <Field
-              label={values.kind === 'percentage' ? 'Percent off' : 'Amount off'}
+              label={values.kind === 'percentage' ? t('Percent off') : t('Amount off')}
               required
               error={form.formState.errors.value?.message}
             >
@@ -290,8 +293,8 @@ export default function PromotionFormPage() {
               )}
             </Field>
             <Field
-              label="Smallest sale it applies to"
-              hint="Leave empty to apply to any sale"
+              label={t('Smallest sale it applies to')}
+              hint={t('Leave empty to apply to any sale')}
               error={form.formState.errors.minimumSale?.message}
             >
               {(p) => (
@@ -303,7 +306,7 @@ export default function PromotionFormPage() {
                       {...p}
                       className="w-full"
                       min={0}
-                      placeholder="Any sale"
+                      placeholder={t('Any sale')}
                       value={field.value}
                       onChange={field.onChange}
                       onBlur={field.onBlur}
@@ -317,10 +320,10 @@ export default function PromotionFormPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>What it applies to</CardTitle>
+            <CardTitle>{t('What it applies to')}</CardTitle>
           </CardHeader>
           <CardBody className="grid gap-3 sm:grid-cols-2">
-            <Field label="Scope">
+            <Field label={t('Scope')}>
               {(p) => (
                 <Controller
                   control={form.control}
@@ -344,12 +347,14 @@ export default function PromotionFormPage() {
             </Field>
             {values.scope !== 'all' ? (
               <Field
-                label={values.scope === 'category' ? 'Categories' : 'Products'}
+                label={values.scope === 'category' ? t('Categories') : t('Products')}
                 required
                 hint={
                   values.scope === 'category'
-                    ? 'Pick as many as the offer covers'
-                    : 'Every variation of each one is covered — both sides of a part, every colour'
+                    ? t('Pick as many as the offer covers')
+                    : t(
+                        'Every variation of each one is covered — both sides of a part, every colour',
+                      )
                 }
                 error={form.formState.errors.scopeIds?.message}
               >
@@ -365,7 +370,7 @@ export default function PromotionFormPage() {
                         onChange={field.onChange}
                         options={scopeOptions}
                         placeholder={
-                          values.scope === 'category' ? 'Pick categories' : 'Pick products'
+                          values.scope === 'category' ? t('Pick categories') : t('Pick products')
                         }
                         searchPlaceholder={
                           values.scope === 'category'
@@ -383,17 +388,17 @@ export default function PromotionFormPage() {
 
         <Card>
           <CardHeader className="flex-col items-stretch gap-1">
-            <CardTitle>Who gets it</CardTitle>
+            <CardTitle>{t('Who gets it')}</CardTitle>
             {/* Separate from the scope on purpose: "15% off brakes" and "15%
                 off, but only for these hauliers" are different offers. */}
             <p className="text-fg-subtle text-2xs">
-              What it covers and who it is for are two different questions. A targeted offer fires
-              only when that autopark is on the sale — one of its drivers buying on its contract —
-              or, for a driver offer, when that owner-driver is the one collecting.
+              {t(
+                'What it covers and who it is for are two different questions. A targeted offer fires only when that autopark is on the sale — one of its drivers buying on its contract — or, for a driver offer, when that owner-driver is the one collecting.',
+              )}
             </p>
           </CardHeader>
           <CardBody className="grid gap-3 sm:grid-cols-2">
-            <Field label="Audience">
+            <Field label={t('Audience')}>
               {(p) => (
                 <Controller
                   control={form.control}
@@ -419,9 +424,11 @@ export default function PromotionFormPage() {
             </Field>
             {values.audience === 'clients' ? (
               <Field
-                label="Autoparks"
+                label={t('Autoparks')}
                 required
-                hint="A sale with no autopark on it — an owner-driver buying for himself — never gets a targeted offer"
+                hint={t(
+                  'A sale with no autopark on it — an owner-driver buying for himself — never gets a targeted offer',
+                )}
                 error={form.formState.errors.clientIds?.message}
               >
                 {(p) => (
@@ -435,7 +442,7 @@ export default function PromotionFormPage() {
                         value={field.value}
                         onChange={field.onChange}
                         options={clientOptions}
-                        placeholder="Pick autoparks"
+                        placeholder={t('Pick autoparks')}
                         searchPlaceholder="Search by name or phone…"
                       />
                     )}
@@ -446,9 +453,9 @@ export default function PromotionFormPage() {
 
             {values.audience === 'drivers' ? (
               <Field
-                label="Drivers"
+                label={t('Drivers')}
                 required
-                hint="Owner-drivers only — a company's driver is reached through its contract"
+                hint={t("Owner-drivers only — a company's driver is reached through its contract")}
                 error={form.formState.errors.driverIds?.message}
               >
                 {(p) => (
@@ -462,7 +469,7 @@ export default function PromotionFormPage() {
                         value={field.value}
                         onChange={field.onChange}
                         options={driverOptions}
-                        placeholder="Pick drivers"
+                        placeholder={t('Pick drivers')}
                         searchPlaceholder="Search by name, phone or plate…"
                       />
                     )}
@@ -475,10 +482,10 @@ export default function PromotionFormPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>When it runs</CardTitle>
+            <CardTitle>{t('When it runs')}</CardTitle>
           </CardHeader>
           <CardBody className="grid gap-3 sm:grid-cols-2">
-            <Field label="Starts">
+            <Field label={t('Starts')}>
               {() => (
                 <Controller
                   control={form.control}
@@ -494,8 +501,8 @@ export default function PromotionFormPage() {
               )}
             </Field>
             <Field
-              label="Ends"
-              hint="Leave empty to run until somebody stops it"
+              label={t('Ends')}
+              hint={t('Leave empty to run until somebody stops it')}
               error={form.formState.errors.endsAt?.message}
             >
               {() => (
@@ -512,9 +519,13 @@ export default function PromotionFormPage() {
                 />
               )}
             </Field>
-            <Field label="Note" className="sm:col-span-2">
+            <Field label={t('Note')} className="sm:col-span-2">
               {(p) => (
-                <Input {...p} placeholder="Why this is running" {...form.register('comment')} />
+                <Input
+                  {...p}
+                  placeholder={t('Why this is running')}
+                  {...form.register('comment')}
+                />
               )}
             </Field>
           </CardBody>
@@ -539,7 +550,7 @@ export default function PromotionFormPage() {
                     )}, to ${formatMoney(EXAMPLE_SALE - exampleDiscount)}.`}
               </p>
               <p className="text-fg-subtle text-2xs">
-                Only one promotion applies to a sale — whichever gives the customer the most.
+                {t('Only one promotion applies to a sale — whichever gives the customer the most.')}
               </p>
             </div>
           </CardBody>

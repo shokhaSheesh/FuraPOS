@@ -14,6 +14,7 @@ import { toast } from '@/shared/ui/toast'
 import { paths } from '@/shared/config/paths'
 import { useClient, useClientActions } from '../api/clients'
 import { CLIENT_STATUSES, clientDraftSchema, type ClientDraft } from '../model/client'
+import { t } from '@/shared/i18n'
 
 /**
  * Adding or editing a client.
@@ -58,10 +59,10 @@ export default function ClientFormPage() {
   if (editing && !existing) {
     return (
       <EmptyState
-        title="No such autopark"
+        title={t('No such autopark')}
         action={
           <Button variant="secondary" asChild>
-            <Link to={paths.users.autoparks}>Back to autoparks</Link>
+            <Link to={paths.users.autoparks}>{t('Back to autoparks')}</Link>
           </Button>
         }
       />
@@ -79,7 +80,7 @@ export default function ClientFormPage() {
       }
       if (editing && existing) {
         actions.update(existing.id, input)
-        toast.success('Saved')
+        toast.success(t('Saved'))
         navigate(paths.users.autoparkDetail(existing.id))
       } else {
         const created = actions.create(input)
@@ -87,7 +88,7 @@ export default function ClientFormPage() {
         navigate(paths.users.autoparkDetail(created.id))
       }
     },
-    () => toast.error('Check the highlighted fields'),
+    () => toast.error(t('Check the highlighted fields')),
   )
 
   return (
@@ -97,17 +98,19 @@ export default function ClientFormPage() {
           to={editing && existing ? paths.users.autoparkDetail(existing.id) : paths.users.autoparks}
         >
           <ArrowLeft />
-          {editing && existing ? existing.name : 'Autoparks'}
+          {editing && existing ? existing.name : t('Autoparks')}
         </Link>
       </Button>
 
       <PageHeader
-        title={editing ? 'Edit autopark' : 'Add autopark'}
-        description="An autopark is given an account, which lets a sale be put on their credit instead of paid up front."
+        title={editing ? t('Edit autopark') : t('Add autopark')}
+        description={t(
+          'An autopark is given an account, which lets a sale be put on their credit instead of paid up front.',
+        )}
         action={
           <Button type="submit" variant="primary">
             <Save />
-            {editing ? 'Save changes' : 'Add autopark'}
+            {editing ? t('Save changes') : t('Add autopark')}
           </Button>
         }
       />
@@ -115,10 +118,10 @@ export default function ClientFormPage() {
       <div className="mt-4 space-y-3">
         <Card>
           <CardHeader>
-            <CardTitle>Who they are</CardTitle>
+            <CardTitle>{t('Who they are')}</CardTitle>
           </CardHeader>
           <CardBody className="grid gap-3 sm:grid-cols-2">
-            <Field label="Status">
+            <Field label={t('Status')}>
               {(p) => (
                 <Controller
                   control={form.control}
@@ -138,7 +141,7 @@ export default function ClientFormPage() {
                 />
               )}
             </Field>
-            <Field label="Name" required error={form.formState.errors.name?.message}>
+            <Field label={t('Name')} required error={form.formState.errors.name?.message}>
               {(p) => (
                 <Input
                   {...p}
@@ -147,13 +150,15 @@ export default function ClientFormPage() {
                 />
               )}
             </Field>
-            <Field label="Phone">
+            <Field label={t('Phone')}>
               {(p) => <Input {...p} placeholder="+998 90 123 45 67" {...form.register('phone')} />}
             </Field>
-            <Field label="Email" error={form.formState.errors.email?.message}>
-              {(p) => <Input {...p} placeholder="info@example.uz" {...form.register('email')} />}
+            <Field label={t('Email')} error={form.formState.errors.email?.message}>
+              {(p) => (
+                <Input {...p} placeholder={t('info@example.uz')} {...form.register('email')} />
+              )}
             </Field>
-            <Field label="Address">
+            <Field label={t('Address')}>
               {(p) => <Input {...p} placeholder="Ташкент, ул. …" {...form.register('address')} />}
             </Field>
           </CardBody>
@@ -161,12 +166,12 @@ export default function ClientFormPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Account</CardTitle>
+            <CardTitle>{t('Account')}</CardTitle>
           </CardHeader>
           <CardBody className="grid gap-3 sm:grid-cols-2">
             <Field
-              label="Credit limit"
-              hint="How much they may owe at once. Leave empty for someone who pays up front."
+              label={t('Credit limit')}
+              hint={t('How much they may owe at once. Leave empty for someone who pays up front.')}
               error={form.formState.errors.creditLimit?.message}
             >
               {(p) => (
@@ -178,7 +183,7 @@ export default function ClientFormPage() {
                       {...p}
                       className="w-full"
                       min={0}
-                      placeholder="No account"
+                      placeholder={t('No account')}
                       value={field.value}
                       onChange={field.onChange}
                       onBlur={field.onBlur}
@@ -187,9 +192,13 @@ export default function ClientFormPage() {
                 />
               )}
             </Field>
-            <Field label="Note">
+            <Field label={t('Note')}>
               {(p) => (
-                <Input {...p} placeholder="Anything worth knowing" {...form.register('comment')} />
+                <Input
+                  {...p}
+                  placeholder={t('Anything worth knowing')}
+                  {...form.register('comment')}
+                />
               )}
             </Field>
           </CardBody>

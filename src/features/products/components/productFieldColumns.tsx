@@ -5,6 +5,7 @@ import { formatMoney, formatNumber } from '@/shared/lib/format'
 import { plainText } from '@/shared/ui/RichTextEditor'
 import type { VariationRow } from '../model/product'
 import { PRODUCT_COLUMN_ORDER } from './productColumns'
+import { t } from '@/shared/i18n'
 
 const Empty = () => <span className="text-fg-subtle">—</span>
 
@@ -39,7 +40,7 @@ export function buildProductFieldColumns<T extends RowData>({
   const columns: TableColumn<T>[] = [
     {
       id: 'image',
-      header: 'Image',
+      header: t('Image'),
       enableSorting: false,
       cell: ({ row }) => (
         <ProductThumb src={variationOf(row.original)?.imageUrl ?? null} size="sm" />
@@ -47,29 +48,29 @@ export function buildProductFieldColumns<T extends RowData>({
     },
     {
       id: 'productName',
-      header: 'Product name',
+      header: t('Product name'),
       enableHiding: false,
       cell: ({ row }) => (
         <span className="font-medium">
-          {variationOf(row.original)?.productName ?? 'Removed product'}
+          {variationOf(row.original)?.productName ?? t('Removed product')}
         </span>
       ),
     },
     {
       id: 'name',
-      header: 'Variation name',
+      header: t('Variation name'),
       cell: ({ row }) => text(variationOf(row.original)?.name),
     },
     {
       id: 'sku',
-      header: 'SKU',
+      header: t('SKU'),
       cell: ({ row }) => (
         <span className="text-2xs font-mono">{variationOf(row.original)?.sku ?? '—'}</span>
       ),
     },
     {
       id: 'barcode',
-      header: 'Barcode',
+      header: t('Barcode'),
       cell: ({ row }) => {
         const code = variationOf(row.original)?.barcode
         return code ? <span className="text-2xs font-mono">{code}</span> : <Empty />
@@ -77,7 +78,7 @@ export function buildProductFieldColumns<T extends RowData>({
     },
     {
       id: 'stock',
-      header: 'Quantity',
+      header: t('Quantity'),
       meta: { align: 'right' },
       cell: ({ row }) => {
         const v = variationOf(row.original)
@@ -100,7 +101,7 @@ export function buildProductFieldColumns<T extends RowData>({
     },
     {
       id: 'location',
-      header: 'Location',
+      header: t('Location'),
       enableSorting: false,
       cell: ({ row }) => {
         const at = (variationOf(row.original)?.stockByLocation ?? []).filter((e) => e.quantity > 0)
@@ -117,7 +118,7 @@ export function buildProductFieldColumns<T extends RowData>({
     },
     {
       id: 'shelfAddress',
-      header: 'Storage address',
+      header: t('Storage address'),
       cell: ({ row }) => {
         const address = variationOf(row.original)?.shelfAddress
         return address ? <span className="text-2xs font-mono">{address}</span> : <Empty />
@@ -125,7 +126,7 @@ export function buildProductFieldColumns<T extends RowData>({
     },
     {
       id: 'salePrice',
-      header: 'Sale price',
+      header: t('Sale price'),
       meta: { align: 'right' },
       cell: ({ row }) => {
         const v = variationOf(row.original)
@@ -136,7 +137,7 @@ export function buildProductFieldColumns<T extends RowData>({
       ? [
           {
             id: 'costPrice',
-            header: 'Supplier price',
+            header: t('Supplier price'),
             meta: { align: 'right' as const },
             cell: ({ row }: { row: { original: T } }) => {
               const v = variationOf(row.original)
@@ -147,22 +148,22 @@ export function buildProductFieldColumns<T extends RowData>({
       : []),
     {
       id: 'brandName',
-      header: 'Supplier',
+      header: t('Supplier'),
       cell: ({ row }) => text(variationOf(row.original)?.brandName),
     },
     {
       id: 'categoryPath',
-      header: 'Category',
+      header: t('Category'),
       cell: ({ row }) => text(variationOf(row.original)?.categoryPath),
     },
     {
       id: 'partSide',
-      header: 'Part',
+      header: t('Part'),
       cell: ({ row }) => text(variationOf(row.original)?.partSide),
     },
     {
       id: 'oem',
-      header: 'OEM',
+      header: t('OEM'),
       cell: ({ row }) => {
         const oem = variationOf(row.original)?.oem
         return oem ? <span className="text-2xs font-mono">{oem}</span> : <Empty />
@@ -170,7 +171,7 @@ export function buildProductFieldColumns<T extends RowData>({
     },
     {
       id: 'vehicleMakes',
-      header: 'Make',
+      header: t('Make'),
       cell: ({ row }) => {
         const makes = variationOf(row.original)?.vehicleMakes ?? []
         return makes.length ? makes.join(', ') : <Empty />
@@ -178,7 +179,7 @@ export function buildProductFieldColumns<T extends RowData>({
     },
     {
       id: 'vehicleModels',
-      header: 'Model',
+      header: t('Model'),
       cell: ({ row }) => {
         const models = variationOf(row.original)?.vehicleModels ?? []
         return models.length ? models.join(', ') : <Empty />
@@ -186,17 +187,17 @@ export function buildProductFieldColumns<T extends RowData>({
     },
     {
       id: 'manufacturer',
-      header: 'Product brand',
+      header: t('Product brand'),
       cell: ({ row }) => text(variationOf(row.original)?.manufacturer),
     },
     {
       id: 'categoryName',
-      header: 'End category',
+      header: t('End category'),
       cell: ({ row }) => text(variationOf(row.original)?.categoryName),
     },
     {
       id: 'cargoWeightKg',
-      header: 'Cargo weight',
+      header: t('Cargo weight'),
       meta: { align: 'right' },
       cell: ({ row }) => {
         const kg = variationOf(row.original)?.cargoWeightKg
@@ -205,12 +206,12 @@ export function buildProductFieldColumns<T extends RowData>({
     },
     {
       id: 'cargoSize',
-      header: 'Cargo size',
+      header: t('Cargo size'),
       cell: ({ row }) => text(variationOf(row.original)?.cargoSize),
     },
     {
       id: 'description',
-      header: 'Description',
+      header: t('Description'),
       cell: ({ row }) => {
         const words = plainText(variationOf(row.original)?.description ?? '')
         return words ? <span title={words}>{words}</span> : <Empty />

@@ -20,6 +20,7 @@ import {
   supplierTotal,
   type GoodsReceipt,
 } from '../model/receipt'
+import { t } from '@/shared/i18n'
 
 const Empty = () => <span className="text-fg-subtle">—</span>
 
@@ -52,18 +53,18 @@ export function buildReceiptColumns({
   return [
     {
       accessorKey: 'number',
-      header: 'ID',
+      header: t('ID'),
       enableHiding: false,
       cell: ({ row }) => <span className="text-2xs font-mono">{row.original.number}</span>,
     },
     {
       accessorKey: 'createdAt',
-      header: 'Date',
+      header: t('Date'),
       cell: ({ row }) => formatDateTime(row.original.createdAt),
     },
     {
       id: 'quantity',
-      header: 'Quantity',
+      header: t('Quantity'),
       meta: { align: 'right' },
       cell: ({ row }) =>
         formatNumber(
@@ -79,23 +80,23 @@ export function buildReceiptColumns({
     */
     {
       id: 'soldThrough',
-      header: 'Sold',
+      header: t('Sold'),
       enableHiding: false,
       cell: ({ row }) => (
-        <SoldBar {...soldThrough(row.original, stockAt)} place="since this delivery arrived" />
+        <SoldBar {...soldThrough(row.original, stockAt)} place={t('since this delivery arrived')} />
       ),
     },
     {
       accessorKey: 'locationName',
-      header: 'Location',
+      header: t('Location'),
     },
     {
       accessorKey: 'createdBy',
-      header: 'User',
+      header: t('User'),
     },
     {
       accessorKey: 'status',
-      header: 'Status',
+      header: t('Status'),
       cell: ({ row }) => (
         <Badge tone={receiptStatusTone(row.original.status)}>
           {receiptStatusLabel(row.original.status)}
@@ -104,7 +105,7 @@ export function buildReceiptColumns({
     },
     {
       accessorKey: 'kind',
-      header: 'Type',
+      header: t('Type'),
       cell: ({ row }) => (
         <Badge tone="neutral">
           {PROCUREMENT_KINDS.find((k) => k.value === row.original.kind)?.label ?? row.original.kind}
@@ -113,7 +114,7 @@ export function buildReceiptColumns({
     },
     {
       accessorKey: 'supplierName',
-      header: 'Suppliers',
+      header: t('Suppliers'),
       enableHiding: false,
       // A market or China buy has no supplier record, so the source phrase
       // stands in — an unlabelled dash would read as "we don't know".
@@ -126,7 +127,7 @@ export function buildReceiptColumns({
     */
     {
       accessorKey: 'orderNumber',
-      header: 'Order',
+      header: t('Order'),
       cell: ({ row }) =>
         row.original.orderId && row.original.orderNumber ? (
           <Link
@@ -142,14 +143,14 @@ export function buildReceiptColumns({
     },
     {
       accessorKey: 'comment',
-      header: 'Note',
+      header: t('Note'),
       cell: ({ row }) => row.original.comment ?? <Empty />,
     },
     ...(canSeeCost
       ? [
           {
             id: 'landed',
-            header: 'Cost price',
+            header: t('Cost price'),
             meta: { align: 'right' as const },
             cell: ({ row }: { row: { original: GoodsReceipt } }) => (
               <span className="font-medium">{formatMoney(landedTotal(row.original, usdRate))}</span>
@@ -157,14 +158,14 @@ export function buildReceiptColumns({
           },
           {
             id: 'retail',
-            header: 'Sale price',
+            header: t('Sale price'),
             meta: { align: 'right' as const },
             cell: ({ row }: { row: { original: GoodsReceipt } }) =>
               formatMoney(retailValue(row.original, salePriceOf)),
           },
           {
             id: 'supplierTotal',
-            header: 'Supply price',
+            header: t('Supply price'),
             meta: { align: 'right' as const },
             cell: ({ row }: { row: { original: GoodsReceipt } }) =>
               formatMoney(supplierTotal(row.original, usdRate)),
@@ -179,12 +180,12 @@ export function buildReceiptColumns({
         <RowActions
           actions={[
             {
-              label: 'Download',
+              label: t('Download'),
               icon: Download,
               onSelect: () => onDownload(row.original),
             },
             {
-              label: 'Delete receipt',
+              label: t('Delete receipt'),
               icon: Ban,
               destructive: true,
               hidden: !canCancelReceipts || !canCancel(row.original.status),

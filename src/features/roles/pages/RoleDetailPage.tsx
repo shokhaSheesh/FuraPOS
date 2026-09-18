@@ -14,6 +14,7 @@ import { Avatar } from '@/features/employees/components/Avatar'
 import { useRole, useRoleActions, useRoleHolders } from '../api/roles'
 import { PermissionGrid } from '../components/PermissionGrid'
 import { grantedKeys, isFullAccess } from '../model/role'
+import { t } from '@/shared/i18n'
 
 /**
  * Editing what a role can reach.
@@ -38,10 +39,10 @@ export default function RoleDetailPage() {
   if (!role) {
     return (
       <EmptyState
-        title="No such role"
+        title={t('No such role')}
         action={
           <Button variant="secondary" asChild>
-            <Link to={paths.users.roles}>Back to roles</Link>
+            <Link to={paths.users.roles}>{t('Back to roles')}</Link>
           </Button>
         }
       />
@@ -67,7 +68,7 @@ export default function RoleDetailPage() {
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
         <Link to={paths.users.roles}>
           <ArrowLeft />
-          Access & roles
+          {t('Access & roles')}
         </Link>
       </Button>
 
@@ -79,12 +80,12 @@ export default function RoleDetailPage() {
               {dirty ? (
                 <Button variant="secondary" onClick={() => setDraft(saved)}>
                   <Undo2 />
-                  Discard
+                  {t('Discard')}
                 </Button>
               ) : null}
               <Button variant="primary" onClick={save} disabled={!dirty}>
                 <Save />
-                Save changes
+                {t('Save changes')}
               </Button>
             </div>
           )
@@ -94,17 +95,17 @@ export default function RoleDetailPage() {
             {role.isSystem ? (
               <Badge tone="warning">
                 <Lock className="size-3" />
-                Built in
+                {t('Built in')}
               </Badge>
             ) : null}
             <span className="text-fg-muted text-sm">
               {isFullAccess(role)
-                ? 'Everything, including modules added later'
+                ? t('Everything, including modules added later')
                 : `${formatNumber(draft.size)} of ${formatNumber(role.total)} permissions`}
             </span>
             {dirty ? (
               <span className="text-warning text-2xs">
-                · unsaved: {added ? `+${formatNumber(added)}` : ''}
+                {t('· unsaved:')} {added ? `+${formatNumber(added)}` : ''}
                 {added && removed ? ' ' : ''}
                 {removed ? `−${formatNumber(removed)}` : ''}
               </span>
@@ -116,10 +117,10 @@ export default function RoleDetailPage() {
       {role.isSystem ? (
         <Card className="border-warning/40">
           <CardBody className="text-fg-muted text-sm">
-            <span className="text-fg font-medium">This role cannot be changed.</span> It is the way
-            back in when something else is mis-configured — a product where every administrator can
-            be locked out is a product that eventually locks everyone out. It also picks up any
-            module added in future automatically.
+            <span className="text-fg font-medium">{t('This role cannot be changed.')}</span>{' '}
+            {t(
+              'It is the way back in when something else is mis-configured — a product where every administrator can be locked out is a product that eventually locks everyone out. It also picks up any module added in future automatically.',
+            )}
           </CardBody>
         </Card>
       ) : null}
@@ -127,7 +128,7 @@ export default function RoleDetailPage() {
       <div className="grid gap-3 lg:grid-cols-4">
         <Card className="lg:col-span-3">
           <CardHeader>
-            <CardTitle>Permissions</CardTitle>
+            <CardTitle>{t('Permissions')}</CardTitle>
           </CardHeader>
           <CardBody>
             <PermissionGrid granted={draft} onChange={setDraft} readOnly={locked} />
@@ -136,18 +137,18 @@ export default function RoleDetailPage() {
 
         <Card className="h-fit">
           <CardHeader>
-            <CardTitle>Who holds it</CardTitle>
+            <CardTitle>{t('Who holds it')}</CardTitle>
           </CardHeader>
           <CardBody className="space-y-2">
             {holders.length === 0 ? (
               <p className="text-fg-subtle text-sm">
-                Nobody has this role yet, so a change here affects no one.
+                {t('Nobody has this role yet, so a change here affects no one.')}
               </p>
             ) : (
               <>
                 <p className="text-fg-subtle text-2xs">
                   {holders.length === 1
-                    ? 'Saving changes what this person sees.'
+                    ? t('Saving changes what this person sees.')
                     : `Saving changes what these ${holders.length} people see.`}
                 </p>
                 {holders.map((employee) => (
@@ -160,7 +161,7 @@ export default function RoleDetailPage() {
                     <div className="min-w-0">
                       <p className="text-fg truncate text-sm">{employee.fullName}</p>
                       <p className="text-fg-subtle text-2xs truncate">
-                        {employee.locationName ?? 'All locations'}
+                        {employee.locationName ?? t('All locations')}
                       </p>
                     </div>
                   </Link>

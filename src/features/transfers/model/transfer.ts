@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { Id, IsoDate } from '@/shared/types'
+import { t } from '@/shared/i18n'
 
 /**
  * A transfer is a document, not an instant edit.
@@ -181,9 +182,9 @@ export const transferSaleValue = (t: Pick<Transfer, 'lines'>) =>
 export function nextStep(status: TransferStatus): { to: TransferStatus; label: string } | null {
   switch (status) {
     case 'draft':
-      return { to: 'in_transit', label: 'Send' }
+      return { to: 'in_transit', label: t('Send') }
     case 'in_transit':
-      return { to: 'received', label: 'Confirm receipt' }
+      return { to: 'received', label: t('Confirm receipt') }
     // 'received' and 'cancelled' are terminal.
     default:
       return null

@@ -11,6 +11,7 @@ import { formatNumber } from '@/shared/lib/format'
 import { useSession } from '@/app/providers/SessionProvider'
 import { useDataStore } from '@/data/store'
 import { vehicleUsage, type VehicleMake, type VehicleModel } from '../model/settings'
+import { t } from '@/shared/i18n'
 
 /**
  * Truck brands and their models.
@@ -42,8 +43,10 @@ export function TruckBrandsPanel({ onEditMake }: { onEditMake: (make: VehicleMak
     return (
       <EmptyState
         icon={Truck}
-        title="No truck brands yet"
-        description="Add the brands you sell parts for — DAF, MAN, Volvo — and then their models."
+        title={t('No truck brands yet')}
+        description={t(
+          'Add the brands you sell parts for — DAF, MAN, Volvo — and then their models.',
+        )}
       />
     )
   }
@@ -51,9 +54,10 @@ export function TruckBrandsPanel({ onEditMake }: { onEditMake: (make: VehicleMak
   return (
     <div className="space-y-3">
       <p className="text-fg-muted text-sm">
-        {formatNumber(makes.length)} brands · {formatNumber(modelCount)} models. Products say which
-        of these they fit, and drivers’ trucks are picked from the same list — renaming here updates
-        both.
+        {formatNumber(makes.length)} {t('brands ·')} {formatNumber(modelCount)}{' '}
+        {t(
+          'models. Products say which of these they fit, and drivers’ trucks are picked from the same list — renaming here updates both.',
+        )}
       </p>
 
       <div className="grid gap-3 lg:grid-cols-2">
@@ -67,20 +71,20 @@ export function TruckBrandsPanel({ onEditMake }: { onEditMake: (make: VehicleMak
                   <p className="text-fg-subtle text-2xs">
                     {formatNumber(make.models.length)}{' '}
                     {make.models.length === 1 ? 'model' : 'models'} · {formatNumber(usage.products)}{' '}
-                    {usage.products === 1 ? 'product fits' : 'products fit'} ·{' '}
+                    {usage.products === 1 ? t('product fits') : t('products fit')} ·{' '}
                     {formatNumber(usage.trucks)} {usage.trucks === 1 ? 'truck' : 'trucks'}
                   </p>
                 </div>
                 <RowActions
                   actions={[
                     {
-                      label: 'Rename',
+                      label: t('Rename'),
                       icon: Pencil,
                       hidden: !can('settings.brands.edit'),
                       onSelect: () => onEditMake(make),
                     },
                     {
-                      label: 'Delete',
+                      label: t('Delete'),
                       icon: Trash2,
                       destructive: true,
                       hidden: !can('settings.brands.delete'),
@@ -133,7 +137,7 @@ function ModelChips({
   return (
     <div className="space-y-3">
       {make.models.length === 0 ? (
-        <p className="text-fg-subtle text-sm">No models yet — add the first one below.</p>
+        <p className="text-fg-subtle text-sm">{t('No models yet — add the first one below.')}</p>
       ) : (
         <ul className="flex flex-wrap gap-1.5">
           {[...make.models]
@@ -168,7 +172,7 @@ function ModelChips({
           />
           <Button type="submit" variant="secondary" size="sm" disabled={!draft.trim()}>
             <Plus />
-            Add
+            {t('Add')}
           </Button>
         </form>
       ) : null}
@@ -242,7 +246,7 @@ function Chip({
         type="button"
         disabled={!canEdit}
         onClick={() => setEditing(true)}
-        title={canEdit ? 'Click to rename' : undefined}
+        title={canEdit ? t('Click to rename') : undefined}
         className="flex items-center gap-1.5 rounded-l-full py-1 pr-1 pl-2.5 hover:underline disabled:hover:no-underline"
       >
         {model.name}

@@ -5,6 +5,7 @@ import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
 import { TagsInput } from '@/shared/ui/TagsInput'
 import { MAX_OPTIONS, type ProductFormValues } from '../model/product'
+import { t } from '@/shared/i18n'
 
 /**
  * Presets, because "option" is jargon until you have seen one. A first-time
@@ -45,7 +46,8 @@ export function ProductOptionsEditor({
     <div className="space-y-2">
       <div className="flex items-baseline justify-between gap-3">
         <p className="text-fg-muted text-sm">
-          Options<span className="text-danger ml-0.5">*</span>
+          {t('Options')}
+          <span className="text-danger ml-0.5">*</span>
         </p>
         <p className="text-fg-subtle text-2xs">
           {full ? `${MAX_OPTIONS} is the maximum` : `Up to ${MAX_OPTIONS}`}
@@ -57,19 +59,19 @@ export function ProductOptionsEditor({
           key={option.id}
           className="border-border rounded-card grid gap-3 border p-3 sm:grid-cols-[minmax(0,12rem)_minmax(0,1fr)_auto]"
         >
-          <Field label="Option name" error={errors?.[index]?.name?.message}>
+          <Field label={t('Option name')} error={errors?.[index]?.name?.message}>
             {(p) => (
               <Input
                 {...p}
-                placeholder="Side"
+                placeholder={t('Side')}
                 value={option.name}
                 onChange={(event) => update(index, { name: event.target.value })}
               />
             )}
           </Field>
           <Field
-            label="Values"
-            hint="Enter after each one"
+            label={t('Values')}
+            hint={t('Enter after each one')}
             error={errors?.[index]?.values?.message}
           >
             {(p) => (
@@ -77,7 +79,7 @@ export function ProductOptionsEditor({
                 id={p.id}
                 value={option.values}
                 onChange={(values) => update(index, { values })}
-                placeholder="Left"
+                placeholder={t('Left')}
               />
             )}
           </Field>
@@ -87,7 +89,7 @@ export function ProductOptionsEditor({
               variant="ghost"
               size="icon"
               aria-label={`Remove the ${option.name || 'unnamed'} option`}
-              title="Remove option"
+              title={t('Remove option')}
               className="hover:text-danger"
               onClick={() => onChange(options.filter((_, i) => i !== index))}
             >
@@ -112,7 +114,7 @@ export function ProductOptionsEditor({
             }
           >
             <Plus />
-            Add option
+            {t('Add option')}
           </Button>
           {availablePresets.length ? (
             <>

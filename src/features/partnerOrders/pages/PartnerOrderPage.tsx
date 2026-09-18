@@ -32,6 +32,7 @@ import {
   type PartnerOrder,
 } from '../model/partnerOrder'
 import { usePartnerOrder, usePartnerOrderActions } from '../api/partnerOrders'
+import { t } from '@/shared/i18n'
 
 /*
   Two, not three. Our side of a partner order ends at the loading bay: what
@@ -56,11 +57,11 @@ export default function PartnerOrderPage() {
   if (!order) {
     return (
       <EmptyState
-        title="That order no longer exists"
-        description="It may have been cancelled since this link was made."
+        title={t('That order no longer exists')}
+        description={t('It may have been cancelled since this link was made.')}
         action={
           <Button variant="secondary" asChild>
-            <Link to={paths.sales.partnerOrders}>Back to partner orders</Link>
+            <Link to={paths.sales.partnerOrders}>{t('Back to partner orders')}</Link>
           </Button>
         }
       />
@@ -70,17 +71,19 @@ export default function PartnerOrderPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <Button variant="ghost" size="icon" aria-label="Back to partner orders" asChild>
+        <Button variant="ghost" size="icon" aria-label={t('Back to partner orders')} asChild>
           <Link to={paths.sales.partnerOrders}>
             <ArrowLeft />
           </Link>
         </Button>
         <h1 className="text-fg text-lg font-semibold">
-          Order {order.number} — {order.clientName}
+          {t('Order')} {order.number} — {order.clientName}
         </h1>
         <Badge tone={partnerStatusTone(order.status)}>{partnerStatusLabel(order.status)}</Badge>
         {order.wantedBy ? (
-          <span className="text-fg-muted text-sm">Wanted by {formatDate(order.wantedBy)}</span>
+          <span className="text-fg-muted text-sm">
+            {t('Wanted by')} {formatDate(order.wantedBy)}
+          </span>
         ) : null}
       </div>
 
@@ -105,9 +108,10 @@ function OrderStep({ order }: { order: PartnerOrder }) {
       <Card>
         <CardHeader className="items-start justify-between gap-3">
           <div>
-            <CardTitle>What they asked for</CardTitle>
+            <CardTitle>{t('What they asked for')}</CardTitle>
             <p className="text-fg-subtle text-2xs mt-0.5">
-              Placed {formatDateTime(order.placedAt)} · ships from {order.locationName}
+              {t('Placed')} {formatDateTime(order.placedAt)} {t('· ships from')}{' '}
+              {order.locationName}
               {order.comment ? ` · ${order.comment}` : ''}
             </p>
           </div>
@@ -115,7 +119,7 @@ function OrderStep({ order }: { order: PartnerOrder }) {
             {canCancel(order.status) && mayEdit ? (
               <Button variant="secondary" size="sm" onClick={() => setConfirmCancel(true)}>
                 <Ban />
-                Decline
+                {t('Decline')}
               </Button>
             ) : null}
             {accept && mayEdit ? (
@@ -143,8 +147,8 @@ function OrderStep({ order }: { order: PartnerOrder }) {
       <ConfirmDialog
         open={confirmCancel}
         onOpenChange={setConfirmCancel}
-        title="Decline this order?"
-        confirmLabel="Decline it"
+        title={t('Decline this order?')}
+        confirmLabel={t('Decline it')}
         body={`${order.number} from ${order.clientName} is closed and its ${formatNumber(
           orderedUnits(order),
         )} units stop being expected. Nothing already sent is affected.`}
@@ -185,22 +189,22 @@ function ShipmentsStep({ order }: { order: PartnerOrder }) {
     <>
       <Card>
         <CardHeader className="items-start justify-between gap-3">
-          <CardTitle>What we have sent</CardTitle>
+          <CardTitle>{t('What we have sent')}</CardTitle>
           {canShip(order.status) && can('sales.orders.edit') ? (
             <Button variant="primary" size="sm" onClick={open}>
               <Truck />
-              Record a shipment
+              {t('Record a shipment')}
             </Button>
           ) : null}
         </CardHeader>
         <CardBody className="p-0">
           {order.shipments.length === 0 ? (
             <EmptyState
-              title="Nothing has gone yet"
+              title={t('Nothing has gone yet')}
               description={
                 order.status === 'new'
-                  ? 'Accept the order on the first step before sending any of it.'
-                  : 'Recording a shipment takes the stock off the shelf it ships from.'
+                  ? t('Accept the order on the first step before sending any of it.')
+                  : t('Recording a shipment takes the stock off the shelf it ships from.')
               }
             />
           ) : (
@@ -208,11 +212,11 @@ function ShipmentsStep({ order }: { order: PartnerOrder }) {
               <table className="w-full min-w-max text-sm">
                 <thead className="bg-canvas">
                   <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-                    <th className="px-4 py-2 text-left font-semibold">Shipment</th>
-                    <th className="px-4 py-2 text-left font-semibold">When</th>
-                    <th className="px-4 py-2 text-left font-semibold">By</th>
-                    <th className="px-4 py-2 text-right font-semibold">Units</th>
-                    <th className="px-4 py-2 text-left font-semibold">Note</th>
+                    <th className="px-4 py-2 text-left font-semibold">{t('Shipment')}</th>
+                    <th className="px-4 py-2 text-left font-semibold">{t('When')}</th>
+                    <th className="px-4 py-2 text-left font-semibold">{t('By')}</th>
+                    <th className="px-4 py-2 text-right font-semibold">{t('Units')}</th>
+                    <th className="px-4 py-2 text-left font-semibold">{t('Note')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -240,7 +244,7 @@ function ShipmentsStep({ order }: { order: PartnerOrder }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Still to send</CardTitle>
+          <CardTitle>{t('Still to send')}</CardTitle>
         </CardHeader>
         <CardBody className="p-0">
           <LineTable order={order} />
@@ -250,11 +254,11 @@ function ShipmentsStep({ order }: { order: PartnerOrder }) {
       <Modal
         open={shipping}
         onOpenChange={setShipping}
-        title="Record a shipment"
-        description="What is going on this load. The stock leaves the shelf it ships from."
+        title={t('Record a shipment')}
+        description={t('What is going on this load. The stock leaves the shelf it ships from.')}
         size="lg"
         primary={{
-          label: 'Send it',
+          label: t('Send it'),
           disabled: going === 0,
           onClick: () =>
             actions.ship(
@@ -270,11 +274,11 @@ function ShipmentsStep({ order }: { order: PartnerOrder }) {
         }}
       >
         <div className="space-y-3">
-          <Field label="Note" hint="Anything worth knowing about this load">
+          <Field label={t('Note')} hint={t('Anything worth knowing about this load')}>
             {(p) => (
               <Input
                 {...p}
-                placeholder="Rest to follow next week"
+                placeholder={t('Rest to follow next week')}
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
               />
@@ -285,9 +289,9 @@ function ShipmentsStep({ order }: { order: PartnerOrder }) {
             <table className="w-full text-sm">
               <thead className="bg-canvas">
                 <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-                  <th className="px-3 py-2 text-left font-semibold">Product</th>
-                  <th className="px-3 py-2 text-right font-semibold">Still to send</th>
-                  <th className="px-3 py-2 text-right font-semibold">Going</th>
+                  <th className="px-3 py-2 text-left font-semibold">{t('Product')}</th>
+                  <th className="px-3 py-2 text-right font-semibold">{t('Still to send')}</th>
+                  <th className="px-3 py-2 text-right font-semibold">{t('Going')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -337,7 +341,7 @@ function ShipmentsStep({ order }: { order: PartnerOrder }) {
 
           <p className="text-fg-muted text-sm">
             {going === 0
-              ? 'Nothing to send.'
+              ? t('Nothing to send.')
               : `${formatNumber(going)} units leaving ${order.locationName}.`}
           </p>
         </div>
@@ -357,11 +361,13 @@ function LineTable({ order }: { order: PartnerOrder }) {
       <table className="w-full min-w-max text-sm">
         <thead className="bg-canvas">
           <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-            <th className="px-4 py-2 text-left font-semibold">Product</th>
-            <th className="px-4 py-2 text-right font-semibold">Ordered</th>
-            <th className="px-4 py-2 text-right font-semibold">Sent</th>
-            <th className="px-4 py-2 text-right font-semibold">Still to send</th>
-            {canSeeMoney ? <th className="px-4 py-2 text-right font-semibold">Price</th> : null}
+            <th className="px-4 py-2 text-left font-semibold">{t('Product')}</th>
+            <th className="px-4 py-2 text-right font-semibold">{t('Ordered')}</th>
+            <th className="px-4 py-2 text-right font-semibold">{t('Sent')}</th>
+            <th className="px-4 py-2 text-right font-semibold">{t('Still to send')}</th>
+            {canSeeMoney ? (
+              <th className="px-4 py-2 text-right font-semibold">{t('Price')}</th>
+            ) : null}
           </tr>
         </thead>
         <tbody>
@@ -410,10 +416,10 @@ function LineTable({ order }: { order: PartnerOrder }) {
           <tfoot>
             <tr className="text-fg-muted border-border border-t">
               <td className="px-4 py-2" colSpan={4}>
-                {formatNumber(outstandingUnits(order))} units still to send
+                {formatNumber(outstandingUnits(order))} {t('units still to send')}
               </td>
               <td className="text-fg px-4 py-2 text-right font-medium tabular-nums">
-                {formatMoney(Math.round(shippedValue(order, USD_RATE)))} sent of{' '}
+                {formatMoney(Math.round(shippedValue(order, USD_RATE)))} {t('sent of')}{' '}
                 {formatMoney(Math.round(orderValue(order, USD_RATE)))}
               </td>
             </tr>

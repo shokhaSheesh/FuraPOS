@@ -3,6 +3,7 @@ import { TriangleAlert } from 'lucide-react'
 import { Card } from '@/shared/ui/Card'
 import { Button } from '@/shared/ui/Button'
 import { EmptyState } from '@/shared/components/EmptyState'
+import { t } from '@/shared/i18n'
 
 export function RouteError() {
   const error = useRouteError()
@@ -19,11 +20,11 @@ export function RouteError() {
           icon={TriangleAlert}
           title={title}
           description={
-            error instanceof Error ? error.message : 'This screen failed to load. Try again.'
+            error instanceof Error ? error.message : t('This screen failed to load. Try again.')
           }
           action={
             <Button variant="secondary" onClick={() => navigate(0)}>
-              Reload
+              {t('Reload')}
             </Button>
           }
         />

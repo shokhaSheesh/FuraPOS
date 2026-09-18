@@ -31,6 +31,7 @@ import {
   RECEIPT_COLUMNS_HIDDEN_BY_DEFAULT,
 } from '../components/receiptColumns'
 import { landedTotal, landedUnitCost, type GoodsReceipt } from '../model/receipt'
+import { t } from '@/shared/i18n'
 
 /**
  * Goods arriving from suppliers — the only way stock legitimately enters.
@@ -113,15 +114,17 @@ export default function GoodsReceiptListPage() {
   return (
     <>
       <PageHeader
-        title="Goods receipt"
-        description="Every delivery from a supplier: what arrived, what it cost once freight and duty are counted, and how much of it has sold since."
+        title={t('Goods receipt')}
+        description={t(
+          'Every delivery from a supplier: what arrived, what it cost once freight and duty are counted, and how much of it has sold since.',
+        )}
         action={
           <div className="flex items-center gap-2">
             <Button
               variant="secondary"
               size="icon"
-              aria-label="Download this list"
-              title="Download this list"
+              aria-label={t('Download this list')}
+              title={t('Download this list')}
               onClick={() =>
                 downloadCsv(
                   'goods-receipts.csv',
@@ -141,10 +144,10 @@ export default function GoodsReceiptListPage() {
             >
               <Download />
             </Button>
-            {can('products.goodsReceipt.create') ? (
+            {can(t('products.goodsReceipt.create')) ? (
               <Button variant="primary" onClick={() => setCreating(true)}>
                 <Plus />
-                Add
+                {t('Add')}
               </Button>
             ) : null}
           </div>
@@ -153,27 +156,27 @@ export default function GoodsReceiptListPage() {
           <div className="flex flex-wrap items-center gap-2">
             <StatusChips
               options={[
-                { value: null, label: 'All' },
-                { value: 'draft', label: 'Unfinished' },
-                { value: 'received', label: 'Completed' },
-                { value: 'cancelled', label: 'Deleted' },
+                { value: null, label: t('All') },
+                { value: 'draft', label: t('Unfinished') },
+                { value: 'received', label: t('Completed') },
+                { value: 'cancelled', label: t('Deleted') },
               ]}
               value={(query.status as string | null) ?? null}
               onChange={(next) => setQuery({ status: next, page: null })}
               counts={counts}
             />
             <FilterSelect
-              aria-label="Filter by supplier"
-              label="From"
-              allLabel="Any supplier"
+              aria-label={t('Filter by supplier')}
+              label={t('From')}
+              allLabel={t('Any supplier')}
               value={(query.supplier as string | null) ?? null}
               options={suppliers.items.map((s) => ({ value: s.id, label: s.name }))}
               onChange={(next) => setQuery({ supplier: next, page: null })}
             />
             <FilterSelect
-              aria-label="Filter by location"
-              label="Into"
-              allLabel="All locations"
+              aria-label={t('Filter by location')}
+              label={t('Into')}
+              allLabel={t('All locations')}
               value={(query.location as string | null) ?? null}
               options={locations.map((item) => ({ value: item.id, label: item.name }))}
               onChange={(next) => setQuery({ location: next, page: null })}
@@ -204,16 +207,18 @@ export default function GoodsReceiptListPage() {
         onRowClick={(receipt) => navigate(paths.products.goodsReceiptDetail(receipt.id))}
         emptyState={
           query.search || query.f || query.status || query.location || query.supplier ? (
-            <EmptyState title="No receipts match these filters" />
+            <EmptyState title={t('No receipts match these filters')} />
           ) : (
             <EmptyState
-              title="Nothing has arrived yet"
-              description="When a supplier's delivery arrives, a receipt records what was in it and adds it to stock. It is the only way stock goes up."
+              title={t('Nothing has arrived yet')}
+              description={t(
+                "When a supplier's delivery arrives, a receipt records what was in it and adds it to stock. It is the only way stock goes up.",
+              )}
               action={
                 can('products.goodsReceipt.create') ? (
                   <Button variant="primary" onClick={() => setCreating(true)}>
                     <Plus />
-                    Add
+                    {t('Add')}
                   </Button>
                 ) : null
               }
@@ -254,18 +259,18 @@ export default function GoodsReceiptListPage() {
       <ConfirmDialog
         open={pendingCancel !== null}
         onOpenChange={(open) => !open && setPendingCancel(null)}
-        title="Delete this receipt?"
-        confirmLabel="Delete it"
+        title={t('Delete this receipt?')}
+        confirmLabel={t('Delete it')}
         body={
           pendingCancel ? (
             <>
               <strong className="text-fg font-medium">{pendingCancel.number}</strong> from{' '}
-              {pendingCancel.supplierName ?? 'its supplier'}
+              {pendingCancel.supplierName ?? t('its supplier')}
               {pendingCancel.status === 'received'
                 ? ` has been posted, so its ${formatMoney(
                     landedTotal(pendingCancel, USD_RATE),
                   )} of stock is taken back off ${pendingCancel.locationName}.`
-                : ' has not been posted, so no stock changes.'}
+                : t(' has not been posted, so no stock changes.')}
             </>
           ) : null
         }

@@ -7,6 +7,7 @@ import { EmptyState } from '@/shared/components/EmptyState'
 import { formatDateTime, formatMoney } from '@/shared/lib/format'
 import { cn } from '@/shared/lib/cn'
 import type { Wallet, WalletInsight, WalletTransaction } from '@/shared/types/wallet'
+import { t } from '@/shared/i18n'
 
 /**
  * The wallet sub-view, built once for all three owners.
@@ -79,8 +80,10 @@ export function WalletPanel({
             <WalletIcon className="size-4" />
           </span>
           <div>
-            <CardTitle>Wallet</CardTitle>
-            <p className="text-fg-subtle text-2xs">Updated {formatDateTime(wallet.updatedAt)}</p>
+            <CardTitle>{t('Wallet')}</CardTitle>
+            <p className="text-fg-subtle text-2xs">
+              {t('Updated')} {formatDateTime(wallet.updatedAt)}
+            </p>
           </div>
         </div>
         {action}
@@ -104,9 +107,11 @@ export function WalletPanel({
             value={formatMoney(wallet.debt)}
             tone={wallet.debt > 0 ? 'danger' : undefined}
           />
-          {showCashback ? <Figure label="Cashback" value={formatMoney(wallet.cashback)} /> : null}
+          {showCashback ? (
+            <Figure label={t('Cashback')} value={formatMoney(wallet.cashback)} />
+          ) : null}
           {wallet.creditLimit !== null ? (
-            <Figure label="Credit limit" value={formatMoney(wallet.creditLimit)} />
+            <Figure label={t('Credit limit')} value={formatMoney(wallet.creditLimit)} />
           ) : null}
         </div>
 
@@ -114,7 +119,7 @@ export function WalletPanel({
           items={[
             {
               value: 'ledger',
-              label: 'Movements',
+              label: t('Movements'),
               badge: transactions.length || undefined,
               content:
                 transactions.length === 0 ? (
@@ -124,10 +129,12 @@ export function WalletPanel({
                     <table className="w-full text-sm">
                       <thead className="bg-canvas">
                         <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-                          <th className="px-3 py-2 text-left font-semibold">When</th>
-                          <th className="px-3 py-2 text-left font-semibold">What</th>
-                          <th className="px-3 py-2 text-right font-semibold">Amount</th>
-                          <th className="px-3 py-2 text-right font-semibold">Balance after</th>
+                          <th className="px-3 py-2 text-left font-semibold">{t('When')}</th>
+                          <th className="px-3 py-2 text-left font-semibold">{t('What')}</th>
+                          <th className="px-3 py-2 text-right font-semibold">{t('Amount')}</th>
+                          <th className="px-3 py-2 text-right font-semibold">
+                            {t('Balance after')}
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
@@ -182,13 +189,15 @@ export function WalletPanel({
             },
             {
               value: 'insights',
-              label: 'Insights',
+              label: t('Insights'),
               badge: insights.length || undefined,
               content:
                 insights.length === 0 ? (
                   <EmptyState
-                    title="Nothing to say yet"
-                    description="Insights appear once there is enough history to notice a pattern."
+                    title={t('Nothing to say yet')}
+                    description={t(
+                      'Insights appear once there is enough history to notice a pattern.',
+                    )}
                   />
                 ) : (
                   <div className="space-y-2">
@@ -209,10 +218,10 @@ export function WalletPanel({
                             }
                           >
                             {insight.tone === 'risk'
-                              ? 'Worth watching'
+                              ? t('Worth watching')
                               : insight.tone === 'positive'
-                                ? 'Good'
-                                : 'Note'}
+                                ? t('Good')
+                                : t('Note')}
                           </Badge>
                         </div>
                         <p className="text-fg-muted mt-1 text-sm">{insight.body}</p>

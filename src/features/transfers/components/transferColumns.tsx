@@ -18,6 +18,7 @@ import {
   transferStatusTone,
   type Transfer,
 } from '../model/transfer'
+import { t } from '@/shared/i18n'
 
 const Empty = () => <span className="text-fg-subtle">—</span>
 
@@ -46,18 +47,18 @@ export function buildTransferColumns({
   return [
     {
       accessorKey: 'number',
-      header: 'Number',
+      header: t('Number'),
       cell: ({ row }) => <span className="text-2xs font-mono">{row.original.number}</span>,
       enableHiding: false,
     },
     {
       accessorKey: 'createdAt',
-      header: 'Created',
+      header: t('Created'),
       cell: ({ row }) => formatDate(row.original.createdAt),
     },
     {
       id: 'route',
-      header: 'Route',
+      header: t('Route'),
       enableHiding: false,
       cell: ({ row }) => (
         <span className="flex items-center gap-1.5">
@@ -69,7 +70,7 @@ export function buildTransferColumns({
     },
     {
       id: 'items',
-      header: 'Items',
+      header: t('Items'),
       meta: { align: 'right' },
       cell: ({ row }) => formatNumber(row.original.lines.length),
     },
@@ -80,20 +81,20 @@ export function buildTransferColumns({
     */
     {
       id: 'requested',
-      header: 'Ordered',
+      header: t('Ordered'),
       meta: { align: 'right' },
       cell: ({ row }) => formatNumber(transferRequested(row.original)),
     },
     {
       id: 'sent',
-      header: 'Sent',
+      header: t('Sent'),
       meta: { align: 'right' },
       cell: ({ row }) =>
         row.original.status === 'draft' ? <Empty /> : formatNumber(transferSent(row.original)),
     },
     {
       id: 'received',
-      header: 'Received',
+      header: t('Received'),
       meta: { align: 'right' },
       cell: ({ row }) => {
         const short = transferShortfall(row.original)
@@ -108,7 +109,7 @@ export function buildTransferColumns({
     },
     {
       id: 'inTransit',
-      header: 'In transit',
+      header: t('In transit'),
       meta: { align: 'right' },
       cell: ({ row }) => {
         const moving = transferInTransit(row.original)
@@ -118,7 +119,7 @@ export function buildTransferColumns({
     // An estimate, drawn as a bar like a goods receipt's — see `transferSoldThrough`.
     {
       id: 'sold',
-      header: 'Sold',
+      header: t('Sold'),
       enableHiding: false,
       cell: ({ row }) => (
         <SoldBar
@@ -129,7 +130,7 @@ export function buildTransferColumns({
     },
     {
       accessorKey: 'status',
-      header: 'Status',
+      header: t('Status'),
       cell: ({ row }) => (
         <Badge tone={transferStatusTone(row.original.status)}>
           {transferStatusLabel(row.original.status)}
@@ -138,27 +139,27 @@ export function buildTransferColumns({
     },
     {
       accessorKey: 'sentAt',
-      header: 'Sent',
+      header: t('Sent'),
       cell: ({ row }) => (row.original.sentAt ? formatDate(row.original.sentAt) : <Empty />),
     },
     {
       accessorKey: 'receivedAt',
-      header: 'Received',
+      header: t('Received'),
       cell: ({ row }) =>
         row.original.receivedAt ? formatDate(row.original.receivedAt) : <Empty />,
     },
     {
       accessorKey: 'createdBy',
-      header: 'Created by',
+      header: t('Created by'),
     },
     {
       accessorKey: 'sentBy',
-      header: 'Sent by',
+      header: t('Sent by'),
       cell: ({ row }) => row.original.sentBy ?? <Empty />,
     },
     {
       accessorKey: 'receivedBy',
-      header: 'Received by',
+      header: t('Received by'),
       cell: ({ row }) => row.original.receivedBy ?? <Empty />,
     },
     // What is riding on the truck, valued. Cost is permission-gated exactly as
@@ -167,7 +168,7 @@ export function buildTransferColumns({
       ? [
           {
             id: 'costValue',
-            header: 'Value at cost',
+            header: t('Value at cost'),
             meta: { align: 'right' as const },
             cell: ({ row }: { row: { original: Transfer } }) =>
               formatMoney(transferCostValue(row.original, usdRate)),
@@ -176,13 +177,13 @@ export function buildTransferColumns({
       : []),
     {
       id: 'saleValue',
-      header: 'Value at sale',
+      header: t('Value at sale'),
       meta: { align: 'right' },
       cell: ({ row }) => formatMoney(transferSaleValue(row.original)),
     },
     {
       accessorKey: 'comment',
-      header: 'Comment',
+      header: t('Comment'),
       cell: ({ row }) => row.original.comment ?? <Empty />,
     },
     {
@@ -193,12 +194,12 @@ export function buildTransferColumns({
         <RowActions
           actions={[
             {
-              label: 'Download',
+              label: t('Download'),
               icon: Download,
               onSelect: () => onDownload(row.original),
             },
             {
-              label: 'Cancel transfer',
+              label: t('Cancel transfer'),
               icon: Trash2,
               destructive: true,
               hidden: !canCancelTransfers || !canCancel(row.original.status),

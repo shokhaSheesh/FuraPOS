@@ -63,6 +63,7 @@ import {
   useSetReceiptStatus,
   useUpdateReceipt,
 } from '../api/receipts'
+import { t } from '@/shared/i18n'
 
 const STEPS = ['Add products', 'Extra data', 'Payment', 'Review and finish']
 
@@ -114,11 +115,11 @@ export default function GoodsReceiptPage() {
   if (!receipt) {
     return (
       <EmptyState
-        title="That receipt no longer exists"
-        description="It may have been deleted since this link was made."
+        title={t('That receipt no longer exists')}
+        description={t('It may have been deleted since this link was made.')}
         action={
           <Button variant="secondary" asChild>
-            <Link to={paths.products.goodsReceipt}>Back to goods receipt</Link>
+            <Link to={paths.products.goodsReceipt}>{t('Back to goods receipt')}</Link>
           </Button>
         }
       />
@@ -130,13 +131,13 @@ export default function GoodsReceiptPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <Button variant="ghost" size="icon" aria-label="Back to goods receipt" asChild>
+        <Button variant="ghost" size="icon" aria-label={t('Back to goods receipt')} asChild>
           <Link to={paths.products.goodsReceipt}>
             <ArrowLeft />
           </Link>
         </Button>
         <h1 className="text-fg text-lg font-semibold">
-          Receipt {receipt.number} — {receipt.locationName}
+          {t('Receipt')} {receipt.number} — {receipt.locationName}
         </h1>
         <Badge tone={receiptStatusTone(receipt.status)}>{receiptStatusLabel(receipt.status)}</Badge>
         {/* What this delivery was checked against. Without it the expected
@@ -145,7 +146,7 @@ export default function GoodsReceiptPage() {
           <Button variant="link" size="sm" className="h-auto px-0" asChild>
             <Link to={paths.procurement.orderDetail(receipt.orderId)}>
               <FileText />
-              Against order {receipt.orderNumber}
+              {t('Against order')} {receipt.orderNumber}
             </Link>
           </Button>
         ) : null}
@@ -159,7 +160,7 @@ export default function GoodsReceiptPage() {
             }}
           >
             <Save />
-            Save
+            {t('Save')}
           </Button>
         ) : null}
       </div>
@@ -507,8 +508,9 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
           summary={
             newToUs > 0 ? (
               <p className="text-fg-subtle text-2xs">
-                {formatNumber(newToUs)} more they list {newToUs === 1 ? 'is' : 'are'} new to us —
-                add {newToUs === 1 ? 'it' : 'them'} to the catalogue to receive
+                {formatNumber(newToUs)} {t('more they list')} {newToUs === 1 ? 'is' : 'are'}{' '}
+                {t('new to us — add')} {newToUs === 1 ? 'it' : 'them'}{' '}
+                {t('to the catalogue to receive')}
               </p>
             ) : null
           }
@@ -531,14 +533,14 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
             <SearchInput
               value={search}
               onChange={setSearch}
-              placeholder="Search by barcode, SKU, variation or product name…"
+              placeholder={t('Search by barcode, SKU, variation or product name…')}
             />
             <div className="flex-1" />
             <div className="border-border rounded-control flex items-center border p-0.5">
               <Button
                 variant={cards ? 'ghost' : 'secondary'}
                 size="icon"
-                aria-label="Show one column per field"
+                aria-label={t('Show one column per field')}
                 aria-pressed={!cards}
                 onClick={() => setCards(false)}
               >
@@ -547,7 +549,7 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
               <Button
                 variant={cards ? 'secondary' : 'ghost'}
                 size="icon"
-                aria-label="Show each product as a card"
+                aria-label={t('Show each product as a card')}
                 aria-pressed={cards}
                 onClick={() => setCards(true)}
               >
@@ -574,11 +576,11 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
             />
             <div className="border-border text-fg-muted flex flex-wrap items-center gap-x-8 gap-y-1 border-t px-4 py-3 text-sm">
               <span>
-                Total quantity:{' '}
+                {t('Total quantity:')}{' '}
                 <strong className="text-fg font-medium">{formatNumber(units)}</strong>
               </span>
               <span>
-                Product variations:{' '}
+                {t('Product variations:')}{' '}
                 <strong className="text-fg font-medium">
                   {formatNumber(receipt.lines.length)}
                 </strong>
@@ -589,13 +591,17 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
         emptyState={
           fromCatalogue ? (
             <EmptyState
-              title="This supplier lists nothing"
-              description="Their catalogue is empty, so there is nothing to receive against it."
+              title={t('This supplier lists nothing')}
+              description={t(
+                'Their catalogue is empty, so there is nothing to receive against it.',
+              )}
             />
           ) : (
             <EmptyState
-              title="Nothing on this receipt yet"
-              description="Add the products that were delivered — search the catalogue, scan them in, or upload the supplier's spreadsheet."
+              title={t('Nothing on this receipt yet')}
+              description={t(
+                "Add the products that were delivered — search the catalogue, scan them in, or upload the supplier's spreadsheet.",
+              )}
             />
           )
         }
@@ -618,8 +624,10 @@ function ExtraDataStep({ receipt, editable }: { receipt: GoodsReceipt; editable:
   if (costs.length === 0 && !editable) {
     return (
       <EmptyState
-        title="Nothing extra was recorded"
-        description="Freight, duty and broker fees would appear here, and they change what every line on this delivery really cost."
+        title={t('Nothing extra was recorded')}
+        description={t(
+          'Freight, duty and broker fees would appear here, and they change what every line on this delivery really cost.',
+        )}
       />
     )
   }
@@ -628,26 +636,27 @@ function ExtraDataStep({ receipt, editable }: { receipt: GoodsReceipt; editable:
     <>
       <Card>
         <CardHeader className="flex-col items-stretch gap-1">
-          <CardTitle>Freight, duty and the rest</CardTitle>
+          <CardTitle>{t('Freight, duty and the rest')}</CardTitle>
           <p className="text-fg-subtle text-2xs">
-            Spread across the products in proportion to their value. Leave it empty and the cost
-            price is simply what the supplier charged.
+            {t(
+              'Spread across the products in proportion to their value. Leave it empty and the cost price is simply what the supplier charged.',
+            )}
           </p>
         </CardHeader>
         <CardBody className="space-y-3">
           {costs.length === 0 ? (
             <p className="text-fg-subtle py-6 text-center text-sm">
-              Add the extra costs and data for this receipt.
+              {t('Add the extra costs and data for this receipt.')}
             </p>
           ) : null}
 
           {costs.map((cost, index) => (
             <div key={cost.id} className="flex items-end gap-2">
-              <Field label="Cost" className="flex-1">
+              <Field label={t('Cost')} className="flex-1">
                 {(p) => (
                   <Input
                     {...p}
-                    placeholder="Freight"
+                    placeholder={t('Freight')}
                     list="receipt-common-costs"
                     disabled={!editable}
                     value={cost.label}
@@ -659,7 +668,7 @@ function ExtraDataStep({ receipt, editable }: { receipt: GoodsReceipt; editable:
                   />
                 )}
               </Field>
-              <Field label="Amount">
+              <Field label={t('Amount')}>
                 {(p) => (
                   <NumberField
                     {...p}
@@ -683,14 +692,14 @@ function ExtraDataStep({ receipt, editable }: { receipt: GoodsReceipt; editable:
                 }
                 options={CURRENCIES}
                 disabled={!editable}
-                aria-label="Currency"
+                aria-label={t('Currency')}
                 className="w-24"
               />
               {editable ? (
                 <Button
                   variant="ghost"
                   size="icon"
-                  aria-label="Remove this cost"
+                  aria-label={t('Remove this cost')}
                   className="hover:text-danger"
                   onClick={() => setCosts(costs.filter((_, i) => i !== index))}
                 >
@@ -722,7 +731,7 @@ function ExtraDataStep({ receipt, editable }: { receipt: GoodsReceipt; editable:
               }
             >
               <Plus />
-              Add
+              {t('Add')}
             </Button>
           ) : null}
         </CardBody>
@@ -730,14 +739,17 @@ function ExtraDataStep({ receipt, editable }: { receipt: GoodsReceipt; editable:
 
       <Card>
         <CardHeader>
-          <CardTitle>Note</CardTitle>
+          <CardTitle>{t('Note')}</CardTitle>
         </CardHeader>
         <CardBody>
-          <Field label="Note" hint="Anything worth knowing when this delivery is queried later">
+          <Field
+            label={t('Note')}
+            hint={t('Anything worth knowing when this delivery is queried later')}
+          >
             {(p) => (
               <Input
                 {...p}
-                placeholder="Part of container 3"
+                placeholder={t('Part of container 3')}
                 disabled={!editable}
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
@@ -757,7 +769,7 @@ function ExtraDataStep({ receipt, editable }: { receipt: GoodsReceipt; editable:
               setComment(receipt.comment ?? '')
             }}
           >
-            Cancel
+            {t('Cancel')}
           </Button>
           <Button
             variant="primary"
@@ -766,13 +778,13 @@ function ExtraDataStep({ receipt, editable }: { receipt: GoodsReceipt; editable:
               update.mutate(
                 { additionalCosts: costs, comment },
                 {
-                  onSuccess: () => toast.success('Saved'),
+                  onSuccess: () => toast.success(t('Saved')),
                   onError: (message) => toast.error(message),
                 },
               )
             }
           >
-            Save
+            {t('Save')}
           </Button>
         </div>
       ) : null}
@@ -807,26 +819,28 @@ function PaymentStep({ receipt }: { receipt: GoodsReceipt }) {
     <>
       <Card className="max-w-3xl">
         <CardHeader className="items-start justify-between gap-3">
-          <CardTitle>Invoice for goods from {receiptSource(receipt)}</CardTitle>
+          <CardTitle>
+            {t('Invoice for goods from')} {receiptSource(receipt)}
+          </CardTitle>
           {canPay ? (
             <Button variant="secondary" size="sm" onClick={() => setPaying((v) => !v)}>
               <Plus />
-              Pay
+              {t('Pay')}
             </Button>
           ) : null}
         </CardHeader>
         <CardBody className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
-              <p className="text-fg-muted text-sm">Total quantity</p>
+              <p className="text-fg-muted text-sm">{t('Total quantity')}</p>
               <p className="text-fg mt-0.5 text-lg font-semibold">{formatNumber(units)}</p>
             </div>
             <div>
-              <p className="text-fg-muted text-sm">Invoice total</p>
+              <p className="text-fg-muted text-sm">{t('Invoice total')}</p>
               <p className="text-fg mt-0.5 text-lg font-semibold">{formatMoney(invoiced)}</p>
             </div>
             <div>
-              <p className="text-fg-muted text-sm">Debt (to pay)</p>
+              <p className="text-fg-muted text-sm">{t('Debt (to pay)')}</p>
               <p
                 className={`mt-0.5 text-lg font-semibold ${debt > 0 ? 'text-danger' : 'text-success'}`}
               >
@@ -837,7 +851,7 @@ function PaymentStep({ receipt }: { receipt: GoodsReceipt }) {
 
           {paying ? (
             <div className="border-border rounded-card flex flex-wrap items-end gap-2 border p-3">
-              <Field label="Amount">
+              <Field label={t('Amount')}>
                 {(p) => (
                   <NumberField
                     {...p}
@@ -845,7 +859,7 @@ function PaymentStep({ receipt }: { receipt: GoodsReceipt }) {
                     step="any"
                     value={amount}
                     onChange={setAmount}
-                    placeholder={String(Math.round(debt / (currency === 'USD' ? rate : 1)))}
+                    placeholder={String(Math.round(debt / (currency === t('USD') ? rate : 1)))}
                   />
                 )}
               </Field>
@@ -853,15 +867,15 @@ function PaymentStep({ receipt }: { receipt: GoodsReceipt }) {
                 value={currency}
                 onChange={(v) => setCurrency(v as 'USD' | 'UZS')}
                 options={CURRENCIES}
-                aria-label="Currency"
+                aria-label={t('Currency')}
                 className="w-24"
               />
-              <Field label="Account" className="min-w-40 flex-1">
+              <Field label={t('Account')} className="min-w-40 flex-1">
                 {(p) => (
                   <Input {...p} value={account} onChange={(e) => setAccount(e.target.value)} />
                 )}
               </Field>
-              <Field label="Note" className="min-w-40 flex-1">
+              <Field label={t('Note')} className="min-w-40 flex-1">
                 {(p) => <Input {...p} value={note} onChange={(e) => setNote(e.target.value)} />}
               </Field>
               <Button
@@ -877,7 +891,7 @@ function PaymentStep({ receipt }: { receipt: GoodsReceipt }) {
                     },
                     {
                       onSuccess: () => {
-                        toast.success('Payment recorded')
+                        toast.success(t('Payment recorded'))
                         setPaying(false)
                         setAmount(null)
                       },
@@ -886,24 +900,24 @@ function PaymentStep({ receipt }: { receipt: GoodsReceipt }) {
                   )
                 }
               >
-                Record it
+                {t('Record it')}
               </Button>
             </div>
           ) : null}
 
           {receipt.payments.length === 0 ? (
             <p className="text-fg-subtle py-4 text-center text-sm">
-              Nothing has been paid against this delivery yet.
+              {t('Nothing has been paid against this delivery yet.')}
             </p>
           ) : (
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-fg-muted border-border border-b text-left">
-                  <th className="py-2 pr-3 font-normal">Date and time</th>
-                  <th className="py-2 pr-3 font-normal">Payer</th>
-                  <th className="py-2 pr-3 font-normal">Account</th>
-                  <th className="py-2 pr-3 text-right font-normal">Amount</th>
-                  <th className="py-2 pr-3 font-normal">Note</th>
+                  <th className="py-2 pr-3 font-normal">{t('Date and time')}</th>
+                  <th className="py-2 pr-3 font-normal">{t('Payer')}</th>
+                  <th className="py-2 pr-3 font-normal">{t('Account')}</th>
+                  <th className="py-2 pr-3 text-right font-normal">{t('Amount')}</th>
+                  <th className="py-2 pr-3 font-normal">{t('Note')}</th>
                   <th className="w-10" />
                 </tr>
               </thead>
@@ -914,7 +928,7 @@ function PaymentStep({ receipt }: { receipt: GoodsReceipt }) {
                     <td className="py-2 pr-3">{payment.payerName}</td>
                     <td className="py-2 pr-3">{payment.accountName}</td>
                     <td className="py-2 pr-3 text-right tabular-nums">
-                      {payment.currency === 'USD'
+                      {payment.currency === t('USD')
                         ? `${payment.amount.toFixed(2)} USD`
                         : formatMoney(payment.amount)}
                     </td>
@@ -924,7 +938,7 @@ function PaymentStep({ receipt }: { receipt: GoodsReceipt }) {
                         <Button
                           variant="ghost"
                           size="icon"
-                          aria-label="Remove this payment"
+                          aria-label={t('Remove this payment')}
                           className="hover:text-danger"
                           onClick={() => setPendingDelete(payment.id)}
                         >
@@ -938,7 +952,7 @@ function PaymentStep({ receipt }: { receipt: GoodsReceipt }) {
               <tfoot>
                 <tr className="text-fg-muted">
                   <td className="py-2 pr-3" colSpan={3}>
-                    Paid so far
+                    {t('Paid so far')}
                   </td>
                   <td className="text-fg py-2 pr-3 text-right font-medium tabular-nums">
                     {formatMoney(paid)}
@@ -954,8 +968,8 @@ function PaymentStep({ receipt }: { receipt: GoodsReceipt }) {
       <ConfirmDialog
         open={pendingDelete !== null}
         onOpenChange={(open) => !open && setPendingDelete(null)}
-        title="Remove this payment?"
-        confirmLabel="Remove it"
+        title={t('Remove this payment?')}
+        confirmLabel={t('Remove it')}
         body="The delivery goes back to being unpaid by that amount."
         onConfirm={() => {
           if (pendingDelete) removePayment.mutate(pendingDelete)
@@ -1035,13 +1049,13 @@ function ReviewStep({
             <SearchInput
               value={search}
               onChange={setSearch}
-              placeholder="Search by barcode, SKU, variation or product name…"
+              placeholder={t('Search by barcode, SKU, variation or product name…')}
             />
             <div className="flex-1" />
             {editable ? (
               <Button variant="primary" onClick={() => setConfirming(true)}>
                 <PackageCheck />
-                Post receipt
+                {t('Post receipt')}
               </Button>
             ) : null}
           </div>
@@ -1049,10 +1063,11 @@ function ReviewStep({
         footer={
           <div className="border-border text-fg-muted flex flex-wrap items-center gap-x-8 gap-y-1 border-t px-4 py-3 text-sm">
             <span>
-              Total quantity: <strong className="text-fg font-medium">{formatNumber(units)}</strong>
+              {t('Total quantity:')}{' '}
+              <strong className="text-fg font-medium">{formatNumber(units)}</strong>
             </span>
             <span>
-              Goods value:{' '}
+              {t('Goods value:')}{' '}
               <strong className="text-fg font-medium">
                 {formatMoney(
                   receipt.lines.reduce(
@@ -1069,8 +1084,8 @@ function ReviewStep({
         }
         emptyState={
           <EmptyState
-            title="There is nothing to review"
-            description="Put some products on the first step and they will appear here."
+            title={t('There is nothing to review')}
+            description={t('Put some products on the first step and they will appear here.')}
           />
         }
       />
@@ -1078,14 +1093,15 @@ function ReviewStep({
       <ConfirmDialog
         open={confirming}
         onOpenChange={setConfirming}
-        title="Post this receipt?"
-        confirmLabel="Post it"
+        title={t('Post this receipt?')}
+        confirmLabel={t('Post it')}
         body={
           <>
-            {formatNumber(units)} units land at{' '}
-            <strong className="text-fg font-medium">{receipt.locationName}</strong>, and every
-            product on it takes the cost price shown above. Posting cannot be undone — a mistake
-            afterwards is fixed with a correction.
+            {formatNumber(units)} {t('units land at')}{' '}
+            <strong className="text-fg font-medium">{receipt.locationName}</strong>
+            {t(
+              ', and every product on it takes the cost price shown above. Posting cannot be undone — a mistake afterwards is fixed with a correction.',
+            )}
           </>
         }
         onConfirm={() =>

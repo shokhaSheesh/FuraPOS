@@ -5,6 +5,7 @@ import { Button } from '@/shared/ui/Button'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { paths } from '@/shared/config/paths'
 import { useDataStore } from '@/data/store'
+import { t } from '@/shared/i18n'
 
 /*
  * Dates and numbers are written by hand here rather than through format.ts.
@@ -40,7 +41,7 @@ export default function OrderDocumentPage() {
   }, [order])
 
   if (!order) {
-    return <EmptyState title="Order not found" description="It may have been deleted." />
+    return <EmptyState title={t('Order not found')} description={t('It may have been deleted.')} />
   }
 
   const rows = [...order.lines].map((line) => ({
@@ -68,16 +69,16 @@ export default function OrderDocumentPage() {
         <Button variant="link" size="sm" className="h-auto px-0 text-neutral-800" asChild>
           <Link to={paths.procurement.orderDetail(order.id)}>
             <ArrowLeft />
-            Back to {order.number}
+            {t('Back to')} {order.number}
           </Link>
         </Button>
         <div className="flex items-center gap-3">
           <span className="text-2xs text-neutral-600">
-            In the print dialog, choose “Save as PDF”
+            {t('In the print dialog, choose “Save as PDF”')}
           </span>
           <Button variant="primary" onClick={() => window.print()}>
             <Printer />
-            Save as PDF
+            {t('Save as PDF')}
           </Button>
         </div>
       </div>
@@ -93,28 +94,30 @@ export default function OrderDocumentPage() {
             <p>{[company.phone, company.email].filter(Boolean).join(' · ')}</p>
           </div>
           <div className="text-right">
-            <p className="text-xl font-bold tracking-wide">PURCHASE ORDER</p>
+            <p className="text-xl font-bold tracking-wide">{t('PURCHASE ORDER')}</p>
             <p className="mt-1 font-mono text-sm">{order.number}</p>
-            <p>Date: {date(order.sentAt ?? order.createdAt)}</p>
+            <p>
+              {t('Date:')} {date(order.sentAt ?? order.createdAt)}
+            </p>
           </div>
         </header>
 
         <section className="mt-4 grid grid-cols-3 gap-4">
           <div>
             <p className="text-[9px] font-semibold tracking-wider text-neutral-500 uppercase">
-              Manufacturer / agent
+              {t('Manufacturer / agent')}
             </p>
             <p className="font-medium">{order.boughtFrom ?? '—'}</p>
           </div>
           <div>
             <p className="text-[9px] font-semibold tracking-wider text-neutral-500 uppercase">
-              Deliver to
+              {t('Deliver to')}
             </p>
             <p className="font-medium">{order.locationName}</p>
           </div>
           <div>
             <p className="text-[9px] font-semibold tracking-wider text-neutral-500 uppercase">
-              Required by
+              {t('Required by')}
             </p>
             <p className="font-medium">{date(order.expectedAt)}</p>
           </div>
@@ -124,13 +127,13 @@ export default function OrderDocumentPage() {
           <thead>
             <tr className="border-y border-neutral-900 text-left text-[9px] tracking-wider uppercase">
               <th className="py-1.5 pr-2">#</th>
-              <th className="py-1.5 pr-2">Our code</th>
-              <th className="py-1.5 pr-2">OEM no.</th>
-              <th className="py-1.5 pr-2">Description</th>
-              <th className="py-1.5 pr-2">Brand</th>
-              <th className="py-1.5 pr-2 text-right">Qty</th>
-              <th className="py-1.5 pr-2 text-right">Unit price</th>
-              <th className="py-1.5 text-right">Amount</th>
+              <th className="py-1.5 pr-2">{t('Our code')}</th>
+              <th className="py-1.5 pr-2">{t('OEM no.')}</th>
+              <th className="py-1.5 pr-2">{t('Description')}</th>
+              <th className="py-1.5 pr-2">{t('Brand')}</th>
+              <th className="py-1.5 pr-2 text-right">{t('Qty')}</th>
+              <th className="py-1.5 pr-2 text-right">{t('Unit price')}</th>
+              <th className="py-1.5 text-right">{t('Amount')}</th>
             </tr>
           </thead>
           <tbody>
@@ -162,16 +165,18 @@ export default function OrderDocumentPage() {
           <table className="min-w-[70mm]">
             <tbody>
               <tr>
-                <td className="py-0.5 pr-4 text-neutral-600">Lines</td>
+                <td className="py-0.5 pr-4 text-neutral-600">{t('Lines')}</td>
                 <td className="py-0.5 text-right tabular-nums">{number(rows.length)}</td>
               </tr>
               <tr>
-                <td className="py-0.5 pr-4 text-neutral-600">Units</td>
+                <td className="py-0.5 pr-4 text-neutral-600">{t('Units')}</td>
                 <td className="py-0.5 text-right tabular-nums">{number(units)}</td>
               </tr>
               {[...totals].map(([currency, amount]) => (
                 <tr key={currency} className="border-t border-neutral-900">
-                  <td className="py-1 pr-4 font-bold">Total {currency}</td>
+                  <td className="py-1 pr-4 font-bold">
+                    {t('Total')} {currency}
+                  </td>
                   <td className="py-1 text-right font-bold tabular-nums">
                     {price(amount, currency)}
                   </td>
@@ -184,24 +189,27 @@ export default function OrderDocumentPage() {
         {order.comment ? (
           <section className="mt-5">
             <p className="text-[9px] font-semibold tracking-wider text-neutral-500 uppercase">
-              Notes
+              {t('Notes')}
             </p>
             <p>{order.comment}</p>
           </section>
         ) : null}
 
         <p className="mt-5 text-neutral-600">
-          Please confirm quantities, prices and the shipping date in writing before production
-          starts.
+          {t(
+            'Please confirm quantities, prices and the shipping date in writing before production starts.',
+          )}
         </p>
 
         <footer className="mt-12 grid grid-cols-2 gap-12">
           <div className="border-t border-neutral-900 pt-1">
-            <p className="text-neutral-600">Issued by — {company.name}</p>
+            <p className="text-neutral-600">
+              {t('Issued by —')} {company.name}
+            </p>
             <p className="text-neutral-600">{order.createdBy}</p>
           </div>
           <div className="border-t border-neutral-900 pt-1">
-            <p className="text-neutral-600">Accepted by — manufacturer</p>
+            <p className="text-neutral-600">{t('Accepted by — manufacturer')}</p>
           </div>
         </footer>
       </article>

@@ -10,6 +10,7 @@ import { formatMoneyIn, formatNumber } from '@/shared/lib/format'
 import { useDataStore } from '@/data/store'
 import type { CatalogueEntry } from '@/features/suppliers/model/catalogue'
 import { suggestOrder, type OrderSuggestion } from '../model/suggestOrder'
+import { t } from '@/shared/i18n'
 
 /**
  * What to order, worked out from what sold.
@@ -82,12 +83,12 @@ export function GenerateOrderModal({
         <div className="flex w-full items-center justify-between gap-3">
           <span className="text-fg-subtle text-2xs">
             {chosen.length === 0
-              ? 'Nothing selected'
+              ? t('Nothing selected')
               : `${formatNumber(chosen.length)} products · ${formatNumber(units)} units`}
           </span>
           <div className="flex gap-2">
             <Button variant="secondary" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button
               variant="primary"
@@ -97,7 +98,7 @@ export function GenerateOrderModal({
                 onOpenChange(false)
               }}
             >
-              Add {formatNumber(chosen.length)} to the order
+              {t('Add')} {formatNumber(chosen.length)} {t('to the order')}
             </Button>
           </div>
         </div>
@@ -105,14 +106,14 @@ export function GenerateOrderModal({
     >
       <div className="space-y-3">
         <div className="flex flex-wrap items-center gap-3">
-          <span className="text-fg-muted text-sm">Based on sales over</span>
+          <span className="text-fg-muted text-sm">{t('Based on sales over')}</span>
           <SegmentedControl
-            aria-label="How far back to look"
+            aria-label={t('How far back to look')}
             value={months}
             onChange={setMonths}
             options={[
-              { value: '3', label: 'Last 3 months' },
-              { value: '6', label: 'Last 6 months' },
+              { value: '3', label: t('Last 3 months') },
+              { value: '6', label: t('Last 6 months') },
             ]}
           />
         </div>
@@ -120,10 +121,11 @@ export function GenerateOrderModal({
         {suggestions.length === 0 ? (
           <div className="text-fg-muted rounded-card border-border border border-dashed p-6 text-center text-sm">
             <Wand2 className="text-fg-subtle mx-auto mb-2 size-5" />
-            <p className="text-fg font-medium">Nothing needs ordering</p>
+            <p className="text-fg font-medium">{t('Nothing needs ordering')}</p>
             <p className="text-2xs mt-1">
-              {scope ?? `Everything ${supplierName} carries`} is either stocked deep enough for
-              another {months} months, or has not sold in that time.
+              {scope ?? `Everything ${supplierName} carries`}{' '}
+              {t('is either stocked deep enough for another')} {months}{' '}
+              {t('months, or has not sold in that time.')}
             </p>
           </div>
         ) : (
@@ -132,11 +134,11 @@ export function GenerateOrderModal({
               <thead className="bg-canvas sticky top-0">
                 <tr className="text-fg-muted text-2xs tracking-wide uppercase">
                   <th className="w-10 px-3 py-2" />
-                  <th className="px-3 py-2 text-left font-semibold">Product</th>
-                  <th className="px-3 py-2 text-right font-semibold">Sold</th>
-                  <th className="px-3 py-2 text-right font-semibold">In stock</th>
-                  <th className="w-40 px-3 py-2 text-right font-semibold">Order</th>
-                  <th className="px-3 py-2 text-right font-semibold">Cost</th>
+                  <th className="px-3 py-2 text-left font-semibold">{t('Product')}</th>
+                  <th className="px-3 py-2 text-right font-semibold">{t('Sold')}</th>
+                  <th className="px-3 py-2 text-right font-semibold">{t('In stock')}</th>
+                  <th className="w-40 px-3 py-2 text-right font-semibold">{t('Order')}</th>
+                  <th className="px-3 py-2 text-right font-semibold">{t('Cost')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -197,7 +199,7 @@ export function GenerateOrderModal({
                           // Says why it is more than the gap, rather than
                           // quietly ordering more than was asked for.
                           <p className="text-fg-subtle text-2xs font-normal whitespace-nowrap">
-                            {formatNumber(suggestion.shortfall)} short,{' '}
+                            {formatNumber(suggestion.shortfall)} {t('short,')}{' '}
                             {formatNumber(suggestion.suggested)} minimum
                           </p>
                         ) : null}

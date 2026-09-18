@@ -63,6 +63,7 @@ import {
   type PurchaseOrder,
 } from '../model/order'
 import { useOrder, useOrderActions, useOrderReceipts, useUpdateOrder } from '../api/orders'
+import { t } from '@/shared/i18n'
 
 /*
   Three, not the receipt's four. A receipt's "Extra data" step owns something
@@ -115,11 +116,11 @@ export default function OrderPage() {
   if (!order) {
     return (
       <EmptyState
-        title="That order no longer exists"
-        description="It may have been deleted since this link was made."
+        title={t('That order no longer exists')}
+        description={t('It may have been deleted since this link was made.')}
         action={
           <Button variant="secondary" asChild>
-            <Link to={paths.procurement.orders}>Back to orders</Link>
+            <Link to={paths.procurement.orders}>{t('Back to orders')}</Link>
           </Button>
         }
       />
@@ -132,18 +133,18 @@ export default function OrderPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <Button variant="ghost" size="icon" aria-label="Back to orders" asChild>
+        <Button variant="ghost" size="icon" aria-label={t('Back to orders')} asChild>
           <Link to={paths.procurement.orders}>
             <ArrowLeft />
           </Link>
         </Button>
         <h1 className="text-fg text-lg font-semibold">
-          Order {order.number} — {orderSource(order)}
+          {t('Order')} {order.number} — {orderSource(order)}
         </h1>
         <Badge tone={orderStatusTone(order.status)}>{orderStatusLabel(order.status)}</Badge>
         {order.expectedAt ? (
           <span className={late ? 'text-danger text-sm font-medium' : 'text-fg-muted text-sm'}>
-            Expected {formatDate(order.expectedAt)}
+            {t('Expected')} {formatDate(order.expectedAt)}
             {late ? ` — ${formatNumber(late)} days late` : ''}
           </span>
         ) : null}
@@ -157,7 +158,7 @@ export default function OrderPage() {
             }}
           >
             <Save />
-            Save
+            {t('Save')}
           </Button>
         ) : null}
       </div>
@@ -456,7 +457,7 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
             ? 'China'
             : (order.supplierName ?? '')
       }
-      scope={order.kind === 'supplier' ? undefined : 'Everything in our catalogue'}
+      scope={order.kind === 'supplier' ? undefined : t('Everything in our catalogue')}
       onAdd={(suggestions) => {
         /*
           Suggestions top up what is already on the order rather than
@@ -503,7 +504,7 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
             <>
               <Button type="button" variant="primary" onClick={() => setSuggesting(true)}>
                 <Wand2 />
-                Suggest
+                {t('Suggest')}
               </Button>
               {!fromCatalogue ? (
                 <AddProductsMenu
@@ -516,7 +517,7 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
             <>
               {canSeeCost ? (
                 <p className="text-fg-muted text-sm">
-                  Order value:{' '}
+                  {t('Order value:')}{' '}
                   <strong className="text-fg font-medium">
                     {formatMoney(Math.round(orderValue(order, USD_RATE)))}
                   </strong>
@@ -524,8 +525,9 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
               ) : null}
               {newToUs > 0 ? (
                 <p className="text-fg-subtle text-2xs">
-                  {formatNumber(newToUs)} more they list {newToUs === 1 ? 'is' : 'are'} new to us —
-                  add {newToUs === 1 ? 'it' : 'them'} to the catalogue to order
+                  {formatNumber(newToUs)} {t('more they list')} {newToUs === 1 ? 'is' : 'are'}{' '}
+                  {t('new to us — add')} {newToUs === 1 ? 'it' : 'them'}{' '}
+                  {t('to the catalogue to order')}
                 </p>
               ) : null}
             </>
@@ -550,14 +552,14 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
             <SearchInput
               value={search}
               onChange={setSearch}
-              placeholder="Search by barcode, SKU, variation or product name…"
+              placeholder={t('Search by barcode, SKU, variation or product name…')}
             />
             <div className="flex-1" />
             <div className="border-border rounded-control flex items-center border p-0.5">
               <Button
                 variant={cards ? 'ghost' : 'secondary'}
                 size="icon"
-                aria-label="Show one column per field"
+                aria-label={t('Show one column per field')}
                 aria-pressed={!cards}
                 onClick={() => setCards(false)}
               >
@@ -566,7 +568,7 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
               <Button
                 variant={cards ? 'secondary' : 'ghost'}
                 size="icon"
-                aria-label="Show each product as a card"
+                aria-label={t('Show each product as a card')}
                 aria-pressed={cards}
                 onClick={() => setCards(true)}
               >
@@ -579,7 +581,7 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
                 onClick={() => setSuggesting(true)}
               >
                 <Wand2 />
-                Suggest
+                {t('Suggest')}
               </Button>
             ) : null}
             {editable && !fromCatalogue ? (
@@ -600,15 +602,16 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
             />
             <div className="border-border text-fg-muted flex flex-wrap items-center gap-x-8 gap-y-1 border-t px-4 py-3 text-sm">
               <span>
-                Total quantity:{' '}
+                {t('Total quantity:')}{' '}
                 <strong className="text-fg font-medium">{formatNumber(units)}</strong>
               </span>
               <span>
-                Products: <strong className="text-fg font-medium">{order.lines.length}</strong>
+                {t('Products:')}{' '}
+                <strong className="text-fg font-medium">{order.lines.length}</strong>
               </span>
               {canSeeCost ? (
                 <span>
-                  Order value:{' '}
+                  {t('Order value:')}{' '}
                   <strong className="text-fg font-medium">
                     {formatMoney(Math.round(orderValue(order, USD_RATE)))}
                   </strong>
@@ -619,13 +622,15 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
         }
         emptyState={
           <EmptyState
-            title="Nothing on this order yet"
+            title={t('Nothing on this order yet')}
             description={
               order.status !== 'draft'
-                ? 'This order was sent with no products on it.'
+                ? t('This order was sent with no products on it.')
                 : fromCatalogue
-                  ? 'This supplier lists nothing, so there is nothing to order from them.'
-                  : 'Use “Add products” to put the first line on, or let Suggest work out what is worth ordering.'
+                  ? t('This supplier lists nothing, so there is nothing to order from them.')
+                  : t(
+                      'Use “Add products” to put the first line on, or let Suggest work out what is worth ordering.',
+                    )
             }
           />
         }
@@ -652,7 +657,7 @@ function DetailsCard({ order, editable }: { order: PurchaseOrder; editable: bool
   return (
     <Card>
       <CardHeader className="items-start justify-between gap-3">
-        <CardTitle>About this order</CardTitle>
+        <CardTitle>{t('About this order')}</CardTitle>
         {editable && dirty ? (
           <div className="flex items-center gap-2">
             <Button
@@ -663,7 +668,7 @@ function DetailsCard({ order, editable }: { order: PurchaseOrder; editable: bool
                 setComment(order.comment ?? '')
               }}
             >
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button
               variant="primary"
@@ -672,21 +677,23 @@ function DetailsCard({ order, editable }: { order: PurchaseOrder; editable: bool
                 update.mutate(
                   { expectedAt, comment: comment || null },
                   {
-                    onSuccess: () => toast.success('Saved'),
+                    onSuccess: () => toast.success(t('Saved')),
                     onError: (message) => toast.error(message),
                   },
                 )
               }
             >
-              Save
+              {t('Save')}
             </Button>
           </div>
         ) : null}
       </CardHeader>
       <CardBody className="grid gap-4 sm:grid-cols-2">
         <Field
-          label="Expected"
-          hint="An order cannot be late against a date nobody gave, so leave it empty when nothing was promised"
+          label={t('Expected')}
+          hint={t(
+            'An order cannot be late against a date nobody gave, so leave it empty when nothing was promised',
+          )}
         >
           {() =>
             editable ? (
@@ -699,22 +706,25 @@ function DetailsCard({ order, editable }: { order: PurchaseOrder; editable: bool
               />
             ) : (
               <p className="text-fg py-1.5 text-sm">
-                {expectedAt ? formatDate(expectedAt) : 'Nothing was promised'}
+                {expectedAt ? formatDate(expectedAt) : t('Nothing was promised')}
               </p>
             )
           }
         </Field>
-        <Field label="Note" hint="Anything worth knowing when this order is queried later">
+        <Field
+          label={t('Note')}
+          hint={t('Anything worth knowing when this order is queried later')}
+        >
           {(p) =>
             editable ? (
               <Input
                 {...p}
-                placeholder="Container 4, Q3 restock"
+                placeholder={t('Container 4, Q3 restock')}
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
               />
             ) : (
-              <p className="text-fg py-1.5 text-sm">{comment || 'None'}</p>
+              <p className="text-fg py-1.5 text-sm">{comment || t('None')}</p>
             )
           }
         </Field>
@@ -739,20 +749,20 @@ function ReviewStep({ order, editable }: { order: PurchaseOrder; editable: boole
 
       <Card>
         <CardHeader className="items-start justify-between gap-3">
-          <CardTitle>What is being ordered</CardTitle>
+          <CardTitle>{t('What is being ordered')}</CardTitle>
           <div className="flex flex-wrap items-center gap-2">
             {order.kind === 'china' ? (
               <Button variant="secondary" size="sm" asChild>
                 <Link to={paths.procurement.orderDocument(order.id)}>
                   <FileText />
-                  Download PDF
+                  {t('Download PDF')}
                 </Link>
               </Button>
             ) : null}
             {canCancel(order.status) && can('procurement.orders.delete') ? (
               <Button variant="secondary" size="sm" onClick={() => setConfirmCancel(true)}>
                 <Ban />
-                Cancel order
+                {t('Cancel order')}
               </Button>
             ) : null}
             {send && can('procurement.orders.edit') ? (
@@ -760,7 +770,7 @@ function ReviewStep({ order, editable }: { order: PurchaseOrder; editable: boole
                 variant="primary"
                 size="sm"
                 disabled={order.lines.length === 0}
-                title={order.lines.length === 0 ? 'Put something on it first' : undefined}
+                title={order.lines.length === 0 ? t('Put something on it first') : undefined}
                 onClick={() =>
                   actions.setStatus(send.to, {
                     onSuccess: () => toast.success(`${order.number} ${send.label.toLowerCase()}`),
@@ -782,8 +792,8 @@ function ReviewStep({ order, editable }: { order: PurchaseOrder; editable: boole
       <ConfirmDialog
         open={confirmCancel}
         onOpenChange={setConfirmCancel}
-        title="Cancel this order?"
-        confirmLabel="Cancel order"
+        title={t('Cancel this order?')}
+        confirmLabel={t('Cancel order')}
         body={`${order.number} is closed and its ${formatNumber(
           outstandingUnits(order),
         )} outstanding units stop being expected. Nothing already delivered is affected.`}
@@ -807,8 +817,8 @@ function LineTable({ order, canSeeCost }: { order: PurchaseOrder; canSeeCost: bo
   if (order.lines.length === 0) {
     return (
       <EmptyState
-        title="Nothing on this order"
-        description="Put some products on the first step and they will appear here."
+        title={t('Nothing on this order')}
+        description={t('Put some products on the first step and they will appear here.')}
       />
     )
   }
@@ -817,12 +827,12 @@ function LineTable({ order, canSeeCost }: { order: PurchaseOrder; canSeeCost: bo
       <table className="w-full min-w-max text-sm">
         <thead className="bg-canvas">
           <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-            <th className="px-4 py-2 text-left font-semibold">Product</th>
-            <th className="px-4 py-2 text-right font-semibold">Ordered</th>
-            <th className="px-4 py-2 text-right font-semibold">Delivered</th>
-            <th className="px-4 py-2 text-right font-semibold">Still coming</th>
+            <th className="px-4 py-2 text-left font-semibold">{t('Product')}</th>
+            <th className="px-4 py-2 text-right font-semibold">{t('Ordered')}</th>
+            <th className="px-4 py-2 text-right font-semibold">{t('Delivered')}</th>
+            <th className="px-4 py-2 text-right font-semibold">{t('Still coming')}</th>
             {canSeeCost ? (
-              <th className="px-4 py-2 text-right font-semibold">Agreed price</th>
+              <th className="px-4 py-2 text-right font-semibold">{t('Agreed price')}</th>
             ) : null}
           </tr>
         </thead>
@@ -861,7 +871,7 @@ function LineTable({ order, canSeeCost }: { order: PurchaseOrder; canSeeCost: bo
                 </td>
                 {canSeeCost ? (
                   <td className="text-fg-muted px-4 py-2 text-right tabular-nums">
-                    {line.costCurrency === 'USD'
+                    {line.costCurrency === t('USD')
                       ? `${line.unitCost.toFixed(2)} USD`
                       : formatMoney(line.unitCost)}
                   </td>
@@ -902,22 +912,24 @@ function DeliveriesStep({ order }: { order: PurchaseOrder }) {
     <>
       <Card>
         <CardHeader className="items-start justify-between gap-3">
-          <CardTitle>Deliveries against this order</CardTitle>
+          <CardTitle>{t('Deliveries against this order')}</CardTitle>
           {canReceive(order.status) && can('procurement.orders.edit') ? (
             <Button variant="primary" size="sm" onClick={openReceiving}>
               <PackageCheck />
-              Book a delivery
+              {t('Book a delivery')}
             </Button>
           ) : null}
         </CardHeader>
         <CardBody className="p-0">
           {receipts.length === 0 ? (
             <EmptyState
-              title="Nothing has arrived yet"
+              title={t('Nothing has arrived yet')}
               description={
                 canReceive(order.status)
-                  ? 'When the supplier delivers, booking it in creates a goods receipt and adds the stock.'
-                  : 'This order has not been sent, so nothing can be delivered against it.'
+                  ? t(
+                      'When the supplier delivers, booking it in creates a goods receipt and adds the stock.',
+                    )
+                  : t('This order has not been sent, so nothing can be delivered against it.')
               }
             />
           ) : (
@@ -925,10 +937,10 @@ function DeliveriesStep({ order }: { order: PurchaseOrder }) {
               <table className="w-full min-w-max text-sm">
                 <thead className="bg-canvas">
                   <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-                    <th className="px-4 py-2 text-left font-semibold">Receipt</th>
-                    <th className="px-4 py-2 text-left font-semibold">Invoice</th>
-                    <th className="px-4 py-2 text-right font-semibold">Products</th>
-                    <th className="px-4 py-2 text-left font-semibold">When</th>
+                    <th className="px-4 py-2 text-left font-semibold">{t('Receipt')}</th>
+                    <th className="px-4 py-2 text-left font-semibold">{t('Invoice')}</th>
+                    <th className="px-4 py-2 text-right font-semibold">{t('Products')}</th>
+                    <th className="px-4 py-2 text-left font-semibold">{t('When')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -962,7 +974,7 @@ function DeliveriesStep({ order }: { order: PurchaseOrder }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>What is still coming</CardTitle>
+          <CardTitle>{t('What is still coming')}</CardTitle>
         </CardHeader>
         <CardBody className="p-0">
           <LineTable order={order} canSeeCost={canSeeCost} />
@@ -972,10 +984,10 @@ function DeliveriesStep({ order }: { order: PurchaseOrder }) {
       <Modal
         open={receiving}
         onOpenChange={setReceiving}
-        title="Book a delivery"
+        title={t('Book a delivery')}
         size="lg"
         primary={{
-          label: 'Book it in',
+          label: t('Book it in'),
           disabled: arriving === 0,
           onClick: () =>
             actions.receive(
@@ -992,11 +1004,14 @@ function DeliveriesStep({ order }: { order: PurchaseOrder }) {
         }}
       >
         <div className="space-y-3">
-          <Field label="Invoice number" hint="The supplier's, for matching their paperwork">
+          <Field
+            label={t('Invoice number')}
+            hint={t("The supplier's, for matching their paperwork")}
+          >
             {(p) => (
               <Input
                 {...p}
-                placeholder="INV-40218"
+                placeholder={t('INV-40218')}
                 value={invoiceNumber}
                 onChange={(event) => setInvoiceNumber(event.target.value)}
               />
@@ -1007,9 +1022,9 @@ function DeliveriesStep({ order }: { order: PurchaseOrder }) {
             <table className="w-full text-sm">
               <thead className="bg-canvas">
                 <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-                  <th className="px-3 py-2 text-left font-semibold">Product</th>
-                  <th className="px-3 py-2 text-right font-semibold">Still coming</th>
-                  <th className="px-3 py-2 text-right font-semibold">Arrived</th>
+                  <th className="px-3 py-2 text-left font-semibold">{t('Product')}</th>
+                  <th className="px-3 py-2 text-right font-semibold">{t('Still coming')}</th>
+                  <th className="px-3 py-2 text-right font-semibold">{t('Arrived')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1062,7 +1077,7 @@ function DeliveriesStep({ order }: { order: PurchaseOrder }) {
 
           <p className="text-fg-muted text-sm">
             {arriving === 0
-              ? 'Nothing to book in.'
+              ? t('Nothing to book in.')
               : `${formatNumber(arriving)} units, worth ${formatMoney(
                   Math.round(
                     order.lines.reduce(

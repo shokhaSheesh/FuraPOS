@@ -45,6 +45,7 @@ import type { VariationRow } from '@/features/products/model/product'
 import { useDataStore } from '@/data/store'
 import { useBestPromotion } from '@/features/promotions/api/promotions'
 import { covers, describe as describePromotion } from '@/features/promotions/model/promotion'
+import { t } from '@/shared/i18n'
 
 const LOCATIONS = [
   { value: 'loc-1', label: 'Central warehouse' },
@@ -336,13 +337,13 @@ export default function NewSalePage() {
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
         <Link to={paths.sales.orders}>
           <ArrowLeft />
-          All sales
+          {t('All sales')}
         </Link>
       </Button>
 
       <PageHeader
-        title="New sale"
-        description="Record a sale taken at the desk, by phone or on delivery."
+        title={t('New sale')}
+        description={t('Record a sale taken at the desk, by phone or on delivery.')}
         action={
           <div className="flex items-center gap-2">
             <Button
@@ -354,7 +355,7 @@ export default function NewSalePage() {
               }
               onClick={() => submit('save')}
             >
-              Save
+              {t('Save')}
             </Button>
             <Button
               variant="secondary"
@@ -363,7 +364,7 @@ export default function NewSalePage() {
               onClick={() => submit('postponed')}
             >
               <Clock />
-              Postpone
+              {t('Postpone')}
             </Button>
             <Button
               variant="primary"
@@ -378,7 +379,7 @@ export default function NewSalePage() {
               onClick={() => submit('complete')}
             >
               <Check />
-              {deliveryOn ? 'Accept order' : 'Complete sale'}
+              {deliveryOn ? t('Accept order') : t('Complete sale')}
             </Button>
           </div>
         }
@@ -397,11 +398,11 @@ export default function NewSalePage() {
         <div className="space-y-3">
           <Card>
             <CardHeader>
-              <CardTitle>Customer</CardTitle>
+              <CardTitle>{t('Customer')}</CardTitle>
             </CardHeader>
             <CardBody className="space-y-3">
               <SegmentedControl
-                aria-label="Which kind of driver is buying"
+                aria-label={t('Which kind of driver is buying')}
                 value={section}
                 onChange={pickSection}
                 options={DRIVER_SECTIONS}
@@ -409,8 +410,8 @@ export default function NewSalePage() {
               {section === 'autopark' ? (
                 <Select
                   className="w-full"
-                  aria-label="Autopark"
-                  placeholder="Choose an autopark"
+                  aria-label={t('Autopark')}
+                  placeholder={t('Choose an autopark')}
                   value={autoparkId ?? undefined}
                   onChange={pickAutopark}
                   options={autoparks}
@@ -428,14 +429,15 @@ export default function NewSalePage() {
 
               {driver ? (
                 <p className="text-fg-subtle text-2xs">
-                  Buying for {describeCapacity(driver, capacity)}
+                  {t('Buying for')} {describeCapacity(driver, capacity)}
                 </p>
               ) : null}
 
               {truckOptions.length > 1 ? (
                 <div className="space-y-1.5">
                   <p className="text-fg-muted text-sm">
-                    Which truck<span className="text-danger ml-0.5">*</span>
+                    {t('Which truck')}
+                    <span className="text-danger ml-0.5">*</span>
                   </p>
                   <div className="grid gap-1.5">
                     {truckOptions.map((truck) => (
@@ -455,7 +457,7 @@ export default function NewSalePage() {
                   </div>
                   {needsTruck ? (
                     <p className="text-danger text-2xs">
-                      He owns {truckOptions.length} trucks — say which this is for.
+                      {t('He owns')} {truckOptions.length} {t('trucks — say which this is for.')}
                     </p>
                   ) : null}
                 </div>
@@ -463,7 +465,7 @@ export default function NewSalePage() {
 
               {client && client.debt > 0 ? (
                 <p className="text-warning text-2xs">
-                  {client.name} already owes {formatMoney(client.debt)}.
+                  {client.name} {t('already owes')} {formatMoney(client.debt)}.
                 </p>
               ) : null}
 
@@ -479,29 +481,29 @@ export default function NewSalePage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Details</CardTitle>
+              <CardTitle>{t('Details')}</CardTitle>
             </CardHeader>
             <CardBody className="space-y-3">
-              <Field label="Location">
+              <Field label={t('Location')}>
                 <Select
                   value={locationId}
                   onChange={setLocationId}
                   options={LOCATIONS}
-                  aria-label="Location"
+                  aria-label={t('Location')}
                   className="w-full"
                 />
               </Field>
-              <Field label="Source">
+              <Field label={t('Source')}>
                 <Select
                   value={channel}
                   onChange={setChannel}
                   options={SALE_CHANNELS}
-                  aria-label="Source"
+                  aria-label={t('Source')}
                   className="w-full"
                 />
               </Field>
               <Field
-                label="Payment method"
+                label={t('Payment method')}
                 error={
                   noDrawer
                     ? 'No cash drawer is open at this location — open a shift, or take payment another way'
@@ -512,25 +514,25 @@ export default function NewSalePage() {
                   value={paymentMethod}
                   onChange={setPaymentMethod}
                   options={PAYMENT_METHODS}
-                  aria-label="Payment method"
+                  aria-label={t('Payment method')}
                   className="w-full"
                 />
               </Field>
-              <Field label="Seller">
+              <Field label={t('Seller')}>
                 <Input value={user?.name ?? ''} readOnly disabled />
               </Field>
-              <Field label="Comment">
+              <Field label={t('Comment')}>
                 <Input
                   value={comment}
                   onChange={(event) => setComment(event.target.value)}
-                  placeholder="Optional"
+                  placeholder={t('Optional')}
                 />
               </Field>
-              <Field label="Hold until">
+              <Field label={t('Hold until')}>
                 <DatePicker
                   value={expiresAt}
                   onChange={setExpiresAt}
-                  placeholder="3 days by default"
+                  placeholder={t('3 days by default')}
                   minDate={new Date()}
                 />
               </Field>
@@ -539,7 +541,7 @@ export default function NewSalePage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Delivery</CardTitle>
+              <CardTitle>{t('Delivery')}</CardTitle>
               <label className="text-fg-muted flex cursor-pointer items-center gap-2 text-sm">
                 <input
                   type="checkbox"
@@ -547,20 +549,20 @@ export default function NewSalePage() {
                   onChange={(event) => setDeliveryOn(event.target.checked)}
                   className="accent-primary size-4"
                 />
-                Required
+                {t('Required')}
               </label>
             </CardHeader>
             {deliveryOn ? (
               <CardBody className="space-y-3">
-                <Field label="Address">
+                <Field label={t('Address')}>
                   <Input
                     value={address}
                     onChange={(event) => setAddress(event.target.value)}
-                    placeholder="Street, building, flat"
+                    placeholder={t('Street, building, flat')}
                   />
                 </Field>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Cost">
+                  <Field label={t('Cost')}>
                     <Input
                       type="number"
                       min={0}
@@ -570,20 +572,20 @@ export default function NewSalePage() {
                       className="text-right"
                     />
                   </Field>
-                  <Field label="Date">
+                  <Field label={t('Date')}>
                     <DatePicker
                       value={scheduledFor}
                       onChange={setScheduledFor}
-                      placeholder="Pick a date"
+                      placeholder={t('Pick a date')}
                       minDate={new Date()}
                     />
                   </Field>
                 </div>
-                <Field label="Courier">
+                <Field label={t('Courier')}>
                   <Input
                     value={courier}
                     onChange={(event) => setCourier(event.target.value)}
-                    placeholder="Optional"
+                    placeholder={t('Optional')}
                   />
                 </Field>
               </CardBody>
@@ -591,7 +593,7 @@ export default function NewSalePage() {
               <CardBody>
                 <p className="text-fg-subtle flex items-center gap-2 text-sm">
                   <Truck className="size-4" />
-                  Customer is taking it with them.
+                  {t('Customer is taking it with them.')}
                 </p>
               </CardBody>
             )}
@@ -604,11 +606,11 @@ export default function NewSalePage() {
                 <div className="min-w-0 flex-1 space-y-1">
                   <p className="text-fg text-sm font-medium">{offer.promotion.name}</p>
                   <p className="text-fg-muted text-2xs">
-                    {describePromotion(offer.promotion)} — takes {formatMoney(offer.discount)} off
-                    this sale.
+                    {describePromotion(offer.promotion)} {t('— takes')}{' '}
+                    {formatMoney(offer.discount)} {t('off this sale.')}
                   </p>
                   <Button type="button" variant="secondary" size="sm" onClick={applyOffer}>
-                    Apply it
+                    {t('Apply it')}
                   </Button>
                 </div>
               </CardBody>
@@ -617,38 +619,42 @@ export default function NewSalePage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Total</CardTitle>
+              <CardTitle>{t('Total')}</CardTitle>
             </CardHeader>
             <CardBody className="space-y-2">
-              <Row label="Subtotal" value={formatMoney(totals.subtotal)} />
+              <Row label={t('Subtotal')} value={formatMoney(totals.subtotal)} />
               {totals.discount > 0 ? (
-                <Row label="Discount" value={`− ${formatMoney(totals.discount)}`} tone="warning" />
+                <Row
+                  label={t('Discount')}
+                  value={`− ${formatMoney(totals.discount)}`}
+                  tone="warning"
+                />
               ) : null}
               {totals.deliveryCost > 0 ? (
-                <Row label="Delivery" value={`+ ${formatMoney(totals.deliveryCost)}`} />
+                <Row label={t('Delivery')} value={`+ ${formatMoney(totals.deliveryCost)}`} />
               ) : null}
               <div className="border-border flex items-baseline justify-between border-t pt-2">
-                <span className="text-fg text-sm font-medium">To pay</span>
+                <span className="text-fg text-sm font-medium">{t('To pay')}</span>
                 <span className="text-fg text-lg font-semibold">{formatMoney(totals.total)}</span>
               </div>
 
-              <Field label="Paid">
+              <Field label={t('Paid')}>
                 <Input
                   type="number"
                   min={0}
                   value={paidText}
                   onChange={(event) => setPaidText(event.target.value)}
                   placeholder={String(totals.total)}
-                  aria-label="Amount paid"
+                  aria-label={t('Amount paid')}
                   className="text-right"
                 />
               </Field>
 
               {totals.change > 0 ? (
-                <Row label="Change" value={formatMoney(totals.change)} tone="success" />
+                <Row label={t('Change')} value={formatMoney(totals.change)} tone="success" />
               ) : null}
               {totals.debt > 0 && paidText !== '' ? (
-                <Row label="Remaining debt" value={formatMoney(totals.debt)} tone="danger" />
+                <Row label={t('Remaining debt')} value={formatMoney(totals.debt)} tone="danger" />
               ) : null}
             </CardBody>
           </Card>

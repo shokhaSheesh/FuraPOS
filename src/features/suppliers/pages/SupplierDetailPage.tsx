@@ -47,6 +47,7 @@ import {
   portalStateTone,
   type PaymentValues,
 } from '../model/supplier'
+import { t } from '@/shared/i18n'
 
 export default function SupplierDetailPage() {
   const { supplierId } = useParams()
@@ -69,7 +70,9 @@ export default function SupplierDetailPage() {
   })
 
   if (!data) {
-    return <EmptyState title="Supplier not found" description="It may have been deleted." />
+    return (
+      <EmptyState title={t('Supplier not found')} description={t('It may have been deleted.')} />
+    )
   }
 
   const { supplier, stats } = data
@@ -118,7 +121,7 @@ export default function SupplierDetailPage() {
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
         <Link to={paths.products.suppliers}>
           <ArrowLeft />
-          Suppliers
+          {t('Suppliers')}
         </Link>
       </Button>
 
@@ -133,14 +136,14 @@ export default function SupplierDetailPage() {
               <Button variant="secondary" asChild>
                 <Link to={paths.products.editSupplier(supplier.id)}>
                   <Pencil />
-                  Edit
+                  {t('Edit')}
                 </Link>
               </Button>
             ) : null}
             {supplier.debt > 0 && can('products.suppliers.edit') ? (
               <Button variant="primary" onClick={() => setPaying(true)}>
                 <Banknote />
-                Record a payment
+                {t('Record a payment')}
               </Button>
             ) : null}
           </div>
@@ -148,41 +151,42 @@ export default function SupplierDetailPage() {
         below={
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone={supplier.status === 'active' ? 'success' : 'neutral'}>
-              {supplier.status === 'active' ? 'Active' : 'Archived'}
+              {supplier.status === 'active' ? t('Active') : t('Archived')}
             </Badge>
             {supplier.debt > 0 ? (
               <Badge tone="danger">{formatMoney(supplier.debt)} owed</Badge>
             ) : (
-              <Badge tone="success">Nothing owed</Badge>
+              <Badge tone="success">{t('Nothing owed')}</Badge>
             )}
             {overdue ? (
               <span className="text-danger text-sm">
-                {formatNumber(overdue)} days past the {supplier.paymentTermDays}-day terms
+                {formatNumber(overdue)} {t('days past the')} {supplier.paymentTermDays}
+                {t('-day terms')}
               </span>
             ) : null}
-            {isDormant(stats) ? <Badge tone="warning">No delivery in 90 days</Badge> : null}
+            {isDormant(stats) ? <Badge tone="warning">{t('No delivery in 90 days')}</Badge> : null}
           </div>
         }
       />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Figure
-          label="Bought from them"
+          label={t('Bought from them')}
           value={canSeeCost ? formatMoney(stats.purchased) : formatNumber(stats.purchasedUnits)}
           meta={`${formatNumber(stats.receipts)} deliveries · ${formatNumber(stats.products)} products`}
         />
         <Figure
-          label="Sold on"
+          label={t('Sold on')}
           value={formatPercent(stats.soldRatio)}
           meta={canSeeCost ? `${formatMoney(stats.soldValue)} of it` : 'of what they sent'}
         />
         <Figure
-          label="Still on the shelf"
+          label={t('Still on the shelf')}
           value={canSeeCost ? formatMoney(stats.onHandValue) : formatNumber(stats.onHandUnits)}
           meta={`${formatNumber(stats.onHandUnits)} units`}
         />
         <Figure
-          label="Last delivery"
+          label={t('Last delivery')}
           value={stats.lastReceiptAt ? formatDate(stats.lastReceiptAt) : 'Never'}
           meta={supplier.paymentTermDays ? `${supplier.paymentTermDays}-day terms` : 'No terms set'}
         />
@@ -213,7 +217,7 @@ export default function SupplierDetailPage() {
             ? [
                 {
                   id: 'overdue',
-                  title: 'This account is past its terms',
+                  title: t('This account is past its terms'),
                   body: `${formatMoney(supplier.debt)} has been outstanding for ${formatNumber(
                     overdue,
                   )} days beyond the agreed ${supplier.paymentTermDays} days. Paying late is usually cheaper than it looks until a supplier changes their terms.`,
@@ -227,7 +231,7 @@ export default function SupplierDetailPage() {
           supplier.debt > 0 && can('products.suppliers.edit') ? (
             <Button variant="secondary" size="sm" onClick={() => setPaying(true)}>
               <Banknote />
-              Record a payment
+              {t('Record a payment')}
             </Button>
           ) : null
         }
@@ -236,24 +240,24 @@ export default function SupplierDetailPage() {
       <div className="grid gap-3 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Recent deliveries</CardTitle>
+            <CardTitle>{t('Recent deliveries')}</CardTitle>
           </CardHeader>
           <CardBody className="p-0">
             {theirReceipts.length === 0 ? (
               <p className="text-fg-subtle p-4 text-sm">
-                Nothing has been received from {supplier.name} yet.
+                {t('Nothing has been received from')} {supplier.name} yet.
               </p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-canvas">
                     <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-                      <th className="px-4 py-2 text-left font-semibold">Receipt</th>
-                      <th className="px-4 py-2 text-left font-semibold">Landed at</th>
-                      <th className="px-4 py-2 text-right font-semibold">Invoiced</th>
-                      <th className="px-4 py-2 text-right font-semibold">Paid</th>
-                      <th className="px-4 py-2 text-right font-semibold">Pending</th>
-                      <th className="px-4 py-2 text-left font-semibold">Status</th>
+                      <th className="px-4 py-2 text-left font-semibold">{t('Receipt')}</th>
+                      <th className="px-4 py-2 text-left font-semibold">{t('Landed at')}</th>
+                      <th className="px-4 py-2 text-right font-semibold">{t('Invoiced')}</th>
+                      <th className="px-4 py-2 text-right font-semibold">{t('Paid')}</th>
+                      <th className="px-4 py-2 text-right font-semibold">{t('Pending')}</th>
+                      <th className="px-4 py-2 text-left font-semibold">{t('Status')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -279,7 +283,7 @@ export default function SupplierDetailPage() {
                           if (!settled) {
                             return (
                               <td className="text-fg-subtle px-4 py-2 text-right" colSpan={3}>
-                                Nothing charged
+                                {t('Nothing charged')}
                               </td>
                             )
                           }
@@ -317,10 +321,10 @@ export default function SupplierDetailPage() {
                             }
                           >
                             {receipt.status === 'received'
-                              ? 'Received'
+                              ? t('Received')
                               : receipt.status === 'draft'
-                                ? 'Draft'
-                                : 'Cancelled'}
+                                ? t('Draft')
+                                : t('Cancelled')}
                           </Badge>
                         </td>
                       </tr>
@@ -336,7 +340,7 @@ export default function SupplierDetailPage() {
                     <tr className="border-border text-2xs border-t font-semibold">
                       <td className="text-fg-muted px-4 py-2" colSpan={2}>
                         {theirReceipts.length === stats.receipts
-                          ? 'All deliveries'
+                          ? t('All deliveries')
                           : `These ${formatNumber(theirReceipts.length)} deliveries`}
                       </td>
                       <td className="text-fg px-4 py-2 text-right tabular-nums">
@@ -362,19 +366,19 @@ export default function SupplierDetailPage() {
         <div className="space-y-3">
           <Card>
             <CardHeader>
-              <CardTitle>Manager</CardTitle>
+              <CardTitle>{t('Manager')}</CardTitle>
             </CardHeader>
             <CardBody className="space-y-2 text-sm">
-              <Row label="Name" value={supplier.contactName ?? '—'} />
-              <Row label="Phone" value={supplier.phone ?? '—'} />
-              <Row label="Email" value={supplier.email ?? '—'} />
-              <Row label="Zone" value={supplier.zone ?? '—'} />
-              <Row label="Address" value={supplier.address ?? '—'} />
+              <Row label={t('Name')} value={supplier.contactName ?? '—'} />
+              <Row label={t('Phone')} value={supplier.phone ?? '—'} />
+              <Row label={t('Email')} value={supplier.email ?? '—'} />
+              <Row label={t('Zone')} value={supplier.zone ?? '—'} />
+              <Row label={t('Address')} value={supplier.address ?? '—'} />
               <Row
-                label="Payment terms"
+                label={t('Payment terms')}
                 value={supplier.paymentTermDays ? `${supplier.paymentTermDays} days` : 'Not agreed'}
               />
-              {supplier.comment ? <Row label="Note" value={supplier.comment} /> : null}
+              {supplier.comment ? <Row label={t('Note')} value={supplier.comment} /> : null}
             </CardBody>
           </Card>
 
@@ -383,7 +387,7 @@ export default function SupplierDetailPage() {
           {canSeePortal ? (
             <Card>
               <CardHeader>
-                <CardTitle>Supplier portal</CardTitle>
+                <CardTitle>{t('Supplier portal')}</CardTitle>
               </CardHeader>
               <CardBody className="space-y-3 text-sm">
                 <div className="flex items-center justify-between gap-3">
@@ -395,25 +399,25 @@ export default function SupplierDetailPage() {
 
                 {!supplier.username ? (
                   <p className="text-fg-muted">
-                    {supplier.contactName ?? 'Nobody here'} cannot sign in. A login is created by
-                    editing this supplier.
+                    {supplier.contactName ?? t('Nobody here')}{' '}
+                    {t('cannot sign in. A login is created by editing this supplier.')}
                   </p>
                 ) : (
                   <div className="space-y-2">
-                    <Row label="Login" value={supplier.username ?? '—'} mono />
+                    <Row label={t('Login')} value={supplier.username ?? '—'} mono />
                     <Row
-                      label="Role"
+                      label={t('Role')}
                       value={roles.find((role) => role.id === supplier.roleId)?.name ?? 'No role'}
                     />
                     {/* Readable, because the person handing it over has to be
                         able to read it out when the supplier rings back. */}
-                    <Row label="Password" value={supplier.password ?? '—'} mono />
+                    <Row label={t('Password')} value={supplier.password ?? '—'} mono />
                     <Row
-                      label="Changed"
+                      label={t('Changed')}
                       value={supplier.passwordSetAt ? formatDate(supplier.passwordSetAt) : 'Never'}
                     />
                     <Row
-                      label="Last signed in"
+                      label={t('Last signed in')}
                       value={
                         supplier.lastSignedInAt ? formatDate(supplier.lastSignedInAt) : 'Never'
                       }
@@ -428,12 +432,12 @@ export default function SupplierDetailPage() {
                             ?.writeText(
                               `Login: ${supplier.username}\nPassword: ${supplier.password}`,
                             )
-                            .then(() => toast.success('Login and password copied'))
-                            .catch(() => toast.error('Could not copy — select the text instead'))
+                            .then(() => toast.success(t('Login and password copied')))
+                            .catch(() => toast.error(t('Could not copy — select the text instead')))
                         }
                       >
                         <Copy />
-                        Copy both
+                        {t('Copy both')}
                       </Button>
                     ) : null}
                   </div>
@@ -450,7 +454,7 @@ export default function SupplierDetailPage() {
                       }}
                     >
                       <KeyRound />
-                      {supplier.password ? 'Change password' : 'Set a password'}
+                      {supplier.password ? t('Change password') : t('Set a password')}
                     </Button>
                     <Button
                       variant="secondary"
@@ -468,8 +472,8 @@ export default function SupplierDetailPage() {
                     >
                       {supplier.access === 'disabled' ? <ShieldCheck /> : <ShieldOff />}
                       {supplier.access === 'disabled'
-                        ? 'Switch access back on'
-                        : 'Switch access off'}
+                        ? t('Switch access back on')
+                        : t('Switch access off')}
                     </Button>
                   </div>
                 ) : null}
@@ -487,15 +491,15 @@ export default function SupplierDetailPage() {
         }}
         title={`Record a payment to ${supplier.name}`}
         description={`${formatMoney(supplier.debt)} is outstanding. This records money already sent — it does not send anything.`}
-        primary={{ label: 'Record payment', onClick: submitPayment }}
+        primary={{ label: t('Record payment'), onClick: submitPayment }}
       >
         <div className="space-y-3">
           {/* Which invoice the money is for. Without this a payment lands on
               the account as a lump and nobody can tell afterwards which
               deliveries it settled. */}
           <Field
-            label="Paying for"
-            hint="Pick the delivery this payment covers, or spread it across the oldest first"
+            label={t('Paying for')}
+            hint={t('Pick the delivery this payment covers, or spread it across the oldest first')}
           >
             {(p) => (
               <Select
@@ -525,7 +529,7 @@ export default function SupplierDetailPage() {
               />
             )}
           </Field>
-          <Field label="Amount" required error={form.formState.errors.amount?.message}>
+          <Field label={t('Amount')} required error={form.formState.errors.amount?.message}>
             {(p) => (
               <NumberField
                 {...p}
@@ -542,10 +546,10 @@ export default function SupplierDetailPage() {
             size="sm"
             onClick={() => form.setValue('amount', payableNow, { shouldValidate: true })}
           >
-            Pay it all — {formatMoney(payableNow)}
+            {t('Pay it all —')} {formatMoney(payableNow)}
           </Button>
-          <Field label="Reference" hint="Transfer number, or how it was paid">
-            {(p) => <Input {...p} placeholder="Bank transfer" {...form.register('comment')} />}
+          <Field label={t('Reference')} hint={t('Transfer number, or how it was paid')}>
+            {(p) => <Input {...p} placeholder={t('Bank transfer')} {...form.register('comment')} />}
           </Field>
         </div>
       </Modal>
@@ -554,21 +558,21 @@ export default function SupplierDetailPage() {
         open={changing}
         onOpenChange={setChanging}
         title={`Password for ${supplier.name}`}
-        description={`${supplier.contactName ?? 'Their manager'} signs in as ${supplier.username}. Type one or generate it — either way it stays readable here.`}
+        description={`${supplier.contactName ?? t('Their manager')} signs in as ${supplier.username}. Type one or generate it — either way it stays readable here.`}
         size="sm"
         primary={{
-          label: 'Save password',
+          label: t('Save password'),
           onClick: () =>
             setPassword.mutate(draftPassword, {
               onSuccess: () => {
-                toast.success('Password changed')
+                toast.success(t('Password changed'))
                 setChanging(false)
               },
               onError: (message) => toast.error(message),
             }),
         }}
       >
-        <Field label="Password" required hint="At least 8 characters">
+        <Field label={t('Password')} required hint={t('At least 8 characters')}>
           {(p) => (
             <div className="flex gap-2">
               <Input
@@ -583,7 +587,7 @@ export default function SupplierDetailPage() {
                 onClick={() => setDraftPassword(generatePassword())}
               >
                 <Wand2 />
-                Generate
+                {t('Generate')}
               </Button>
             </div>
           )}

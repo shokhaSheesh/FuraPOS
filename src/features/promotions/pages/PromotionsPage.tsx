@@ -30,6 +30,7 @@ import {
   promotionStatusLabel,
   promotionStatusTone,
 } from '../model/promotion'
+import { t } from '@/shared/i18n'
 
 /**
  * Promotions.
@@ -55,7 +56,7 @@ export default function PromotionsPage() {
     () => [
       {
         accessorKey: 'name',
-        header: 'Promotion',
+        header: t('Promotion'),
         enableHiding: false,
         cell: ({ row }) => (
           <div className="min-w-0">
@@ -66,7 +67,7 @@ export default function PromotionsPage() {
       },
       {
         accessorKey: 'status',
-        header: 'Status',
+        header: t('Status'),
         enableHiding: false,
         cell: ({ row }) => (
           <Badge tone={promotionStatusTone(row.original.status)}>
@@ -76,7 +77,7 @@ export default function PromotionsPage() {
       },
       {
         id: 'runs',
-        header: 'Runs',
+        header: t('Runs'),
         enableHiding: false,
         cell: ({ row }) => (
           <div className="min-w-0">
@@ -89,7 +90,7 @@ export default function PromotionsPage() {
                 className={`text-2xs ${row.original.daysLeft <= 7 ? 'text-warning' : 'text-fg-subtle'}`}
               >
                 {row.original.daysLeft === 0
-                  ? 'ends today'
+                  ? t('ends today')
                   : `${formatNumber(row.original.daysLeft)} days left`}
               </p>
             ) : null}
@@ -98,11 +99,11 @@ export default function PromotionsPage() {
       },
       {
         id: 'applies',
-        header: 'Applies to',
+        header: t('Applies to'),
         enableHiding: false,
         cell: ({ row }) =>
           row.original.scope === 'all' ? (
-            <span className="text-fg-muted">Everything</span>
+            <span className="text-fg-muted">{t('Everything')}</span>
           ) : (
             <div className="flex flex-wrap gap-1" title={row.original.scopeNames.join(', ')}>
               {row.original.scopeNames.slice(0, 2).map((name) => (
@@ -123,10 +124,10 @@ export default function PromotionsPage() {
       },
       {
         id: 'audience',
-        header: 'Who gets it',
+        header: t('Who gets it'),
         cell: ({ row }) =>
           row.original.audience === 'everyone' ? (
-            <span className="text-fg-muted">Everyone</span>
+            <span className="text-fg-muted">{t('Everyone')}</span>
           ) : (
             <Badge tone="info" title={row.original.clientNames.join(', ')}>
               {describeAudience(row.original)}
@@ -135,16 +136,16 @@ export default function PromotionsPage() {
       },
       {
         id: 'minimum',
-        header: 'Minimum sale',
+        header: t('Minimum sale'),
         meta: { align: 'right' },
         cell: ({ row }) =>
           row.original.minimumSale === null ? (
-            <span className="text-fg-subtle">Any</span>
+            <span className="text-fg-subtle">{t('Any')}</span>
           ) : (
             <span className="tabular-nums">{formatMoney(row.original.minimumSale)}</span>
           ),
       },
-      { accessorKey: 'createdBy', header: 'Set up by' },
+      { accessorKey: 'createdBy', header: t('Set up by') },
       {
         id: 'actions',
         header: '',
@@ -167,13 +168,13 @@ export default function PromotionsPage() {
                 },
               },
               {
-                label: 'Edit',
+                label: t('Edit'),
                 icon: Pencil,
                 hidden: !can('marketing.promotions.edit'),
                 onSelect: () => navigate(paths.marketing.editPromotion(row.original.id)),
               },
               {
-                label: 'Delete',
+                label: t('Delete'),
                 icon: Trash2,
                 destructive: true,
                 hidden: !can('marketing.promotions.delete'),
@@ -190,27 +191,29 @@ export default function PromotionsPage() {
   return (
     <>
       <PageHeader
-        title="Promotions"
-        description="Discounts recorded as a decision rather than typed into a sale. A running promotion is applied for the seller on the New sale screen, so nobody has to remember this week's offer or work the percentage out by hand."
+        title={t('Promotions')}
+        description={t(
+          "Discounts recorded as a decision rather than typed into a sale. A running promotion is applied for the seller on the New sale screen, so nobody has to remember this week's offer or work the percentage out by hand.",
+        )}
         action={
           can('marketing.promotions.create') ? (
             <Button variant="primary" asChild>
               <Link to={paths.marketing.newPromotion}>
                 <Plus />
-                Add promotion
+                {t('Add promotion')}
               </Link>
             </Button>
           ) : null
         }
         below={
           <StatusChips
-            ariaLabel="Which promotions to show"
+            ariaLabel={t('Which promotions to show')}
             options={[
-              { value: null, label: 'All' },
-              { value: 'running', label: 'Running' },
-              { value: 'scheduled', label: 'Scheduled' },
-              { value: 'paused', label: 'Paused' },
-              { value: 'finished', label: 'Finished' },
+              { value: null, label: t('All') },
+              { value: 'running', label: t('Running') },
+              { value: 'scheduled', label: t('Scheduled') },
+              { value: 'paused', label: t('Paused') },
+              { value: 'finished', label: t('Finished') },
             ]}
             value={(query.status as string | null) ?? null}
             onChange={(status) => setQuery({ status, page: null })}
@@ -240,18 +243,20 @@ export default function PromotionsPage() {
         onRowClick={(promotion) => navigate(paths.marketing.editPromotion(promotion.id))}
         emptyState={
           query.search || query.f || query.status ? (
-            <EmptyState title="No promotions match these filters" />
+            <EmptyState title={t('No promotions match these filters')} />
           ) : (
             <EmptyState
               icon={Tag}
-              title="No promotions yet"
-              description="A promotion turns a discount into a decision with an end date, so its cost can be measured afterwards instead of disappearing into general discounting."
+              title={t('No promotions yet')}
+              description={t(
+                'A promotion turns a discount into a decision with an end date, so its cost can be measured afterwards instead of disappearing into general discounting.',
+              )}
               action={
                 can('marketing.promotions.create') ? (
                   <Button variant="primary" asChild>
                     <Link to={paths.marketing.newPromotion}>
                       <Plus />
-                      Add promotion
+                      {t('Add promotion')}
                     </Link>
                   </Button>
                 ) : null
@@ -268,12 +273,12 @@ export default function PromotionsPage() {
         }}
         title={`Delete ${deleting?.name}?`}
         body="Sales already made at this price are not affected — they keep the discount they were given. Only future sales change."
-        confirmLabel="Delete"
+        confirmLabel={t('Delete')}
         destructive
         onConfirm={() => {
           if (deleting) actions.remove(deleting.id)
           setDeleting(null)
-          toast.success('Promotion deleted')
+          toast.success(t('Promotion deleted'))
         }}
       />
     </>

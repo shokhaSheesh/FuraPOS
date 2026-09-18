@@ -1,6 +1,7 @@
 import { cn } from '@/shared/lib/cn'
 import { DateRangePicker, type DateRange } from '@/shared/ui/DateRangePicker'
 import type { DashboardPeriod } from '../api/summary'
+import { t } from '@/shared/i18n'
 
 const OPTIONS: { value: Exclude<DashboardPeriod, 'custom'>; label: string }[] = [
   { value: 'today', label: 'Today' },
@@ -30,7 +31,7 @@ export function PeriodFilter({
     <div className="flex flex-wrap items-center gap-2">
       <div
         role="group"
-        aria-label="Period"
+        aria-label={t('Period')}
         className="border-border bg-surface rounded-control inline-flex border p-0.5"
       >
         {OPTIONS.map((option) => (

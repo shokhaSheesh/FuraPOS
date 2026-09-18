@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { Select } from '@/shared/ui/Select'
 import { MultiSelect } from '@/shared/ui/MultiSelect'
 import { useDataStore } from '@/data/store'
+import { t } from '@/shared/i18n'
 
 /*
  * Truck brand and model pickers, fed by Settings → Brands → Truck brands.
@@ -44,13 +45,13 @@ export function VehicleMakeSelect({
   return (
     <div id={id}>
       <Select
-        aria-label={ariaLabel ?? 'Truck brand'}
+        aria-label={ariaLabel ?? t('Truck brand')}
         className={className}
         disabled={disabled}
         value={value || NONE}
         onChange={(next) => onChange(next === NONE ? null : next)}
         options={[
-          { value: NONE, label: 'No brand' },
+          { value: NONE, label: t('No brand') },
           ...names.map((n) => ({ value: n, label: n })),
         ]}
       />
@@ -103,9 +104,9 @@ export function VehicleMakesMultiSelect({
   return (
     <div id={id}>
       <MultiSelect
-        aria-label="Truck brands"
+        aria-label={t('Truck brands')}
         className="w-full"
-        placeholder="Any brand"
+        placeholder={t('Any brand')}
         searchPlaceholder="Search truck brands…"
         value={value}
         onChange={onChange}
@@ -133,10 +134,10 @@ export function VehicleModelSelect({
   const models = withCurrent(useModelsOf(make), value)
   return (
     <Select
-      aria-label={ariaLabel ?? 'Truck model'}
+      aria-label={ariaLabel ?? t('Truck model')}
       className={className}
       disabled={disabled || !make}
-      placeholder={make ? 'Pick a model' : 'Pick the brand first'}
+      placeholder={make ? t('Pick a model') : t('Pick the brand first')}
       value={value || NONE}
       onChange={(next) => onChange(next === NONE ? null : next)}
       options={[
@@ -166,10 +167,10 @@ export function VehicleModelsMultiSelect({
   }))
   return (
     <MultiSelect
-      aria-label="Models it fits"
+      aria-label={t('Models it fits')}
       className="w-full"
       disabled={makes.length === 0}
-      placeholder={makes.length ? 'All models, or pick some' : 'Pick a brand first'}
+      placeholder={makes.length ? t('All models, or pick some') : t('Pick a brand first')}
       searchPlaceholder="Search models…"
       value={value}
       onChange={onChange}

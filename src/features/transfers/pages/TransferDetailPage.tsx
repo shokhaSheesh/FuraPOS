@@ -31,6 +31,7 @@ import {
   transferStatusLabel,
   transferStatusTone,
 } from '../model/transfer'
+import { t } from '@/shared/i18n'
 
 export default function TransferDetailPage() {
   const navigate = useNavigate()
@@ -44,7 +45,9 @@ export default function TransferDetailPage() {
   const [quantityStep, setQuantityStep] = useState<'send' | 'receive' | null>(null)
 
   if (!transfer) {
-    return <EmptyState title="Transfer not found" description="It may have been deleted." />
+    return (
+      <EmptyState title={t('Transfer not found')} description={t('It may have been deleted.')} />
+    )
   }
 
   const step = nextStep(transfer.status)
@@ -75,7 +78,7 @@ export default function TransferDetailPage() {
       ?.stockByLocation.find((row) => row.locationId === transfer.fromLocationId)?.quantity ?? 0
 
   const timeline = [
-    { label: 'Created', at: transfer.createdAt, by: transfer.createdBy },
+    { label: t('Created'), at: transfer.createdAt, by: transfer.createdBy },
     { label: `Sent from ${transfer.fromLocationName}`, at: transfer.sentAt, by: transfer.sentBy },
     {
       label: `Received at ${transfer.toLocationName}`,
@@ -89,7 +92,7 @@ export default function TransferDetailPage() {
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
         <Link to={paths.products.transfers}>
           <ArrowLeft />
-          Transfers
+          {t('Transfers')}
         </Link>
       </Button>
 
@@ -102,14 +105,14 @@ export default function TransferDetailPage() {
           <div className="flex items-center gap-2">
             {canCancel(transfer.status) && can('products.transfers.delete') ? (
               <Button variant="secondary" onClick={() => setConfirmCancel(true)}>
-                Cancel transfer
+                {t('Cancel transfer')}
               </Button>
             ) : null}
             {transfer.status === 'draft' && can('products.transfers.create') ? (
               <Button variant="secondary" asChild>
                 <Link to={paths.products.editTransfer(transfer.id)}>
                   <Pencil />
-                  Continue editing
+                  {t('Continue editing')}
                 </Link>
               </Button>
             ) : null}
@@ -147,12 +150,12 @@ export default function TransferDetailPage() {
             <Truck className="text-warning mt-0.5 size-4 shrink-0" />
             <p className="text-fg-muted text-sm">
               {transferInTransit(transfer) === 1
-                ? 'This unit has'
+                ? t('This unit has')
                 : `These ${formatNumber(transferInTransit(transfer))} units have`}{' '}
               left {transfer.fromLocationName} and{' '}
-              {transferInTransit(transfer) === 1 ? 'is' : 'are'} not yet counted at{' '}
-              {transfer.toLocationName}. It will not appear in either location's stock until receipt
-              is confirmed.
+              {transferInTransit(transfer) === 1 ? 'is' : 'are'} {t('not yet counted at')}{' '}
+              {transfer.toLocationName}
+              {t(". It will not appear in either location's stock until receipt is confirmed.")}
             </p>
           </CardBody>
         </Card>
@@ -163,9 +166,9 @@ export default function TransferDetailPage() {
           <CardBody className="flex items-start gap-3 p-4">
             <Check className="text-danger mt-0.5 size-4 shrink-0" />
             <p className="text-fg-muted text-sm">
-              {formatNumber(transferShortfall(transfer))} units left {transfer.fromLocationName} and
-              never arrived at {transfer.toLocationName}. They are on neither shelf and have been
-              written off against this transfer.
+              {formatNumber(transferShortfall(transfer))} {t('units left')}{' '}
+              {transfer.fromLocationName} {t('and never arrived at')} {transfer.toLocationName}
+              {t('. They are on neither shelf and have been written off against this transfer.')}
             </p>
           </CardBody>
         </Card>
@@ -174,20 +177,20 @@ export default function TransferDetailPage() {
       <div className="grid gap-3 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Items</CardTitle>
+            <CardTitle>{t('Items')}</CardTitle>
             {/* What is riding on the truck, in money. Cost is permission-gated
                 exactly as it is in the catalogue. */}
             <div className="text-2xs flex items-center gap-3">
               {can('products.cost.view') ? (
                 <span className="text-fg-muted">
-                  At cost{' '}
+                  {t('At cost')}{' '}
                   <span className="text-fg font-medium">
                     {formatMoney(transferCostValue(transfer, USD_RATE))}
                   </span>
                 </span>
               ) : null}
               <span className="text-fg-muted">
-                At sale{' '}
+                {t('At sale')}{' '}
                 <span className="text-fg font-medium">
                   {formatMoney(transferSaleValue(transfer))}
                 </span>
@@ -199,18 +202,18 @@ export default function TransferDetailPage() {
               <table className="w-full text-sm">
                 <thead className="bg-canvas">
                   <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-                    <th className="px-4 py-2 text-left font-semibold">Product</th>
-                    <th className="px-4 py-2 text-right font-semibold">Ordered</th>
+                    <th className="px-4 py-2 text-left font-semibold">{t('Product')}</th>
+                    <th className="px-4 py-2 text-right font-semibold">{t('Ordered')}</th>
                     {transfer.status === 'draft' ? (
-                      <th className="px-4 py-2 text-right font-semibold">At source</th>
+                      <th className="px-4 py-2 text-right font-semibold">{t('At source')}</th>
                     ) : (
-                      <th className="px-4 py-2 text-right font-semibold">Sent</th>
+                      <th className="px-4 py-2 text-right font-semibold">{t('Sent')}</th>
                     )}
                     {transfer.receivedAt ? (
-                      <th className="px-4 py-2 text-right font-semibold">Received</th>
+                      <th className="px-4 py-2 text-right font-semibold">{t('Received')}</th>
                     ) : null}
                     {transfer.status === 'in_transit' ? (
-                      <th className="px-4 py-2 text-right font-semibold">In transit</th>
+                      <th className="px-4 py-2 text-right font-semibold">{t('In transit')}</th>
                     ) : null}
                   </tr>
                 </thead>
@@ -248,7 +251,7 @@ export default function TransferDetailPage() {
                             }`}
                           >
                             {formatNumber(available)}
-                            {cannotFill ? ' — not enough' : ''}
+                            {cannotFill ? t(' — not enough') : ''}
                           </td>
                         ) : (
                           <td className="text-fg px-4 py-2 text-right font-medium tabular-nums">
@@ -256,7 +259,7 @@ export default function TransferDetailPage() {
                             {/* What the warehouse could not find stayed put. */}
                             {unfulfilled > 0 ? (
                               <span className="text-fg-subtle text-2xs ml-1">
-                                (−{formatNumber(unfulfilled)} not found)
+                                (−{formatNumber(unfulfilled)} {t('not found)')}
                               </span>
                             ) : null}
                           </td>
@@ -269,7 +272,9 @@ export default function TransferDetailPage() {
                           >
                             {formatNumber(line.receivedQuantity ?? 0)}
                             {missing > 0 ? (
-                              <span className="text-2xs ml-1">(−{formatNumber(missing)} lost)</span>
+                              <span className="text-2xs ml-1">
+                                (−{formatNumber(missing)} {t('lost)')}
+                              </span>
                             ) : null}
                           </td>
                         ) : null}
@@ -289,7 +294,7 @@ export default function TransferDetailPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>History</CardTitle>
+            <CardTitle>{t('History')}</CardTitle>
           </CardHeader>
           <CardBody className="space-y-3">
             {timeline.map((entry) => (
@@ -304,7 +309,7 @@ export default function TransferDetailPage() {
                     {entry.label}
                   </p>
                   <p className="text-fg-subtle text-2xs">
-                    {entry.at ? formatDateTime(entry.at) : 'Not yet'}
+                    {entry.at ? formatDateTime(entry.at) : t('Not yet')}
                     {entry.by ? ` · ${entry.by}` : ''}
                   </p>
                 </div>
@@ -314,7 +319,7 @@ export default function TransferDetailPage() {
               <div className="flex items-start gap-3">
                 <span className="bg-danger mt-1.5 size-2 shrink-0 rounded-full" />
                 <div>
-                  <p className="text-fg text-sm">Cancelled</p>
+                  <p className="text-fg text-sm">{t('Cancelled')}</p>
                   <p className="text-fg-subtle text-2xs">{formatDateTime(transfer.updatedAt)}</p>
                 </div>
               </div>
@@ -326,8 +331,8 @@ export default function TransferDetailPage() {
       <ConfirmDialog
         open={confirmCancel}
         onOpenChange={setConfirmCancel}
-        title="Cancel this transfer?"
-        confirmLabel="Cancel transfer"
+        title={t('Cancel this transfer?')}
+        confirmLabel={t('Cancel transfer')}
         body={
           transfer.status === 'in_transit'
             ? `${transfer.number} has already been sent, so its ${formatNumber(

@@ -26,6 +26,7 @@ import {
   type TemplateKind,
 } from '../model/template'
 import { TemplatePreview } from '../components/TemplatePreview'
+import { t } from '@/shared/i18n'
 
 const EMPTY: TemplateDraft = {
   name: '',
@@ -117,12 +118,12 @@ export default function TemplateFormPage() {
   const save = () => {
     setShowErrors(true)
     if (!parsed.success) {
-      toast.error('Check the highlighted fields')
+      toast.error(t('Check the highlighted fields'))
       return
     }
     if (editing && templateId) {
       actions.update(templateId, parsed.data)
-      toast.success('Template saved')
+      toast.success(t('Template saved'))
     } else {
       actions.create(parsed.data)
       toast.success(`${parsed.data.name} created`)
@@ -135,17 +136,19 @@ export default function TemplateFormPage() {
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
         <Link to={paths.products.printTemplates}>
           <ArrowLeft />
-          Print templates
+          {t('Print templates')}
         </Link>
       </Button>
 
       <PageHeader
-        title={editing ? `Edit ${existing?.name ?? 'template'}` : 'New print template'}
-        description="Choose the size, the code and what prints on it. The preview is drawn at true size."
+        title={editing ? `Edit ${existing?.name ?? 'template'}` : t('New print template')}
+        description={t(
+          'Choose the size, the code and what prints on it. The preview is drawn at true size.',
+        )}
         action={
           <Button variant="primary" onClick={save}>
             <Save />
-            {editing ? 'Save changes' : 'Create template'}
+            {editing ? t('Save changes') : t('Create template')}
           </Button>
         }
       />
@@ -154,20 +157,20 @@ export default function TemplateFormPage() {
         <div className="space-y-3">
           <Card>
             <CardHeader>
-              <CardTitle>The basics</CardTitle>
+              <CardTitle>{t('The basics')}</CardTitle>
             </CardHeader>
             <CardBody className="grid gap-3 sm:grid-cols-2">
-              <Field label="Name" required error={errors.name?.[0]} className="sm:col-span-2">
+              <Field label={t('Name')} required error={errors.name?.[0]} className="sm:col-span-2">
                 {(p) => (
                   <Input
                     {...p}
-                    placeholder="Part sticker"
+                    placeholder={t('Part sticker')}
                     value={draft.name}
                     onChange={(event) => setDraft((c) => ({ ...c, name: event.target.value }))}
                   />
                 )}
               </Field>
-              <Field label="What it is">
+              <Field label={t('What it is')}>
                 {(p) => (
                   <Select
                     {...p}
@@ -182,7 +185,7 @@ export default function TemplateFormPage() {
                   />
                 )}
               </Field>
-              <Field label="Code">
+              <Field label={t('Code')}>
                 {(p) => (
                   <Select
                     {...p}
@@ -198,9 +201,9 @@ export default function TemplateFormPage() {
 
           <Card>
             <CardHeader className="flex-col items-stretch gap-1">
-              <CardTitle>Size</CardTitle>
+              <CardTitle>{t('Size')}</CardTitle>
               <p className="text-fg-subtle text-2xs">
-                {perRow(draft.widthMm)} across a sheet of A4.
+                {perRow(draft.widthMm)} {t('across a sheet of A4.')}
               </p>
             </CardHeader>
             <CardBody className="space-y-3">
@@ -226,7 +229,7 @@ export default function TemplateFormPage() {
                 })}
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                <Field label="Width (mm)" error={errors.widthMm?.[0]}>
+                <Field label={t('Width (mm)')} error={errors.widthMm?.[0]}>
                   {(p) => (
                     <NumberField
                       {...p}
@@ -238,7 +241,7 @@ export default function TemplateFormPage() {
                     />
                   )}
                 </Field>
-                <Field label="Height (mm)" error={errors.heightMm?.[0]}>
+                <Field label={t('Height (mm)')} error={errors.heightMm?.[0]}>
                   {(p) => (
                     <NumberField
                       {...p}
@@ -256,9 +259,9 @@ export default function TemplateFormPage() {
 
           <Card>
             <CardHeader className="flex-col items-stretch gap-1">
-              <CardTitle>What prints on it</CardTitle>
+              <CardTitle>{t('What prints on it')}</CardTitle>
               <p className="text-fg-subtle text-2xs">
-                Ticked fields print in this order. The headline is the one set in large type.
+                {t('Ticked fields print in this order. The headline is the one set in large type.')}
               </p>
             </CardHeader>
             <CardBody className="space-y-1">
@@ -288,7 +291,7 @@ export default function TemplateFormPage() {
                     <span className={on ? 'text-fg text-sm' : 'text-fg-subtle text-sm'}>
                       {field.label}
                     </span>
-                    {isHeadline ? <Badge tone="neutral">Headline</Badge> : null}
+                    {isHeadline ? <Badge tone="neutral">{t('Headline')}</Badge> : null}
                     <div className="ml-auto flex items-center gap-1">
                       {on && !isHeadline ? (
                         <Button
@@ -296,7 +299,7 @@ export default function TemplateFormPage() {
                           size="sm"
                           onClick={() => setDraft((c) => ({ ...c, headlineField: field.key }))}
                         >
-                          Make headline
+                          {t('Make headline')}
                         </Button>
                       ) : null}
                       {on ? (
@@ -329,10 +332,11 @@ export default function TemplateFormPage() {
 
         <Card className="lg:sticky lg:top-4 lg:h-fit lg:w-80">
           <CardHeader className="flex-col items-stretch gap-1">
-            <CardTitle>Preview</CardTitle>
+            <CardTitle>{t('Preview')}</CardTitle>
             <p className="text-fg-subtle text-2xs">
-              Drawn at true size, with sample values. If a name is cut off here, it is cut off on
-              the sticker.
+              {t(
+                'Drawn at true size, with sample values. If a name is cut off here, it is cut off on the sticker.',
+              )}
             </p>
           </CardHeader>
           <CardBody className="bg-canvas flex justify-center py-6">

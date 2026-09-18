@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
 import { DropdownMenu } from 'radix-ui'
 import { Button } from '@/shared/ui/Button'
+import { t } from '@/shared/i18n'
 
 export interface RowAction {
   label: string
@@ -55,7 +56,7 @@ export function RowActions({ actions }: { actions: RowAction[] }) {
           <Button
             variant="ghost"
             size="icon"
-            aria-label="More actions"
+            aria-label={t('More actions')}
             onClick={(event) => event.stopPropagation()}
           >
             <MoreHorizontal />

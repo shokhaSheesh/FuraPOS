@@ -9,6 +9,7 @@ import {
   PRODUCT_FIELD_COLUMN_IDS,
 } from '@/features/products/components/productFieldColumns'
 import type { VariationRow } from '@/features/products/model/product'
+import { t } from '@/shared/i18n'
 
 /**
  * A row on a transfer's product step.
@@ -116,7 +117,7 @@ export function buildTransferLineColumns({
     ? [
         {
           id: 'product',
-          header: 'Product',
+          header: t('Product'),
           enableHiding: false,
           cell: ({ row }) => {
             const v = row.original.variation
@@ -163,19 +164,21 @@ export function buildTransferLineColumns({
       meta: { align: 'right' },
       cell: ({ row }) => (
         <div className="leading-tight">
-          <p className="text-fg tabular-nums">{formatNumber(row.original.demand[3])} in 3 months</p>
+          <p className="text-fg tabular-nums">
+            {formatNumber(row.original.demand[3])} {t('in 3 months')}
+          </p>
           <p className="text-fg-subtle text-2xs tabular-nums">
-            {formatNumber(row.original.demand[6])} in 6 months
+            {formatNumber(row.original.demand[6])} {t('in 6 months')}
           </p>
           {row.original.stalled ? (
-            <p className="text-warning text-2xs">not selling lately</p>
+            <p className="text-warning text-2xs">{t('not selling lately')}</p>
           ) : null}
         </div>
       ),
     },
     {
       id: 'move',
-      header: 'Move',
+      header: t('Move'),
       enableHiding: false,
       meta: { align: 'right' },
       cell: ({ row }) =>
@@ -243,7 +246,7 @@ export function buildTransferLineColumns({
                   variant="ghost"
                   size="icon"
                   aria-label={`Remove ${row.original.variation.fullName} from this transfer`}
-                  title="Remove from this transfer"
+                  title={t('Remove from this transfer')}
                   className="hover:text-danger"
                   onClick={() => onRemove(row.original)}
                 >

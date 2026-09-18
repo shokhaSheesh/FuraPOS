@@ -15,6 +15,7 @@ import { useDataStore } from '@/data/store'
 import { useLogKindCounts, useLogSummary, useStockLog } from '../api/logs'
 import { STOCK_LOG_KINDS, type StockLogKind } from '../model/log'
 import { buildLogColumns, documentPath } from './logColumns'
+import { t } from '@/shared/i18n'
 
 /**
  * One product's history, on its own page — the Product logs screen narrowed
@@ -77,9 +78,9 @@ export function ProductLog({
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <StatusChips
-          ariaLabel="Filter by what caused the change"
+          ariaLabel={t('Filter by what caused the change')}
           options={[
-            { value: null, label: 'All' },
+            { value: null, label: t('All') },
             ...STOCK_LOG_KINDS.map((entry) => ({ value: entry.value, label: entry.label })),
           ]}
           value={kind}
@@ -91,9 +92,9 @@ export function ProductLog({
         />
         {variations.length > 1 ? (
           <FilterSelect
-            aria-label="Filter by variation"
-            label="Variation"
-            allLabel="All variations"
+            aria-label={t('Filter by variation')}
+            label={t('Variation')}
+            allLabel={t('All variations')}
             value={variationId}
             options={variations.map((v) => ({ value: v.id, label: v.name }))}
             onChange={(next) => {
@@ -103,9 +104,9 @@ export function ProductLog({
           />
         ) : null}
         <FilterSelect
-          aria-label="Filter by location"
-          label="At"
-          allLabel="Everywhere"
+          aria-label={t('Filter by location')}
+          label={t('At')}
+          allLabel={t('Everywhere')}
           value={location}
           options={locations.map((l) => ({ value: l.id, label: l.name }))}
           onChange={(next) => {
@@ -156,8 +157,8 @@ export function ProductLog({
         emptyState={
           <EmptyState
             icon={Package}
-            title="Nothing has moved"
-            description="No stock of this product has changed with these filters."
+            title={t('Nothing has moved')}
+            description={t('No stock of this product has changed with these filters.')}
           />
         }
       />

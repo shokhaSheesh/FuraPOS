@@ -3,6 +3,7 @@ import { ImagePlus, Trash2 } from 'lucide-react'
 import { Button } from '@/shared/ui/Button'
 import { toast } from '@/shared/ui/toast'
 import { cn } from '@/shared/lib/cn'
+import { t } from '@/shared/i18n'
 
 /**
  * Picks one picture and keeps it as a data URL.
@@ -33,8 +34,8 @@ export function ImageField({
 
   const choose = (file: File | undefined) => {
     if (!file) return
-    if (!file.type.startsWith('image/')) return toast.error('That file is not an image')
-    if (file.size > MAX_BYTES) return toast.error('Pictures must be under 2 MB')
+    if (!file.type.startsWith('image/')) return toast.error(t('That file is not an image'))
+    if (file.size > MAX_BYTES) return toast.error(t('Pictures must be under 2 MB'))
     setReading(true)
     const reader = new FileReader()
     reader.onload = () => {
@@ -42,7 +43,7 @@ export function ImageField({
       setReading(false)
     }
     reader.onerror = () => {
-      toast.error('That picture could not be read')
+      toast.error(t('That picture could not be read'))
       setReading(false)
     }
     reader.readAsDataURL(file)
@@ -60,7 +61,7 @@ export function ImageField({
           'hover:border-border-strong hover:text-fg-muted',
           box,
         )}
-        aria-label={value ? 'Replace the picture' : 'Add a picture'}
+        aria-label={value ? t('Replace the picture') : t('Add a picture')}
       >
         {value ? (
           <img src={value} alt="" className="size-full object-cover" />
@@ -76,7 +77,7 @@ export function ImageField({
           <button
             type="button"
             onClick={() => onChange(null)}
-            aria-label="Remove the picture"
+            aria-label={t('Remove the picture')}
             className="text-fg-subtle hover:text-danger"
           >
             <Trash2 className="size-3.5" />
@@ -91,7 +92,7 @@ export function ImageField({
             disabled={reading}
             onClick={() => input.current?.click()}
           >
-            {value ? 'Replace' : 'Upload picture'}
+            {value ? t('Replace') : t('Upload picture')}
           </Button>
           {value ? (
             <Button
@@ -102,10 +103,10 @@ export function ImageField({
               onClick={() => onChange(null)}
             >
               <Trash2 />
-              Remove
+              {t('Remove')}
             </Button>
           ) : (
-            <span className="text-fg-subtle text-2xs">JPG or PNG, up to 2 MB</span>
+            <span className="text-fg-subtle text-2xs">{t('JPG or PNG, up to 2 MB')}</span>
           )}
         </div>
       )}

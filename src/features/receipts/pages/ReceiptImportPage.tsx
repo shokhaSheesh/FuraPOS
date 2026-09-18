@@ -4,6 +4,7 @@ import { SpreadsheetImport } from '@/shared/components/SpreadsheetImport'
 import { toast } from '@/shared/ui/toast'
 import { paths } from '@/shared/config/paths'
 import { useReceipt, useUpdateReceipt } from '../api/receipts'
+import { t } from '@/shared/i18n'
 
 /** A supplier's spreadsheet, onto a receipt that is still being built. */
 export default function ReceiptImportPage() {
@@ -12,7 +13,7 @@ export default function ReceiptImportPage() {
   const { data: receipt } = useReceipt(receiptId)
   const update = useUpdateReceipt(receiptId)
 
-  if (!receipt) return <EmptyState title="That receipt no longer exists" />
+  if (!receipt) return <EmptyState title={t('That receipt no longer exists')} />
 
   const back = paths.products.goodsReceiptDetail(receipt.id)
 

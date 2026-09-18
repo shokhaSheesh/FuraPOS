@@ -15,6 +15,7 @@ import { formatNumber } from '@/shared/lib/format'
 import { useDataStore } from '@/data/store'
 import { useStartStocktake } from '../api/stocktakes'
 import { stocktakeDraftSchema, type StocktakeDraft } from '../model/stocktake'
+import { t } from '@/shared/i18n'
 
 /**
  * Open a count.
@@ -61,7 +62,7 @@ export default function NewStocktakePage() {
   const submit = form.handleSubmit(
     (values) => {
       if (lineCount === 0) {
-        toast.error('Nothing to count with that scope')
+        toast.error(t('Nothing to count with that scope'))
         return
       }
       start.mutate(values, {
@@ -71,7 +72,7 @@ export default function NewStocktakePage() {
         },
       })
     },
-    () => toast.error('Check the highlighted fields'),
+    () => toast.error(t('Check the highlighted fields')),
   )
 
   const location = locations.find((l) => l.id === locationId)
@@ -81,13 +82,15 @@ export default function NewStocktakePage() {
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
         <Link to={paths.products.stocktaking}>
           <ArrowLeft />
-          Stocktaking
+          {t('Stocktaking')}
         </Link>
       </Button>
 
       <PageHeader
-        title="Start a count"
-        description="The app records what the system currently believes, then someone walks the shelves and enters what is actually there."
+        title={t('Start a count')}
+        description={t(
+          'The app records what the system currently believes, then someone walks the shelves and enters what is actually there.',
+        )}
         action={
           <div className="flex items-center gap-2">
             <Button
@@ -95,11 +98,11 @@ export default function NewStocktakePage() {
               variant="secondary"
               onClick={() => navigate(paths.products.stocktaking)}
             >
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button type="button" variant="primary" onClick={submit}>
               <ClipboardList />
-              Open the sheet
+              {t('Open the sheet')}
             </Button>
           </div>
         }
@@ -108,10 +111,10 @@ export default function NewStocktakePage() {
       <div className="mt-4 max-w-2xl space-y-3">
         <Card>
           <CardHeader>
-            <CardTitle>What to count</CardTitle>
+            <CardTitle>{t('What to count')}</CardTitle>
           </CardHeader>
           <CardBody className="space-y-3">
-            <Field label="Location" required error={form.formState.errors.locationId?.message}>
+            <Field label={t('Location')} required error={form.formState.errors.locationId?.message}>
               {(p) => (
                 <Controller
                   control={form.control}
@@ -130,8 +133,8 @@ export default function NewStocktakePage() {
             </Field>
 
             <Field
-              label="Scope"
-              hint="Counting one category at a time is how a warehouse gets counted at all"
+              label={t('Scope')}
+              hint={t('Counting one category at a time is how a warehouse gets counted at all')}
             >
               {(p) => (
                 <Controller
@@ -143,7 +146,7 @@ export default function NewStocktakePage() {
                       className="w-full"
                       value={field.value || undefined}
                       onChange={field.onChange}
-                      placeholder="The whole location"
+                      placeholder={t('The whole location')}
                       options={categories.map((c) => ({ value: c.id, label: c.path }))}
                     />
                   )}
@@ -151,7 +154,10 @@ export default function NewStocktakePage() {
               )}
             </Field>
 
-            <Field label="Brand" hint="Narrow further when one supplier's stock is in doubt">
+            <Field
+              label={t('Brand')}
+              hint={t("Narrow further when one supplier's stock is in doubt")}
+            >
               {(p) => (
                 <Controller
                   control={form.control}
@@ -162,7 +168,7 @@ export default function NewStocktakePage() {
                       className="w-full"
                       value={field.value || undefined}
                       onChange={field.onChange}
-                      placeholder="Every brand"
+                      placeholder={t('Every brand')}
                       options={brands.map((b) => ({ value: b.id, label: b.name }))}
                     />
                   )}
@@ -170,8 +176,10 @@ export default function NewStocktakePage() {
               )}
             </Field>
 
-            <Field label="Comment" hint="Why this count is happening">
-              {(p) => <Input {...p} placeholder="Monthly count" {...form.register('comment')} />}
+            <Field label={t('Comment')} hint={t('Why this count is happening')}>
+              {(p) => (
+                <Input {...p} placeholder={t('Monthly count')} {...form.register('comment')} />
+              )}
             </Field>
           </CardBody>
         </Card>
@@ -179,14 +187,17 @@ export default function NewStocktakePage() {
         <Card>
           <CardBody className="p-4">
             <p className="text-fg-muted text-sm">
-              This sheet will have{' '}
-              <span className="text-fg font-semibold">{formatNumber(lineCount)} lines</span> —
-              everything {location?.name ?? 'the location'} carries
-              {categoryId ? ' in that category' : ''}
-              {brandId ? ' from that brand' : ''}, including anything the system says is at zero.
+              {t('This sheet will have')}{' '}
+              <span className="text-fg font-semibold">{formatNumber(lineCount)} lines</span>{' '}
+              {t('— everything')} {location?.name ?? t('the location')} carries
+              {categoryId ? t(' in that category') : ''}
+              {brandId ? t(' from that brand') : ''}
+              {t(', including anything the system says is at zero.')}
             </p>
             <p className="text-fg-subtle text-2xs mt-1">
-              Lines nobody counts are left exactly as they are. An empty count is not a write-off.
+              {t(
+                'Lines nobody counts are left exactly as they are. An empty count is not a write-off.',
+              )}
             </p>
           </CardBody>
         </Card>

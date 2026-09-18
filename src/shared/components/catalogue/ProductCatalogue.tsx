@@ -24,6 +24,7 @@ import {
 } from './browse'
 import { CATALOGUE_CARD_FIELDS } from './cardFields'
 import { ProductGroupTable } from './ProductGroupTable'
+import { t } from '@/shared/i18n'
 
 /** The "no filter" value of a select, which cannot hold an empty string. */
 const ALL = '__all__'
@@ -184,7 +185,7 @@ export function ProductCatalogue<R extends CatalogueRow>({
   const openGroup = useCallback((group: ProductGroup<R>) => setOpenId(group.productId), [])
   const close = useCallback(() => setOpenId(null), [])
 
-  const allOwn: OwnCardField[] = [{ id: 'variations', label: 'Variations' }, ...ownFields]
+  const allOwn: OwnCardField[] = [{ id: 'variations', label: t('Variations') }, ...ownFields]
   const has = (id: string) => fields.includes(id)
 
   const toggleField = (id: string, on: boolean) => {
@@ -271,7 +272,7 @@ export function ProductCatalogue<R extends CatalogueRow>({
           <div className="ml-auto flex flex-wrap items-center gap-2">
             <Select
               className="w-40"
-              aria-label="Make"
+              aria-label={t('Make')}
               value={make}
               onChange={(next) => {
                 setMake(next)
@@ -280,13 +281,13 @@ export function ProductCatalogue<R extends CatalogueRow>({
                 setModel(ALL)
               }}
               options={[
-                { value: ALL, label: 'All makes' },
+                { value: ALL, label: t('All makes') },
                 ...makes.map((m) => ({ value: m, label: m })),
               ]}
             />
             <Select
               className="w-40"
-              aria-label="Model"
+              aria-label={t('Model')}
               value={model}
               onChange={setModel}
               disabled={make === ALL}
@@ -300,7 +301,7 @@ export function ProductCatalogue<R extends CatalogueRow>({
                 type="button"
                 variant={view === 'cards' ? 'secondary' : 'ghost'}
                 size="icon"
-                aria-label="Show products as cards"
+                aria-label={t('Show products as cards')}
                 aria-pressed={view === 'cards'}
                 onClick={() => chooseView('cards')}
               >
@@ -310,7 +311,7 @@ export function ProductCatalogue<R extends CatalogueRow>({
                 type="button"
                 variant={view === 'table' ? 'secondary' : 'ghost'}
                 size="icon"
-                aria-label="Show products as a list"
+                aria-label={t('Show products as a list')}
                 aria-pressed={view === 'table'}
                 onClick={() => chooseView('table')}
               >
@@ -326,7 +327,7 @@ export function ProductCatalogue<R extends CatalogueRow>({
                 trigger={
                   <Button type="button" variant="ghost" size="sm">
                     <Settings2 />
-                    Fields
+                    {t('Fields')}
                   </Button>
                 }
               >
@@ -340,7 +341,7 @@ export function ProductCatalogue<R extends CatalogueRow>({
                   />
                 ))}
                 <p className="text-fg-subtle text-2xs border-border mt-1 border-t px-2 pt-2 pb-1.5">
-                  Product fields
+                  {t('Product fields')}
                 </p>
                 {CATALOGUE_CARD_FIELDS.filter((field) => canSeeCost || !field.costOnly).map(
                   (field) => (
@@ -364,8 +365,8 @@ export function ProductCatalogue<R extends CatalogueRow>({
             className="pl-9"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Name, SKU, OEM, barcode or storage address"
-            aria-label="Search products"
+            placeholder={t('Name, SKU, OEM, barcode or storage address')}
+            aria-label={t('Search products')}
           />
         </div>
       </div>
@@ -389,22 +390,25 @@ export function ProductCatalogue<R extends CatalogueRow>({
             />
           }
           emptyState={
-            <EmptyState title="No products match" description="Try another make or model." />
+            <EmptyState
+              title={t('No products match')}
+              description={t('Try another make or model.')}
+            />
           }
         />
       ) : matching.length === 0 ? (
         <div className="rounded-card border-border bg-surface border">
           <EmptyState
-            title="No products match"
+            title={t('No products match')}
             description={
               current && search.trim()
-                ? 'Only this category was searched.'
-                : 'Try another make or model.'
+                ? t('Only this category was searched.')
+                : t('Try another make or model.')
             }
             action={
               current && search.trim() ? (
                 <Button type="button" variant="secondary" onClick={() => setPath([])}>
-                  Search every category
+                  {t('Search every category')}
                 </Button>
               ) : undefined
             }
@@ -438,7 +442,7 @@ export function ProductCatalogue<R extends CatalogueRow>({
       {/* What is on the document so far, wherever in the catalogue you are. */}
       <div className="border-border bg-surface shadow-card rounded-card sticky bottom-3 z-10 flex flex-wrap items-center gap-x-8 gap-y-1 border px-4 py-3">
         <p className="text-fg-muted text-sm">
-          Chosen:{' '}
+          {t('Chosen:')}{' '}
           <strong className="text-fg font-medium">
             {formatNumber(chosenProducts)} {chosenProducts === 1 ? 'product' : 'products'}
           </strong>{' '}
@@ -620,13 +624,13 @@ export function SalesFigures({
   return (
     <div className="text-2xs text-fg-subtle flex gap-3" title={title}>
       <span>
-        3 months
+        {t('3 months')}
         <strong className="text-fg block text-sm font-semibold tabular-nums">
           {formatNumber(demand[3])}
         </strong>
       </span>
       <span>
-        6 months
+        {t('6 months')}
         <strong className="text-fg block text-sm font-semibold tabular-nums">
           {formatNumber(demand[6])}
         </strong>

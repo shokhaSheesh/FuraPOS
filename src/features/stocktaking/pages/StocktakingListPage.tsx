@@ -41,6 +41,7 @@ import {
   surplusUnits,
   type Stocktake,
 } from '../model/stocktake'
+import { t } from '@/shared/i18n'
 
 /**
  * Counts, past and in progress.
@@ -69,18 +70,18 @@ export default function StocktakingListPage() {
     () => [
       {
         accessorKey: 'number',
-        header: 'Number',
+        header: t('Number'),
         cell: ({ row }) => <span className="text-2xs font-mono">{row.original.number}</span>,
         enableHiding: false,
       },
       {
         accessorKey: 'createdAt',
-        header: 'Started',
+        header: t('Started'),
         cell: ({ row }) => formatDate(row.original.createdAt),
       },
       {
         accessorKey: 'locationName',
-        header: 'Location',
+        header: t('Location'),
         enableHiding: false,
       },
       /*
@@ -90,7 +91,7 @@ export default function StocktakingListPage() {
       */
       {
         id: 'scopeType',
-        header: 'Counted by',
+        header: t('Counted by'),
         cell: ({ row }) => {
           const detail = scopeDetail(row.original)
           return (
@@ -103,7 +104,7 @@ export default function StocktakingListPage() {
       },
       {
         accessorKey: 'appliedAt',
-        header: 'Finished',
+        header: t('Finished'),
         cell: ({ row }) =>
           row.original.appliedAt ? (
             formatDateTime(row.original.appliedAt)
@@ -113,7 +114,7 @@ export default function StocktakingListPage() {
       },
       {
         id: 'progress',
-        header: 'Counted',
+        header: t('Counted'),
         enableHiding: false,
         cell: ({ row }) => {
           const { done, total, ratio } = progress(row.original)
@@ -134,7 +135,7 @@ export default function StocktakingListPage() {
       },
       {
         id: 'accuracy',
-        header: 'Agreed',
+        header: t('Agreed'),
         meta: { align: 'right' },
         cell: ({ row }) => {
           const { done } = progress(row.original)
@@ -149,13 +150,13 @@ export default function StocktakingListPage() {
       },
       {
         id: 'differs',
-        header: 'Differs',
+        header: t('Differs'),
         meta: { align: 'right' },
         cell: ({ row }) => formatNumber(discrepancies(row.original).length),
       },
       {
         id: 'missing',
-        header: 'Missing',
+        header: t('Missing'),
         meta: { align: 'right' },
         cell: ({ row }) => {
           const short = shortUnits(row.original)
@@ -168,7 +169,7 @@ export default function StocktakingListPage() {
       },
       {
         id: 'found',
-        header: 'Found',
+        header: t('Found'),
         meta: { align: 'right' },
         cell: ({ row }) => {
           const surplus = surplusUnits(row.original)
@@ -183,7 +184,7 @@ export default function StocktakingListPage() {
         ? [
             {
               id: 'value',
-              header: 'Value at cost',
+              header: t('Value at cost'),
               meta: { align: 'right' as const },
               cell: ({ row }: { row: { original: Stocktake } }) => {
                 const value = netCostValue(row.original, USD_RATE)
@@ -200,7 +201,7 @@ export default function StocktakingListPage() {
         : []),
       {
         accessorKey: 'status',
-        header: 'Status',
+        header: t('Status'),
         cell: ({ row }) => (
           <Badge tone={stocktakeStatusTone(row.original.status)}>
             {stocktakeStatusLabel(row.original.status)}
@@ -209,11 +210,11 @@ export default function StocktakingListPage() {
       },
       {
         accessorKey: 'createdBy',
-        header: 'Started by',
+        header: t('Started by'),
       },
       {
         accessorKey: 'comment',
-        header: 'Comment',
+        header: t('Comment'),
         cell: ({ row }) => row.original.comment ?? <span className="text-fg-subtle">—</span>,
       },
       {
@@ -224,7 +225,7 @@ export default function StocktakingListPage() {
           <RowActions
             actions={[
               {
-                label: 'Abandon count',
+                label: t('Abandon count'),
                 icon: Ban,
                 destructive: true,
                 hidden: row.original.status !== 'counting' || !can('products.stocktaking.delete'),
@@ -241,14 +242,16 @@ export default function StocktakingListPage() {
   return (
     <>
       <PageHeader
-        title="Stocktaking"
-        description="Someone counts what is really on the shelves, and the app compares it with what the system believes. The gap is stock you have lost without noticing."
+        title={t('Stocktaking')}
+        description={t(
+          'Someone counts what is really on the shelves, and the app compares it with what the system believes. The gap is stock you have lost without noticing.',
+        )}
         action={
           can('products.stocktaking.create') ? (
             <Button variant="primary" asChild>
               <Link to={paths.products.newStocktake}>
                 <Plus />
-                Start a count
+                {t('Start a count')}
               </Link>
             </Button>
           ) : null
@@ -257,19 +260,19 @@ export default function StocktakingListPage() {
           <div className="flex flex-wrap items-center gap-2">
             <StatusChips
               options={[
-                { value: null, label: 'All' },
-                { value: 'counting', label: 'Counting' },
-                { value: 'applied', label: 'Applied' },
-                { value: 'cancelled', label: 'Abandoned' },
+                { value: null, label: t('All') },
+                { value: 'counting', label: t('Counting') },
+                { value: 'applied', label: t('Applied') },
+                { value: 'cancelled', label: t('Abandoned') },
               ]}
               value={(query.status as string | null) ?? null}
               onChange={(next) => setQuery({ status: next, page: null })}
               counts={counts}
             />
             <FilterSelect
-              aria-label="Filter by location"
-              label="At"
-              allLabel="All locations"
+              aria-label={t('Filter by location')}
+              label={t('At')}
+              allLabel={t('All locations')}
               value={(query.location as string | null) ?? null}
               options={locations.map((item) => ({ value: item.id, label: item.name }))}
               onChange={(next) => setQuery({ location: next, page: null })}
@@ -300,17 +303,19 @@ export default function StocktakingListPage() {
         onRowClick={(stocktake) => navigate(paths.products.stocktakeDetail(stocktake.id))}
         emptyState={
           query.search || query.f || query.status || query.location ? (
-            <EmptyState title="No counts match these filters" />
+            <EmptyState title={t('No counts match these filters')} />
           ) : (
             <EmptyState
-              title="Nothing has been counted"
-              description="The system's numbers drift — things get broken, miscounted or taken without anyone recording it. Counting the shelves is the only way to find out by how much."
+              title={t('Nothing has been counted')}
+              description={t(
+                "The system's numbers drift — things get broken, miscounted or taken without anyone recording it. Counting the shelves is the only way to find out by how much.",
+              )}
               action={
                 can('products.stocktaking.create') ? (
                   <Button variant="primary" asChild>
                     <Link to={paths.products.newStocktake}>
                       <Plus />
-                      Start a count
+                      {t('Start a count')}
                     </Link>
                   </Button>
                 ) : null
@@ -323,8 +328,8 @@ export default function StocktakingListPage() {
       <ConfirmDialog
         open={pendingCancel !== null}
         onOpenChange={(open) => !open && setPendingCancel(null)}
-        title="Abandon this count?"
-        confirmLabel="Abandon"
+        title={t('Abandon this count?')}
+        confirmLabel={t('Abandon')}
         body={
           pendingCancel
             ? `Everything counted so far on ${pendingCancel.number} is discarded and no stock changes.`

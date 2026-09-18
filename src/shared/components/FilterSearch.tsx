@@ -16,6 +16,7 @@ import {
   type FilterValue,
   type FilterValues,
 } from '@/shared/lib/fieldFilters'
+import { t } from '@/shared/i18n'
 
 /**
  * The search bar, OX-style: a text search that is also a filter by field.
@@ -147,12 +148,12 @@ export function FilterSearch<T>({
       }
     >
       <header className="border-border flex items-center justify-between gap-2 border-b py-2 pr-2 pl-4">
-        <span className="text-fg text-sm font-semibold">Filters</span>
+        <span className="text-fg text-sm font-semibold">{t('Filters')}</span>
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          aria-label="Close filters"
+          aria-label={t('Close filters')}
           onClick={() => setOpen(false)}
         >
           <X />
@@ -176,10 +177,10 @@ export function FilterSearch<T>({
 
       <footer className="border-border flex items-center justify-end gap-2 border-t p-3">
         <Button type="button" variant="secondary" onClick={reset}>
-          Reset
+          {t('Reset')}
         </Button>
         <Button type="button" variant="primary" onClick={apply}>
-          Apply
+          {t('Apply')}
         </Button>
       </footer>
     </Popover>
@@ -230,7 +231,7 @@ function FieldEditor<T>({
           <NumberField
             className="flex-1"
             aria-label={`${field.label} from`}
-            placeholder="From"
+            placeholder={t('From')}
             value={current.min}
             onChange={(min) => onChange({ ...current, min })}
           />
@@ -238,7 +239,7 @@ function FieldEditor<T>({
           <NumberField
             className="flex-1"
             aria-label={`${field.label} to`}
-            placeholder="To"
+            placeholder={t('To')}
             value={current.max}
             onChange={(max) => onChange({ ...current, max })}
           />
@@ -258,9 +259,9 @@ function FieldEditor<T>({
             onChange(next === 'any' ? undefined : { type: 'boolean', value: next === 'yes' })
           }
           options={[
-            { value: 'any', label: 'Any' },
-            { value: 'yes', label: 'Yes' },
-            { value: 'no', label: 'No' },
+            { value: 'any', label: t('Any') },
+            { value: 'yes', label: t('Yes') },
+            { value: 'no', label: t('No') },
           ]}
         />
       )
@@ -292,7 +293,7 @@ function DateEditor({
   return (
     <DateRangePicker
       className="w-full"
-      placeholder="Any date"
+      placeholder={t('Any date')}
       value={range}
       onChange={(next) => {
         const start = toDay(next.from)

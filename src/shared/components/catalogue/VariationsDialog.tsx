@@ -12,6 +12,7 @@ import {
   PRODUCT_FIELD_COLUMN_IDS,
 } from '@/features/products/components/productFieldColumns'
 import type { CatalogueRow, ProductGroup } from './browse'
+import { t } from '@/shared/i18n'
 
 /** What the variations table already says in its own columns. */
 const SHOWN_ELSEWHERE = ['image', 'productName', 'name', 'stock']
@@ -114,7 +115,7 @@ function OpenProduct<R extends CatalogueRow>({
 
   const variationColumn: TableColumn<DialogRow<R>> = {
     id: 'variation',
-    header: 'Variation',
+    header: t('Variation'),
     enableHiding: false,
     cell: ({ row }) => {
       const v = row.original.row.variation
@@ -150,15 +151,16 @@ function OpenProduct<R extends CatalogueRow>({
           <span className="text-fg-muted text-sm">
             {units > 0 ? (
               <>
-                Chosen: <strong className="text-fg font-medium">{formatNumber(units)}</strong> units
+                {t('Chosen:')}{' '}
+                <strong className="text-fg font-medium">{formatNumber(units)}</strong> units
               </>
             ) : (
-              'Nothing chosen'
+              t('Nothing chosen')
             )}
           </span>
           <div className="flex items-center gap-2">
             <Button type="button" variant="secondary" onClick={onClose}>
-              Close
+              {t('Close')}
             </Button>
             <Button
               type="button"

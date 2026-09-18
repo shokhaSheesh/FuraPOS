@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { procurementSource } from '@/shared/types'
 import type { Id, IsoDate, ProcurementKind } from '@/shared/types'
+import { t } from '@/shared/i18n'
 
 /**
  * Goods arriving from a supplier — the only way stock legitimately enters the
@@ -346,7 +347,7 @@ export const receiptSource = (
 
 /** The one step a receipt can take from where it is. */
 export function nextStep(status: ReceiptStatus): { to: ReceiptStatus; label: string } | null {
-  return status === 'draft' ? { to: 'received', label: 'Post receipt' } : null
+  return status === 'draft' ? { to: 'received', label: t('Post receipt') } : null
 }
 
 export const canCancel = (status: ReceiptStatus) => status !== 'cancelled'

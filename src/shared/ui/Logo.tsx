@@ -1,4 +1,5 @@
 import { cn } from '@/shared/lib/cn'
+import { t } from '@/shared/i18n'
 
 /**
  * The brand lockup for the sidebar. The mark's black outlines disappear on
@@ -14,7 +15,7 @@ export function Logo({ collapsed, className }: { collapsed?: boolean; className?
       </span>
       {!collapsed ? (
         <span className="text-chrome-fg text-sm leading-none font-semibold tracking-tight">
-          FURA SENTR
+          {t('FURA SENTR')}
         </span>
       ) : null}
     </span>

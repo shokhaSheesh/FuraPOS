@@ -6,6 +6,7 @@ import type { TableColumn } from '@/shared/components/table/features'
 import { formatMoney, formatNumber } from '@/shared/lib/format'
 import { plainText } from '@/shared/ui/RichTextEditor'
 import type { VariationRow } from '../model/product'
+import { t } from '@/shared/i18n'
 
 const Empty = () => <span className="text-fg-subtle">—</span>
 
@@ -42,14 +43,14 @@ export function buildProductColumns({
     // Рисунок
     {
       id: 'image',
-      header: 'Image',
+      header: t('Image'),
       enableSorting: false,
       cell: ({ row }) => <ProductThumb src={row.original.imageUrl} size="sm" />,
     },
     // Штрих-код
     {
       accessorKey: 'barcode',
-      header: 'Barcode',
+      header: t('Barcode'),
       cell: ({ row }) =>
         row.original.barcode ? (
           <span className="text-2xs font-mono">{row.original.barcode}</span>
@@ -60,14 +61,14 @@ export function buildProductColumns({
     // Артикул
     {
       accessorKey: 'sku',
-      header: 'SKU',
+      header: t('SKU'),
       enableHiding: false,
       cell: ({ row }) => <span className="text-2xs font-mono">{row.original.sku}</span>,
     },
     // Продажная цена
     {
       accessorKey: 'salePrice',
-      header: 'Sale price',
+      header: t('Sale price'),
       meta: { align: 'right' },
       cell: ({ row }) => money(row.original.salePrice, row.original.saleCurrency),
     },
@@ -76,7 +77,7 @@ export function buildProductColumns({
       ? ([
           {
             accessorKey: 'costPrice',
-            header: 'Supplier price',
+            header: t('Supplier price'),
             meta: { align: 'right' },
             cell: ({ row }) => money(row.original.costPrice, row.original.costCurrency),
           },
@@ -85,32 +86,32 @@ export function buildProductColumns({
     // Поставщик
     {
       accessorKey: 'brandName',
-      header: 'Supplier',
+      header: t('Supplier'),
       cell: ({ row }) => text(row.original.brandName),
     },
     // Название продукта
     {
       accessorKey: 'productName',
-      header: 'Product name',
+      header: t('Product name'),
       enableHiding: false,
       cell: ({ row }) => <span className="font-medium">{row.original.productName}</span>,
     },
     // Название вариации продукта
     {
       accessorKey: 'name',
-      header: 'Variation name',
+      header: t('Variation name'),
       cell: ({ row }) => text(row.original.name),
     },
     // Часть
     {
       accessorKey: 'partSide',
-      header: 'Part',
+      header: t('Part'),
       cell: ({ row }) => text(row.original.partSide),
     },
     // OEM
     {
       accessorKey: 'oem',
-      header: 'OEM',
+      header: t('OEM'),
       cell: ({ row }) =>
         row.original.oem ? (
           <span className="text-2xs font-mono">{row.original.oem}</span>
@@ -121,7 +122,7 @@ export function buildProductColumns({
     // Описание — written as formatted text, listed as words
     {
       accessorKey: 'description',
-      header: 'Description',
+      header: t('Description'),
       cell: ({ row }) => {
         const words = plainText(row.original.description)
         return words ? <span title={words}>{words}</span> : <Empty />
@@ -130,7 +131,7 @@ export function buildProductColumns({
     // Фактическое кол-во
     {
       accessorKey: 'stock',
-      header: 'Quantity',
+      header: t('Quantity'),
       meta: { align: 'right' },
       cell: ({ row }) => {
         const { stock, lowStockThreshold, unit } = row.original
@@ -167,7 +168,7 @@ export function buildProductColumns({
     // Локация — where this stock is
     {
       id: 'location',
-      header: 'Location',
+      header: t('Location'),
       enableSorting: false,
       cell: ({ row }) => {
         const at = row.original.stockByLocation.filter((entry) => entry.quantity > 0)
@@ -187,7 +188,7 @@ export function buildProductColumns({
     // Адрес товара — the exact bin, as a picker reads it: "1-A-23-4"
     {
       accessorKey: 'shelfAddress',
-      header: 'Storage address',
+      header: t('Storage address'),
       cell: ({ row }) =>
         row.original.shelfAddress ? (
           <span className="text-2xs font-mono">{row.original.shelfAddress}</span>
@@ -198,13 +199,13 @@ export function buildProductColumns({
     // Категория
     {
       accessorKey: 'categoryPath',
-      header: 'Category',
+      header: t('Category'),
       cell: ({ row }) => row.original.categoryPath,
     },
     // Вес карго
     {
       accessorKey: 'cargoWeightKg',
-      header: 'Cargo weight',
+      header: t('Cargo weight'),
       meta: { align: 'right' },
       cell: ({ row }) =>
         row.original.cargoWeightKg ? `${formatNumber(row.original.cargoWeightKg)} kg` : <Empty />,
@@ -212,46 +213,46 @@ export function buildProductColumns({
     // Размер карго
     {
       accessorKey: 'cargoSize',
-      header: 'Cargo size',
+      header: t('Cargo size'),
       cell: ({ row }) => text(row.original.cargoSize),
     },
     // Марка
     {
       accessorKey: 'vehicleMakes',
-      header: 'Make',
+      header: t('Make'),
       cell: ({ row }) =>
         row.original.vehicleMakes.length ? row.original.vehicleMakes.join(', ') : <Empty />,
     },
     // Модель
     {
       id: 'vehicleModels',
-      header: 'Model',
+      header: t('Model'),
       cell: ({ row }) =>
         row.original.vehicleModels.length ? row.original.vehicleModels.join(', ') : <Empty />,
     },
     // Категория конечное
     {
       accessorKey: 'categoryName',
-      header: 'End category',
+      header: t('End category'),
       cell: ({ row }) => row.original.categoryName,
     },
     // Бренд товара
     {
       accessorKey: 'manufacturer',
-      header: 'Product brand',
+      header: t('Product brand'),
       cell: ({ row }) => text(row.original.manufacturer),
     },
     // Not fields: how a row is worked with.
     {
       accessorKey: 'status',
-      header: 'Status',
+      header: t('Status'),
       cell: ({ row }) =>
         row.original.status === 'active' ? (
-          <Badge tone="success">Active</Badge>
+          <Badge tone="success">{t('Active')}</Badge>
         ) : row.original.status === 'draft' ? (
-          <Badge tone="warning">Draft</Badge>
+          <Badge tone="warning">{t('Draft')}</Badge>
         ) : (
-          <Badge>Archived</Badge>
+          <Badge>{t('Archived')}</Badge>
         ),
     },
     {
@@ -262,9 +263,14 @@ export function buildProductColumns({
       cell: ({ row }) => (
         <RowActions
           actions={[
-            { label: 'Edit', icon: Pencil, onSelect: () => onEdit(row.original), hidden: !canEdit },
             {
-              label: 'Delete',
+              label: t('Edit'),
+              icon: Pencil,
+              onSelect: () => onEdit(row.original),
+              hidden: !canEdit,
+            },
+            {
+              label: t('Delete'),
               icon: Trash2,
               destructive: true,
               onSelect: () => onDelete(row.original),

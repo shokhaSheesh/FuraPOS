@@ -1,6 +1,7 @@
 import { Badge } from '@/shared/ui/Badge'
 import { formatMoney } from '@/shared/lib/format'
 import { VERDICT_LABEL, verdictOf } from '../model/shift'
+import { t } from '@/shared/i18n'
 
 /**
  * The one number this whole feature exists for.
@@ -12,7 +13,7 @@ import { VERDICT_LABEL, verdictOf } from '../model/shift'
 export function VarianceBadge({ difference }: { difference: number | null }) {
   const verdict = verdictOf(difference)
   if (verdict === null || difference === null) {
-    return <span className="text-fg-subtle">Not counted</span>
+    return <span className="text-fg-subtle">{t('Not counted')}</span>
   }
 
   const tone = verdict === 'exact' || verdict === 'within' ? 'success' : 'warning'

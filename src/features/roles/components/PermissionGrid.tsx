@@ -17,6 +17,7 @@ import {
   withImpliedView,
   withoutImpliedActions,
 } from '../model/role'
+import { t } from '@/shared/i18n'
 
 const ACTION_LABELS: Record<PermissionAction, string> = {
   view: 'View',
@@ -96,7 +97,7 @@ export function PermissionGrid({
         <SearchInput
           value={search}
           onChange={setSearch}
-          placeholder="Find a screen or permission…"
+          placeholder={t('Find a screen or permission…')}
         />
         <p className="text-fg-subtle text-2xs tabular-nums">{formatNumber(totalGranted)} granted</p>
       </div>
@@ -105,7 +106,7 @@ export function PermissionGrid({
         <table className="w-full text-sm">
           <thead className="bg-canvas sticky top-0">
             <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-              <th className="px-3 py-2 text-left font-semibold">Can reach</th>
+              <th className="px-3 py-2 text-left font-semibold">{t('Can reach')}</th>
               {PERMISSION_ACTIONS.map((action) => (
                 <th key={action} className="w-20 px-3 py-2 text-center font-semibold">
                   {ACTION_LABELS[action]}
@@ -149,7 +150,10 @@ export function PermissionGrid({
       </div>
 
       {modules.length === 0 ? (
-        <p className="text-fg-subtle py-6 text-center text-sm">Nothing matches “{search}”.</p>
+        <p className="text-fg-subtle py-6 text-center text-sm">
+          {t('Nothing matches “')}
+          {search}”.
+        </p>
       ) : null}
     </div>
   )
@@ -230,7 +234,7 @@ function ModuleRows({
                   if (!applies) {
                     return (
                       <td key={action} className="text-fg-subtle px-3 py-1.5 text-center">
-                        <span aria-label="not applicable">–</span>
+                        <span aria-label={t('not applicable')}>–</span>
                       </td>
                     )
                   }

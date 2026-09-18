@@ -14,6 +14,7 @@ import { formatDateTime } from '@/shared/lib/format'
 import { useDataStore } from '@/data/store'
 import { PAYMENT_METHODS, SALE_STATUSES } from '@/features/sales/model/sale'
 import { INDUSTRIES, companySchema, type CompanyDraft } from '../model/settings'
+import { t } from '@/shared/i18n'
 
 /**
  * General settings.
@@ -59,37 +60,39 @@ export default function GeneralSettingsPage() {
   const save = () => {
     setShowErrors(true)
     if (!parsed.success) {
-      toast.error('Check the highlighted fields')
+      toast.error(t('Check the highlighted fields'))
       return
     }
     updateCompany(draft)
-    toast.success('Settings saved')
+    toast.success(t('Settings saved'))
   }
 
   return (
     <>
       <PageHeader
-        title="General"
-        description="Who the company is, the dollar rate behind every cost, and the two rules that change numbers on other screens."
+        title={t('General')}
+        description={t(
+          'Who the company is, the dollar rate behind every cost, and the two rules that change numbers on other screens.',
+        )}
         action={
           <Button variant="primary" onClick={save}>
             <Save />
-            Save changes
+            {t('Save changes')}
           </Button>
         }
         below={
           <span className="text-fg-subtle text-2xs">
-            Last changed {formatDateTime(company.updatedAt)}
+            {t('Last changed')} {formatDateTime(company.updatedAt)}
           </span>
         }
       />
 
       <Card>
         <CardHeader>
-          <CardTitle>Company</CardTitle>
+          <CardTitle>{t('Company')}</CardTitle>
         </CardHeader>
         <CardBody className="grid gap-3 sm:grid-cols-2">
-          <Field label="Name" required error={errors.name?.[0]}>
+          <Field label={t('Name')} required error={errors.name?.[0]}>
             {(p) => (
               <Input
                 {...p}
@@ -98,7 +101,7 @@ export default function GeneralSettingsPage() {
               />
             )}
           </Field>
-          <Field label="Industry">
+          <Field label={t('Industry')}>
             {(p) => (
               <Select
                 {...p}
@@ -109,7 +112,7 @@ export default function GeneralSettingsPage() {
               />
             )}
           </Field>
-          <Field label="Address" className="sm:col-span-2">
+          <Field label={t('Address')} className="sm:col-span-2">
             {(p) => (
               <Input
                 {...p}
@@ -118,7 +121,7 @@ export default function GeneralSettingsPage() {
               />
             )}
           </Field>
-          <Field label="Phone">
+          <Field label={t('Phone')}>
             {(p) => (
               <Input
                 {...p}
@@ -127,7 +130,7 @@ export default function GeneralSettingsPage() {
               />
             )}
           </Field>
-          <Field label="Email" error={errors.email?.[0]}>
+          <Field label={t('Email')} error={errors.email?.[0]}>
             {(p) => (
               <Input
                 {...p}
@@ -141,14 +144,15 @@ export default function GeneralSettingsPage() {
 
       <Card>
         <CardHeader className="flex-col items-stretch gap-1">
-          <CardTitle>Exchange rate</CardTitle>
+          <CardTitle>{t('Exchange rate')}</CardTitle>
           <p className="text-fg-subtle text-2xs">
-            Suppliers invoice in dollars and customers pay in so'm, so this one number sits behind
-            every landed cost, margin and order value in the product.
+            {t(
+              "Suppliers invoice in dollars and customers pay in so'm, so this one number sits behind every landed cost, margin and order value in the product.",
+            )}
           </p>
         </CardHeader>
         <CardBody>
-          <Field label="US dollar rate" required error={errors.usdRate?.[0]}>
+          <Field label={t('US dollar rate')} required error={errors.usdRate?.[0]}>
             {(p) => (
               <NumberField
                 {...p}
@@ -165,15 +169,18 @@ export default function GeneralSettingsPage() {
 
       <Card>
         <CardHeader className="flex-col items-stretch gap-1">
-          <CardTitle>Sales rules</CardTitle>
+          <CardTitle>{t('Sales rules')}</CardTitle>
           <p className="text-fg-subtle text-2xs">
-            The two settings here change numbers on other screens, so they are worth reading twice.
+            {t(
+              'The two settings here change numbers on other screens, so they are worth reading twice.',
+            )}
           </p>
         </CardHeader>
         <CardBody className="space-y-5">
           <div className="space-y-2">
             <p className="text-fg-muted text-sm">
-              How a sale can be paid<span className="text-danger ml-0.5">*</span>
+              {t('How a sale can be paid')}
+              <span className="text-danger ml-0.5">*</span>
             </p>
             <div className="flex flex-wrap gap-x-6 gap-y-2">
               {PAYMENT_METHODS.map((method) => (
@@ -198,15 +205,16 @@ export default function GeneralSettingsPage() {
           <label className="flex items-center justify-between gap-3">
             <span className="min-w-0">
               <span className="text-fg block text-sm font-medium">
-                Allow a sale past a client's credit limit
+                {t("Allow a sale past a client's credit limit")}
               </span>
               <span className="text-fg-subtle text-2xs">
-                Off means the limit stops the sale. On means it only warns — which is a decision
-                about trust, not about software.
+                {t(
+                  'Off means the limit stops the sale. On means it only warns — which is a decision about trust, not about software.',
+                )}
               </span>
             </span>
             <Switch
-              aria-label="Allow a sale past a credit limit"
+              aria-label={t('Allow a sale past a credit limit')}
               checked={draft.allowOverCreditLimit}
               onCheckedChange={(allowOverCreditLimit) =>
                 setDraft((c) => ({ ...c, allowOverCreditLimit }))
@@ -216,7 +224,8 @@ export default function GeneralSettingsPage() {
 
           <div className="space-y-2">
             <p className="text-fg-muted text-sm">
-              What counts as revenue<span className="text-danger ml-0.5">*</span>
+              {t('What counts as revenue')}
+              <span className="text-danger ml-0.5">*</span>
             </p>
             <div className="flex flex-wrap gap-x-6 gap-y-2">
               {SALE_STATUSES.filter((status) => status.value !== 'deleted').map((status) => (
@@ -241,9 +250,9 @@ export default function GeneralSettingsPage() {
               {/* Said plainly: this is the setting most likely to make two
                   people quote different revenue figures at each other. */}
               <p>
-                Every figure in Analytics moves when this changes. Counting an open sale as revenue
-                flatters the dashboard and the reports alike. Deleted sales never count, whatever is
-                ticked here.
+                {t(
+                  'Every figure in Analytics moves when this changes. Counting an open sale as revenue flatters the dashboard and the reports alike. Deleted sales never count, whatever is ticked here.',
+                )}
               </p>
             </div>
           </div>

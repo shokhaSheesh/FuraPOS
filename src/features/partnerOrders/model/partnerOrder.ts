@@ -1,4 +1,5 @@
 import type { Id, IsoDate } from '@/shared/types'
+import { t } from '@/shared/i18n'
 
 /**
  * An order somebody placed **with us**.
@@ -151,7 +152,7 @@ export const shippedRatio = (order: Pick<PartnerOrder, 'lines'>) => {
 export function nextStep(
   status: PartnerOrderStatus,
 ): { to: PartnerOrderStatus; label: string } | null {
-  return status === 'new' ? { to: 'confirmed', label: 'Accept the order' } : null
+  return status === 'new' ? { to: 'confirmed', label: t('Accept the order') } : null
 }
 
 export const canShip = (status: PartnerOrderStatus) =>

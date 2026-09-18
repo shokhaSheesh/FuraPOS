@@ -18,6 +18,7 @@ import { formatNumber } from '@/shared/lib/format'
 import type { TableColumn } from '@/shared/components/table/features'
 import { useRoleActions, useRoles, type RoleRow } from '../api/roles'
 import { roleDraftSchema } from '../model/role'
+import { t } from '@/shared/i18n'
 
 /**
  * Access & roles.
@@ -70,25 +71,25 @@ export default function RolesPage() {
     () => [
       {
         accessorKey: 'name',
-        header: 'Role',
+        header: t('Role'),
         enableHiding: false,
         cell: ({ row }) => (
           <p className="text-fg flex items-center gap-1.5 font-medium">
             {row.original.name}
             {row.original.isSystem ? (
-              <Lock className="text-fg-subtle size-3" aria-label="Built in" />
+              <Lock className="text-fg-subtle size-3" aria-label={t('Built in')} />
             ) : null}
           </p>
         ),
       },
       {
         id: 'holders',
-        header: 'People',
+        header: t('People'),
         meta: { align: 'right' },
         enableHiding: false,
         cell: ({ row }) =>
           row.original.holders === 0 ? (
-            <span className="text-fg-subtle">Nobody</span>
+            <span className="text-fg-subtle">{t('Nobody')}</span>
           ) : (
             <span className="text-fg font-medium tabular-nums">
               {formatNumber(row.original.holders)}
@@ -97,7 +98,7 @@ export default function RolesPage() {
       },
       {
         id: 'access',
-        header: 'Access',
+        header: t('Access'),
         enableHiding: false,
         cell: ({ row }) => {
           const { granted, total, ratio, permissions } = row.original
@@ -111,7 +112,7 @@ export default function RolesPage() {
                 />
               </span>
               <span className="text-fg-muted text-2xs tabular-nums">
-                {full ? 'Everything' : `${formatNumber(granted)} of ${formatNumber(total)}`}
+                {full ? t('Everything') : `${formatNumber(granted)} of ${formatNumber(total)}`}
               </span>
             </div>
           )
@@ -119,7 +120,7 @@ export default function RolesPage() {
       },
       {
         id: 'modules',
-        header: 'Can reach',
+        header: t('Can reach'),
         cell: ({ row }) => (
           <div className="flex flex-wrap gap-1">
             {row.original.modules.slice(0, 4).map((label) => (
@@ -133,7 +134,7 @@ export default function RolesPage() {
               </span>
             ) : null}
             {row.original.modules.length === 0 ? (
-              <span className="text-fg-subtle">Nothing yet</span>
+              <span className="text-fg-subtle">{t('Nothing yet')}</span>
             ) : null}
           </div>
         ),
@@ -152,7 +153,7 @@ export default function RolesPage() {
                 onSelect: () => navigate(paths.users.roleDetail(row.original.id)),
               },
               {
-                label: 'Delete',
+                label: t('Delete'),
                 icon: Trash2,
                 destructive: true,
                 onSelect: () => setDeleting(row.original),
@@ -169,13 +170,15 @@ export default function RolesPage() {
   return (
     <>
       <PageHeader
-        title="Access & roles"
-        description="What each kind of employee can reach. Access is granted to a role, not to a person, so the fifth seller you hire inherits what the other four have and a rule change happens in one place."
+        title={t('Access & roles')}
+        description={t(
+          'What each kind of employee can reach. Access is granted to a role, not to a person, so the fifth seller you hire inherits what the other four have and a rule change happens in one place.',
+        )}
         action={
           can('users.roles.create') ? (
             <Button variant="primary" onClick={openNew}>
               <Plus />
-              Add role
+              {t('Add role')}
             </Button>
           ) : null
         }
@@ -193,8 +196,8 @@ export default function RolesPage() {
         emptyState={
           <EmptyState
             icon={ShieldCheck}
-            title="No roles yet"
-            description="A role is a named set of permissions that people inherit."
+            title={t('No roles yet')}
+            description={t('A role is a named set of permissions that people inherit.')}
           />
         }
       />
@@ -202,15 +205,17 @@ export default function RolesPage() {
       <Modal
         open={creating}
         onOpenChange={setCreating}
-        title="New role"
-        description="Name it after the job, not the person. It starts with no access at all — you choose what it can reach next."
-        primary={{ label: 'Create role', onClick: create }}
+        title={t('New role')}
+        description={t(
+          'Name it after the job, not the person. It starts with no access at all — you choose what it can reach next.',
+        )}
+        primary={{ label: t('Create role'), onClick: create }}
       >
-        <Field label="Name" required error={errors.name?.[0]}>
+        <Field label={t('Name')} required error={errors.name?.[0]}>
           {(p) => (
             <Input
               {...p}
-              placeholder="Senior seller"
+              placeholder={t('Senior seller')}
               value={draft.name}
               onChange={(e) => setDraft({ name: e.target.value })}
             />
@@ -229,7 +234,7 @@ export default function RolesPage() {
             ? `${formatNumber(deleting.holders)} ${deleting.holders === 1 ? 'person holds' : 'people hold'} this role. Move them to another role first — otherwise they would be left holding a role that does not exist.`
             : 'Nobody holds this role, so nothing changes for anyone.'
         }
-        confirmLabel="Delete"
+        confirmLabel={t('Delete')}
         destructive
         onConfirm={() => deleting && remove(deleting)}
       />

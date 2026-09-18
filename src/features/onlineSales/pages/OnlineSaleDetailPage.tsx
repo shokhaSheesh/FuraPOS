@@ -23,6 +23,7 @@ import {
   unitsOf,
   type PaymentTransaction,
 } from '../model/onlineSale'
+import { t } from '@/shared/i18n'
 
 const TRANSACTION_TONE: Record<
   PaymentTransaction['status'],
@@ -43,7 +44,12 @@ export default function OnlineSaleDetailPage() {
   const { data: sale } = useOnlineSale(onlineSaleId ?? '')
 
   if (!sale) {
-    return <EmptyState title="Online order not found" description="It may have been removed." />
+    return (
+      <EmptyState
+        title={t('Online order not found')}
+        description={t('It may have been removed.')}
+      />
+    )
   }
 
   const status = onlineStatusMeta(sale.status)
@@ -57,7 +63,7 @@ export default function OnlineSaleDetailPage() {
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
         <Link to={paths.sales.online}>
           <ArrowLeft />
-          Online sales
+          {t('Online sales')}
         </Link>
       </Button>
 
@@ -69,10 +75,10 @@ export default function OnlineSaleDetailPage() {
             <Badge tone={status.tone}>{status.label}</Badge>
             <Badge tone={payment.tone}>{payment.label}</Badge>
             <Badge tone="neutral">{formatNumber(units)} pcs</Badge>
-            {sale.express ? <Badge tone="warning">Express</Badge> : null}
+            {sale.express ? <Badge tone="warning">{t('Express')}</Badge> : null}
             <span className="text-fg-subtle text-2xs flex items-center gap-1">
               <Globe className="size-3.5" />
-              View only — managed in the e-commerce app
+              {t('View only — managed in the e-commerce app')}
             </span>
           </div>
         }
@@ -86,19 +92,20 @@ export default function OnlineSaleDetailPage() {
         <div className="min-w-0 flex-1 text-sm">
           {takesStock(sale) ? (
             <p className="text-fg">
-              Took <span className="font-semibold">{formatNumber(units)} pcs</span> from{' '}
-              <span className="font-semibold">{sale.locationName}</span> when it was placed.
+              {t('Took')} <span className="font-semibold">{formatNumber(units)} pcs</span> from{' '}
+              <span className="font-semibold">{sale.locationName}</span> {t('when it was placed.')}
             </p>
           ) : (
             <p className="text-fg">
-              {sale.status === 'returned' ? 'Returned' : 'Cancelled'} — the{' '}
-              <span className="font-semibold">{formatNumber(units)} pcs</span> went back to{' '}
+              {sale.status === 'returned' ? t('Returned') : t('Cancelled')} {t('— the')}{' '}
+              <span className="font-semibold">{formatNumber(units)} pcs</span> {t('went back to')}{' '}
               {sale.locationName}.
             </p>
           )}
           <p className="text-fg-subtle text-2xs">
-            Every line shows up in Product logs as an online sale, next to counter sales and
-            transfers.
+            {t(
+              'Every line shows up in Product logs as an online sale, next to counter sales and transfers.',
+            )}
           </p>
         </div>
       </Card>
@@ -106,67 +113,67 @@ export default function OnlineSaleDetailPage() {
       <div className="grid gap-3 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Order</CardTitle>
+            <CardTitle>{t('Order')}</CardTitle>
           </CardHeader>
           <CardBody className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
-            <Info label="Created" value={formatDateTime(sale.createdAt)} />
-            <Info label="Updated" value={formatDateTime(sale.updatedAt)} />
-            <Info label="Picked from" value={sale.locationName} />
+            <Info label={t('Created')} value={formatDateTime(sale.createdAt)} />
+            <Info label={t('Updated')} value={formatDateTime(sale.updatedAt)} />
+            <Info label={t('Picked from')} value={sale.locationName} />
             <Info
-              label="Prepared by"
+              label={t('Prepared by')}
               value={sale.employeeName ?? 'Not assigned yet'}
               muted={!sale.employeeName}
             />
-            <Info label="Payment method" value={PROVIDER_LABEL[sale.paymentProvider]} />
-            <Info label="Payment" value={payment.label} />
+            <Info label={t('Payment method')} value={PROVIDER_LABEL[sale.paymentProvider]} />
+            <Info label={t('Payment')} value={payment.label} />
           </CardBody>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Customer & delivery</CardTitle>
+            <CardTitle>{t('Customer & delivery')}</CardTitle>
           </CardHeader>
           <CardBody className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
             <Info
-              label="Customer"
+              label={t('Customer')}
               value={sale.customerName}
               href={sale.driverId ? paths.users.driverDetail(sale.driverId) : undefined}
             />
-            <Info label="Phone" value={sale.customerPhone} />
+            <Info label={t('Phone')} value={sale.customerPhone} />
             <Info
-              label="Delivery"
+              label={t('Delivery')}
               value={`${DELIVERY_LABEL[sale.deliveryMethod]}${sale.express ? ' · express' : ''}`}
             />
             {sale.deliveryMethod === 'pickup' ? (
-              <Info label="Collect from" value={sale.locationName} />
+              <Info label={t('Collect from')} value={sale.locationName} />
             ) : sale.pickupPoint ? (
-              <Info label="EMU pickup point" value={sale.pickupPoint} />
+              <Info label={t('EMU pickup point')} value={sale.pickupPoint} />
             ) : (
               <Info
-                label="Address"
+                label={t('Address')}
                 value={sale.customerAddress ?? '—'}
                 muted={!sale.customerAddress}
               />
             )}
             <Info
-              label="Estimated delivery"
+              label={t('Estimated delivery')}
               value={sale.estimatedDeliveryAt ? formatDateTime(sale.estimatedDeliveryAt) : '—'}
               muted={!sale.estimatedDeliveryAt}
             />
             <Info
-              label={sale.deliveryMethod === 'pickup' ? 'Collected' : 'Delivered'}
+              label={sale.deliveryMethod === 'pickup' ? t('Collected') : t('Delivered')}
               value={sale.deliveredAt ? formatDateTime(sale.deliveredAt) : 'Not yet'}
               muted={!sale.deliveredAt}
             />
             {sale.courierOrderId ? (
               <>
-                <Info label="EMU status" value={sale.courierStatus ?? '—'} />
-                <Info label="EMU order ID" value={sale.courierOrderId} mono />
+                <Info label={t('EMU status')} value={sale.courierStatus ?? '—'} />
+                <Info label={t('EMU order ID')} value={sale.courierOrderId} mono />
               </>
             ) : null}
             {sale.customerNote ? (
               <div className="sm:col-span-2">
-                <Info label="Customer note" value={sale.customerNote} />
+                <Info label={t('Customer note')} value={sale.customerNote} />
               </div>
             ) : null}
           </CardBody>
@@ -176,17 +183,17 @@ export default function OnlineSaleDetailPage() {
       <div className="grid gap-3 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Products</CardTitle>
+            <CardTitle>{t('Products')}</CardTitle>
           </CardHeader>
           <CardBody className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-canvas">
                   <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-                    <th className="px-4 py-2 text-left font-semibold">Product</th>
-                    <th className="px-4 py-2 text-right font-semibold">Price</th>
-                    <th className="px-4 py-2 text-right font-semibold">Quantity</th>
-                    <th className="px-4 py-2 text-right font-semibold">Subtotal</th>
+                    <th className="px-4 py-2 text-left font-semibold">{t('Product')}</th>
+                    <th className="px-4 py-2 text-right font-semibold">{t('Price')}</th>
+                    <th className="px-4 py-2 text-right font-semibold">{t('Quantity')}</th>
+                    <th className="px-4 py-2 text-right font-semibold">{t('Subtotal')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -223,30 +230,30 @@ export default function OnlineSaleDetailPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Summary</CardTitle>
+            <CardTitle>{t('Summary')}</CardTitle>
           </CardHeader>
           <CardBody className="space-y-2">
-            <Money label="Products" value={formatMoney(productsTotal(sale))} />
-            <Money label="Delivery" value={formatMoney(sale.deliveryFee)} />
+            <Money label={t('Products')} value={formatMoney(productsTotal(sale))} />
+            <Money label={t('Delivery')} value={formatMoney(sale.deliveryFee)} />
             <Money
-              label="Discount"
+              label={t('Discount')}
               value={sale.discount ? `−${formatMoney(sale.discount)}` : formatMoney(0)}
               tone={sale.discount ? 'success' : undefined}
             />
             <div className="border-border border-t pt-2">
-              <Money label="Order total" value={formatMoney(total)} strong />
+              <Money label={t('Order total')} value={formatMoney(total)} strong />
             </div>
             <Money
-              label="Paid with cashback"
+              label={t('Paid with cashback')}
               value={sale.cashbackUsed ? `−${formatMoney(sale.cashbackUsed)}` : formatMoney(0)}
               tone={sale.cashbackUsed ? 'success' : undefined}
             />
-            <Money label="To pay in money" value={formatMoney(payable(sale))} />
+            <Money label={t('To pay in money')} value={formatMoney(payable(sale))} />
             <div className="border-border border-t pt-2">
-              <Money label="Paid" value={formatMoney(paid)} strong />
+              <Money label={t('Paid')} value={formatMoney(paid)} strong />
               {payable(sale) - paid > 0 && takesStock(sale) ? (
                 <p className="text-warning text-2xs mt-1 text-right">
-                  {formatMoney(payable(sale) - paid)} still to be collected
+                  {formatMoney(payable(sale) - paid)} {t('still to be collected')}
                 </p>
               ) : null}
             </div>
@@ -256,26 +263,26 @@ export default function OnlineSaleDetailPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Payment transactions</CardTitle>
+          <CardTitle>{t('Payment transactions')}</CardTitle>
         </CardHeader>
         <CardBody className="p-0">
           {sale.transactions.length === 0 ? (
             <p className="text-fg-subtle p-4 text-sm">
               {sale.paymentProvider === 'cash'
-                ? 'Cash on delivery — nothing is recorded until the courier collects it.'
+                ? t('Cash on delivery — nothing is recorded until the courier collects it.')
                 : payable(sale) === 0
-                  ? 'Paid entirely with cashback, so no money changed hands.'
-                  : 'No payment has come through yet.'}
+                  ? t('Paid entirely with cashback, so no money changed hands.')
+                  : t('No payment has come through yet.')}
             </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-canvas">
                   <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-                    <th className="px-4 py-2 text-left font-semibold">Payment</th>
-                    <th className="px-4 py-2 text-left font-semibold">Status</th>
-                    <th className="px-4 py-2 text-left font-semibold">When</th>
-                    <th className="px-4 py-2 text-right font-semibold">Amount</th>
+                    <th className="px-4 py-2 text-left font-semibold">{t('Payment')}</th>
+                    <th className="px-4 py-2 text-left font-semibold">{t('Status')}</th>
+                    <th className="px-4 py-2 text-left font-semibold">{t('When')}</th>
+                    <th className="px-4 py-2 text-right font-semibold">{t('Amount')}</th>
                   </tr>
                 </thead>
                 <tbody>

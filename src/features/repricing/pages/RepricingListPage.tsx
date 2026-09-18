@@ -31,6 +31,7 @@ import {
   type Repricing,
 } from '../model/repricing'
 import { ruleSentence } from './RepricingDetailPage'
+import { t } from '@/shared/i18n'
 
 /**
  * Price changes, past and pending.
@@ -57,28 +58,28 @@ export default function RepricingListPage() {
     () => [
       {
         accessorKey: 'number',
-        header: 'Number',
+        header: t('Number'),
         cell: ({ row }) => <span className="text-2xs font-mono">{row.original.number}</span>,
         enableHiding: false,
       },
       {
         accessorKey: 'createdAt',
-        header: 'Created',
+        header: t('Created'),
         cell: ({ row }) => formatDate(row.original.createdAt),
       },
       {
         id: 'rule',
-        header: 'Rule',
+        header: t('Rule'),
         enableHiding: false,
         cell: ({ row }) => <span className="font-medium">{ruleSentence(row.original)}</span>,
       },
       {
         id: 'scope',
-        header: 'Applied to',
+        header: t('Applied to'),
         cell: ({ row }) => {
           const sentence = scopeSentence(row.original)
           return sentence === 'Everything' ? (
-            <span className="text-fg-subtle">Everything</span>
+            <span className="text-fg-subtle">{t('Everything')}</span>
           ) : (
             sentence
           )
@@ -86,13 +87,13 @@ export default function RepricingListPage() {
       },
       {
         id: 'products',
-        header: 'Products',
+        header: t('Products'),
         meta: { align: 'right' },
         cell: ({ row }) => formatNumber(changedLines(row.original).length),
       },
       {
         id: 'direction',
-        header: 'Up / down',
+        header: t('Up / down'),
         meta: { align: 'right' },
         cell: ({ row }) => (
           <span className="tabular-nums">
@@ -104,7 +105,7 @@ export default function RepricingListPage() {
       },
       {
         id: 'average',
-        header: 'Average move',
+        header: t('Average move'),
         meta: { align: 'right' },
         cell: ({ row }) => {
           const change = averageChange(row.original)
@@ -121,7 +122,7 @@ export default function RepricingListPage() {
         ? [
             {
               id: 'risky',
-              header: 'Below cost',
+              header: t('Below cost'),
               meta: { align: 'right' as const },
               cell: ({ row }: { row: { original: Repricing } }) => {
                 const risky = belowCost(row.original).length
@@ -136,17 +137,17 @@ export default function RepricingListPage() {
         : []),
       {
         accessorKey: 'status',
-        header: 'Status',
+        header: t('Status'),
         cell: ({ row }) => (
           <Badge tone={repricingStatusTone(row.original.status)}>
             {repricingStatusLabel(row.original.status)}
           </Badge>
         ),
       },
-      { accessorKey: 'createdBy', header: 'Created by' },
+      { accessorKey: 'createdBy', header: t('Created by') },
       {
         accessorKey: 'comment',
-        header: 'Reason',
+        header: t('Reason'),
         cell: ({ row }) => row.original.comment ?? <span className="text-fg-subtle">—</span>,
       },
       {
@@ -157,7 +158,7 @@ export default function RepricingListPage() {
           <RowActions
             actions={[
               {
-                label: 'Put prices back',
+                label: t('Put prices back'),
                 icon: Undo2,
                 destructive: true,
                 hidden: row.original.status !== 'applied' || !can('products.repricing.delete'),
@@ -174,14 +175,16 @@ export default function RepricingListPage() {
   return (
     <>
       <PageHeader
-        title="Repricing"
-        description="Change what many products sell for at once — when the exchange rate moves, or a supplier puts prices up. Every change is recorded and can be put back."
+        title={t('Repricing')}
+        description={t(
+          'Change what many products sell for at once — when the exchange rate moves, or a supplier puts prices up. Every change is recorded and can be put back.',
+        )}
         action={
           can('products.repricing.create') ? (
             <Button variant="primary" asChild>
               <Link to={paths.products.newRepricing}>
                 <Plus />
-                New price change
+                {t('New price change')}
               </Link>
             </Button>
           ) : null
@@ -190,21 +193,21 @@ export default function RepricingListPage() {
           <div className="flex flex-wrap items-center gap-2">
             <StatusChips
               options={[
-                { value: null, label: 'All' },
-                { value: 'draft', label: 'Draft' },
-                { value: 'applied', label: 'Applied' },
-                { value: 'reverted', label: 'Reverted' },
+                { value: null, label: t('All') },
+                { value: 'draft', label: t('Draft') },
+                { value: 'applied', label: t('Applied') },
+                { value: 'reverted', label: t('Reverted') },
               ]}
               value={(query.status as string | null) ?? null}
               onChange={(next) => setQuery({ status: next, page: null })}
               counts={counts}
             />
             <StatusChips
-              ariaLabel="Filter by direction"
+              ariaLabel={t('Filter by direction')}
               options={[
-                { value: null, label: 'Either way' },
-                { value: 'up', label: 'Prices up' },
-                { value: 'down', label: 'Prices down' },
+                { value: null, label: t('Either way') },
+                { value: 'up', label: t('Prices up') },
+                { value: 'down', label: t('Prices down') },
               ]}
               value={(query.direction as string | null) ?? null}
               onChange={(next) => setQuery({ direction: next, page: null })}
@@ -235,17 +238,19 @@ export default function RepricingListPage() {
         onRowClick={(repricing) => navigate(paths.products.repricingDetail(repricing.id))}
         emptyState={
           query.search || query.f || query.status || query.direction ? (
-            <EmptyState title="No price changes match these filters" />
+            <EmptyState title={t('No price changes match these filters')} />
           ) : (
             <EmptyState
-              title="No prices have been changed"
-              description="Editing prices one product at a time leaves no record of when they moved or why. This does it in bulk, and keeps the answer."
+              title={t('No prices have been changed')}
+              description={t(
+                'Editing prices one product at a time leaves no record of when they moved or why. This does it in bulk, and keeps the answer.',
+              )}
               action={
                 can('products.repricing.create') ? (
                   <Button variant="primary" asChild>
                     <Link to={paths.products.newRepricing}>
                       <Plus />
-                      New price change
+                      {t('New price change')}
                     </Link>
                   </Button>
                 ) : null
@@ -258,8 +263,8 @@ export default function RepricingListPage() {
       <ConfirmDialog
         open={pendingRevert !== null}
         onOpenChange={(open) => !open && setPendingRevert(null)}
-        title="Put these prices back?"
-        confirmLabel="Put back"
+        title={t('Put these prices back?')}
+        confirmLabel={t('Put back')}
         body={
           pendingRevert
             ? `Every product ${pendingRevert.number} changed goes back to exactly the price it had before.`

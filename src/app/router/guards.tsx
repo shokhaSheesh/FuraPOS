@@ -7,6 +7,7 @@ import { useSession } from '@/app/providers/SessionProvider'
 import { Card } from '@/shared/ui/Card'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { Skeleton } from '@/shared/ui/Skeleton'
+import { t } from '@/shared/i18n'
 
 /**
  * Guards a route by permission key. A user without access sees an explicit
@@ -28,8 +29,8 @@ export function RequirePermission({
       <Card>
         <EmptyState
           icon={Lock}
-          title="You don't have access to this screen"
-          description="Ask an administrator to grant your role the matching permission."
+          title={t("You don't have access to this screen")}
+          description={t('Ask an administrator to grant your role the matching permission.')}
         />
       </Card>
     )

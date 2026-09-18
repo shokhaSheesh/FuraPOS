@@ -6,6 +6,7 @@ import { NumberField } from '@/shared/components/NumberField'
 import { cn } from '@/shared/lib/cn'
 import { formatNumber } from '@/shared/lib/format'
 import { combinationName, type ProductFormValues } from '../model/product'
+import { t } from '@/shared/i18n'
 
 /**
  * Stock, as its own section, because it answers a different question from the
@@ -57,7 +58,8 @@ export function ProductStockSection({
   const picker = (
     <div className="space-y-1.5">
       <p className="text-fg-muted text-sm">
-        Stocked at<span className="text-danger ml-0.5">*</span>
+        {t('Stocked at')}
+        <span className="text-danger ml-0.5">*</span>
       </p>
       <div className="flex flex-wrap gap-1.5">
         {locations.map((location) => {
@@ -90,7 +92,7 @@ export function ProductStockSection({
   const quantities =
     selected.length === 0 ? (
       <p className="text-fg-subtle text-sm">
-        Pick a location above to enter quantities against it.
+        {t('Pick a location above to enter quantities against it.')}
       </p>
     ) : (
       <div className="border-border rounded-card overflow-x-auto border">
@@ -98,14 +100,14 @@ export function ProductStockSection({
           <thead className="bg-canvas">
             <tr className="text-fg-muted text-2xs tracking-wide uppercase">
               <th className="px-3 py-2 text-left font-semibold">
-                {single ? 'Product' : 'Variation'}
+                {single ? t('Product') : t('Variation')}
               </th>
               {selected.map((location) => (
                 <th key={location.id} className="px-3 py-2 text-right font-semibold">
                   {location.name}
                 </th>
               ))}
-              <th className="px-3 py-2 text-right font-semibold">Total</th>
+              <th className="px-3 py-2 text-right font-semibold">{t('Total')}</th>
             </tr>
           </thead>
           <tbody>
@@ -122,12 +124,12 @@ export function ProductStockSection({
                   <td className="text-fg px-3 py-2">
                     {/* The same name the catalogue will list it under. */}
                     {single
-                      ? productName || 'This product'
+                      ? productName || t('This product')
                       : [productName, combinationName(variation.optionValues)]
                           .filter(Boolean)
                           .join(' — ') || `Variation ${index + 1}`}
                     <span className="text-fg-subtle text-2xs ml-2">
-                      {variation.sku || 'no SKU'}
+                      {variation.sku || t('no SKU')}
                     </span>
                   </td>
                   {locations.map((location, locationIndex) =>
@@ -170,7 +172,7 @@ export function ProductStockSection({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Locations</CardTitle>
+          <CardTitle>{t('Locations')}</CardTitle>
         </CardHeader>
         <CardBody>{picker}</CardBody>
       </Card>
@@ -180,11 +182,15 @@ export function ProductStockSection({
   return (
     <Card>
       <CardHeader className="flex-col items-stretch gap-1">
-        <CardTitle>Quantity</CardTitle>
+        <CardTitle>{t('Quantity')}</CardTitle>
         <p className="text-fg-subtle text-2xs">
           {editing
-            ? 'Editing a quantity here writes the new figure directly. To record why it changed, use Corrections instead.'
-            : 'Opening quantities. Everything after this arrives through goods receipt, corrections and stocktaking.'}
+            ? t(
+                'Editing a quantity here writes the new figure directly. To record why it changed, use Corrections instead.',
+              )
+            : t(
+                'Opening quantities. Everything after this arrives through goods receipt, corrections and stocktaking.',
+              )}
         </p>
       </CardHeader>
       <CardBody className="space-y-4">

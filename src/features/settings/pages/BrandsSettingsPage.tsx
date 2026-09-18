@@ -19,6 +19,7 @@ import type { TableColumn } from '@/shared/components/table/features'
 import { useDataStore } from '@/data/store'
 import { brandSchema, type Brand, type VehicleMake } from '../model/settings'
 import { TruckBrandsPanel } from '../components/TruckBrandsPanel'
+import { t } from '@/shared/i18n'
 
 /**
  * Brands — two lists that are easy to confuse, kept apart by a tab.
@@ -101,24 +102,24 @@ export default function BrandsSettingsPage() {
     () => [
       {
         accessorKey: 'name',
-        header: 'Brand',
+        header: t('Brand'),
         enableHiding: false,
         cell: ({ row }) => <span className="text-fg font-medium">{row.original.name}</span>,
       },
       {
         accessorKey: 'zone',
-        header: 'From',
+        header: t('From'),
         cell: ({ row }) => row.original.zone ?? <span className="text-fg-subtle">—</span>,
       },
       {
         id: 'products',
-        header: 'Products',
+        header: t('Products'),
         meta: { align: 'right' },
         enableHiding: false,
         cell: ({ row }) => {
           const used = counts.get(row.original.id) ?? 0
           return used === 0 ? (
-            <span className="text-fg-subtle">None</span>
+            <span className="text-fg-subtle">{t('None')}</span>
           ) : (
             <span className="tabular-nums">{formatNumber(used)}</span>
           )
@@ -126,11 +127,11 @@ export default function BrandsSettingsPage() {
       },
       {
         accessorKey: 'active',
-        header: 'Status',
+        header: t('Status'),
         enableHiding: false,
         cell: ({ row }) => (
           <Badge tone={row.original.active ? 'success' : 'neutral'}>
-            {row.original.active ? 'Active' : 'Hidden'}
+            {row.original.active ? t('Active') : t('Hidden')}
           </Badge>
         ),
       },
@@ -143,13 +144,13 @@ export default function BrandsSettingsPage() {
           <RowActions
             actions={[
               {
-                label: 'Edit',
+                label: t('Edit'),
                 icon: Pencil,
                 hidden: !can('settings.brands.edit'),
                 onSelect: () => openFor(row.original),
               },
               {
-                label: 'Delete',
+                label: t('Delete'),
                 icon: Trash2,
                 destructive: true,
                 hidden: !can('settings.brands.delete'),
@@ -167,23 +168,27 @@ export default function BrandsSettingsPage() {
   return (
     <>
       <PageHeader
-        title="Brands"
+        title={t('Brands')}
         description={
           tab === 'parts'
-            ? 'Who makes the parts you sell. A product points at one of these, so renaming a brand here renames it everywhere.'
-            : 'The trucks your parts fit, and their models. Products and drivers’ trucks are picked from this list.'
+            ? t(
+                'Who makes the parts you sell. A product points at one of these, so renaming a brand here renames it everywhere.',
+              )
+            : t(
+                'The trucks your parts fit, and their models. Products and drivers’ trucks are picked from this list.',
+              )
         }
         action={
           can('settings.brands.create') ? (
             tab === 'parts' ? (
               <Button variant="primary" onClick={() => openFor(null)}>
                 <Plus />
-                Add brand
+                {t('Add brand')}
               </Button>
             ) : (
               <Button variant="primary" onClick={() => openMake(null)}>
                 <Plus />
-                Add truck brand
+                {t('Add truck brand')}
               </Button>
             )
           ) : null
@@ -196,7 +201,7 @@ export default function BrandsSettingsPage() {
         items={[
           {
             value: 'parts',
-            label: 'Part brands',
+            label: t('Part brands'),
             badge: brands.length,
             content: (
               <DataTable
@@ -210,8 +215,8 @@ export default function BrandsSettingsPage() {
                 emptyState={
                   <EmptyState
                     icon={Tag}
-                    title="No brands yet"
-                    description="Add the manufacturers whose parts you stock."
+                    title={t('No brands yet')}
+                    description={t('Add the manufacturers whose parts you stock.')}
                   />
                 }
               />
@@ -219,7 +224,7 @@ export default function BrandsSettingsPage() {
           },
           {
             value: 'trucks',
-            label: 'Truck brands & models',
+            label: t('Truck brands & models'),
             badge: vehicleMakes.length,
             content: <TruckBrandsPanel onEditMake={(make) => openMake(make)} />,
           },
@@ -231,20 +236,20 @@ export default function BrandsSettingsPage() {
         onOpenChange={(next) => {
           if (!next) setMakeDialog(null)
         }}
-        title={makeDialog?.make ? `Rename ${makeDialog.make.name}` : 'New truck brand'}
+        title={makeDialog?.make ? `Rename ${makeDialog.make.name}` : t('New truck brand')}
         description={
           makeDialog?.make
-            ? 'Every product and truck that says this brand is updated to the new name.'
-            : 'Add its models on its card afterwards.'
+            ? t('Every product and truck that says this brand is updated to the new name.')
+            : t('Add its models on its card afterwards.')
         }
         primary={{ label: makeDialog?.make ? 'Rename' : 'Add brand', onClick: saveMake }}
       >
-        <Field label="Name" required>
+        <Field label={t('Name')} required>
           {(p) => (
             <Input
               {...p}
               autoFocus
-              placeholder="Shacman"
+              placeholder={t('Shacman')}
               value={makeName}
               onChange={(event) => setMakeName(event.target.value)}
               onKeyDown={(event) => {
@@ -261,25 +266,25 @@ export default function BrandsSettingsPage() {
       <Modal
         open={open}
         onOpenChange={setOpen}
-        title={editing ? `Edit ${editing.name}` : 'New brand'}
+        title={editing ? `Edit ${editing.name}` : t('New brand')}
         primary={{ label: editing ? 'Save changes' : 'Add brand', onClick: save }}
       >
         <div className="space-y-3">
-          <Field label="Name" required error={errors.name?.[0]}>
+          <Field label={t('Name')} required error={errors.name?.[0]}>
             {(p) => (
               <Input
                 {...p}
-                placeholder="Bosch"
+                placeholder={t('Bosch')}
                 value={draft.name}
                 onChange={(event) => setDraft((c) => ({ ...c, name: event.target.value }))}
               />
             )}
           </Field>
-          <Field label="From" hint="Where the manufacturer is based">
+          <Field label={t('From')} hint={t('Where the manufacturer is based')}>
             {(p) => (
               <Input
                 {...p}
-                placeholder="Germany"
+                placeholder={t('Germany')}
                 value={draft.zone}
                 onChange={(event) => setDraft((c) => ({ ...c, zone: event.target.value }))}
               />
@@ -287,14 +292,15 @@ export default function BrandsSettingsPage() {
           </Field>
           <label className="flex items-center justify-between gap-3">
             <span className="min-w-0">
-              <span className="text-fg block text-sm font-medium">Active</span>
+              <span className="text-fg block text-sm font-medium">{t('Active')}</span>
               <span className="text-fg-subtle text-2xs">
-                A hidden brand stays on the products that already use it, but cannot be picked for
-                new ones.
+                {t(
+                  'A hidden brand stays on the products that already use it, but cannot be picked for new ones.',
+                )}
               </span>
             </span>
             <Switch
-              aria-label="Active"
+              aria-label={t('Active')}
               checked={draft.active}
               onCheckedChange={(active) => setDraft((c) => ({ ...c, active }))}
             />
@@ -309,13 +315,13 @@ export default function BrandsSettingsPage() {
         }}
         title={`Delete ${deleting?.name}?`}
         body="Products already using it keep the name they were saved with."
-        confirmLabel="Delete"
+        confirmLabel={t('Delete')}
         destructive
         onConfirm={() => {
           if (!deleting) return
           const result = remove(deleting.id)
           setDeleting(null)
-          if (result.ok) toast.success('Brand deleted')
+          if (result.ok) toast.success(t('Brand deleted'))
           else toast.error(result.error)
         }}
       />

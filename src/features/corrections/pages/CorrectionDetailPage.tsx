@@ -22,6 +22,7 @@ import {
   netCostValue,
   netUnits,
 } from '../model/correction'
+import { t } from '@/shared/i18n'
 
 export default function CorrectionDetailPage() {
   const navigate = useNavigate()
@@ -32,7 +33,9 @@ export default function CorrectionDetailPage() {
   const [confirmCancel, setConfirmCancel] = useState(false)
 
   if (!correction) {
-    return <EmptyState title="Correction not found" description="It may have been deleted." />
+    return (
+      <EmptyState title={t('Correction not found')} description={t('It may have been deleted.')} />
+    )
   }
 
   const net = netUnits(correction)
@@ -44,7 +47,7 @@ export default function CorrectionDetailPage() {
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
         <Link to={paths.products.corrections}>
           <ArrowLeft />
-          Corrections
+          {t('Corrections')}
         </Link>
       </Button>
 
@@ -55,7 +58,7 @@ export default function CorrectionDetailPage() {
           correction.status === 'applied' && can('products.corrections.delete') ? (
             <Button variant="secondary" onClick={() => setConfirmCancel(true)}>
               <Undo2 />
-              Reverse
+              {t('Reverse')}
             </Button>
           ) : null
         }
@@ -80,9 +83,10 @@ export default function CorrectionDetailPage() {
           <CardBody className="flex items-start gap-3 p-4">
             <Undo2 className="text-fg-muted mt-0.5 size-4 shrink-0" />
             <p className="text-fg-muted text-sm">
-              This correction was reversed on {formatDateTime(correction.updatedAt)}. Its effect on
-              stock has been undone, and both entries are kept — that it was made and then withdrawn
-              is itself part of the record.
+              {t('This correction was reversed on')} {formatDateTime(correction.updatedAt)}
+              {t(
+                '. Its effect on stock has been undone, and both entries are kept — that it was made and then withdrawn is itself part of the record.',
+              )}
             </p>
           </CardBody>
         </Card>
@@ -91,7 +95,7 @@ export default function CorrectionDetailPage() {
       <div className="grid gap-3 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Items</CardTitle>
+            <CardTitle>{t('Items')}</CardTitle>
             <span className={`text-sm font-medium ${net < 0 ? 'text-danger' : 'text-success'}`}>
               {net > 0 ? '+' : '−'}
               {formatNumber(Math.abs(net))} units
@@ -103,10 +107,10 @@ export default function CorrectionDetailPage() {
               <table className="w-full text-sm">
                 <thead className="bg-canvas">
                   <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-                    <th className="px-4 py-2 text-left font-semibold">Product</th>
-                    <th className="px-4 py-2 text-right font-semibold">System said</th>
-                    <th className="px-4 py-2 text-right font-semibold">Counted</th>
-                    <th className="px-4 py-2 text-right font-semibold">Change</th>
+                    <th className="px-4 py-2 text-left font-semibold">{t('Product')}</th>
+                    <th className="px-4 py-2 text-right font-semibold">{t('System said')}</th>
+                    <th className="px-4 py-2 text-right font-semibold">{t('Counted')}</th>
+                    <th className="px-4 py-2 text-right font-semibold">{t('Change')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -156,14 +160,14 @@ export default function CorrectionDetailPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Record</CardTitle>
+            <CardTitle>{t('Record')}</CardTitle>
           </CardHeader>
           <CardBody className="space-y-3 text-sm">
-            <Row label="Reason" value={correctionReasonLabel(correction.reason)} />
-            <Row label="Location" value={correction.locationName} />
-            <Row label="Recorded by" value={correction.createdBy} />
-            <Row label="Recorded" value={formatDateTime(correction.createdAt)} />
-            {correction.comment ? <Row label="Comment" value={correction.comment} /> : null}
+            <Row label={t('Reason')} value={correctionReasonLabel(correction.reason)} />
+            <Row label={t('Location')} value={correction.locationName} />
+            <Row label={t('Recorded by')} value={correction.createdBy} />
+            <Row label={t('Recorded')} value={formatDateTime(correction.createdAt)} />
+            {correction.comment ? <Row label={t('Comment')} value={correction.comment} /> : null}
           </CardBody>
         </Card>
       </div>
@@ -171,8 +175,8 @@ export default function CorrectionDetailPage() {
       <ConfirmDialog
         open={confirmCancel}
         onOpenChange={setConfirmCancel}
-        title="Reverse this correction?"
-        confirmLabel="Reverse"
+        title={t('Reverse this correction?')}
+        confirmLabel={t('Reverse')}
         body={`${correction.number} changed stock at ${correction.locationName} by ${
           net > 0 ? '+' : '−'
         }${formatNumber(Math.abs(net))} units. Reversing puts that back and keeps both entries.`}

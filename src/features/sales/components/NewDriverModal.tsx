@@ -6,6 +6,7 @@ import { Field } from '@/shared/components/Field'
 import { toast } from '@/shared/ui/toast'
 import { useDriverActions } from '@/features/drivers/api/drivers'
 import { driverSchema, type Driver, type DriverDraft } from '@/features/drivers/model/driver'
+import { t } from '@/shared/i18n'
 
 const EMPTY: DriverDraft = {
   fullName: '',
@@ -59,7 +60,7 @@ export function NewDriverModal({
   const save = () => {
     setShowErrors(true)
     if (!parsed.success) {
-      toast.error('Check the highlighted fields')
+      toast.error(t('Check the highlighted fields'))
       return
     }
     const created = actions.create(parsed.data)
@@ -72,24 +73,24 @@ export function NewDriverModal({
     <Modal
       open={open}
       onOpenChange={onOpenChange}
-      title="New owner-driver"
-      description="Enough to sell to him now. The rest can be filled in later on his card."
-      primary={{ label: 'Add and select', onClick: save }}
+      title={t('New owner-driver')}
+      description={t('Enough to sell to him now. The rest can be filled in later on his card.')}
+      primary={{ label: t('Add and select'), onClick: save }}
     >
       <div className="space-y-3">
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Name" required error={errors.fullName?.[0]}>
+          <Field label={t('Name')} required error={errors.fullName?.[0]}>
             {(p) => (
               <Input
                 {...p}
                 autoFocus
-                placeholder="Bekzod Normatov"
+                placeholder={t('Bekzod Normatov')}
                 value={draft.fullName}
                 onChange={(event) => setDraft((c) => ({ ...c, fullName: event.target.value }))}
               />
             )}
           </Field>
-          <Field label="Phone">
+          <Field label={t('Phone')}>
             {(p) => (
               <Input
                 {...p}
@@ -102,19 +103,19 @@ export function NewDriverModal({
         </div>
 
         <div className="border-border rounded-card space-y-3 border p-3">
-          <p className="text-fg text-sm font-medium">His truck</p>
+          <p className="text-fg text-sm font-medium">{t('His truck')}</p>
           <div className="grid gap-3 sm:grid-cols-3">
-            <Field label="Number plate" required error={errors.ownTrucks?.[0]}>
+            <Field label={t('Number plate')} required error={errors.ownTrucks?.[0]}>
               {(p) => (
                 <Input
                   {...p}
-                  placeholder="40 E 678 HH"
+                  placeholder={t('40 E 678 HH')}
                   value={truck.plate}
                   onChange={(event) => setTruck({ plate: event.target.value })}
                 />
               )}
             </Field>
-            <Field label="Make">
+            <Field label={t('Make')}>
               {(p) => (
                 <VehicleMakeSelect
                   id={p.id}
@@ -123,7 +124,7 @@ export function NewDriverModal({
                 />
               )}
             </Field>
-            <Field label="Model">
+            <Field label={t('Model')}>
               {() => (
                 <VehicleModelSelect
                   make={truck.make}
@@ -136,7 +137,7 @@ export function NewDriverModal({
           {/* He can own more than one, but not at a counter with a queue
               behind him — the second lorry goes on his card afterwards. */}
           <p className="text-fg-subtle text-2xs">
-            One truck now. Add any others on his card later.
+            {t('One truck now. Add any others on his card later.')}
           </p>
         </div>
       </div>

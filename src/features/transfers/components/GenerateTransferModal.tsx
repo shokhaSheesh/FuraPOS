@@ -9,6 +9,7 @@ import { QuantityStepper } from '@/shared/components/catalogue/VariationsDialog'
 import { formatNumber } from '@/shared/lib/format'
 import { useDataStore } from '@/data/store'
 import { suggestTransfer, type TransferSuggestion } from '../model/suggest'
+import { t } from '@/shared/i18n'
 
 /**
  * What the shop needs, worked out from what it sold.
@@ -84,12 +85,12 @@ export function GenerateTransferModal({
         <div className="flex w-full items-center justify-between gap-3">
           <span className="text-fg-subtle text-2xs">
             {chosen.length === 0
-              ? 'Nothing selected'
+              ? t('Nothing selected')
               : `${formatNumber(chosen.length)} products · ${formatNumber(units)} units`}
           </span>
           <div className="flex gap-2">
             <Button variant="secondary" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button
               variant="primary"
@@ -99,7 +100,7 @@ export function GenerateTransferModal({
                 onOpenChange(false)
               }}
             >
-              Add {formatNumber(chosen.length)} to the transfer
+              {t('Add')} {formatNumber(chosen.length)} {t('to the transfer')}
             </Button>
           </div>
         </div>
@@ -107,14 +108,14 @@ export function GenerateTransferModal({
     >
       <div className="space-y-3">
         <div className="flex flex-wrap items-center gap-3">
-          <span className="text-fg-muted text-sm">Based on sales over</span>
+          <span className="text-fg-muted text-sm">{t('Based on sales over')}</span>
           <SegmentedControl
-            aria-label="How far back to look"
+            aria-label={t('How far back to look')}
             value={months}
             onChange={setMonths}
             options={[
-              { value: '3', label: 'Last 3 months' },
-              { value: '6', label: 'Last 6 months' },
+              { value: '3', label: t('Last 3 months') },
+              { value: '6', label: t('Last 6 months') },
             ]}
           />
         </div>
@@ -122,10 +123,10 @@ export function GenerateTransferModal({
         {suggestions.length === 0 ? (
           <div className="text-fg-muted rounded-card border-border border border-dashed p-6 text-center text-sm">
             <Wand2 className="text-fg-subtle mx-auto mb-2 size-5" />
-            <p className="text-fg font-medium">Nothing needs moving</p>
+            <p className="text-fg font-medium">{t('Nothing needs moving')}</p>
             <p className="text-2xs mt-1">
-              Everything {toName} sells is either stocked there already, or {fromName} has none to
-              spare after covering its own sales.
+              {t('Everything')} {toName} {t('sells is either stocked there already, or')} {fromName}{' '}
+              {t('has none to spare after covering its own sales.')}
             </p>
           </div>
         ) : (
@@ -134,11 +135,13 @@ export function GenerateTransferModal({
               <thead className="bg-canvas sticky top-0">
                 <tr className="text-fg-muted text-2xs tracking-wide uppercase">
                   <th className="w-10 px-3 py-2" />
-                  <th className="px-3 py-2 text-left font-semibold">Product</th>
-                  <th className="px-3 py-2 text-right font-semibold">Sold at {toName}</th>
+                  <th className="px-3 py-2 text-left font-semibold">{t('Product')}</th>
+                  <th className="px-3 py-2 text-right font-semibold">
+                    {t('Sold at')} {toName}
+                  </th>
                   <th className="px-3 py-2 text-right font-semibold">At {toName}</th>
                   <th className="px-3 py-2 text-right font-semibold">At {fromName}</th>
-                  <th className="w-40 px-3 py-2 text-right font-semibold">Send</th>
+                  <th className="w-40 px-3 py-2 text-right font-semibold">{t('Send')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -197,7 +200,7 @@ export function GenerateTransferModal({
                           // Says why it is not sending the full shortfall,
                           // rather than quietly sending less than asked.
                           <p className="text-warning text-2xs font-normal whitespace-nowrap">
-                            {formatNumber(suggestion.shortfall)} needed, rest kept
+                            {formatNumber(suggestion.shortfall)} {t('needed, rest kept')}
                           </p>
                         ) : null}
                       </td>

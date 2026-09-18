@@ -21,7 +21,7 @@ import { t } from '@/shared/i18n'
  */
 export function ProductPicker({
   onPick,
-  placeholder = 'Search a product by name, SKU or barcode to add it…',
+  placeholder = t('Search a product by name, SKU or barcode to add it…'),
   stockLabel,
   disabled,
 }: {

@@ -2,6 +2,7 @@ import { Select as RadixSelect } from 'radix-ui'
 import { Check, ChevronDown } from 'lucide-react'
 import { cn } from '@/shared/lib/cn'
 import type { SelectOption } from '@/shared/types'
+import { t } from '@/shared/i18n'
 
 /**
  * Our dropdown. Same 36px control height, radius and border as Input so a
@@ -11,7 +12,7 @@ export function Select<T extends string>({
   value,
   onChange,
   options,
-  placeholder = 'Select…',
+  placeholder = t('Select…'),
   disabled,
   className,
   'aria-label': ariaLabel,

@@ -195,7 +195,7 @@ export default function ReportBuilderPage() {
                   onChange={changeSource}
                   options={REPORT_SOURCES.map((entry) => ({
                     value: entry.value,
-                    label: entry.label,
+                    label: t(entry.label),
                   }))}
                 />
               )}
@@ -231,7 +231,7 @@ export default function ReportBuilderPage() {
                   onChange={(chart) => setState((c) => ({ ...c, chart }))}
                   options={REPORT_CHARTS.map((entry) => ({
                     value: entry.value,
-                    label: entry.label,
+                    label: t(entry.label),
                   }))}
                 />
               )}
@@ -293,7 +293,7 @@ export default function ReportBuilderPage() {
                 {schema.measures.map((measure) => (
                   <Row
                     key={measure.key}
-                    label={measure.label}
+                    label={t(measure.label)}
                     hint={isDerived(measure.key) ? t('worked out, not summed') : undefined}
                     checked={state.measures.includes(measure.key)}
                     onToggle={() => toggle('measures', measure.key)}
@@ -311,7 +311,7 @@ export default function ReportBuilderPage() {
                 {schema.dimensions.map((dimension) => (
                   <Row
                     key={dimension.key}
-                    label={dimension.label}
+                    label={t(dimension.label)}
                     checked={state.dimensions.includes(dimension.key)}
                     onToggle={() => toggle('dimensions', dimension.key)}
                   />

@@ -105,7 +105,7 @@ export function RichTextEditor({
   value,
   onChange,
   id,
-  placeholder = 'Describe the product…',
+  placeholder = t('Describe the product…'),
   className,
 }: {
   /** HTML. Null and empty string both mean "nothing written yet". */

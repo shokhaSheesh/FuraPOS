@@ -85,10 +85,10 @@ export interface Stocktake {
  * says a field was left alone.
  */
 export function scopeType(s: Pick<Stocktake, 'categoryId' | 'brandId'>) {
-  if (s.categoryId && s.brandId) return 'Category and brand'
-  if (s.categoryId) return 'Category'
-  if (s.brandId) return 'Brand'
-  return 'Whole location'
+  if (s.categoryId && s.brandId) return t('Category and brand')
+  if (s.categoryId) return t('Category')
+  if (s.brandId) return t('Brand')
+  return t('Whole location')
 }
 
 /** The scope in full, for the row beneath the type. */

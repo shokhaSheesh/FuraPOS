@@ -76,7 +76,7 @@ export default function OnlineSaleDetailPage() {
         below={
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone={status.tone}>{status.label}</Badge>
-            <Badge tone={payment.tone}>{payment.label}</Badge>
+            <Badge tone={payment.tone}>{t(payment.label)}</Badge>
             <Badge tone="neutral">
               {formatNumber(units)} {t('pcs')}
             </Badge>
@@ -136,7 +136,7 @@ export default function OnlineSaleDetailPage() {
               muted={!sale.employeeName}
             />
             <Info label={t('Payment method')} value={PROVIDER_LABEL[sale.paymentProvider]} />
-            <Info label={t('Payment')} value={payment.label} />
+            <Info label={t('Payment')} value={t(payment.label)} />
           </CardBody>
         </Card>
 
@@ -153,7 +153,7 @@ export default function OnlineSaleDetailPage() {
             <Info label={t('Phone')} value={sale.customerPhone} />
             <Info
               label={t('Delivery')}
-              value={`${DELIVERY_LABEL[sale.deliveryMethod]}${sale.express ? ' · express' : ''}`}
+              value={`${t(DELIVERY_LABEL[sale.deliveryMethod])}${sale.express ? t(' · express') : ''}`}
             />
             {sale.deliveryMethod === 'pickup' ? (
               <Info label={t('Collect from')} value={sale.locationName} />

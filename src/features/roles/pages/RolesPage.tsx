@@ -127,7 +127,7 @@ export default function RolesPage() {
           <div className="flex flex-wrap gap-1">
             {row.original.modules.slice(0, 4).map((label) => (
               <Badge key={label} tone="neutral">
-                {label}
+                {t(label)}
               </Badge>
             ))}
             {row.original.modules.length > 4 ? (

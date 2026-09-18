@@ -278,32 +278,35 @@ export function bestPromotion(
  * read, then counts them — "4 categories" beats four truncated labels.
  */
 export function describeScope(promotion: Pick<Promotion, 'scope' | 'scopeNames'>): string {
-  if (promotion.scope === 'all') return 'everything'
+  if (promotion.scope === 'all') return t('everything')
   const names = promotion.scopeNames
-  if (names.length === 0) return 'nothing yet'
-  if (names.length <= 2) return names.join(' and ')
-  return `${names.length} ${promotion.scope === 'category' ? 'categories' : 'products'}`
+  if (names.length === 0) return t('nothing yet')
+  if (names.length <= 2) return names.join(t(' and '))
+  return `${names.length} ${promotion.scope === 'category' ? t('categories') : t('products')}`
 }
 
 /** Who it is for, in words — the counterpart to {@link describeScope}. */
 export function describeAudience(
   promotion: Pick<Promotion, 'audience' | 'clientNames' | 'driverNames'>,
 ): string {
-  if (promotion.audience === 'everyone') return 'everyone'
+  if (promotion.audience === 'everyone') return t('everyone')
   const drivers = promotion.audience === 'drivers'
   const names = drivers ? (promotion.driverNames ?? []) : promotion.clientNames
-  if (names.length === 0) return 'nobody yet'
-  if (names.length <= 2) return names.join(' and ')
-  return `${names.length} ${drivers ? 'drivers' : 'autoparks'}`
+  if (names.length === 0) return t('nobody yet')
+  if (names.length <= 2) return names.join(t(' and '))
+  return `${names.length} ${drivers ? t('drivers') : t('autoparks')}`
 }
 
 /** How the rule reads in a sentence, for the list and the sale screen. */
 export function describe(promotion: Promotion): string {
   const amount =
     promotion.kind === 'percentage'
-      ? `${promotion.value}% off`
-      : `${formatMoney(promotion.value)} off`
-  const who = promotion.audience === 'everyone' ? '' : ` for ${describeAudience(promotion)}`
+      ? t('{value}% off', { value: promotion.value })
+      : t('{value} off', { value: formatMoney(promotion.value) })
+  const who =
+    promotion.audience === 'everyone'
+      ? ''
+      : t(' for {audience}', { audience: describeAudience(promotion) })
   return `${amount} ${describeScope(promotion)}${who}`
 }
 

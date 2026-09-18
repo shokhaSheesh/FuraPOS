@@ -5,6 +5,7 @@ import { formatDate } from '@/shared/lib/format'
 import { Button } from './Button'
 import { Popover } from './Popover'
 import { Calendar } from './Calendar'
+import { t } from '@/shared/i18n'
 
 /**
  * One date. Same overlay and same three-step calendar as the range picker —
@@ -17,7 +18,7 @@ import { Calendar } from './Calendar'
 export function DatePicker({
   value,
   onChange,
-  placeholder = 'Pick a date',
+  placeholder = t('Pick a date'),
   minDate,
   maxDate,
   className,

@@ -1,11 +1,12 @@
 import { Search } from 'lucide-react'
 import { Input } from '@/shared/ui/Input'
+import { t } from '@/shared/i18n'
 
 /** The search box: always first in a toolbar, always this shape. */
 export function SearchInput({
   value,
   onChange,
-  placeholder = 'Search…',
+  placeholder = t('Search…'),
 }: {
   value: string
   onChange: (value: string) => void

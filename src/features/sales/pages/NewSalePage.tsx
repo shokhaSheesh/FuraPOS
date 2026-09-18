@@ -497,7 +497,7 @@ export default function NewSalePage() {
                 <Select
                   value={channel}
                   onChange={setChannel}
-                  options={SALE_CHANNELS}
+                  options={SALE_CHANNELS.map((c) => ({ ...c, label: t(c.label) }))}
                   aria-label={t('Source')}
                   className="w-full"
                 />
@@ -506,14 +506,16 @@ export default function NewSalePage() {
                 label={t('Payment method')}
                 error={
                   noDrawer
-                    ? 'No cash drawer is open at this location — open a shift, or take payment another way'
+                    ? t(
+                        'No cash drawer is open at this location — open a shift, or take payment another way',
+                      )
                     : undefined
                 }
               >
                 <Select
                   value={paymentMethod}
                   onChange={setPaymentMethod}
-                  options={PAYMENT_METHODS}
+                  options={PAYMENT_METHODS.map((m) => ({ ...m, label: t(m.label) }))}
                   aria-label={t('Payment method')}
                   className="w-full"
                 />

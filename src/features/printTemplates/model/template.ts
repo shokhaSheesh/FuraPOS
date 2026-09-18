@@ -144,8 +144,8 @@ export const plural = (count: number, one: string, many = `${one}s`) =>
 
 /** A one-line summary for the card: "Product label · 4 fields · barcode". */
 export function describeTemplate(template: PrintTemplate): string {
-  const parts = [kindLabel(template.kind), `${template.fields.length} fields`]
-  if (template.code !== 'none') parts.push(template.code === 'qr' ? 'QR code' : 'barcode')
+  const parts = [kindLabel(template.kind), t('{count} fields', { count: template.fields.length })]
+  if (template.code !== 'none') parts.push(template.code === 'qr' ? t('QR code') : t('barcode'))
   return parts.join(' · ')
 }
 

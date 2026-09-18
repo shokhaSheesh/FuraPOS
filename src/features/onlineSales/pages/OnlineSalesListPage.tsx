@@ -97,9 +97,9 @@ export default function OnlineSalesListPage() {
           const meta = PAYMENT_STATUS_META[row.original.paymentStatus]
           return (
             <div>
-              <Badge tone={meta.tone}>{meta.label}</Badge>
+              <Badge tone={meta.tone}>{t(meta.label)}</Badge>
               <p className="text-fg-subtle text-2xs mt-0.5">
-                {PROVIDER_LABEL[row.original.paymentProvider]}
+                {t(PROVIDER_LABEL[row.original.paymentProvider])}
               </p>
             </div>
           )
@@ -111,7 +111,7 @@ export default function OnlineSalesListPage() {
         cell: ({ row }) => (
           <div className="min-w-0">
             <p className="text-fg truncate">
-              {DELIVERY_LABEL[row.original.deliveryMethod]}
+              {t(DELIVERY_LABEL[row.original.deliveryMethod])}
               {row.original.express ? (
                 <Badge tone="warning" className="ml-1.5">
                   {t('Express')}
@@ -137,7 +137,7 @@ export default function OnlineSalesListPage() {
         enableHiding: false,
         cell: ({ row }) => {
           const meta = onlineStatusMeta(row.original.status)
-          return <Badge tone={meta.tone}>{meta.label}</Badge>
+          return <Badge tone={meta.tone}>{t(meta.label)}</Badge>
         },
       },
     ],
@@ -160,7 +160,7 @@ export default function OnlineSalesListPage() {
               ariaLabel={t('Filter by status')}
               options={[
                 { value: null, label: t('All') },
-                ...ONLINE_SALE_STATUSES.map((s) => ({ value: s.value, label: s.label })),
+                ...ONLINE_SALE_STATUSES.map((s) => ({ value: s.value, label: t(s.label) })),
               ]}
               value={(query.status as string | null) ?? null}
               onChange={(next) => setQuery({ status: next, page: null })}
@@ -173,7 +173,7 @@ export default function OnlineSalesListPage() {
               value={(query.payment as string | null) ?? null}
               options={Object.entries(PAYMENT_STATUS_META).map(([value, meta]) => ({
                 value,
-                label: meta.label,
+                label: t(meta.label),
               }))}
               onChange={(next) => setQuery({ payment: next, page: null })}
             />

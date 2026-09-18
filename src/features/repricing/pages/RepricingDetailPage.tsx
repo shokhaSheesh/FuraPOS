@@ -408,9 +408,11 @@ export function ruleSentence(repricing: {
   rule: { kind: string; value: number; roundTo: number }
 }) {
   const { kind, value, roundTo } = repricing.rule
-  const rounding = roundTo > 1 ? `, rounded to ${formatNumber(roundTo)}` : ''
+  const rounding =
+    roundTo > 1 ? t(', rounded to {roundTo}', { roundTo: formatNumber(roundTo) }) : ''
   if (kind === 'percent') return `${value > 0 ? '+' : ''}${value}%${rounding}`
   if (kind === 'amount') return `${value > 0 ? '+' : ''}${formatMoney(value)}${rounding}`
-  if (kind === 'margin') return `${formatPercent(value)} margin on cost${rounding}`
-  return 'Typed by hand'
+  if (kind === 'margin')
+    return t('{value} margin on cost', { value: formatPercent(value) }) + rounding
+  return t('Typed by hand')
 }

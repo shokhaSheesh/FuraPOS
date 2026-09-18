@@ -33,7 +33,7 @@ export function MultiSelect<T extends string>({
   value,
   onChange,
   options,
-  placeholder = 'Select…',
+  placeholder = t('Select…'),
   searchPlaceholder = 'Search…',
   emptyLabel = 'Nothing matches',
   disabled,

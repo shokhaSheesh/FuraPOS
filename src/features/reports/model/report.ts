@@ -304,13 +304,13 @@ export const findDimension = (source: ReportSource, key: string) =>
 /** The definition as a sentence, for the list. */
 export function describeReport(definition: ReportDefinition): string {
   const measures = definition.measures
-    .map((key) => findMeasure(definition.source, key)?.label ?? key)
+    .map((key) => t(findMeasure(definition.source, key)?.label ?? key))
     .join(', ')
   const dimensions = definition.dimensions
-    .map((key) => findDimension(definition.source, key)?.label.toLowerCase() ?? key)
-    .join(' and ')
-  if (definition.dimensions.length === 0) return `${measures}, in total`
-  return `${measures} by ${dimensions}`
+    .map((key) => t(findDimension(definition.source, key)?.label ?? key).toLowerCase())
+    .join(t(' and '))
+  if (definition.dimensions.length === 0) return t('{measures}, in total', { measures })
+  return t('{measures} by {dimensions}', { measures, dimensions })
 }
 
 /* --- validation ---------------------------------------------------------- */

@@ -132,7 +132,7 @@ export default function ReportsPage() {
             ariaLabel={t('Filter by data source')}
             options={[
               { value: null, label: t('All') },
-              ...REPORT_SOURCES.map((entry) => ({ value: entry.value, label: entry.label })),
+              ...REPORT_SOURCES.map((entry) => ({ value: entry.value, label: t(entry.label) })),
             ]}
             value={(query.source as string | null) ?? null}
             onChange={(source) => setQuery({ source, page: null })}

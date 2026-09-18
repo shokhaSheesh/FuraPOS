@@ -9,7 +9,9 @@ import type { Dictionary } from './t'
  * readable while a module is being translated.
  */
 export const ru: Dictionary = {
+  ' and ': ' и ',
   ' and counting': ' и растёт',
+  ' for {audience}': ' для {audience}',
   ' from that brand': ' этого бренда',
   ' has been posted, so its {p0} of stock is taken back off {locationName}.':
     ' проведён, поэтому {p0} остатка снимается с «{locationName}».',
@@ -19,6 +21,7 @@ export const ru: Dictionary = {
     ' Оно уже отправлено, поэтому товар вернётся туда, откуда ушёл.',
   ' Nothing has moved yet, so no stock changes.': ' Ничего ещё не уехало, остатки не изменятся.',
   ' · closed {p0}': ' · закрыта {p0}',
+  ' · express': ' · экспресс',
   ' · OEM {oem}': ' · OEM {oem}',
   ' — not enough': ' — не хватает',
   ' — top {CHART_TOP_N} of {p1}. The table below has them all.':
@@ -31,6 +34,7 @@ export const ru: Dictionary = {
   ', and every product on it takes the cost price shown above. Posting cannot be undone — a mistake afterwards is fixed with a correction.':
     ', и каждый товар получит показанную выше себестоимость. Проведение нельзя отменить — ошибку потом исправляют корректировкой.',
   ', including anything the system says is at zero.': ', включая то, что по системе на нуле.',
+  ', rounded to {roundTo}': ', округление до {roundTo}',
   ', so it cannot sign in whatever the password is.':
     ', поэтому войти он не сможет, каким бы ни был пароль.',
   ', {p0} found': ', найдено {p0}',
@@ -49,6 +53,7 @@ export const ru: Dictionary = {
   '.csv, .xlsx and .xls — the encoding and separator are worked out for you':
     '.csv, .xlsx и .xls — кодировка и разделитель определяются автоматически',
   '/mo': '/мес',
+  '1 selected': 'выбрано: 1',
   '1 USD =': '1 USD =',
   '1. Upload the file': '1. Загрузите файл',
   '100 × 150 mm': '100 × 150 мм',
@@ -127,6 +132,7 @@ export const ru: Dictionary = {
   'Add a picture': 'Добавить фото',
   'Add a product': 'Добавить товар',
   'Add a supplier': 'Добавить поставщика',
+  'Add a tag…': 'Добавьте тег…',
   'Add a {name} model': 'Добавить модель {name}',
   'Add a {name} model, then Enter': 'Добавьте модель {name} и нажмите Enter',
   'Add and select': 'Добавить и выбрать',
@@ -278,6 +284,7 @@ export const ru: Dictionary = {
   'Autopark drivers': 'Водители автопарков',
   "Autopark's truck": 'Машина автопарка',
   Autoparks: 'Автопарки',
+  autoparks: 'автопарков',
   'Average check': 'Средний чек',
   'Average move': 'Среднее перемещение',
   'average, against what each part cost': 'в среднем, относительно себестоимости каждой детали',
@@ -298,6 +305,7 @@ export const ru: Dictionary = {
   'Balance after': 'Остаток после',
   'Bank transfer': 'Перечисление',
   Barcode: 'Штрих-код',
+  barcode: 'штрих-код',
   'Barcode — {name}': 'Штрих-код — {name}',
   Bars: 'Столбцы',
   'Base pay': 'Оклад',
@@ -370,6 +378,7 @@ export const ru: Dictionary = {
   carries: 'держит',
   Cash: 'Наличные',
   'Cash in and out': 'Приход и расход наличных',
+  'Cash on delivery': 'Оплата при получении',
   'Cash on delivery — nothing is recorded until the courier collects it.':
     'Оплата при получении — ничего не записывается, пока курьер не заберёт деньги.',
   'Cash registers': 'Кассы',
@@ -379,7 +388,9 @@ export const ru: Dictionary = {
   'Cash that should be on hand': 'Сколько наличных должно быть в кассе',
   Cashback: 'Кэшбэк',
   Categories: 'Категории',
+  categories: 'категорий',
   Category: 'Категория',
+  'Category and brand': 'Категория и бренд',
   'Category deleted': 'Категория удалена',
   'Category for new products': 'Категория для новых товаров',
   Change: 'Изменить',
@@ -444,6 +455,7 @@ export const ru: Dictionary = {
   Company: 'Компания',
   'Company name': 'Название компании',
   'Comparing things — products, sellers, categories': 'Сравнение — товары, продавцы, категории',
+  complete: 'выполнено',
   'Complete sale': 'Завершить продажу',
   Completed: 'Завершено',
   'Confirm purchase': 'Подтвердить закупку',
@@ -545,6 +557,7 @@ export const ru: Dictionary = {
   Delivering: 'Доставляется',
   Delivery: 'Доставка',
   'Demo:': 'Демо:',
+  'Describe the product…': 'Опишите товар…',
   Description: 'Описание',
   Details: 'Подробности',
   Difference: 'Расхождение',
@@ -586,6 +599,7 @@ export const ru: Dictionary = {
   Driver: 'Водитель',
   'Driver deleted': 'Водитель удалён',
   Drivers: 'Водители',
+  drivers: 'водителей',
   Driving: 'За рулём',
   'Drop a CSV or Excel file here': 'Перетащите сюда файл CSV или Excel',
   'Drop a CSV or Excel file here, or click to choose one':
@@ -617,6 +631,7 @@ export const ru: Dictionary = {
   Email: 'Эл. почта',
   Employees: 'Сотрудники',
   Empty: 'Пусто',
+  'EMU courier': 'Курьер EMU',
   'EMU order ID': 'ID заказа EMU',
   'EMU pickup point': 'Пункт выдачи EMU',
   'EMU status': 'Статус EMU',
@@ -656,9 +671,11 @@ export const ru: Dictionary = {
     'Все склады и магазины. Остатки считаются по локациям, поэтому именно между ними идут перемещения и по ним проводится инвентаризация.',
   'Every zone': 'Все зоны',
   Everyone: 'Все',
+  everyone: 'всех',
   'Everyone who works here and what they can sign in to. An account is also a sales record, so this is where you see who is carrying the shop and whose login nobody has closed.':
     'Все, кто здесь работает, и к чему у них есть доступ. Учётная запись — это ещё и история продаж, поэтому здесь видно, кто тянет магазин и чей логин никто не закрыл.',
   Everything: 'Всё',
+  everything: 'всё',
   'Everything in our catalogue': 'Весь наш каталог',
   'Everything suggested is already on this transfer':
     'Всё предложенное уже есть в этом перемещении',
@@ -1034,6 +1051,8 @@ export const ru: Dictionary = {
   'No autopark driver matches': 'Нет подходящих водителей автопарков',
   'No brand': 'Без бренда',
   'No brands yet': 'Брендов пока нет',
+  'No cash drawer is open at this location — open a shift, or take payment another way':
+    'На этой локации не открыта касса — откройте смену или примите оплату другим способом',
   'No cash sales yet.': 'Продаж за наличные пока нет.',
   'No categories yet': 'Категорий пока нет',
   'no change': 'без изменений',
@@ -1106,6 +1125,7 @@ export const ru: Dictionary = {
     'Эту роль пока никто не занимает, так что изменения никого не затронут.',
   'Nobody here': 'Здесь никого нет',
   'Nobody matches these filters': 'Нет подходящих по этим фильтрам',
+  'nobody yet': 'пока никого',
   None: 'Нет',
   'none missing': 'недостачи нет',
   'None yet': 'Пока нет',
@@ -1177,6 +1197,7 @@ export const ru: Dictionary = {
   'Nothing updated': 'Ничего не обновлено',
   'Nothing was promised': 'Срок не обещали',
   'Nothing yet': 'Пока ничего',
+  'nothing yet': 'пока ничего',
   Now: 'Сейчас',
   Number: 'Номер',
   'Number of sales': 'Количество продаж',
@@ -1265,6 +1286,7 @@ export const ru: Dictionary = {
   'Other ({length})': 'Прочее ({length})',
   'Other ways to add products': 'Другие способы добавить товары',
   'Our code': 'Наш код',
+  'Our courier': 'Наш курьер',
   out: 'расход',
   'Out for delivery': 'В доставке',
   'Out of stock': 'Нет в наличии',
@@ -1353,6 +1375,7 @@ export const ru: Dictionary = {
   'Picked from': 'Собрано из',
   'Picked from our own catalogue, since they have none here':
     'Выбрано из нашего каталога, потому что своего у них здесь нет',
+  'Pickup from our shop': 'Самовывоз из магазина',
   Picture: 'Фото',
   'Pictures must be under 2 MB': 'Фото должно быть меньше 2 МБ',
   'Pin to the sidebar': 'Закрепить в меню',
@@ -1590,6 +1613,8 @@ export const ru: Dictionary = {
   'Scheduled for': 'Запланировано на',
   Scope: 'Область',
   screens: ['экран', 'экрана', 'экранов'],
+  'Search a product by name, SKU or barcode to add it…':
+    'Найдите товар по названию, SKU или штрих-коду, чтобы добавить…',
   'Search a product to recount at {p0}…': 'Найдите товар для пересчёта на «{p0}»…',
   'Search above to add the first line. Quantity and price stay editable afterwards.':
     'Найдите товар выше, чтобы добавить первую строку. Количество и цену потом можно менять.',
@@ -1606,10 +1631,12 @@ export const ru: Dictionary = {
   'Search or scan, and add straight to the list':
     'Ищите или сканируйте — и сразу добавляйте в список',
   'Search products': 'Поиск товаров',
+  'Search…': 'Поиск…',
   'See cost price & margin': 'Видеть себестоимость и маржу',
   'see it': 'смотреть',
   'See salary': 'Видеть зарплату',
   selected: 'выбрано',
+  'Select…': 'Выберите…',
   'Sell every combination': 'Продавать все сочетания',
   'Sell this as one thing?': 'Продавать это как одну позицию?',
   'Sell {name}': 'Продавать {name}',
@@ -1925,6 +1952,7 @@ export const ru: Dictionary = {
     'Включите, если в первой строке названия колонок, а не товар.',
   Type: 'Тип',
   'Type each price myself': 'Ввести каждую цену вручную',
+  'Typed by hand': 'Введено вручную',
   Unblock: 'Разблокировать',
   Underline: 'Подчёркнутый',
   Undo: 'Отменить',
@@ -2104,6 +2132,7 @@ export const ru: Dictionary = {
   'Who we buy from, what we still owe them, and how much of what they sent us has actually sold.':
     'У кого мы закупаем, сколько ещё должны и сколько из привезённого реально продано.',
   'Who we buy it from': 'У кого мы это покупаем',
+  'Whole location': 'Вся локация',
   Wholesale: 'Опт',
   'Wholesale price': 'Оптовая цена',
   'Wholesale price currency': 'Валюта оптовой цены',
@@ -2143,6 +2172,7 @@ export const ru: Dictionary = {
   'Your own details.': 'Ваши данные.',
   Zone: 'Зона',
   "{autoparkName}'s truck": 'Машина автопарка «{autoparkName}»',
+  '{count} fields': 'полей: {count}',
   '{days} days ago': '{days} дн. назад',
   '{done} of {total} lines': '{done} из {total} строк',
   '{dropped} field{p1} removed — not on a {kind}': 'Убрано полей: {dropped} — их нет у «{kind}»',
@@ -2161,6 +2191,8 @@ export const ru: Dictionary = {
   '{length} variation{p1} the options and {p2} removed':
     'Вариаций: {length} — параметры и {p2} удалены',
   '{MAX_OPTIONS} is the maximum': 'Максимум — {MAX_OPTIONS}',
+  '{measures} by {dimensions}': '{measures} по: {dimensions}',
+  '{measures}, in total': '{measures}, итого',
   '{name} added': '{name} добавлен',
   '{name} applied': '«{name}» применена',
   '{name} blocked': '{name} заблокирован',
@@ -2230,6 +2262,9 @@ export const ru: Dictionary = {
     '{p0} — первые {PREVIEW_ROWS} строк, за всё время.',
   '{p0}% off {scopeName}{audienceName}': '−{p0}% на {scopeName}{audienceName}',
   '{p0}{p1} at cost': '{p0}{p1} по себестоимости',
+  '{value} margin on cost': 'маржа {value} к себестоимости',
+  '{value} off': '−{value}',
+  '{value}% off': '−{value}%',
   '{widthMm} × {heightMm} mm — {columns} across a sheet of A4.':
     '{widthMm} × {heightMm} мм — {columns} в ряд на листе A4.',
   '· last bought': '· последняя закупка',

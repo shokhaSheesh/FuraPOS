@@ -52,7 +52,7 @@ export function DateRangePicker({
   value,
   onChange,
   className,
-  placeholder = 'Custom range',
+  placeholder = t('Custom range'),
 }: {
   value: DateRange
   onChange: (range: DateRange) => void

@@ -11,7 +11,7 @@ import { t } from '@/shared/i18n'
 export function TagsInput({
   value,
   onChange,
-  placeholder = 'Add a tag…',
+  placeholder = t('Add a tag…'),
   id,
 }: {
   value: string[]

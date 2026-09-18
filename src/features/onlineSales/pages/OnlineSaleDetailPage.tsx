@@ -75,7 +75,7 @@ export default function OnlineSaleDetailPage() {
         })}
         below={
           <div className="flex flex-wrap items-center gap-2">
-            <Badge tone={status.tone}>{status.label}</Badge>
+            <Badge tone={status.tone}>{t(status.label)}</Badge>
             <Badge tone={payment.tone}>{t(payment.label)}</Badge>
             <Badge tone="neutral">
               {formatNumber(units)} {t('pcs')}

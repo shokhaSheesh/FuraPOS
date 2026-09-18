@@ -140,6 +140,10 @@ which uses proportional figures: equal-width digits make a lone number look loos
 Tabular is for digits that must line up in a column, nothing else. Text columns are left-aligned. Nothing is centered except a single icon or badge
 in a fixed-width column.
 
+The interface is **Russian**, with English as the source language behind `t()` (see CLAUDE.md).
+Wording follows OX's own terms where OX has one — «Приход», «Переоценка», «Коррекции» — so somebody
+moving from it is not learning new names for the same screens.
+
 Money, dates and counts render **only** through `src/shared/lib/format.ts`. A raw `toLocaleString()`
 or a hand-built date string in a component is a bug.
 

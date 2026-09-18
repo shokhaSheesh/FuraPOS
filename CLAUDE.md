@@ -172,6 +172,19 @@ Conventions that are load-bearing — follow them rather than inventing per-scre
   Columns beside the switcher, and a `+` that opens `<VariationsDialog>` to set quantities (and, on
   purchases, prices) per variation. Orders and receipts use `<PurchaseCatalogue>` over
   `buildPurchaseRows`. Unfinished documents have a Save button and say so when you leave.
+- **The interface is Russian; English is the source.** Every user-facing string goes through
+  `t()` from `@/shared/i18n`, keyed by the English text itself — `t('Add products')` — so an
+  untranslated string renders as readable English rather than `orders.list.empty.title`, and
+  nothing has to be invented to add one. Placeholders are named: `t('Only {count} here', { count })`.
+  A noun that agrees with a number takes `tn(n, 'product', 'products')`, which the Russian
+  dictionary answers with all three forms. `t()` is a plain function, not a hook, so column
+  builders and model helpers translate the same way a component does; changing language rebuilds
+  the app (`AppProviders`) so every one of them is re-read. **Never call `t()` at module scope** —
+  a status table or a column list is read once at import and would freeze the language it was
+  imported in; leave those tables English and translate where they are rendered (`DataTable`
+  translates a heading written as plain text, `Steps` a step, `StatusChips` a chip). Russian lives
+  in `src/shared/i18n/ru.ts`; adding Uzbek is one more dictionary. The language switch is in the
+  top bar, and numbers and dates follow it while the currency stays UZS. Tests run in English.
 - **Overlays are ours.** Dropdowns, date pickers and menus all build on `shared/ui/Popover`;
   `Select`, `Calendar` (three-step days → months → years) and `DateRangePicker` are the components.
   Never a native `<select>`, never a stock library theme — see DESIGN_RULES § 11.
@@ -198,8 +211,6 @@ Conventions that are load-bearing — follow them rather than inventing per-scre
 - **Target vertical**: the reference tenant sells auto parts, but this product should stay generic
   across retail verticals unless told otherwise. Seed data is auto-parts flavoured — swap it when
   the vertical is confirmed.
-- **Locale & currency**: `format.ts` currently assumes `ru-RU` / `UZS`. Confirm, and decide whether
-  the app needs runtime i18n (nothing is wired for it yet).
 - **Which module ships first (MVP scope)** — Dashboard + Sales + Products is the likely starting
   slice, but confirm before deep-building Finance/Analytics/Marketing.
 

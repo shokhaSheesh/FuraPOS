@@ -1937,7 +1937,7 @@ export const ru: Dictionary = {
   'Transfer not found': 'Перемещение не найдено',
   'Transfer number, or how it was paid': 'Номер перевода или способ оплаты',
   'Transfer out': 'Расход перемещением',
-  Transfers: 'Перемещение продуктов',
+  Transfers: 'Перемещения',
   Truck: 'Машина',
   'Truck brand': 'Марка техники',
   'Truck brands': 'Марки техники',

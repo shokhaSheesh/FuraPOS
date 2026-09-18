@@ -194,7 +194,7 @@ export default function TransfersListPage() {
         body={
           pendingCancel ? (
             <>
-              <strong className="text-fg font-medium">{pendingCancel.number}</strong> moves{' '}
+              <strong className="text-fg font-medium">{pendingCancel.number}</strong> {t('moves')}{' '}
               {formatNumber(transferQuantity(pendingCancel))} {t('units from')}{' '}
               {pendingCancel.fromLocationName} to {pendingCancel.toLocationName}.
               {pendingCancel.status === 'in_transit'

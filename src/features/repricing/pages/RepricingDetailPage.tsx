@@ -32,7 +32,7 @@ import {
   repricingStatusTone,
   scopeSentence,
 } from '../model/repricing'
-import { t } from '@/shared/i18n'
+import { t, tn } from '@/shared/i18n'
 
 type Lens = 'all' | 'changed' | 'risky'
 
@@ -113,7 +113,7 @@ export default function RepricingDetailPage() {
                 onClick={() => setConfirmApply(true)}
               >
                 <Check />
-                {t('Apply to')} {formatNumber(changed.length)} products
+                {t('Apply to')} {formatNumber(changed.length)} {t('products')}
               </Button>
             ) : null}
           </div>
@@ -137,8 +137,8 @@ export default function RepricingDetailPage() {
             <AlertTriangle className="text-danger mt-0.5 size-4 shrink-0" />
             <p className="text-fg-muted text-sm">
               {formatNumber(risky.length)}{' '}
-              {risky.length === 1 ? t('product would sell') : t('products would sell')}{' '}
-              {t('for less than')} {risky.length === 1 ? 'it' : 'they'} {t('cost. Use the')}{' '}
+              {tn(risky.length, 'product would sell', 'products would sell')} {t('for less than')}{' '}
+              {tn(risky.length, 'it', 'they')} {t('cost. Use the')}{' '}
               <button
                 type="button"
                 className="text-fg font-medium underline"
@@ -146,7 +146,7 @@ export default function RepricingDetailPage() {
               >
                 {t('Below cost')}
               </button>{' '}
-              {t('filter and fix')} {risky.length === 1 ? 'it' : 'them'} {t('before applying.')}
+              {t('filter and fix')} {tn(risky.length, 'it', 'them')} {t('before applying.')}
             </p>
           </CardBody>
         </Card>
@@ -162,7 +162,8 @@ export default function RepricingDetailPage() {
             </span>
           </p>
           <p className="text-fg-subtle text-2xs">
-            {formatNumber(raisedCount(repricing))} up · {formatNumber(loweredCount(repricing))} down
+            {formatNumber(raisedCount(repricing))} up · {formatNumber(loweredCount(repricing))}{' '}
+            {t('down')}
           </p>
         </Card>
         <Card className="p-4">

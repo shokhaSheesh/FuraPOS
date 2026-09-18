@@ -313,7 +313,7 @@ export default function MassUpdatePage() {
                 </div>
                 <p className="text-fg-subtle text-2xs">
                   {t('Showing')} {formatNumber(Math.min(8, rows.length))} of{' '}
-                  {formatNumber(rows.length)} rows
+                  {formatNumber(rows.length)} {t('rows')}
                 </p>
 
                 {issues.length ? (

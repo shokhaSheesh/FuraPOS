@@ -1,3 +1,4 @@
+import { t } from '@/shared/i18n'
 /**
  * Where bought goods come from.
  *
@@ -39,7 +40,7 @@ export const hasSupplierRecord = (kind: ProcurementKind) => kind === 'supplier'
 
 /** What to call the free-text field for a kind that has no supplier record. */
 export const boughtFromLabel = (kind: ProcurementKind) =>
-  kind === 'market' ? 'Bought from' : 'Factory'
+  kind === 'market' ? t('Bought from') : t('Factory')
 
 export const boughtFromPlaceholder = (kind: ProcurementKind) =>
   kind === 'market' ? 'Jomiy bozori, row 4' : 'Guangzhou Auto Parts Co.'

@@ -63,7 +63,7 @@ import {
   type PurchaseOrder,
 } from '../model/order'
 import { useOrder, useOrderActions, useOrderReceipts, useUpdateOrder } from '../api/orders'
-import { t } from '@/shared/i18n'
+import { t, tn } from '@/shared/i18n'
 
 /*
   Three, not the receipt's four. A receipt's "Extra data" step owns something
@@ -529,8 +529,8 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
               ) : null}
               {newToUs > 0 ? (
                 <p className="text-fg-subtle text-2xs">
-                  {formatNumber(newToUs)} {t('more they list')} {newToUs === 1 ? 'is' : 'are'}{' '}
-                  {t('new to us — add')} {newToUs === 1 ? 'it' : 'them'}{' '}
+                  {formatNumber(newToUs)} {t('more they list')} {tn(newToUs, 'is', 'are')}{' '}
+                  {t('new to us — add')} {tn(newToUs, 'it', 'them')}{' '}
                   {t('to the catalogue to order')}
                 </p>
               ) : null}
@@ -868,7 +868,7 @@ function LineTable({ order, canSeeCost }: { order: PurchaseOrder; canSeeCost: bo
                 </td>
                 <td className="px-4 py-2 text-right tabular-nums">
                   {outstanding === 0 ? (
-                    <span className="text-success">complete</span>
+                    <span className="text-success">{t('complete')}</span>
                   ) : (
                     <span className="text-warning font-medium">{formatNumber(outstanding)}</span>
                   )}

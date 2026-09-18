@@ -13,6 +13,7 @@ import {
   supplierTotal,
   type GoodsReceipt,
 } from './receipt'
+import { t } from '@/shared/i18n'
 
 /** Today's shelf, read when a filter runs — the sold-through and retail columns price against it. */
 const variations = () => useDataStore.getState().variations
@@ -38,7 +39,7 @@ export const RECEIPT_FILTER_OVERRIDES: FieldOverrides<GoodsReceipt> = {
   },
   kind: {
     type: 'options',
-    optionLabel: (value) => PROCUREMENT_KINDS.find((k) => k.value === value)?.label ?? value,
+    optionLabel: (value) => t(PROCUREMENT_KINDS.find((k) => k.value === value)?.label ?? value),
   },
   supplierName: { type: 'options', get: receiptSource },
   landed: { get: (r) => landedTotal(r, USD_RATE) },

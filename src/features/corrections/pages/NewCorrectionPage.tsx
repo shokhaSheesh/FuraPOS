@@ -208,7 +208,7 @@ export default function NewCorrectionPage() {
             <p className="text-fg-subtle text-2xs">
               {t('Enter what you counted, not the difference.')}{' '}
               {location?.name ?? t('The location')}
-              {t('&rsquo;s current figure is shown beside it.')}
+              {t('’s current figure is shown beside it.')}
             </p>
           </CardHeader>
           <CardBody className="space-y-3">

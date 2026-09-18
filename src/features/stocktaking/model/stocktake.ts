@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { Id, IsoDate } from '@/shared/types'
+import { t } from '@/shared/i18n'
 
 /**
  * A planned count of a shelf, as a session rather than an edit.
@@ -27,7 +28,7 @@ export const STOCKTAKE_STATUSES: {
 ]
 
 export const stocktakeStatusLabel = (status: StocktakeStatus) =>
-  STOCKTAKE_STATUSES.find((entry) => entry.value === status)?.label ?? status
+  t(STOCKTAKE_STATUSES.find((entry) => entry.value === status)?.label ?? status)
 
 export const stocktakeStatusTone = (status: StocktakeStatus) =>
   STOCKTAKE_STATUSES.find((entry) => entry.value === status)?.tone ?? 'neutral'

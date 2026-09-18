@@ -329,7 +329,7 @@ export default function ReportBuilderPage() {
             {preview ? (
               <span className="text-fg-subtle text-2xs tabular-nums">
                 {formatNumber(preview.rows.length)} {t('rows from')}{' '}
-                {formatNumber(preview.sourceRows)} records
+                {formatNumber(preview.sourceRows)} {t('records')}
               </span>
             ) : null}
           </div>

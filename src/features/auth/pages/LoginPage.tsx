@@ -122,9 +122,9 @@ export default function LoginPage() {
       {/* A design build with no backend: say how to get in, rather than leave a
           reviewer guessing at a password. */}
       <p className="text-fg-subtle text-2xs text-center">
-        {t('Demo:')} <span className="font-mono">akhmet</span> {t('(Owner),')}{' '}
-        <span className="font-mono">nodira</span> {t('(Manager),')}{' '}
-        <span className="font-mono">mansurbek</span> {t('(Seller) — password')}{' '}
+        {t('Demo:')} <span className="font-mono">{t('akhmet')}</span> {t('(Owner),')}{' '}
+        <span className="font-mono">{t('nodira')}</span> {t('(Manager),')}{' '}
+        <span className="font-mono">{t('mansurbek')}</span> {t('(Seller) — password')}{' '}
         <span className="font-mono">{DEMO_PASSWORD}</span>
       </p>
     </div>

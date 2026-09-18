@@ -15,7 +15,7 @@ import { useDataStore } from '@/data/store'
 import { useLogKindCounts, useLogSummary, useStockLog } from '../api/logs'
 import { STOCK_LOG_KINDS, type StockLogKind } from '../model/log'
 import { buildLogColumns, documentPath } from './logColumns'
-import { t } from '@/shared/i18n'
+import { t, tn } from '@/shared/i18n'
 
 /**
  * One product's history, on its own page — the Product logs screen narrowed
@@ -125,9 +125,10 @@ export function ProductLog({
 
       <p className="text-fg-muted text-sm">
         <strong className="text-fg font-medium">{formatNumber(summary.events)}</strong>{' '}
-        {summary.events === 1 ? 'change' : 'changes'} ·{' '}
+        {tn(summary.events, 'change', 'changes')} ·{' '}
         <span className="text-success font-medium">+{formatNumber(summary.unitsIn)}</span> in ·{' '}
-        <span className="text-danger font-medium">−{formatNumber(summary.unitsOut)}</span> out
+        <span className="text-danger font-medium">−{formatNumber(summary.unitsOut)}</span>{' '}
+        {t('out')}
       </p>
 
       <DataTable

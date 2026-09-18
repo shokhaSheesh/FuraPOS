@@ -495,7 +495,7 @@ export default function DriversPage() {
                   className="w-full"
                   value={draft.status}
                   onChange={(status) => setDraft((c) => ({ ...c, status: status as DriverStatus }))}
-                  options={DRIVER_STATUSES}
+                  options={DRIVER_STATUSES.map((option) => ({ ...option, label: t(option.label) }))}
                 />
               )}
             </Field>

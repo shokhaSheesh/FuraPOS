@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { Id, IsoDate } from '@/shared/types'
+import { t } from '@/shared/i18n'
 
 /**
  * Changing what things sell for, as a document rather than an edit.
@@ -26,7 +27,7 @@ export const REPRICING_STATUSES: {
 ]
 
 export const repricingStatusLabel = (status: RepricingStatus) =>
-  REPRICING_STATUSES.find((entry) => entry.value === status)?.label ?? status
+  t(REPRICING_STATUSES.find((entry) => entry.value === status)?.label ?? status)
 
 export const repricingStatusTone = (status: RepricingStatus) =>
   REPRICING_STATUSES.find((entry) => entry.value === status)?.tone ?? 'neutral'

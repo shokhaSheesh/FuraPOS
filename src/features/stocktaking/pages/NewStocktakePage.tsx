@@ -193,8 +193,10 @@ export default function NewStocktakePage() {
           <CardBody className="p-4">
             <p className="text-fg-muted text-sm">
               {t('This sheet will have')}{' '}
-              <span className="text-fg font-semibold">{formatNumber(lineCount)} lines</span>{' '}
-              {t('— everything')} {location?.name ?? t('the location')} carries
+              <span className="text-fg font-semibold">
+                {formatNumber(lineCount)} {t('lines')}
+              </span>{' '}
+              {t('— everything')} {location?.name ?? t('the location')} {t('carries')}
               {categoryId ? t(' in that category') : ''}
               {brandId ? t(' from that brand') : ''}
               {t(', including anything the system says is at zero.')}

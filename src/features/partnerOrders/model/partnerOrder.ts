@@ -40,7 +40,7 @@ export const PARTNER_ORDER_STATUSES: {
 const meta = (status: PartnerOrderStatus) =>
   PARTNER_ORDER_STATUSES.find((entry) => entry.value === status)!
 
-export const partnerStatusLabel = (status: PartnerOrderStatus) => meta(status).label
+export const partnerStatusLabel = (status: PartnerOrderStatus) => t(meta(status).label)
 export const partnerStatusTone = (status: PartnerOrderStatus) => meta(status).tone
 
 export type Currency = 'USD' | 'UZS'

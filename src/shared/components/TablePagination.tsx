@@ -25,7 +25,11 @@ export function TablePagination({ total, pagination, onChange }: TablePagination
   return (
     <div className="border-border flex flex-wrap items-center justify-between gap-3 border-t px-3 py-2">
       <p className="text-fg-muted text-sm">
-        {formatNumber(from)}–{formatNumber(to)} of {formatNumber(total)}
+        {t('{from}–{to} of {total}', {
+          from: formatNumber(from),
+          to: formatNumber(to),
+          total: formatNumber(total),
+        })}
       </p>
 
       <div className="flex items-center gap-3">

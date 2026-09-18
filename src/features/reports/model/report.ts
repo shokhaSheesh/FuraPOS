@@ -34,7 +34,7 @@ export const REPORT_SOURCES: {
 ]
 
 export const sourceLabel = (source: ReportSource) =>
-  REPORT_SOURCES.find((entry) => entry.value === source)?.label ?? source
+  t(REPORT_SOURCES.find((entry) => entry.value === source)?.label ?? source)
 
 /**
  * A column you can group by. OX calls these "informational columns"; they are

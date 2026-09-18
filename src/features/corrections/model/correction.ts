@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { Id, IsoDate } from '@/shared/types'
+import { t } from '@/shared/i18n'
 
 /**
  * Why a number changed when nothing was sold, received or moved.
@@ -27,7 +28,7 @@ export const CORRECTION_REASONS: {
 ]
 
 export const correctionReasonLabel = (reason: CorrectionReason) =>
-  CORRECTION_REASONS.find((entry) => entry.value === reason)?.label ?? reason
+  t(CORRECTION_REASONS.find((entry) => entry.value === reason)?.label ?? reason)
 
 /**
  * `applied` the moment it is saved — whoever counts, records. A review step
@@ -51,7 +52,7 @@ export const correctionStatusTone = (status: CorrectionStatus) =>
   CORRECTION_STATUSES.find((entry) => entry.value === status)?.tone ?? 'neutral'
 
 export const correctionStatusLabel = (status: CorrectionStatus) =>
-  CORRECTION_STATUSES.find((entry) => entry.value === status)?.label ?? status
+  t(CORRECTION_STATUSES.find((entry) => entry.value === status)?.label ?? status)
 
 export interface CorrectionLine {
   id: string

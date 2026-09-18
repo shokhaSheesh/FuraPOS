@@ -109,7 +109,7 @@ export function DateRangePicker({
         <div className="border-border w-36 shrink-0 border-r p-2">
           {presets.map((preset) => (
             <button
-              key={preset.label}
+              key={t(preset.label)}
               type="button"
               onClick={() => {
                 const next = preset.range()

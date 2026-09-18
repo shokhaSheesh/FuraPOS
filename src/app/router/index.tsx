@@ -7,6 +7,7 @@ import { Skeleton } from '@/shared/ui/Skeleton'
 import { paths } from '@/shared/config/paths'
 import { HomeRoute, RequireAuth, RequirePermission } from './guards'
 import { RouteError } from './RouteError'
+import { t } from '@/shared/i18n'
 
 const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPage'))
 const DriversPage = lazy(() => import('@/features/drivers/pages/DriversPage'))
@@ -101,7 +102,7 @@ function page(element: ReactNode, permission?: string) {
  * sidebar is fully navigable and nobody has to guess what is coming.
  */
 function todo(title: string, permission?: string, description?: string): ReactNode {
-  return page(<PlaceholderPage title={title} description={description} />, permission)
+  return page(<PlaceholderPage title={t(title)} description={description} />, permission)
 }
 
 const routes: RouteObject[] = [

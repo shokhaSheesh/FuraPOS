@@ -164,7 +164,9 @@ export function MultiSelect<T extends string>({
 
       {value.length > 0 ? (
         <div className="border-border flex items-center justify-between gap-2 border-t px-3 py-2">
-          <span className="text-fg-subtle text-2xs tabular-nums">{value.length} selected</span>
+          <span className="text-fg-subtle text-2xs tabular-nums">
+            {value.length} {t('selected')}
+          </span>
           <Button
             type="button"
             variant="link"

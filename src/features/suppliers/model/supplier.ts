@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { MIN_PASSWORD_LENGTH } from '@/shared/lib/password'
 import type { Id, IsoDate } from '@/shared/types'
+import { t } from '@/shared/i18n'
 
 /**
  * Who we buy from.
@@ -114,9 +115,9 @@ export const PORTAL_STATES: {
 
 const portalMeta = (state: PortalState) => PORTAL_STATES.find((entry) => entry.value === state)!
 
-export const portalStateLabel = (state: PortalState) => portalMeta(state).label
+export const portalStateLabel = (state: PortalState) => t(portalMeta(state).label)
 export const portalStateTone = (state: PortalState) => portalMeta(state).tone
-export const portalStateHint = (state: PortalState) => portalMeta(state).hint
+export const portalStateHint = (state: PortalState) => t(portalMeta(state).hint)
 
 /**
  * A username proposed from the company name, because one typed by hand is one

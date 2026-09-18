@@ -398,7 +398,7 @@ export function SpreadsheetImport({
                 {file ? (
                   <p className="text-fg-muted mt-2 flex items-center gap-2 text-sm">
                     <Paperclip className="size-4" />
-                    {file.name} · {formatNumber(grid.length)} rows
+                    {file.name} · {formatNumber(grid.length)} {t('rows')}
                   </p>
                 ) : null}
                 {error ? (
@@ -581,7 +581,7 @@ export function SpreadsheetImport({
                   <p className="text-fg-subtle text-2xs mt-1">
                     {formatNumber(plan.creatable.length)}{' '}
                     {t(
-                      'of them could be created — turn on &ldquo;Create products we do not carry&rdquo; on the first step.',
+                      'of them could be created — turn on “Create products we do not carry” on the first step.',
                     )}
                   </p>
                 ) : null}
@@ -627,7 +627,7 @@ export function SpreadsheetImport({
             </Button>
           ) : (
             <Button variant="primary" disabled={willAdd === 0} onClick={run}>
-              {t('Add')} {formatNumber(willAdd)} products
+              {t('Add')} {formatNumber(willAdd)} {t('products')}
             </Button>
           )}
         </div>

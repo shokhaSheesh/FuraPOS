@@ -174,7 +174,9 @@ export default function OrdersListPage() {
           if (units === 0) return <span className="text-fg-subtle">—</span>
           return (
             <div>
-              <p className="text-fg font-medium tabular-nums">{formatNumber(units)} units</p>
+              <p className="text-fg font-medium tabular-nums">
+                {formatNumber(units)} {t('units')}
+              </p>
               {canSeeCost ? (
                 <p className="text-fg-subtle text-2xs tabular-nums">
                   {formatMoney(Math.round(outstandingValue(row.original, USD_RATE)))}

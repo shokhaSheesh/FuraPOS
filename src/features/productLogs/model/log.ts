@@ -1,4 +1,5 @@
 import type { Id, IsoDate } from '@/shared/types'
+import { t } from '@/shared/i18n'
 
 /**
  * Every change to a stock number, one row each.
@@ -32,7 +33,7 @@ export const STOCK_LOG_KINDS: {
 ]
 
 export const logKindLabel = (kind: StockLogKind) =>
-  STOCK_LOG_KINDS.find((entry) => entry.value === kind)?.label ?? kind
+  t(STOCK_LOG_KINDS.find((entry) => entry.value === kind)?.label ?? kind)
 
 export interface StockLogEntry {
   id: string

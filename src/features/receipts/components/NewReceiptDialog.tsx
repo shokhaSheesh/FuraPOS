@@ -89,7 +89,10 @@ export function NewReceiptDialog({
                     aria-label={t('Where these goods came from')}
                     value={field.value}
                     onChange={field.onChange}
-                    options={PROCUREMENT_KINDS.map(({ value, label }) => ({ value, label }))}
+                    options={PROCUREMENT_KINDS.map(({ value, label }) => ({
+                      value,
+                      label: t(label),
+                    }))}
                   />
                   <p className="text-fg-subtle text-2xs">
                     {PROCUREMENT_KINDS.find((k) => k.value === field.value)?.hint}

@@ -187,7 +187,7 @@ export default function TemplateFormPage() {
                     onChange={(kind) => setKind(kind as TemplateKind)}
                     options={TEMPLATE_KINDS.map((kind) => ({
                       value: kind.value,
-                      label: kind.label,
+                      label: t(kind.label),
                       hint: kind.hint,
                     }))}
                   />
@@ -200,7 +200,7 @@ export default function TemplateFormPage() {
                     className="w-full"
                     value={draft.code}
                     onChange={(code) => setDraft((c) => ({ ...c, code: code as CodeKind }))}
-                    options={CODE_KINDS}
+                    options={CODE_KINDS.map((option) => ({ ...option, label: t(option.label) }))}
                   />
                 )}
               </Field>
@@ -220,7 +220,7 @@ export default function TemplateFormPage() {
                   const active = size.widthMm === draft.widthMm && size.heightMm === draft.heightMm
                   return (
                     <Button
-                      key={size.label}
+                      key={t(size.label)}
                       variant={active ? 'primary' : 'secondary'}
                       size="sm"
                       onClick={() =>
@@ -231,7 +231,7 @@ export default function TemplateFormPage() {
                         }))
                       }
                     >
-                      {size.label}
+                      {t(size.label)}
                     </Button>
                   )
                 })}
@@ -292,12 +292,12 @@ export default function TemplateFormPage() {
                     className="hover:bg-canvas flex items-center gap-2 rounded-md px-2 py-1.5"
                   >
                     <Checkbox
-                      aria-label={field.label}
+                      aria-label={t(field.label)}
                       checked={on}
                       onCheckedChange={() => toggleField(field.key)}
                     />
                     <span className={on ? 'text-fg text-sm' : 'text-fg-subtle text-sm'}>
-                      {field.label}
+                      {t(field.label)}
                     </span>
                     {isHeadline ? <Badge tone="neutral">{t('Headline')}</Badge> : null}
                     <div className="ml-auto flex items-center gap-1">

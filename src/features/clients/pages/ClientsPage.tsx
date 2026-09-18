@@ -119,7 +119,7 @@ export default function ClientsPage() {
                 {formatMoney(Math.round(row.original.stats.revenue))}
               </p>
               <p className="text-fg-subtle text-2xs tabular-nums">
-                {formatNumber(row.original.stats.sales)} sales
+                {formatNumber(row.original.stats.sales)} {t('sales')}
               </p>
             </div>
           ),
@@ -131,7 +131,8 @@ export default function ClientsPage() {
         cell: ({ row }) => {
           const days = daysSinceLastSale(row.original.stats)
           if (days === null) return <span className="text-fg-subtle">{t('Never')}</span>
-          const label = days === 0 ? 'Today' : days === 1 ? 'Yesterday' : `${days} days ago`
+          const label =
+            days === 0 ? t('Today') : days === 1 ? t('Yesterday') : t('{days} days ago', { days })
           return (
             <span className={row.original.dormant ? 'text-warning' : 'text-fg-muted'}>{label}</span>
           )

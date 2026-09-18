@@ -14,7 +14,7 @@ import { Avatar } from '@/features/employees/components/Avatar'
 import { useRole, useRoleActions, useRoleHolders } from '../api/roles'
 import { PermissionGrid } from '../components/PermissionGrid'
 import { grantedKeys, isFullAccess } from '../model/role'
-import { t } from '@/shared/i18n'
+import { t, tn } from '@/shared/i18n'
 
 /**
  * Editing what a role can reach.
@@ -58,7 +58,7 @@ export default function RoleDetailPage() {
     actions.setPermissions(role.id, [...draft])
     toast.success(
       holders.length
-        ? `Saved. ${formatNumber(holders.length)} ${holders.length === 1 ? 'person' : 'people'} affected`
+        ? `Saved. ${formatNumber(holders.length)} ${tn(holders.length, 'person', 'people')} affected`
         : 'Saved',
     )
   }

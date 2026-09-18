@@ -101,7 +101,7 @@ export default function CorrectionDetailPage() {
             <CardTitle>{t('Items')}</CardTitle>
             <span className={`text-sm font-medium ${net < 0 ? 'text-danger' : 'text-success'}`}>
               {net > 0 ? '+' : '−'}
-              {formatNumber(Math.abs(net))} units
+              {formatNumber(Math.abs(net))} {t('units')}
               {canSeeCost ? ` · ${value < 0 ? '−' : ''}${formatMoney(Math.abs(value))}` : ''}
             </span>
           </CardHeader>

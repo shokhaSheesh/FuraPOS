@@ -77,7 +77,7 @@ export default function PrintTemplatesPage() {
           counts={counts}
           options={[
             { value: null, label: t('All') },
-            ...TEMPLATE_KINDS.map((kind) => ({ value: kind.value, label: kind.label })),
+            ...TEMPLATE_KINDS.map((kind) => ({ value: kind.value, label: t(kind.label) })),
           ]}
         />
       </div>

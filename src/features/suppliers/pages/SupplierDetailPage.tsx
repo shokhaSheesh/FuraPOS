@@ -47,7 +47,7 @@ import {
   portalStateTone,
   type PaymentValues,
 } from '../model/supplier'
-import { t } from '@/shared/i18n'
+import { t, tn } from '@/shared/i18n'
 
 export default function SupplierDetailPage() {
   const { supplierId } = useParams()
@@ -159,7 +159,9 @@ export default function SupplierDetailPage() {
               {supplier.status === 'active' ? t('Active') : t('Archived')}
             </Badge>
             {supplier.debt > 0 ? (
-              <Badge tone="danger">{formatMoney(supplier.debt)} owed</Badge>
+              <Badge tone="danger">
+                {formatMoney(supplier.debt)} {t('owed')}
+              </Badge>
             ) : (
               <Badge tone="success">{t('Nothing owed')}</Badge>
             )}
@@ -250,7 +252,7 @@ export default function SupplierDetailPage() {
           <CardBody className="p-0">
             {theirReceipts.length === 0 ? (
               <p className="text-fg-subtle p-4 text-sm">
-                {t('Nothing has been received from')} {supplier.name} yet.
+                {t('Nothing has been received from')} {supplier.name} {t('yet.')}
               </p>
             ) : (
               <div className="overflow-x-auto">
@@ -527,7 +529,7 @@ export default function SupplierDetailPage() {
                     value: OLDEST_FIRST,
                     label: t('Oldest first — across {length} {p1}', {
                       length: unpaid.length,
-                      p1: unpaid.length === 1 ? 'delivery' : 'deliveries',
+                      p1: tn(unpaid.length, 'delivery', 'deliveries'),
                     }),
                   },
                   ...unpaid.map((entry) => ({

@@ -31,7 +31,7 @@ import {
   transferStatusLabel,
   transferStatusTone,
 } from '../model/transfer'
-import { t } from '@/shared/i18n'
+import { t, tn } from '@/shared/i18n'
 
 export default function TransferDetailPage() {
   const navigate = useNavigate()
@@ -159,8 +159,8 @@ export default function TransferDetailPage() {
                 : t('These {p0} units have', {
                     p0: formatNumber(transferInTransit(transfer)),
                   })}{' '}
-              left {transfer.fromLocationName} and{' '}
-              {transferInTransit(transfer) === 1 ? 'is' : 'are'} {t('not yet counted at')}{' '}
+              {t('left')} {transfer.fromLocationName} and{' '}
+              {tn(transferInTransit(transfer), 'is', 'are')} {t('not yet counted at')}{' '}
               {transfer.toLocationName}
               {t(". It will not appear in either location's stock until receipt is confirmed.")}
             </p>

@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { Id, IsoDate } from '@/shared/types'
+import { t } from '@/shared/i18n'
 
 /**
  * Print templates — OX's «Шаблоны для печати».
@@ -110,7 +111,7 @@ export const templateSchema = z.object({
 export type TemplateDraft = z.infer<typeof templateSchema>
 
 export const kindLabel = (kind: TemplateKind) =>
-  TEMPLATE_KINDS.find((entry) => entry.value === kind)?.label ?? kind
+  t(TEMPLATE_KINDS.find((entry) => entry.value === kind)?.label ?? kind)
 
 export const sizeLabel = (template: Pick<PrintTemplate, 'widthMm' | 'heightMm'>) =>
   `${template.widthMm} × ${template.heightMm} mm`

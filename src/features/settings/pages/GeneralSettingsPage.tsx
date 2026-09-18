@@ -189,11 +189,11 @@ export default function GeneralSettingsPage() {
                   className="flex cursor-pointer items-center gap-2 text-sm"
                 >
                   <Checkbox
-                    aria-label={method.label}
+                    aria-label={t(method.label)}
                     checked={draft.paymentMethods.includes(method.value)}
                     onCheckedChange={() => toggle('paymentMethods', method.value)}
                   />
-                  <span className="text-fg">{method.label}</span>
+                  <span className="text-fg">{t(method.label)}</span>
                 </label>
               ))}
             </div>
@@ -234,11 +234,11 @@ export default function GeneralSettingsPage() {
                   className="flex cursor-pointer items-center gap-2 text-sm"
                 >
                   <Checkbox
-                    aria-label={status.label}
+                    aria-label={t(status.label)}
                     checked={draft.revenueStatuses.includes(status.value)}
                     onCheckedChange={() => toggle('revenueStatuses', status.value)}
                   />
-                  <span className="text-fg">{status.label}</span>
+                  <span className="text-fg">{t(status.label)}</span>
                 </label>
               ))}
             </div>

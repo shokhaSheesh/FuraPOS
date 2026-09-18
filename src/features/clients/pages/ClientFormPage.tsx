@@ -134,7 +134,7 @@ export default function ClientFormPage() {
                       onChange={field.onChange}
                       options={CLIENT_STATUSES.map((entry) => ({
                         value: entry.value,
-                        label: entry.label,
+                        label: t(entry.label),
                       }))}
                     />
                   )}

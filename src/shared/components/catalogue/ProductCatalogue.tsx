@@ -24,7 +24,7 @@ import {
 } from './browse'
 import { CATALOGUE_CARD_FIELDS } from './cardFields'
 import { ProductGroupTable } from './ProductGroupTable'
-import { t } from '@/shared/i18n'
+import { t, tn } from '@/shared/i18n'
 
 /** The "no filter" value of a select, which cannot hold an empty string. */
 const ALL = '__all__'
@@ -266,7 +266,7 @@ export function ProductCatalogue<R extends CatalogueRow>({
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-fg-muted text-sm">
             <strong className="text-fg font-medium">{formatNumber(matching.length)}</strong>{' '}
-            {matching.length === 1 ? 'product' : 'products'}
+            {tn(matching.length, 'product', 'products')}
           </p>
 
           <div className="ml-auto flex flex-wrap items-center gap-2">
@@ -444,9 +444,10 @@ export function ProductCatalogue<R extends CatalogueRow>({
         <p className="text-fg-muted text-sm">
           {t('Chosen:')}{' '}
           <strong className="text-fg font-medium">
-            {formatNumber(chosenProducts)} {chosenProducts === 1 ? 'product' : 'products'}
+            {formatNumber(chosenProducts)} {tn(chosenProducts, 'product', 'products')}
           </strong>{' '}
-          · <strong className="text-fg font-medium">{formatNumber(chosenUnits)}</strong> units
+          · <strong className="text-fg font-medium">{formatNumber(chosenUnits)}</strong>{' '}
+          {t('units')}
         </p>
         {summary}
       </div>
@@ -568,8 +569,7 @@ function ProductCard<R extends CatalogueRow>({
           </h3>
           {has('variations') ? (
             <p className="text-fg-subtle text-2xs mt-0.5">
-              {formatNumber(group.rows.length)}{' '}
-              {group.rows.length === 1 ? 'variation' : 'variations'}
+              {formatNumber(group.rows.length)} {tn(group.rows.length, 'variation', 'variations')}
             </p>
           ) : null}
         </div>

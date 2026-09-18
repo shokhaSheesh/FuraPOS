@@ -223,7 +223,9 @@ export default function NewRepricingPage() {
               )}
             </Field>
             <p className="text-fg-muted text-sm">
-              <span className="text-fg font-semibold">{formatNumber(scope.length)} products</span>{' '}
+              <span className="text-fg font-semibold">
+                {formatNumber(scope.length)} {t('products')}
+              </span>{' '}
               {t(
                 'match. Prices that do not move are still listed, so the sheet shows what was considered.',
               )}
@@ -252,7 +254,7 @@ export default function NewRepricingPage() {
                         // so carrying it over would quietly compute nonsense.
                         form.setValue('value', defaultRuleValue(next))
                       }}
-                      options={RULE_KINDS.map((r) => ({ value: r.value, label: r.label }))}
+                      options={RULE_KINDS.map((r) => ({ value: r.value, label: t(r.label) }))}
                     />
                   )}
                 />
@@ -309,7 +311,10 @@ export default function NewRepricingPage() {
                       className="w-full"
                       value={String(field.value)}
                       onChange={(next) => field.onChange(Number(next))}
-                      options={ROUNDING_OPTIONS}
+                      options={ROUNDING_OPTIONS.map((option) => ({
+                        ...option,
+                        label: t(option.label),
+                      }))}
                     />
                   )}
                 />

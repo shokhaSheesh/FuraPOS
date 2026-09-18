@@ -28,7 +28,7 @@ export const RECEIPT_STATUSES: {
 ]
 
 export const receiptStatusLabel = (status: ReceiptStatus) =>
-  RECEIPT_STATUSES.find((entry) => entry.value === status)?.label ?? status
+  t(RECEIPT_STATUSES.find((entry) => entry.value === status)?.label ?? status)
 
 export const receiptStatusTone = (status: ReceiptStatus) =>
   RECEIPT_STATUSES.find((entry) => entry.value === status)?.tone ?? 'neutral'

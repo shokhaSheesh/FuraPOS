@@ -63,7 +63,7 @@ import {
   useSetReceiptStatus,
   useUpdateReceipt,
 } from '../api/receipts'
-import { t } from '@/shared/i18n'
+import { t, tn } from '@/shared/i18n'
 
 const STEPS = ['Add products', 'Extra data', 'Payment', 'Review and finish']
 
@@ -510,8 +510,8 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
           summary={
             newToUs > 0 ? (
               <p className="text-fg-subtle text-2xs">
-                {formatNumber(newToUs)} {t('more they list')} {newToUs === 1 ? 'is' : 'are'}{' '}
-                {t('new to us — add')} {newToUs === 1 ? 'it' : 'them'}{' '}
+                {formatNumber(newToUs)} {t('more they list')} {tn(newToUs, 'is', 'are')}{' '}
+                {t('new to us — add')} {tn(newToUs, 'it', 'them')}{' '}
                 {t('to the catalogue to receive')}
               </p>
             ) : null

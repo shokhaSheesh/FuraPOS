@@ -1,6 +1,7 @@
 import { parseNumber } from '@/shared/lib/importFields'
 import type { Id } from '@/shared/types'
 import type { Product, ProductVariation, VariationRow } from '@/features/products/model/product'
+import { t } from '@/shared/i18n'
 
 /**
  * Mass update — OX's «Массовое обновление инф. товаров».
@@ -26,7 +27,7 @@ export const KEY_TYPES: { value: KeyType; label: string }[] = [
   { value: 'productId', label: 'Product ID' },
 ]
 
-export const keyLabel = (key: KeyType) => KEY_TYPES.find((k) => k.value === key)?.label ?? key
+export const keyLabel = (key: KeyType) => t(KEY_TYPES.find((k) => k.value === key)?.label ?? key)
 
 /* --- fields --------------------------------------------------------------- */
 

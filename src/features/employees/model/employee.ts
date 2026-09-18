@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { LOGIN_PATTERN, MIN_PASSWORD_LENGTH } from '@/shared/lib/password'
 import type { Id, IsoDate } from '@/shared/types'
+import { t } from '@/shared/i18n'
 
 /**
  * Who works here.
@@ -39,7 +40,7 @@ export const EMPLOYEE_STATUSES: {
 ]
 
 export const employeeStatusLabel = (status: EmployeeStatus) =>
-  EMPLOYEE_STATUSES.find((entry) => entry.value === status)?.label ?? status
+  t(EMPLOYEE_STATUSES.find((entry) => entry.value === status)?.label ?? status)
 
 export const employeeStatusTone = (status: EmployeeStatus) =>
   EMPLOYEE_STATUSES.find((entry) => entry.value === status)?.tone ?? 'neutral'

@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { Id, IsoDate } from '@/shared/types'
+import { t } from '@/shared/i18n'
 
 /**
  * Who buys from us.
@@ -35,7 +36,7 @@ export const CLIENT_STATUSES: {
 ]
 
 export const clientStatusLabel = (status: ClientStatus) =>
-  CLIENT_STATUSES.find((entry) => entry.value === status)?.label ?? status
+  t(CLIENT_STATUSES.find((entry) => entry.value === status)?.label ?? status)
 
 export const clientStatusTone = (status: ClientStatus) =>
   CLIENT_STATUSES.find((entry) => entry.value === status)?.tone ?? 'neutral'

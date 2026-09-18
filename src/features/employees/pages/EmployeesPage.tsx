@@ -98,7 +98,7 @@ export default function EmployeesPage() {
                 {formatMoney(Math.round(stats.revenueThisMonth))}
               </p>
               <p className="text-fg-subtle text-2xs tabular-nums">
-                {formatNumber(stats.salesThisMonth)} sales
+                {formatNumber(stats.salesThisMonth)} {t('sales')}
               </p>
             </div>
           )
@@ -124,7 +124,8 @@ export default function EmployeesPage() {
         cell: ({ row }) => {
           const days = daysSinceActive(row.original)
           if (days === null) return <span className="text-fg-subtle">{t('Never signed in')}</span>
-          const label = days === 0 ? 'Today' : days === 1 ? 'Yesterday' : `${days} days ago`
+          const label =
+            days === 0 ? t('Today') : days === 1 ? t('Yesterday') : t('{days} days ago', { days })
           return (
             <span className={row.original.dormant ? 'text-warning' : 'text-fg-muted'}>{label}</span>
           )

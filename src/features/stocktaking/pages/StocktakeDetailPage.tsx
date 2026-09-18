@@ -119,7 +119,7 @@ export default function StocktakeDetailPage() {
                 onClick={() => setConfirmApply(true)}
               >
                 <Check />
-                {t('Apply')} {formatNumber(differing.length)} changes
+                {t('Apply')} {formatNumber(differing.length)} {t('changes')}
               </Button>
             ) : null}
           </div>

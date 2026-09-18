@@ -11,7 +11,7 @@ import { formatNumber } from '@/shared/lib/format'
 import { useSession } from '@/app/providers/SessionProvider'
 import { useDataStore } from '@/data/store'
 import { vehicleUsage, type VehicleMake, type VehicleModel } from '../model/settings'
-import { t } from '@/shared/i18n'
+import { t, tn } from '@/shared/i18n'
 
 /**
  * Truck brands and their models.
@@ -69,10 +69,10 @@ export function TruckBrandsPanel({ onEditMake }: { onEditMake: (make: VehicleMak
                 <div className="min-w-0">
                   <p className="text-fg truncate text-base font-semibold">{make.name}</p>
                   <p className="text-fg-subtle text-2xs">
-                    {formatNumber(make.models.length)}{' '}
-                    {make.models.length === 1 ? 'model' : 'models'} · {formatNumber(usage.products)}{' '}
-                    {usage.products === 1 ? t('product fits') : t('products fit')} ·{' '}
-                    {formatNumber(usage.trucks)} {usage.trucks === 1 ? 'truck' : 'trucks'}
+                    {formatNumber(make.models.length)} {tn(make.models.length, 'model', 'models')} ·{' '}
+                    {formatNumber(usage.products)}{' '}
+                    {tn(usage.products, 'product fits', 'products fit')} ·{' '}
+                    {formatNumber(usage.trucks)} {tn(usage.trucks, 'truck', 'trucks')}
                   </p>
                 </div>
                 <RowActions
@@ -203,7 +203,7 @@ function Chip({
     const result = renameModel(make.id, model.id, name)
     if (result.ok) {
       toast.success(
-        total > 0 ? `Renamed — ${total} ${total === 1 ? 'place' : 'places'} updated` : 'Renamed',
+        total > 0 ? `Renamed — ${total} ${tn(total, 'place', 'places')} updated` : 'Renamed',
       )
     } else {
       toast.error(result.error)

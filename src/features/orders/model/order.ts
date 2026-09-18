@@ -70,7 +70,7 @@ export const ORDER_STATUSES: {
 ]
 
 export const orderStatusLabel = (status: OrderStatus) =>
-  ORDER_STATUSES.find((entry) => entry.value === status)?.label ?? status
+  t(ORDER_STATUSES.find((entry) => entry.value === status)?.label ?? status)
 
 export const orderStatusTone = (status: OrderStatus) =>
   ORDER_STATUSES.find((entry) => entry.value === status)?.tone ?? 'neutral'

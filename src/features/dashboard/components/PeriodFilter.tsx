@@ -47,7 +47,7 @@ export function PeriodFilter({
                 : 'text-fg-muted hover:text-fg',
             )}
           >
-            {option.label}
+            {t(option.label)}
           </button>
         ))}
       </div>

@@ -101,7 +101,8 @@ export default function DashboardPage() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>
-              {t('Revenue by location&ensp;')}
+              {t('Revenue by location')}
+              {'\u2003'}
               <span className="text-fg-subtle font-normal">{t('UZS')}</span>
             </CardTitle>
             {data ? <ChartLegend locations={data.locations} data={data.revenueByLocation} /> : null}

@@ -12,7 +12,7 @@ import {
   PRODUCT_FIELD_COLUMN_IDS,
 } from '@/features/products/components/productFieldColumns'
 import type { CatalogueRow, ProductGroup } from './browse'
-import { t } from '@/shared/i18n'
+import { t, tn } from '@/shared/i18n'
 
 /** What the variations table already says in its own columns. */
 const SHOWN_ELSEWHERE = ['image', 'productName', 'name', 'stock']
@@ -144,7 +144,7 @@ function OpenProduct<R extends CatalogueRow>({
       open
       onOpenChange={(open) => (open ? undefined : onClose())}
       title={group.productName}
-      description={`${group.categoryPath} · ${group.rows.length} ${group.rows.length === 1 ? 'variation' : 'variations'}`}
+      description={`${group.categoryPath} · ${group.rows.length} ${tn(group.rows.length, 'variation', 'variations')}`}
       size="xl"
       footer={
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -152,7 +152,7 @@ function OpenProduct<R extends CatalogueRow>({
             {units > 0 ? (
               <>
                 {t('Chosen:')}{' '}
-                <strong className="text-fg font-medium">{formatNumber(units)}</strong> units
+                <strong className="text-fg font-medium">{formatNumber(units)}</strong> {t('units')}
               </>
             ) : (
               t('Nothing chosen')

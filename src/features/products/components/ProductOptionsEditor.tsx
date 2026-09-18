@@ -120,7 +120,7 @@ export function ProductOptionsEditor({
           </Button>
           {availablePresets.length ? (
             <>
-              <span className="text-fg-subtle text-2xs ml-1">or</span>
+              <span className="text-fg-subtle text-2xs ml-1">{t('or')}</span>
               {availablePresets.map((preset) => (
                 <Button
                   key={preset.name}

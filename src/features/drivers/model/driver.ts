@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { Id, IsoDate } from '@/shared/types'
+import { t } from '@/shared/i18n'
 
 /**
  * Drivers.
@@ -212,7 +213,7 @@ export const driverSchema = z
 export type DriverDraft = z.infer<typeof driverSchema>
 
 export const statusLabel = (status: DriverStatus) =>
-  DRIVER_STATUSES.find((entry) => entry.value === status)?.label ?? status
+  t(DRIVER_STATUSES.find((entry) => entry.value === status)?.label ?? status)
 
 /**
  * How the capacity reads on the "Buying for" choice.

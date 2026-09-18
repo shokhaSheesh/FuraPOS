@@ -3,6 +3,7 @@ import { Card } from '@/shared/ui/Card'
 import { Skeleton } from '@/shared/ui/Skeleton'
 import { cn } from '@/shared/lib/cn'
 import { formatPercent } from '@/shared/lib/format'
+import { t } from '@/shared/i18n'
 
 interface StatCardProps {
   label: string
@@ -54,7 +55,9 @@ export function StatCard({
             <Arrow className="size-3" />
             {formatPercent(Math.abs(change))}
           </span>
-          {comparedTo ? <span className="text-fg-subtle">vs {comparedTo}</span> : null}
+          {comparedTo ? (
+            <span className="text-fg-subtle">{t('vs {p}', { p: t(comparedTo) })}</span>
+          ) : null}
         </p>
       ) : null}
     </Card>

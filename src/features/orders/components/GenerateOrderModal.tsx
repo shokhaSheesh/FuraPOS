@@ -203,7 +203,7 @@ export function GenerateOrderModal({
                           // quietly ordering more than was asked for.
                           <p className="text-fg-subtle text-2xs font-normal whitespace-nowrap">
                             {formatNumber(suggestion.shortfall)} {t('short,')}{' '}
-                            {formatNumber(suggestion.suggested)} minimum
+                            {formatNumber(suggestion.suggested)} {t('minimum')}
                           </p>
                         ) : null}
                       </td>

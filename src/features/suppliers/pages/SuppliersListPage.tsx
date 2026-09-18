@@ -141,7 +141,9 @@ export default function SuppliersListPage() {
           if (onHandUnits === 0) return <span className="text-fg-subtle">—</span>
           return (
             <div>
-              <p className="text-fg tabular-nums">{formatNumber(onHandUnits)} units</p>
+              <p className="text-fg tabular-nums">
+                {formatNumber(onHandUnits)} {t('units')}
+              </p>
               {canSeeCost ? (
                 <p className="text-fg-subtle text-2xs tabular-nums">{formatMoney(onHandValue)}</p>
               ) : null}

@@ -1,3 +1,4 @@
+import { tn } from '@/shared/i18n'
 import { create } from 'zustand'
 import { combinationName } from '@/features/products/model/product'
 import type { Product, VariationRow } from '@/features/products/model/product'
@@ -722,8 +723,8 @@ const allTrucks = (drivers: Driver[]) =>
 
 const usageText = ({ products, trucks }: { products: number; trucks: number }) =>
   [
-    products ? `${products} ${products === 1 ? 'product' : 'products'}` : null,
-    trucks ? `${trucks} ${trucks === 1 ? 'truck' : 'trucks'}` : null,
+    products ? `${products} ${tn(products, 'product', 'products')}` : null,
+    trucks ? `${trucks} ${tn(trucks, 'truck', 'trucks')}` : null,
   ]
     .filter(Boolean)
     .join(' and ')
@@ -2201,7 +2202,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
     if (holders > 0) {
       return {
         ok: false,
-        error: `${holders} ${holders === 1 ? 'person holds' : 'people hold'} this role — move them first`,
+        error: `${holders} ${tn(holders, 'person holds', 'people hold')} this role — move them first`,
       }
     }
     // Supplier logins hold roles too, and would be left the same way.
@@ -2209,7 +2210,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
     if (logins > 0) {
       return {
         ok: false,
-        error: `${logins} supplier ${logins === 1 ? 'login holds' : 'logins hold'} this role — move them first`,
+        error: `${logins} supplier ${tn(logins, 'login holds', 'logins hold')} this role — move them first`,
       }
     }
     set({ roles: get().roles.filter((r) => r.id !== id) })

@@ -17,7 +17,7 @@ import {
   withImpliedView,
   withoutImpliedActions,
 } from '../model/role'
-import { t } from '@/shared/i18n'
+import { t, tn } from '@/shared/i18n'
 
 const ACTION_LABELS: Record<PermissionAction, string> = {
   view: 'View',
@@ -99,7 +99,9 @@ export function PermissionGrid({
           onChange={setSearch}
           placeholder={t('Find a screen or permission…')}
         />
-        <p className="text-fg-subtle text-2xs tabular-nums">{formatNumber(totalGranted)} granted</p>
+        <p className="text-fg-subtle text-2xs tabular-nums">
+          {formatNumber(totalGranted)} {t('granted')}
+        </p>
       </div>
 
       <div className="border-border rounded-card overflow-x-auto border">
@@ -188,7 +190,7 @@ function ModuleRows({
         <td className="px-3 py-2">
           <div className="flex items-center gap-2">
             <Checkbox
-              aria-label={t('All of {label}', { label: node.label })}
+              aria-label={t('All of {label}', { label: t(node.label) })}
               disabled={readOnly}
               checked={state === 'partial' ? 'indeterminate' : state === 'on'}
               onCheckedChange={onToggleModule}
@@ -198,7 +200,7 @@ function ModuleRows({
               onClick={onToggleCollapse}
               className="text-fg hover:text-fg flex items-center gap-1 font-medium"
             >
-              {node.label}
+              {t(node.label)}
               <ChevronDown
                 className={cn('size-3.5 transition-transform', collapsed && '-rotate-90')}
               />
@@ -208,7 +210,7 @@ function ModuleRows({
         <td colSpan={PERMISSION_ACTIONS.length} className="text-fg-subtle text-2xs px-3 py-2">
           {leaves.length === 1 && leaves[0]?.key === node.key
             ? null
-            : `${leaves.length} ${leaves.length === 1 ? 'screen' : 'screens'}`}
+            : `${leaves.length} ${tn(leaves.length, 'screen', 'screens')}`}
         </td>
       </tr>
 
@@ -221,12 +223,12 @@ function ModuleRows({
                 <td className="py-1.5 pr-3 pl-9">
                   <label className="flex cursor-pointer items-center gap-2">
                     <Checkbox
-                      aria-label={t('All of {label}', { label: leaf.label })}
+                      aria-label={t('All of {label}', { label: t(leaf.label) })}
                       disabled={readOnly}
                       checked={rowState === 'partial' ? 'indeterminate' : rowState === 'on'}
                       onCheckedChange={(on) => onToggleLeafRow(leaf, on)}
                     />
-                    <span className="text-fg-muted">{leaf.label}</span>
+                    <span className="text-fg-muted">{t(leaf.label)}</span>
                   </label>
                 </td>
                 {PERMISSION_ACTIONS.map((action) => {

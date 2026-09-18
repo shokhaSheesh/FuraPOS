@@ -26,7 +26,7 @@ import { useSession } from '@/app/providers/SessionProvider'
 import { useDataStore } from '@/data/store'
 import { TRANSFER_KINDS, transferDraftSchema, type TransferDraft } from '../model/transfer'
 import { demandAt, hasStalled } from '@/shared/lib/demand'
-import { t } from '@/shared/i18n'
+import { t, tn } from '@/shared/i18n'
 
 /**
  * Build a transfer.
@@ -225,7 +225,7 @@ export default function NewTransferPage() {
     toast.success(
       t('{p0} {p1} added', {
         p0: formatNumber(added.length),
-        p1: added.length === 1 ? 'product' : 'products',
+        p1: tn(added.length, 'product', 'products'),
       }),
     )
   }
@@ -682,7 +682,7 @@ function ReviewStep({
           <strong className="text-fg font-medium">{formatNumber(movingUnits)}</strong>{' '}
           {t('units across')}{' '}
           <strong className="text-fg font-medium">{formatNumber(rows.length)}</strong>{' '}
-          {rows.length === 1 ? 'product' : 'products'}
+          {tn(rows.length, 'product', 'products')}
         </p>
       </Card>
 

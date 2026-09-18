@@ -5,6 +5,7 @@ import { FilterSearch } from '@/shared/components/FilterSearch'
 import { filterFieldsFromColumns, type FieldOverrides } from '@/shared/lib/columnFilterFields'
 import { decodeFilters, encodeFilters } from '@/shared/lib/fieldFilters'
 import type { ListQuery, ListQueryPatch } from '@/shared/types'
+import { t } from '@/shared/i18n'
 
 /**
  * `FilterSearch` for a list page whose state lives in the URL: the panel's
@@ -18,7 +19,7 @@ export function ColumnFilterSearch<T extends RowData>({
   overrides,
   query,
   setQuery,
-  placeholder = 'Filter and search',
+  placeholder = t('Filter and search'),
 }: {
   columns: TableColumn<T>[]
   /** Every row the list can show, unfiltered — pick-lists are read from it. */

@@ -102,7 +102,7 @@ export default function ReportViewPage() {
             {result ? (
               <span className="text-fg-subtle text-2xs tabular-nums">
                 {formatNumber(result.rows.length)} {t('rows from')}{' '}
-                {formatNumber(result.sourceRows)} records
+                {formatNumber(result.sourceRows)} {t('records')}
               </span>
             ) : null}
           </div>

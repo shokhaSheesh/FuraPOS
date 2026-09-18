@@ -77,7 +77,9 @@ export default function OnlineSaleDetailPage() {
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone={status.tone}>{status.label}</Badge>
             <Badge tone={payment.tone}>{payment.label}</Badge>
-            <Badge tone="neutral">{formatNumber(units)} pcs</Badge>
+            <Badge tone="neutral">
+              {formatNumber(units)} {t('pcs')}
+            </Badge>
             {sale.express ? <Badge tone="warning">{t('Express')}</Badge> : null}
             <span className="text-fg-subtle text-2xs flex items-center gap-1">
               <Globe className="size-3.5" />
@@ -95,14 +97,20 @@ export default function OnlineSaleDetailPage() {
         <div className="min-w-0 flex-1 text-sm">
           {takesStock(sale) ? (
             <p className="text-fg">
-              {t('Took')} <span className="font-semibold">{formatNumber(units)} pcs</span> from{' '}
-              <span className="font-semibold">{sale.locationName}</span> {t('when it was placed.')}
+              {t('Took')}{' '}
+              <span className="font-semibold">
+                {formatNumber(units)} {t('pcs')}
+              </span>{' '}
+              from <span className="font-semibold">{sale.locationName}</span>{' '}
+              {t('when it was placed.')}
             </p>
           ) : (
             <p className="text-fg">
               {sale.status === 'returned' ? t('Returned') : t('Cancelled')} {t('— the')}{' '}
-              <span className="font-semibold">{formatNumber(units)} pcs</span> {t('went back to')}{' '}
-              {sale.locationName}.
+              <span className="font-semibold">
+                {formatNumber(units)} {t('pcs')}
+              </span>{' '}
+              {t('went back to')} {sale.locationName}.
             </p>
           )}
           <p className="text-fg-subtle text-2xs">

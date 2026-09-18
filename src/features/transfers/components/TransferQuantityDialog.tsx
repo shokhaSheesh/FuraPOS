@@ -6,7 +6,7 @@ import { StorageAddress } from '@/shared/components/StorageAddress'
 import { Button } from '@/shared/ui/Button'
 import { formatNumber } from '@/shared/lib/format'
 import type { Transfer } from '../model/transfer'
-import { t } from '@/shared/i18n'
+import { t, tn } from '@/shared/i18n'
 
 type Mode = 'send' | 'receive'
 
@@ -184,7 +184,7 @@ export function TransferQuantityDialog({
 
         {gap > 0 ? (
           <p className="text-danger text-sm">
-            {formatNumber(gap)} {gap === 1 ? t('unit is') : t('units are')} {copy.shortfall}.
+            {formatNumber(gap)} {tn(gap, 'unit is', 'units are')} {copy.shortfall}.
           </p>
         ) : (
           <p className="text-fg-subtle text-sm">

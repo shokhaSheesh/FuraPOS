@@ -1,4 +1,5 @@
 import { cn } from '@/shared/lib/cn'
+import { t } from '@/shared/i18n'
 
 export interface StatusChip<T extends string> {
   value: T | null
@@ -33,7 +34,7 @@ export function StatusChips<T extends string>({
         const count = counts ? (counts[option.value ?? 'all'] ?? 0) : undefined
         return (
           <button
-            key={option.label}
+            key={t(option.label)}
             type="button"
             aria-pressed={active}
             onClick={() => onChange(option.value)}

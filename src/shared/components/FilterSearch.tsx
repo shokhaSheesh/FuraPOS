@@ -36,7 +36,7 @@ export function FilterSearch<T>({
   onApply,
   search,
   onSearchChange,
-  placeholder = 'Filter and search',
+  placeholder = t('Filter and search'),
 }: {
   fields: FilterField<T>[]
   /** What is applied now — usually read from the URL. */

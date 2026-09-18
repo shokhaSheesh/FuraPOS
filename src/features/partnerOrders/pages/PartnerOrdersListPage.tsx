@@ -116,7 +116,7 @@ export default function PartnerOrdersListPage() {
           return left > 0 ? (
             <span className="text-warning font-medium">{formatNumber(left)}</span>
           ) : (
-            <span className="text-success">complete</span>
+            <span className="text-success">{t('complete')}</span>
           )
         },
       },

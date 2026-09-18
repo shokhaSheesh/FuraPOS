@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { Id, IsoDate } from '@/shared/types'
+import { t } from '@/shared/i18n'
 
 /**
  * Cash registers and cash shifts.
@@ -191,4 +192,4 @@ export type MovementDraft = z.infer<typeof movementSchema>
 export type RegisterDraft = z.infer<typeof registerSchema>
 
 export const reasonLabel = (value: string) =>
-  MOVEMENT_REASONS.find((reason) => reason.value === value)?.label ?? value
+  t(MOVEMENT_REASONS.find((reason) => reason.value === value)?.label ?? value)

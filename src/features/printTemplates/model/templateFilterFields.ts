@@ -1,6 +1,7 @@
 import type { TableColumn } from '@/shared/components/table/features'
 import type { FieldOverrides } from '@/shared/lib/columnFilterFields'
 import { CODE_KINDS, kindLabel, type PrintTemplate, type TemplateKind } from './template'
+import { t } from '@/shared/i18n'
 
 /**
  * Print templates are a grid of cards rather than a table, so there are no
@@ -25,7 +26,7 @@ export const TEMPLATE_FILTER_OVERRIDES: FieldOverrides<PrintTemplate> = {
   height: { unit: 'mm', type: 'range', get: (t) => t.heightMm },
   code: {
     type: 'options',
-    optionLabel: (value) => CODE_KINDS.find((c) => c.value === value)?.label ?? value,
+    optionLabel: (value) => t(CODE_KINDS.find((c) => c.value === value)?.label ?? value),
   },
   fields: { type: 'options', get: (t) => t.fields },
   createdBy: { type: 'options' },

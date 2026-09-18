@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import type { Id, IsoDate } from '@/shared/types'
 import { formatMoney } from '@/shared/lib/format'
+import { t } from '@/shared/i18n'
 
 /**
  * A promotion: a discount rule with a reason and an end date.
@@ -78,7 +79,7 @@ export const PROMOTION_STATUSES: {
 ]
 
 export const promotionStatusLabel = (status: PromotionStatus) =>
-  PROMOTION_STATUSES.find((entry) => entry.value === status)?.label ?? status
+  t(PROMOTION_STATUSES.find((entry) => entry.value === status)?.label ?? status)
 
 export const promotionStatusTone = (status: PromotionStatus) =>
   PROMOTION_STATUSES.find((entry) => entry.value === status)?.tone ?? 'neutral'

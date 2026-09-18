@@ -6,6 +6,7 @@ import { navigation, type NavSection } from '@/shared/config/navigation'
 import { useUiStore } from '@/shared/hooks/useUiStore'
 import { useSession } from '@/app/providers/SessionProvider'
 import { Logo } from '@/shared/ui/Logo'
+import { t } from '@/shared/i18n'
 
 /**
  * Navy in both themes — the sidebar is the brand's presence on every screen
@@ -65,13 +66,13 @@ function SidebarSection({ section, collapsed }: { section: NavSection; collapsed
       <NavLink
         to={section.to}
         end
-        title={collapsed ? section.label : undefined}
+        title={collapsed ? t(section.label) : undefined}
         className={({ isActive }) => cn(rowBase, isActive ? rowActive : rowIdle)}
       >
         <Icon className="size-4 shrink-0" />
         {!collapsed ? (
           <>
-            <span className="flex-1 truncate text-left">{section.label}</span>
+            <span className="flex-1 truncate text-left">{t(section.label)}</span>
             {section.badge ? <LifecycleBadge>{section.badge}</LifecycleBadge> : null}
           </>
         ) : null}
@@ -84,13 +85,13 @@ function SidebarSection({ section, collapsed }: { section: NavSection; collapsed
       <button
         type="button"
         onClick={() => toggleSection(section.id)}
-        title={collapsed ? section.label : undefined}
+        title={collapsed ? t(section.label) : undefined}
         className={cn(rowBase, sectionActive ? 'text-chrome-fg' : rowIdle)}
       >
         <Icon className="size-4 shrink-0" />
         {!collapsed ? (
           <>
-            <span className="flex-1 truncate text-left">{section.label}</span>
+            <span className="flex-1 truncate text-left">{t(section.label)}</span>
             {section.badge ? <LifecycleBadge>{section.badge}</LifecycleBadge> : null}
             <ChevronDown className={cn('size-3.5 transition-transform', open && 'rotate-180')} />
           </>
@@ -118,7 +119,7 @@ function SidebarSection({ section, collapsed }: { section: NavSection; collapsed
                 }
               >
                 {item.icon ? <item.icon className="size-3.5 shrink-0" /> : null}
-                <span className="flex-1 truncate">{item.label}</span>
+                <span className="flex-1 truncate">{t(item.label)}</span>
                 {item.badge ? <LifecycleBadge>{item.badge}</LifecycleBadge> : null}
               </NavLink>
             </Fragment>

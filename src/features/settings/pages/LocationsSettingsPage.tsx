@@ -127,7 +127,9 @@ export default function LocationsSettingsPage() {
             return <span className="text-fg-subtle">{t('Empty')}</span>
           return (
             <div>
-              <p className="text-fg tabular-nums">{formatNumber(entry.units)} units</p>
+              <p className="text-fg tabular-nums">
+                {formatNumber(entry.units)} {t('units')}
+              </p>
               <p className="text-fg-subtle text-2xs tabular-nums">
                 {formatMoney(Math.round(entry.value))} {t('at cost')}
               </p>
@@ -244,7 +246,7 @@ export default function LocationsSettingsPage() {
                 className="w-full"
                 value={draft.kind}
                 onChange={(kind) => setDraft((c) => ({ ...c, kind }))}
-                options={LOCATION_KINDS}
+                options={LOCATION_KINDS.map((option) => ({ ...option, label: t(option.label) }))}
               />
             )}
           </Field>

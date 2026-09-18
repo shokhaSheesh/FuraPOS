@@ -27,7 +27,7 @@ export const TRANSFER_STATUSES: {
 ]
 
 export const transferStatusLabel = (status: TransferStatus) =>
-  TRANSFER_STATUSES.find((entry) => entry.value === status)?.label ?? status
+  t(TRANSFER_STATUSES.find((entry) => entry.value === status)?.label ?? status)
 
 export const transferStatusTone = (status: TransferStatus) =>
   TRANSFER_STATUSES.find((entry) => entry.value === status)?.tone ?? 'neutral'

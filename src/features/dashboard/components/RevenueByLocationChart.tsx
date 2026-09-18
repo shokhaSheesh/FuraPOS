@@ -9,7 +9,7 @@ import {
 } from 'recharts'
 import { Skeleton } from '@/shared/ui/Skeleton'
 import { useChartTheme } from '@/shared/lib/chart'
-import { formatDate, formatMoney, formatNumberCompact } from '@/shared/lib/format'
+import { formatDate, formatMoney, formatNumberCompact, locale } from '@/shared/lib/format'
 import type { DashboardSummary } from '../api/summary'
 
 interface Props {
@@ -42,7 +42,7 @@ export function RevenueByLocationChart({ data, locations, loading }: Props) {
           <XAxis
             dataKey="date"
             tickFormatter={(value: string) =>
-              new Date(value).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })
+              new Date(value).toLocaleDateString(locale(), { day: '2-digit', month: 'short' })
             }
             tick={{ fill: ink.label, fontSize: 11 }}
             axisLine={{ stroke: ink.axis }}

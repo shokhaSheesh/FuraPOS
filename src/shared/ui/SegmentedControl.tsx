@@ -1,4 +1,5 @@
 import { cn } from '@/shared/lib/cn'
+import { t } from '@/shared/i18n'
 
 /**
  * A two-or-three way switch for a choice that changes what the rest of the form
@@ -38,7 +39,7 @@ export function SegmentedControl<T extends string>({
                 : 'text-fg-muted hover:text-fg',
             )}
           >
-            {option.label}
+            {t(option.label)}
           </button>
         )
       })}

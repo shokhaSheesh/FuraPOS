@@ -402,7 +402,7 @@ function LineTable({ order }: { order: PartnerOrder }) {
                 </td>
                 <td className="px-4 py-2 text-right tabular-nums">
                   {left === 0 ? (
-                    <span className="text-success">complete</span>
+                    <span className="text-success">{t('complete')}</span>
                   ) : (
                     <span className="text-warning font-medium">{formatNumber(left)}</span>
                   )}

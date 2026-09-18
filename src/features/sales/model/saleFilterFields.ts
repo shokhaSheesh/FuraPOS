@@ -1,10 +1,11 @@
 import type { FieldOverrides } from '@/shared/lib/columnFilterFields'
 import { PAYMENT_METHODS, SALE_CHANNELS, SALE_STATUSES, type Sale } from './sale'
+import { t } from '@/shared/i18n'
 
 const labelFrom =
   (list: readonly { value: string; label: string }[]) =>
   (value: string): string =>
-    list.find((entry) => entry.value === value)?.label ?? value
+    t(list.find((entry) => entry.value === value)?.label ?? value)
 
 /**
  * The sales ledger's search panel: its columns, with the few whose value is

@@ -73,7 +73,9 @@ export default function OnlineSalesListPage() {
         header: t('Items'),
         meta: { align: 'right' },
         cell: ({ row }) => (
-          <span className="tabular-nums">{formatNumber(unitsOf(row.original))} pcs</span>
+          <span className="tabular-nums">
+            {formatNumber(unitsOf(row.original))} {t('pcs')}
+          </span>
         ),
       },
       {

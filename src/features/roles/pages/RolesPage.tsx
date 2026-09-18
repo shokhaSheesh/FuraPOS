@@ -18,7 +18,7 @@ import { formatNumber } from '@/shared/lib/format'
 import type { TableColumn } from '@/shared/components/table/features'
 import { useRoleActions, useRoles, type RoleRow } from '../api/roles'
 import { roleDraftSchema } from '../model/role'
-import { t } from '@/shared/i18n'
+import { t, tn } from '@/shared/i18n'
 
 /**
  * Access & roles.
@@ -132,7 +132,7 @@ export default function RolesPage() {
             ))}
             {row.original.modules.length > 4 ? (
               <span className="text-fg-subtle text-2xs">
-                +{row.original.modules.length - 4} more
+                +{row.original.modules.length - 4} {t('more')}
               </span>
             ) : null}
             {row.original.modules.length === 0 ? (
@@ -233,7 +233,7 @@ export default function RolesPage() {
         title={t('Delete the {name} role?', { name: deleting?.name })}
         body={
           deleting?.holders
-            ? `${formatNumber(deleting.holders)} ${deleting.holders === 1 ? 'person holds' : 'people hold'} this role. Move them to another role first — otherwise they would be left holding a role that does not exist.`
+            ? `${formatNumber(deleting.holders)} ${tn(deleting.holders, 'person holds', 'people hold')} this role. Move them to another role first — otherwise they would be left holding a role that does not exist.`
             : 'Nobody holds this role, so nothing changes for anyone.'
         }
         confirmLabel={t('Delete')}

@@ -6,6 +6,7 @@ import { Badge } from '@/shared/ui/Badge'
 import { useUiStore } from '@/shared/hooks/useUiStore'
 import { useSession } from '@/app/providers/SessionProvider'
 import { useTheme } from '@/app/providers/ThemeProvider'
+import { LanguageMenu } from '@/shared/i18n'
 import { paths } from '@/shared/config/paths'
 
 const menuContentClass =
@@ -25,6 +26,7 @@ export function Topbar() {
       </Button>
 
       <div className="ml-auto flex items-center gap-1">
+        <LanguageMenu />
         <Button
           variant="ghost"
           size="icon"

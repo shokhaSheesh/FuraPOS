@@ -18,7 +18,7 @@ import {
 } from 'date-fns'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/shared/lib/cn'
-import { LOCALE } from '@/shared/lib/format'
+import { locale } from '@/shared/lib/format'
 
 export interface DateRange {
   from: Date | null
@@ -34,13 +34,13 @@ const WEEK_STARTS_ON = 1 as const
 
 const monthNames = (format: 'short' | 'long') =>
   Array.from({ length: 12 }, (_, month) =>
-    new Intl.DateTimeFormat(LOCALE, { month: format }).format(new Date(2020, month, 1)),
+    new Intl.DateTimeFormat(locale(), { month: format }).format(new Date(2020, month, 1)),
   )
 
 const weekdayNames = () => {
   const base = startOfWeek(new Date(2021, 0, 4), { weekStartsOn: WEEK_STARTS_ON })
   return Array.from({ length: 7 }, (_, i) =>
-    new Intl.DateTimeFormat(LOCALE, { weekday: 'short' }).format(addDays(base, i)),
+    new Intl.DateTimeFormat(locale(), { weekday: 'short' }).format(addDays(base, i)),
   )
 }
 
@@ -72,7 +72,7 @@ export function Calendar({
 
   const title =
     view === 'days'
-      ? new Intl.DateTimeFormat(LOCALE, { month: 'long', year: 'numeric' }).format(month)
+      ? new Intl.DateTimeFormat(locale(), { month: 'long', year: 'numeric' }).format(month)
       : view === 'months'
         ? String(month.getFullYear())
         : `${yearPageStart} – ${yearPageStart + YEARS_PER_PAGE - 1}`

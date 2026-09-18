@@ -18,7 +18,7 @@ import { t } from '@/shared/i18n'
  */
 export function AddProductsMenu({
   onUploadSpreadsheet,
-  label = 'Add products',
+  label = t('Add products'),
 }: {
   onUploadSpreadsheet: () => void
   label?: string

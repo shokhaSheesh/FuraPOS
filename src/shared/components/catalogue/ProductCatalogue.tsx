@@ -218,15 +218,15 @@ export function ProductCatalogue<R extends CatalogueRow>({
             icon={<Layers />}
             imageUrl={category.imageUrl}
             name={category.name}
-            detail={`${formatNumber(counts.get(category.id) ?? 0)} products`}
+            detail={t('{count} products', { count: formatNumber(counts.get(category.id) ?? 0) })}
             onClick={() => goTo([category.id])}
           />
         ))}
         <CategoryTile
           active={path.length === 0}
           icon={<LayoutGrid />}
-          name="All categories"
-          detail={`${formatNumber(groups.length)} products`}
+          name={t('All categories')}
+          detail={t('{count} products', { count: formatNumber(groups.length) })}
           onClick={() => goTo([])}
         />
       </div>
@@ -242,8 +242,8 @@ export function ProductCatalogue<R extends CatalogueRow>({
               compact
               active={path.length === level.depth + 1}
               icon={<LayoutGrid />}
-              name={`All in ${parent?.name ?? 'this category'}`}
-              detail={`${formatNumber(counts.get(level.id) ?? 0)} products`}
+              name={t('All in {category}', { category: parent?.name ?? t('this category') })}
+              detail={t('{count} products', { count: formatNumber(counts.get(level.id) ?? 0) })}
               onClick={() => goTo(path.slice(0, level.depth + 1))}
             />
             {level.children.map((child) => (
@@ -254,7 +254,7 @@ export function ProductCatalogue<R extends CatalogueRow>({
                 icon={<Folder />}
                 imageUrl={child.imageUrl}
                 name={child.name}
-                detail={`${formatNumber(counts.get(child.id) ?? 0)} products`}
+                detail={t('{count} products', { count: formatNumber(counts.get(child.id) ?? 0) })}
                 onClick={() => goTo([...path.slice(0, level.depth + 1), child.id])}
               />
             ))}
@@ -292,7 +292,7 @@ export function ProductCatalogue<R extends CatalogueRow>({
               onChange={setModel}
               disabled={make === ALL}
               options={[
-                { value: ALL, label: make === ALL ? 'Pick a make first' : 'All models' },
+                { value: ALL, label: make === ALL ? t('Pick a make first') : t('All models') },
                 ...models.map((m) => ({ value: m, label: m })),
               ]}
             />

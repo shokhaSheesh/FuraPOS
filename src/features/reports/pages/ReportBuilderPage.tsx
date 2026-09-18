@@ -185,7 +185,7 @@ export default function ReportBuilderPage() {
             </Field>
             <Field
               label={t('Data')}
-              hint={REPORT_SOURCES.find((s) => s.value === state.source)?.hint}
+              hint={t(REPORT_SOURCES.find((s) => s.value === state.source)?.hint ?? '')}
             >
               {(p) => (
                 <Select
@@ -250,7 +250,7 @@ export default function ReportBuilderPage() {
                     onChange={(chartMeasure) => setState((c) => ({ ...c, chartMeasure }))}
                     options={state.measures.map((key) => ({
                       value: key,
-                      label: schema.measures.find((m) => m.key === key)?.label ?? key,
+                      label: t(schema.measures.find((m) => m.key === key)?.label ?? key),
                     }))}
                   />
                 )}

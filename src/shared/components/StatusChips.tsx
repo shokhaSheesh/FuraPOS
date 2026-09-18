@@ -34,7 +34,7 @@ export function StatusChips<T extends string>({
         const count = counts ? (counts[option.value ?? 'all'] ?? 0) : undefined
         return (
           <button
-            key={t(option.label)}
+            key={option.label}
             type="button"
             aria-pressed={active}
             onClick={() => onChange(option.value)}
@@ -46,7 +46,7 @@ export function StatusChips<T extends string>({
                 : 'border-border bg-surface text-fg-muted hover:text-fg hover:border-border-strong',
             )}
           >
-            {option.label}
+            {t(option.label)}
             {count === undefined ? null : (
               <span
                 className={cn(

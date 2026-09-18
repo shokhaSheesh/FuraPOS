@@ -134,8 +134,8 @@ export default function SaleDetailPage() {
         }
         below={
           <div className="flex flex-wrap items-center gap-2">
-            <Badge tone={status?.tone ?? 'neutral'}>{status?.label ?? sale.status}</Badge>
-            <Badge>{SALE_CHANNELS.find((c) => c.value === sale.channel)?.label}</Badge>
+            <Badge tone={status?.tone ?? 'neutral'}>{t(status?.label ?? sale.status)}</Badge>
+            <Badge>{t(SALE_CHANNELS.find((c) => c.value === sale.channel)?.label ?? '')}</Badge>
             {sale.delivery ? <Badge tone="info">{t('Delivery')}</Badge> : null}
             {sale.expiresAt ? (
               <Badge tone="warning">
@@ -356,11 +356,11 @@ function Overview({ sale }: { sale: Sale }) {
             ) : null}
             <Row
               label={t('Source')}
-              value={SALE_CHANNELS.find((c) => c.value === sale.channel)?.label ?? '—'}
+              value={t(SALE_CHANNELS.find((c) => c.value === sale.channel)?.label ?? '—')}
             />
             <Row
               label={t('Payment')}
-              value={PAYMENT_METHODS.find((m) => m.value === sale.paymentMethod)?.label ?? '—'}
+              value={t(PAYMENT_METHODS.find((m) => m.value === sale.paymentMethod)?.label ?? '—')}
             />
             <Row label={t('Created')} value={formatDateTime(sale.createdAt)} />
             <Row label={t('Updated')} value={formatDateTime(sale.updatedAt)} />

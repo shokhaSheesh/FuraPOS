@@ -60,8 +60,8 @@ export function ReportChartView({
   const { series, brand, ink } = useChartTheme()
   const data = chartData(result, dimension, measure, chart)
   const format = findMeasure(source, measure)?.format ?? 'number'
-  const measureLabel = findMeasure(source, measure)?.label ?? measure
-  const dimensionLabel = findDimension(source, dimension)?.label ?? dimension
+  const measureLabel = t(findMeasure(source, measure)?.label ?? measure)
+  const dimensionLabel = t(findDimension(source, dimension)?.label ?? dimension)
 
   const render = (value: number) =>
     format === 'money'

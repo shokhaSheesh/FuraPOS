@@ -85,7 +85,7 @@ export function Steps({
                 {done ? <Check className="size-3.5" /> : number}
               </span>
               <span className={cn('truncate', active ? 'text-fg font-medium' : 'text-fg-muted')}>
-                {label}
+                {t(label)}
               </span>
             </button>
           </li>

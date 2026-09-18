@@ -101,7 +101,7 @@ export function NewOrderDialog({
                     options={ORDER_KINDS.map(({ value, label }) => ({ value, label }))}
                   />
                   <p className="text-fg-subtle text-2xs">
-                    {ORDER_KINDS.find((k) => k.value === field.value)?.hint}
+                    {t(ORDER_KINDS.find((k) => k.value === field.value)?.hint ?? '')}
                   </p>
                 </div>
               )}

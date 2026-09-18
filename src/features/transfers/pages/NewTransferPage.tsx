@@ -515,7 +515,7 @@ export default function NewTransferPage() {
                   />
                 </div>
                 <p className="text-fg-subtle text-2xs">
-                  {TRANSFER_KINDS.find((entry) => entry.value === kind)?.hint}
+                  {t(TRANSFER_KINDS.find((entry) => entry.value === kind)?.hint ?? '')}
                 </p>
               </CardHeader>
               <CardBody className="grid items-start gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">

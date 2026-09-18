@@ -42,7 +42,7 @@ export function ResultTable({
           <tr className="text-fg-muted text-2xs tracking-wide uppercase">
             {dimensions.map((key) => (
               <th key={key} className="px-3 py-2 text-left font-semibold">
-                {findDimension(source, key)?.label ?? key}
+                {t(findDimension(source, key)?.label ?? key)}
               </th>
             ))}
             {dimensions.length === 0 ? (
@@ -50,7 +50,7 @@ export function ResultTable({
             ) : null}
             {measures.map((key) => (
               <th key={key} className="px-3 py-2 text-right font-semibold">
-                {findMeasure(source, key)?.label ?? key}
+                {t(findMeasure(source, key)?.label ?? key)}
               </th>
             ))}
           </tr>

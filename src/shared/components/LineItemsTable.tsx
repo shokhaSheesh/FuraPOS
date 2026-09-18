@@ -244,7 +244,7 @@ export function LineItemsTable<T extends LineRow>({
                 <span>
                   <span className="text-fg block">{action.label}</span>
                   {action.hint ? (
-                    <span className="text-fg-subtle text-2xs block">{action.hint}</span>
+                    <span className="text-fg-subtle text-2xs block">{t(action.hint)}</span>
                   ) : null}
                 </span>
               </DropdownMenu.Item>

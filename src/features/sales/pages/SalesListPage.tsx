@@ -85,13 +85,13 @@ const columns: TableColumn<Sale>[] = [
   {
     accessorKey: 'channel',
     header: 'Channel',
-    cell: ({ row }) => SALE_CHANNELS.find((c) => c.value === row.original.channel)?.label ?? '—',
+    cell: ({ row }) => t(SALE_CHANNELS.find((c) => c.value === row.original.channel)?.label ?? '—'),
   },
   {
     accessorKey: 'paymentMethod',
     header: 'Payment',
     cell: ({ row }) =>
-      PAYMENT_METHODS.find((m) => m.value === row.original.paymentMethod)?.label ?? '—',
+      t(PAYMENT_METHODS.find((m) => m.value === row.original.paymentMethod)?.label ?? '—'),
   },
   {
     id: 'items',
@@ -168,7 +168,9 @@ const columns: TableColumn<Sale>[] = [
     header: 'Status',
     cell: ({ row }) => {
       const status = SALE_STATUSES.find((s) => s.value === row.original.status)
-      return <Badge tone={status?.tone ?? 'neutral'}>{status?.label ?? row.original.status}</Badge>
+      return (
+        <Badge tone={status?.tone ?? 'neutral'}>{t(status?.label ?? row.original.status)}</Badge>
+      )
     },
   },
 ]

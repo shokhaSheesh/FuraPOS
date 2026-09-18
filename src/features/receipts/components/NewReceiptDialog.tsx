@@ -95,7 +95,7 @@ export function NewReceiptDialog({
                     }))}
                   />
                   <p className="text-fg-subtle text-2xs">
-                    {PROCUREMENT_KINDS.find((k) => k.value === field.value)?.hint}
+                    {t(PROCUREMENT_KINDS.find((k) => k.value === field.value)?.hint ?? '')}
                   </p>
                 </div>
               )}

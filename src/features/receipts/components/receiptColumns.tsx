@@ -108,7 +108,10 @@ export function buildReceiptColumns({
       header: t('Type'),
       cell: ({ row }) => (
         <Badge tone="neutral">
-          {PROCUREMENT_KINDS.find((k) => k.value === row.original.kind)?.label ?? row.original.kind}
+          {t(
+            PROCUREMENT_KINDS.find((k) => k.value === row.original.kind)?.label ??
+              row.original.kind,
+          )}
         </Badge>
       ),
     },

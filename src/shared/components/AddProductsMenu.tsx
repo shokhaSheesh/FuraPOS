@@ -65,8 +65,8 @@ export function AddProductsMenu({
                 <option.icon className="size-4" />
               </span>
               <span className="min-w-0">
-                <span className="text-fg block text-sm font-medium">{option.label}</span>
-                <span className="text-fg-subtle text-2xs block">{option.hint}</span>
+                <span className="text-fg block text-sm font-medium">{t(option.label)}</span>
+                <span className="text-fg-subtle text-2xs block">{t(option.hint)}</span>
               </span>
             </DropdownMenu.Item>
           ))}

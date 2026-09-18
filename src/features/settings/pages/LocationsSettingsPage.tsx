@@ -112,7 +112,9 @@ export default function LocationsSettingsPage() {
         enableHiding: false,
         cell: ({ row }) => (
           <Badge tone="neutral">
-            {LOCATION_KINDS.find((k) => k.value === row.original.kind)?.label ?? row.original.kind}
+            {t(
+              LOCATION_KINDS.find((k) => k.value === row.original.kind)?.label ?? row.original.kind,
+            )}
           </Badge>
         ),
       },

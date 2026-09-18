@@ -471,7 +471,7 @@ export function DataTable<T extends RowData>({
                     </span>
                     <span className="flex-1 truncate">
                       {typeof column.columnDef.header === 'string'
-                        ? column.columnDef.header
+                        ? t(column.columnDef.header)
                         : column.id}
                     </span>
                     {/* Ordering by arrows here works on every table. Tables
@@ -563,7 +563,15 @@ export function DataTable<T extends RowData>({
                     >
                       {/* No sort control on a heading (client request): a heading
                           is for reading and for dragging. */}
-                      {header.isPlaceholder ? null : <table.FlexRender header={header} />}
+                      {header.isPlaceholder ? null /* A heading written as plain text is translated here, so
+                           a column table declared at module scope — where `t()`
+                           would be read once at import — still follows the
+                           language on screen. */ : typeof header.column.columnDef.header ===
+                        'string' ? (
+                        t(header.column.columnDef.header)
+                      ) : (
+                        <table.FlexRender header={header} />
+                      )}
                       {resizable ? (
                         <span
                           role="separator"

@@ -157,6 +157,11 @@ interface CatalogState {
   locations: typeof locations
 
   createSale: (input: CreateSaleInput) => Sale
+  /**
+   * Replaces what a sale holds — its lines, buyer and payment — keeping its
+   * number and when it was started. A parked sale finished at the till.
+   */
+  rewriteSale: (id: string, input: CreateSaleInput) => Sale | undefined
   updateSale: (id: string, patch: { status?: SaleStatus; paid?: number }) => Sale | undefined
   deleteVariation: (id: string) => void
   /** Inline toggles on the catalogue row, as in the reference product. */
@@ -736,6 +741,61 @@ const usageText = ({ products, trucks }: { products: number; trucks: number }) =
     .filter(Boolean)
     .join(' and ')
 
+/**
+ * A sale built from what the till or a form hands over. One function for a new
+ * sale and for finishing one that was parked, so the two can never disagree
+ * about totals, the drawer it lands in or who it is attributed to.
+ */
+function saleFrom(
+  state: Pick<CatalogState, 'clients' | 'locations' | 'drivers' | 'cashShifts'>,
+  input: CreateSaleInput,
+  identity: Pick<Sale, 'id' | 'number' | 'createdAt'>,
+): Sale {
+  const totals = computeTotals(input.lines, input.paid)
+  const client = state.clients.find((c) => c.id === input.clientId)
+  const now = new Date().toISOString()
+  return {
+    id: identity.id,
+    number: identity.number,
+    status: input.status,
+    channel: input.channel,
+    clientId: input.clientId,
+    clientName: client?.name ?? null,
+    locationId: input.locationId,
+    locationName: state.locations.find((l) => l.id === input.locationId)?.name ?? '—',
+    // No auth in this build: every sale is made by the signed-in user.
+    sellerId: 'emp-1',
+    sellerName: 'Akhmet Dauletmuratov',
+    promotionId: input.promotionId ?? null,
+    /*
+        The two facts the customer-facing apps read: the driver so his own
+        "My orders" can show an offline purchase, and the truck so the
+        autopark owner sees an operation on the right vehicle.
+      */
+    driverId: input.driverId ?? null,
+    driverName: state.drivers.find((d) => d.id === input.driverId)?.fullName ?? null,
+    truckPlate: input.truckPlate ?? null,
+    paymentMethod: input.paymentMethod,
+    // Only cash reaches a drawer. The New sale screen refuses a cash sale
+    // with no shift open, so this is the record of which one took it.
+    shiftId:
+      input.paymentMethod === 'cash'
+        ? (openShiftFor(state.cashShifts, input.locationId)?.id ?? null)
+        : null,
+    comment: input.comment || null,
+    lines: input.lines,
+    subtotal: totals.subtotal,
+    discount: totals.discount,
+    total: totals.total,
+    paid: input.paid,
+    debt: Math.max(0, totals.total - input.paid),
+    expiresAt: input.expiresAt,
+    createdAt: identity.createdAt,
+    updatedAt: now,
+    finishedAt: input.status === 'completed' ? now : null,
+  }
+}
+
 export const useDataStore = create<CatalogState>((set, get) => ({
   products: seedProducts,
   variations: seedVariations,
@@ -774,52 +834,20 @@ export const useDataStore = create<CatalogState>((set, get) => ({
   createSale: (input) => {
     const sales = get().sales
     const sequence = sales.length + 1
-    const totals = computeTotals(input.lines, input.paid)
-    const client = get().clients.find((c) => c.id === input.clientId)
-    const now = new Date().toISOString()
-
-    const sale: Sale = {
+    const sale = saleFrom(get(), input, {
       id: `sale-${sequence}`,
       number: `S-${String(sequence).padStart(5, '0')}`,
-      status: input.status,
-      channel: input.channel,
-      clientId: input.clientId,
-      clientName: client?.name ?? null,
-      locationId: input.locationId,
-      locationName: get().locations.find((l) => l.id === input.locationId)?.name ?? '—',
-      // No auth in this build: every sale is made by the signed-in user.
-      sellerId: 'emp-1',
-      sellerName: 'Akhmet Dauletmuratov',
-      promotionId: input.promotionId ?? null,
-      /*
-        The two facts the customer-facing apps read: the driver so his own
-        "My orders" can show an offline purchase, and the truck so the
-        autopark owner sees an operation on the right vehicle.
-      */
-      driverId: input.driverId ?? null,
-      driverName: get().drivers.find((d) => d.id === input.driverId)?.fullName ?? null,
-      truckPlate: input.truckPlate ?? null,
-      paymentMethod: input.paymentMethod,
-      // Only cash reaches a drawer. The New sale screen refuses a cash sale
-      // with no shift open, so this is the record of which one took it.
-      shiftId:
-        input.paymentMethod === 'cash'
-          ? (openShiftFor(get().cashShifts, input.locationId)?.id ?? null)
-          : null,
-      comment: input.comment || null,
-      lines: input.lines,
-      subtotal: totals.subtotal,
-      discount: totals.discount,
-      total: totals.total,
-      paid: input.paid,
-      debt: Math.max(0, totals.total - input.paid),
-      expiresAt: input.expiresAt,
-      createdAt: now,
-      updatedAt: now,
-      finishedAt: input.status === 'completed' ? now : null,
-    }
-
+      createdAt: new Date().toISOString(),
+    })
     set({ sales: [...sales, sale] })
+    return sale
+  },
+
+  rewriteSale: (id, input) => {
+    const existing = get().sales.find((sale) => sale.id === id)
+    if (!existing) return undefined
+    const sale = saleFrom(get(), input, existing)
+    set({ sales: get().sales.map((entry) => (entry.id === id ? sale : entry)) })
     return sale
   },
 

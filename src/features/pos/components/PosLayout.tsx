@@ -1,6 +1,6 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Link, NavLink, Outlet } from 'react-router'
-import { LogOut, ShoppingCart, Wallet } from 'lucide-react'
+import { Clock, LogOut, ShoppingCart, Wallet } from 'lucide-react'
 import { Button } from '@/shared/ui/Button'
 import { Logo } from '@/shared/ui/Logo'
 import { Select } from '@/shared/ui/Select'
@@ -13,13 +13,30 @@ import { useDataStore } from '@/data/store'
 import { useOpenShiftAt } from '@/features/cashShifts/api/shifts'
 import { useTillStore } from '../model/tillStore'
 
-const SECTIONS = [
+const SECTIONS: {
+  to: string
+  label: string
+  icon: typeof ShoppingCart
+  end: boolean
+  permission: string
+  badge?: 'open' | 'parked'
+}[] = [
   {
     to: paths.sales.newSale,
     label: 'Sale',
     icon: ShoppingCart,
     end: true,
     permission: 'sales.orders.create',
+    badge: 'open',
+  },
+  // Sales put aside for a customer who will be back (client request).
+  {
+    to: paths.sales.tillParked,
+    label: 'Parked',
+    icon: Clock,
+    end: false,
+    permission: 'sales.orders.create',
+    badge: 'parked',
   },
   {
     to: paths.sales.tillCash,
@@ -41,7 +58,14 @@ export function PosLayout() {
   const locations = useDataStore((s) => s.locations)
   const locationId = useTillStore((s) => s.locationId)
   const setLocation = useTillStore((s) => s.setLocation)
-  const cartLines = useTillStore((s) => s.cart.length)
+  /** Sales open on the till with something in them. */
+  const openSales = useTillStore((s) => s.tabs.filter((tab) => tab.cart.length > 0).length)
+  const sales = useDataStore((s) => s.sales)
+  const parkedHere = useMemo(
+    () =>
+      sales.filter((sale) => sale.status === 'postponed' && sale.locationId === locationId).length,
+    [sales, locationId],
+  )
   const openShift = useOpenShiftAt(locationId)
 
   // The cashier's own shop when their account names one.
@@ -76,9 +100,13 @@ export function PosLayout() {
             >
               <section.icon />
               {t(section.label)}
-              {section.to === paths.sales.newSale && cartLines > 0 ? (
+              {section.badge === 'open' && openSales > 0 ? (
                 <span className="bg-primary text-primary-fg min-w-5 rounded-full px-1.5 text-center text-[11px] leading-5 font-semibold">
-                  {cartLines}
+                  {openSales}
+                </span>
+              ) : section.badge === 'parked' && parkedHere > 0 ? (
+                <span className="bg-warning-soft text-warning min-w-5 rounded-full px-1.5 text-center text-[11px] leading-5 font-semibold">
+                  {parkedHere}
                 </span>
               ) : null}
             </NavLink>
@@ -91,7 +119,7 @@ export function PosLayout() {
           onChange={(next) => {
             if (next === locationId) return
             setLocation(next)
-            if (cartLines) toast.info(t('Cart cleared — stock differs by location'))
+            if (openSales) toast.info(t('Cart cleared — stock differs by location'))
           }}
           options={locations.map((l) => ({ value: l.id, label: l.name }))}
         />

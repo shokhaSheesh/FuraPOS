@@ -23,27 +23,30 @@ Two very different surfaces, and this build is the first one:
    A full-screen cash desk opened from the sidebar and from every "New sale" button (same tab —
    the demo data lives in one tab's memory, so a sale rung up elsewhere would never reach the ledger); it **replaces the New sale form**. Same catalogue as every document (categories, make →
    model, cards; a single-variation product goes straight into the cart on a tap), a cart with the
-   customer, the promotion that applies, payment method and change, and Pay (no postponing at
-   the till — client request). It writes
+   customer, the promotion that applies, payment method and change, and Pay or Park. It writes
    exactly the sale the form did — see `src/features/pos/`. Still part of this web app, not a
    separate domain or an iframed panel as OX does it; no hardware (printer, drawer, scanner) yet.
-   **Layout** (`PosLayout`): one top bar with the till's two sections as **tabs — «Продажа» and
-   «Касса»** — then the shop and whether its drawer is open. Tabs, not a rail, because «Продажа»'s
+   **Layout** (`PosLayout`): one top bar with the till's three sections as **tabs — «Продажа»,
+   «Отложки» and «Касса»** — then the shop and whether its drawer is open. Tabs, not a rail, because «Продажа»'s
    left edge belongs to its **«Каталог запчастей»** sidebar: «По товарам» (categories →
    sub-categories) or «По автомобилям» (truck makes → models), with a search that narrows the tree;
    only what this shop stocks, with counts. The products show as **wide rows** (client reference):
    photo, name, Артикул, OEM, brand and make tags | in stock here, location, shelf cell | price |
    cart button — `renderCard` and `browse` on `<ProductCatalogue>`. The customer is two steps:
-   **1. find the driver** — one search field over owner-drivers and autopark drivers (F2), with an
-   add-driver button beside it; **2. choose the truck** (F3). The truck decides whose purchase it
+   **1. find the driver** — one search field over owner-drivers and autopark drivers, with an
+   add-driver button beside it; **2. choose the truck**. No keyboard shortcuts (client request). The truck decides whose purchase it
    is: his own truck is his own, his autopark's truck puts the sale on the autopark's account; a
    single truck is chosen for him. See `src/features/pos/model/buyer.ts`. Payment is cash,
    «Перевод» (the `card` method, renamed) or on credit — credit needs an account; no bank transfer,
-   no delivery, no postponing. **«Касса»** (`/pos/cash`): cash in every shop's drawer now, and for
+   no delivery. **Several sales at once** (client request): numbered tabs above the cart, `+` opens
+   another, each with its own cart, driver and payment. **«Отложки»** (`/pos/parked`, client
+   request): «Отложить» saves the sale as `postponed` and frees the tab; «Продолжить» reopens it
+   in a tab where it stopped, and paying finishes that same sale (`rewriteSale` keeps its id and
+   number) rather than creating a second one. **«Касса»** (`/pos/cash`): cash in every shop's drawer now, and for
    this shop how it was reached — float + cash sales + paid in − taken out — with the shift opened
    or closed there. **Expenses** (client request) are recorded there as cash-outs on the open shift
-   with a category (meals, transport, household…), never more than the drawer holds. The cart,
-   customer and catalogue choice live in `tillStore`, so switching tabs keeps a half-rung sale.
+   with a category (meals, transport, household…), never more than the drawer holds. The open
+   sales and catalogue choice live in `tillStore`, so switching sections keeps a half-rung sale.
 
 ## Information architecture
 

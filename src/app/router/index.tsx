@@ -77,6 +77,7 @@ const OrderPage = lazy(() => import('@/features/orders/pages/OrderPage'))
 const OrderImportPage = lazy(() => import('@/features/orders/pages/OrderImportPage'))
 const PosPage = lazy(() => import('@/features/pos/pages/PosPage'))
 const PosCashPage = lazy(() => import('@/features/pos/pages/PosCashPage'))
+const PosParkedPage = lazy(() => import('@/features/pos/pages/PosParkedPage'))
 const AllSalesPage = lazy(() => import('@/features/sales/pages/SalesListPage'))
 const SaleDetailPage = lazy(() => import('@/features/sales/pages/SaleDetailPage'))
 
@@ -122,6 +123,7 @@ const routes: RouteObject[] = [
     ),
     children: [
       { index: true, element: page(<PosPage />, 'sales.orders.create') },
+      { path: paths.sales.tillParked, element: page(<PosParkedPage />, 'sales.orders.create') },
       { path: paths.sales.tillCash, element: page(<PosCashPage />, 'sales.cashShifts.view') },
     ],
   },

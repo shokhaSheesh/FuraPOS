@@ -2394,4 +2394,29 @@ export const ru: Dictionary = {
   'Nothing in the catalogue matches': 'В каталоге ничего не найдено',
   Collapse: 'Свернуть',
   Expand: 'Развернуть',
+  Parked: 'Отложки',
+  Park: 'Отложить',
+  'Put this sale aside and serve the next customer':
+    'Отложить эту продажу и обслужить следующего покупателя',
+  '{number} parked — pick it up from «Отложки»':
+    '{number} отложена — продолжить можно в «Отложках»',
+  'Close sale {number}': 'Закрыть продажу {number}',
+  'Another sale': 'Ещё одна продажа',
+  'Close sale {number}?': 'Закрыть продажу {number}?',
+  'Its cart has {count} {products} and they will be dropped. To come back to it later, park it instead.':
+    'В корзине {count} {products} — они пропадут. Чтобы вернуться к ней позже, отложите её.',
+  'Close it': 'Закрыть',
+  'Sales put aside for a customer who will be back. Pick one up where it stopped.':
+    'Продажи, отложенные для покупателя, который вернётся. Продолжите с того места, где остановились.',
+  'Nothing is parked here': 'Отложенных продаж нет',
+  'On a sale, «Отложить» puts it aside and frees the till for the next customer.':
+    'Кнопка «Отложить» в продаже откладывает её и освобождает кассу для следующего покупателя.',
+  'parked {when}': 'отложена {when}',
+  'Go to sale {number}': 'Перейти к продаже {number}',
+  'Pick it up': 'Продолжить',
+  'Delete {number}': 'Удалить {number}',
+  'Delete {number}?': 'Удалить {number}?',
+  'The customer is not coming back for it. It moves to deleted sales and can be restored from the back office.':
+    'Покупатель за ней не вернётся. Продажа уйдёт в удалённые — восстановить её можно в бэк-офисе.',
+  'Carrying on with parked sale {number}': 'Продолжение отложенной продажи {number}',
 }

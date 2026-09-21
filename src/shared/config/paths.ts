@@ -24,6 +24,8 @@ export const paths = {
     newSale: '/pos',
     /** The till's cash desk: the drawer at each shop, and what was spent from it. */
     tillCash: '/pos/cash',
+    /** Sales parked at the till for a customer who will be back. */
+    tillParked: '/pos/parked',
     orders: '/sales/orders', // OX: /app/sells/orders
     /**
      * A status view is the ledger with a filter, not a page of its own — the

@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import {
   Banknote,
   ChevronDown,
+  Clock,
   ArrowRightLeft,
   HandCoins,
   Minus,
@@ -26,7 +27,6 @@ import { paths } from '@/shared/config/paths'
 import { t, tn } from '@/shared/i18n'
 import { useDataStore } from '@/data/store'
 import type { VariationRow } from '@/features/products/model/product'
-import { useCreateSale } from '@/features/sales/api/sales'
 import {
   computeTotals,
   SALE_CHANNELS,
@@ -43,8 +43,9 @@ import { addOne, quantityIn, setQuantity, unitsIn } from '../model/cart'
 import { TillCatalogue, type TillRow } from '../components/TillCatalogue'
 import { TillCatalogueSidebar, browseTitle } from '../components/TillCatalogueSidebar'
 import { TillCustomer } from '../components/TillCustomer'
-import { needsTruck } from '../model/buyer'
-import { useTillStore } from '../model/tillStore'
+import { WALK_IN, needsTruck, type TillBuyer } from '../model/buyer'
+import { useActiveTab, useTillStore } from '../model/tillStore'
+import { SaleTabs } from '../components/SaleTabs'
 
 const PAYMENTS: { value: PaymentMethod; label: string; icon: typeof Banknote }[] = [
   { value: 'cash', label: 'Cash', icon: Banknote },
@@ -69,30 +70,30 @@ export default function PosPage() {
   const locations = useDataStore((s) => s.locations)
   const variations = useDataStore((s) => s.variations)
   const sales = useDataStore((s) => s.sales)
-  const createSale = useCreateSale()
+  const createSale = useDataStore((s) => s.createSale)
 
-  // The session — shop, cart, buyer — outlives a step over to «Касса».
+  // The session — shop, open sales, catalogue — outlives a step to another tab.
   const locationId = useTillStore((state) => state.locationId) ?? ''
-  const cart = useTillStore((state) => state.cart)
+  const tab = useActiveTab()
+  const update = useTillStore((state) => state.update)
   const setCart = useTillStore((state) => state.setCart)
-  const buyer = useTillStore((state) => state.buyer)
-  const setBuyer = useTillStore((state) => state.setBuyer)
   const last = useTillStore((state) => state.last)
   const finish = useTillStore((state) => state.finish)
-  const clearSale = useTillStore((state) => state.clear)
   const browse = useTillStore((state) => state.browse)
   const setBrowse = useTillStore((state) => state.setBrowse)
+  const rewriteSale = useDataStore((s) => s.rewriteSale)
   const categories = useDataStore((s) => s.categorySettings)
   const location = locations.find((l) => l.id === locationId)
-  const [payment, setPayment] = useState<PaymentMethod>('cash')
-  const [paidText, setPaidText] = useState('')
-  const [appliedPromotionId, setAppliedPromotionId] = useState<string | null>(null)
+  const { cart, buyer, payment, paidText, channel, comment } = tab
+  const appliedPromotionId = tab.promotionId
+  const setBuyer = (next: TillBuyer) => update({ buyer: next })
+  const setPayment = (next: PaymentMethod) => update({ payment: next })
+  const setPaidText = (next: string) => update({ paidText: next })
+  const setAppliedPromotionId = (next: string | null) => update({ promotionId: next })
+  const setChannel = (next: SaleChannel) => update({ channel: next })
+  const setComment = (next: string) => update({ comment: next })
   /** Everything a counter sale rarely needs, folded away until it does. */
   const [more, setMore] = useState(false)
-  const [channel, setChannel] = useState<SaleChannel>('desk')
-  const [comment, setComment] = useState('')
-  /** Remounts the customer block on a new sale, so its own choices clear too. */
-  const [saleKey, setSaleKey] = useState(0)
 
   const openShift = useOpenShiftAt(locationId)
   const noDrawer = cashSaleBlocked(payment, openShift !== null)
@@ -179,51 +180,59 @@ export default function PosPage() {
   const creditWithoutAccount = payment === 'credit' && buyer.client === null
   const blocked = cart.length === 0 || noDrawer || needsTruck(buyer) || creditWithoutAccount
 
-  /** Back to an empty till: the form's own fields, and the session's cart and buyer. */
-  const resetFields = () => {
-    setPayment('cash')
-    setPaidText('')
-    setAppliedPromotionId(null)
-    setChannel('desk')
-    setComment('')
-    setMore(false)
-    setSaleKey((key) => key + 1)
+  /** Empties the sale on screen, leaving the other open sales alone. */
+  const reset = () =>
+    update({
+      cart: [],
+      buyer: WALK_IN,
+      payment: 'cash',
+      paidText: '',
+      promotionId: null,
+      channel: 'desk',
+      comment: '',
+    })
+
+  /** The sale on screen as the store takes it, in a given state. */
+  const saleInput = (status: SaleStatus, paid: number) => ({
+    clientId: buyer.client?.id ?? null,
+    driverId: buyer.driver?.id ?? null,
+    truckPlate: buyer.truck?.truck.plate ?? null,
+    locationId,
+    paymentMethod: payment,
+    channel,
+    comment,
+    paid,
+    lines: cart,
+    promotionId: appliedPromotionId,
+    expiresAt: null,
+    status,
+  })
+
+  /** Writes the sale — over the parked one it carries on with, when there is one. */
+  const save = (status: SaleStatus, paid: number) => {
+    const input = saleInput(status, paid)
+    return tab.parked ? rewriteSale(tab.parked.id, input) : createSale(input)
   }
 
-  const reset = () => {
-    clearSale()
-    resetFields()
+  const pay = () => {
+    // On credit nothing changes hands; otherwise an empty field means paid in full.
+    const sale = save('completed', payment !== 'credit' ? Number(paidText) || totals.total : 0)
+    if (!sale) return
+    toast.success(t('{number} paid', { number: sale.number }))
+    finish({ id: sale.id, number: sale.number })
   }
 
   /*
-    A till sale is paid and gone. Postponing was dropped at the client's
-    request: an order put aside for later is not something the counter does.
+    Parking (client request): the customer steps out for ten minutes, the sale
+    waits in «Отложки» exactly as it was, and the till is free for the next
+    person. It is a sale in the «Отложено» state, so the back office sees it
+    too; picking it up and paying finishes that same sale.
   */
-  const pay = () => {
-    createSale.mutate(
-      {
-        clientId: buyer.client?.id ?? null,
-        driverId: buyer.driver?.id ?? null,
-        truckPlate: buyer.truck?.truck.plate ?? null,
-        locationId,
-        paymentMethod: payment,
-        channel,
-        comment,
-        // On credit nothing changes hands; otherwise an empty field means paid in full.
-        paid: payment !== 'credit' ? Number(paidText) || totals.total : 0,
-        lines: cart,
-        promotionId: appliedPromotionId,
-        expiresAt: null,
-        status: 'completed' satisfies SaleStatus,
-      },
-      {
-        onSuccess: (sale) => {
-          finish({ id: sale.id, number: sale.number })
-          toast.success(t('{number} paid', { number: sale.number }))
-          resetFields()
-        },
-      },
-    )
+  const park = () => {
+    const sale = save('postponed', 0)
+    if (!sale) return
+    toast.success(t('{number} parked — pick it up from «Отложки»', { number: sale.number }))
+    finish(null)
   }
 
   return (
@@ -244,8 +253,14 @@ export default function PosPage() {
 
         <aside className="border-border bg-surface flex min-h-0 flex-col border-l">
           <div className="border-border space-y-3 border-b p-3">
+            <SaleTabs />
+            {tab.parked ? (
+              <p className="bg-warning-soft text-warning rounded-control px-2.5 py-1.5 text-xs font-medium">
+                {t('Carrying on with parked sale {number}', { number: tab.parked.number })}
+              </p>
+            ) : null}
             <ProductPicker onPick={add} placeholder={t('Scan a barcode or search to add…')} />
-            <TillCustomer key={saleKey} buyer={buyer} onChange={setBuyer} />
+            <TillCustomer key={tab.id} buyer={buyer} onChange={setBuyer} />
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto">
@@ -414,16 +429,22 @@ export default function PosPage() {
               ) : null}
             </div>
 
-            <Button
-              type="button"
-              variant="primary"
-              size="lg"
-              className="w-full"
-              disabled={blocked}
-              onClick={pay}
-            >
-              {t('Pay {total}', { total: formatMoney(totals.total) })}
-            </Button>
+            <div className="grid grid-cols-[auto_1fr] gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                size="lg"
+                disabled={cart.length === 0}
+                onClick={park}
+                title={t('Put this sale aside and serve the next customer')}
+              >
+                <Clock />
+                {t('Park')}
+              </Button>
+              <Button type="button" variant="primary" size="lg" disabled={blocked} onClick={pay}>
+                {t('Pay {total}', { total: formatMoney(totals.total) })}
+              </Button>
+            </div>
             {last && cart.length === 0 ? (
               <p className="text-fg-subtle text-center text-xs">
                 {t('Last sale')}{' '}

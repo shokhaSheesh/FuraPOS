@@ -67,6 +67,42 @@ describe('data store', () => {
     expect(sale.number).toMatch(/^S-\d{5}$/)
   })
 
+  it('finishes a parked sale in place, not as a second sale', () => {
+    const store = useDataStore.getState()
+    const input = {
+      clientId: null,
+      locationId: 'loc-2',
+      channel: 'desk' as const,
+      paymentMethod: 'cash' as const,
+      comment: '',
+      paid: 0,
+      lines: [line()],
+      status: 'postponed' as const,
+      expiresAt: null,
+    }
+    const parked = store.createSale(input)
+    const count = useDataStore.getState().sales.length
+
+    // Back ten minutes later with one more of the part, and pays.
+    const paid = useDataStore.getState().rewriteSale(parked.id, {
+      ...input,
+      lines: [line({ quantity: 3 })],
+      paid: 300_000,
+      status: 'completed',
+    })
+
+    expect(useDataStore.getState().sales).toHaveLength(count)
+    expect(paid).toMatchObject({
+      id: parked.id,
+      number: parked.number,
+      createdAt: parked.createdAt,
+      status: 'completed',
+      total: 300_000,
+      debt: 0,
+    })
+    expect(paid?.finishedAt).not.toBeNull()
+  })
+
   it('caps a payment at the total and clears the debt', () => {
     const sale = useDataStore.getState().createSale({
       clientId: null,

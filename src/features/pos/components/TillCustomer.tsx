@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import {
   ChevronRight,
   Search,
@@ -40,9 +40,7 @@ function driverKind(driver: Driver) {
  * 1. **Find the driver** — owner-drivers and autopark drivers in one search.
  * 2. **Pick the truck** — his own trucks and his autopark's. The truck decides whose purchase it is; a single truck
  *    is chosen without asking. See `../model/buyer.ts`.
- *
- * F2 opens the search and F3 the trucks, so a cashier can serve a queue
- * without reaching for the mouse.
+
  */
 export function TillCustomer({
   buyer,
@@ -69,26 +67,12 @@ export function TillCustomer({
     onChange(resolveBuyer(buyer.party, option, clients))
   }
 
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'F2') {
-        event.preventDefault()
-        searchRef.current?.focus()
-      } else if (event.key === 'F3' && options.length > 0) {
-        event.preventDefault()
-        setChoosing(true)
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [options.length])
-
   // The list shows while there is a truck still to choose, or on request.
   const showTrucks = options.length > 1 && (choosing || buyer.truck === null)
 
   return (
     <div className="space-y-4">
-      <Step number={1} title={t('Find the driver')} hotkey="F2">
+      <Step number={1} title={t('Find the driver')}>
         <DriverSearch
           inputRef={searchRef}
           drivers={drivers}
@@ -104,7 +88,7 @@ export function TillCustomer({
       </Step>
 
       {options.length > 0 ? (
-        <Step number={2} title={t('Choose the truck')} hotkey="F3">
+        <Step number={2} title={t('Choose the truck')}>
           {showTrucks ? (
             <div className="max-h-56 space-y-1.5 overflow-y-auto">
               {options.map((option) => (
@@ -150,26 +134,13 @@ export function TillCustomer({
   )
 }
 
-function Step({
-  number,
-  title,
-  hotkey,
-  children,
-}: {
-  number: number
-  title: string
-  hotkey: string
-  children: ReactNode
-}) {
+function Step({ number, title, children }: { number: number; title: string; children: ReactNode }) {
   return (
     <section className="space-y-2">
       <div className="flex items-center justify-between">
         <h2 className="text-fg text-sm font-semibold">
           {number}. {title}
         </h2>
-        <kbd className="border-border bg-surface-muted text-fg-muted rounded border px-1.5 py-0.5 font-mono text-[10px]">
-          {hotkey}
-        </kbd>
       </div>
       {children}
     </section>

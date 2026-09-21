@@ -1,6 +1,10 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import {
+  ArrowLeft,
+  ArrowRight,
+  FileText,
+  ReceiptText,
   Banknote,
   ChevronDown,
   Clock,
@@ -16,6 +20,7 @@ import { ProductThumb } from '@/shared/components/ProductThumb'
 import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
 import { Select } from '@/shared/ui/Select'
+import { Modal } from '@/shared/ui/Modal'
 import { toast } from '@/shared/ui/toast'
 import { cn } from '@/shared/lib/cn'
 import { formatMoney, formatNumber } from '@/shared/lib/format'
@@ -26,7 +31,9 @@ import { useDataStore } from '@/data/store'
 import type { VariationRow } from '@/features/products/model/product'
 import {
   computeTotals,
+  lineTotal,
   SALE_CHANNELS,
+  type Sale,
   type PaymentMethod,
   type SaleChannel,
   type SaleLine,
@@ -43,6 +50,7 @@ import { TillCustomer } from '../components/TillCustomer'
 import { WALK_IN, needsTruck, type TillBuyer } from '../model/buyer'
 import { useActiveTab, useTillStore } from '../model/tillStore'
 import { SaleTabs } from '../components/SaleTabs'
+import { PrintSale, type SaleDocument } from '../components/SaleDocuments'
 
 const PAYMENTS: { value: PaymentMethod; label: string; icon: typeof Banknote }[] = [
   { value: 'cash', label: 'Cash', icon: Banknote },
@@ -93,6 +101,10 @@ export default function PosPage() {
   const setComment = (next: string) => update({ comment: next })
   /** Everything a counter sale rarely needs, folded away until it does. */
   const [more, setMore] = useState(false)
+  /** The sale just paid for, while the cashier chooses what to print. */
+  const [paidSale, setPaidSale] = useState<Sale | null>(null)
+  const [printing, setPrinting] = useState<SaleDocument | null>(null)
+  const donePrinting = useCallback(() => setPrinting(null), [])
 
   const openShift = useOpenShiftAt(locationId)
   const noDrawer = cashSaleBlocked(payment, openShift !== null)
@@ -177,7 +189,28 @@ export default function PosPage() {
   const units = unitsIn(cart)
   /** Credit is a debt on somebody's account, so it needs somebody. */
   const creditWithoutAccount = payment === 'credit' && buyer.client === null
-  const blocked = cart.length === 0 || noDrawer || needsTruck(buyer) || creditWithoutAccount
+  /** Step 1 is done: something to sell, and whose purchase it is. */
+  const readyToPay = cart.length > 0 && !needsTruck(buyer)
+  const blocked = !readyToPay || noDrawer || creditWithoutAccount
+
+  const totalsBlock = (
+    <div className="space-y-1 text-sm">
+      <Row label={`${t('Subtotal')} · ${formatNumber(units)} ${tn(units, 'unit', 'units')}`}>
+        {formatMoney(totals.subtotal)}
+      </Row>
+      {totals.discount > 0 ? (
+        <Row label={t('Discount')} tone="text-warning">
+          − {formatMoney(totals.discount)}
+        </Row>
+      ) : null}
+      <div className="flex items-baseline justify-between pt-1">
+        <span className="text-fg font-medium">{t('To pay')}</span>
+        <span className="text-fg text-2xl font-semibold tabular-nums">
+          {formatMoney(totals.total)}
+        </span>
+      </div>
+    </div>
+  )
 
   /** Empties the sale on screen, leaving the other open sales alone. */
   const reset = () =>
@@ -189,6 +222,7 @@ export default function PosPage() {
       promotionId: null,
       channel: 'desk',
       comment: '',
+      step: 'sale',
     })
 
   /** The sale on screen as the store takes it, in a given state. */
@@ -217,8 +251,9 @@ export default function PosPage() {
     // On credit nothing changes hands; otherwise an empty field means paid in full.
     const sale = save('completed', payment !== 'credit' ? Number(paidText) || totals.total : 0)
     if (!sale) return
-    toast.success(t('{number} paid', { number: sale.number }))
     finish({ id: sale.id, number: sale.number })
+    // Then the paper, if any (client request): the receipt, or the waybill.
+    setPaidSale(sale)
   }
 
   /*
@@ -271,217 +306,344 @@ export default function PosPage() {
                 {t('Carrying on with parked sale {number}', { number: tab.parked.number })}
               </p>
             ) : null}
-            <ProductPicker onPick={add} placeholder={t('Scan a barcode or search to add…')} />
-            <TillCustomer key={tab.id} buyer={buyer} onChange={setBuyer} />
+            <StepBar step={tab.step} canPay={readyToPay} onStep={(step) => update({ step })} />
+            {tab.step === 'sale' ? (
+              <>
+                <ProductPicker onPick={add} placeholder={t('Scan a barcode or search to add…')} />
+                <TillCustomer key={tab.id} buyer={buyer} onChange={setBuyer} />
+              </>
+            ) : null}
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            {cart.length === 0 ? (
-              <div className="text-fg-subtle flex h-full flex-col items-center justify-center gap-2 p-6 text-center">
-                <ShoppingCart className="size-8" />
-                <p className="text-fg text-sm font-medium">{t('The cart is empty')}</p>
-                <p className="text-2xs max-w-60">
-                  {t('Tap a product on the left, or scan its barcode.')}
-                </p>
-              </div>
-            ) : (
-              <ul className="divide-border divide-y">
-                {cart.map((line) => (
-                  <CartLine
-                    key={line.id}
-                    line={line}
-                    variation={variations.find((v) => v.id === line.variationId)}
-                    onQuantity={(quantity) => setUnits(line.variationId, quantity)}
-                  />
-                ))}
-              </ul>
-            )}
-          </div>
-
-          <div className="border-border space-y-3 border-t p-3">
-            {offer && !discounted ? (
-              <div className="border-primary-border bg-primary-soft/40 rounded-control flex items-start gap-2 border p-2.5">
-                <Tag className="text-primary mt-0.5 size-4 shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-fg text-sm font-medium">{offer.promotion.name}</p>
-                  <p className="text-fg-muted text-2xs">
-                    {describePromotion(offer.promotion)} {t('— takes')}{' '}
-                    {formatMoney(offer.discount)} {t('off this sale.')}
-                  </p>
-                </div>
-                <Button type="button" size="sm" variant="secondary" onClick={applyOffer}>
-                  {t('Apply it')}
-                </Button>
-              </div>
-            ) : null}
-
-            <div className="space-y-1 text-sm">
-              <Row
-                label={`${t('Subtotal')} · ${formatNumber(units)} ${tn(units, 'unit', 'units')}`}
-              >
-                {formatMoney(totals.subtotal)}
-              </Row>
-              {totals.discount > 0 ? (
-                <Row label={t('Discount')} tone="text-warning">
-                  − {formatMoney(totals.discount)}
-                </Row>
-              ) : null}
-              <div className="flex items-baseline justify-between pt-1">
-                <span className="text-fg font-medium">{t('To pay')}</span>
-                <span className="text-fg text-2xl font-semibold tabular-nums">
-                  {formatMoney(totals.total)}
-                </span>
-              </div>
-            </div>
-
-            <div
-              className="grid grid-cols-3 gap-1.5"
-              role="radiogroup"
-              aria-label={t('Payment method')}
-            >
-              {PAYMENTS.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={payment === option.value}
-                  onClick={() => setPayment(option.value)}
-                  className={cn(
-                    'rounded-control flex flex-col items-center gap-1 border px-1 py-2 text-xs transition-colors',
-                    payment === option.value
-                      ? 'border-primary bg-primary-soft text-primary font-medium'
-                      : 'border-border text-fg-muted hover:border-border-strong',
-                  )}
-                >
-                  <option.icon className="size-4" />
-                  <span className="truncate">{t(option.label)}</span>
-                </button>
-              ))}
-            </div>
-            {noDrawer ? (
-              <p className="text-danger text-2xs">
-                {t(
-                  'No cash drawer is open at this location — open a shift, or take payment another way',
-                )}
-              </p>
-            ) : null}
-
-            {creditWithoutAccount ? (
-              <p className="text-danger text-2xs">
-                {t('On credit needs a client — find one above, or take payment another way.')}
-              </p>
-            ) : null}
-
-            {payment !== 'credit' ? (
-              <div className="grid grid-cols-2 items-end gap-2">
-                <label className="space-y-1">
-                  <span className="text-fg-muted text-2xs">{t('Received')}</span>
-                  <Input
-                    type="number"
-                    min={0}
-                    inputMode="numeric"
-                    value={paidText}
-                    onChange={(event) => setPaidText(event.target.value)}
-                    placeholder={String(Math.round(totals.total))}
-                    aria-label={t('Amount paid')}
-                    className="text-right"
-                  />
-                </label>
-                {/* Less than the total leaves a debt; more is change — which only cash gives. */}
-                {paidText !== '' && totals.debt > 0 ? (
-                  <div className="rounded-control bg-danger-soft px-3 py-1.5 text-right">
-                    <p className="text-danger text-2xs">{t('Remaining debt')}</p>
-                    <p className="text-danger font-semibold tabular-nums">
-                      {formatMoney(totals.debt)}
-                    </p>
-                  </div>
-                ) : payment === 'cash' ? (
-                  <div className="rounded-control bg-surface-muted px-3 py-1.5 text-right">
-                    <p className="text-fg-subtle text-2xs">{t('Change due')}</p>
-                    <p className="text-success font-semibold tabular-nums">
-                      {formatMoney(totals.change)}
+          {tab.step === 'sale' ? (
+            <>
+              <div className="min-h-0 flex-1 overflow-y-auto">
+                {cart.length === 0 ? (
+                  <div className="text-fg-subtle flex h-full flex-col items-center justify-center gap-2 p-6 text-center">
+                    <ShoppingCart className="size-8" />
+                    <p className="text-fg text-sm font-medium">{t('The cart is empty')}</p>
+                    <p className="text-2xs max-w-60">
+                      {t('Tap a product on the left, or scan its barcode.')}
                     </p>
                   </div>
                 ) : (
-                  <div className="rounded-control bg-surface-muted px-3 py-1.5 text-right">
-                    <p className="text-fg-subtle text-2xs">{t('Remaining debt')}</p>
-                    <p className="text-fg font-semibold tabular-nums">{formatMoney(0)}</p>
-                  </div>
+                  <ul className="divide-border divide-y">
+                    {cart.map((line) => (
+                      <CartLine
+                        key={line.id}
+                        line={line}
+                        variation={variations.find((v) => v.id === line.variationId)}
+                        onQuantity={(quantity) => setUnits(line.variationId, quantity)}
+                      />
+                    ))}
+                  </ul>
                 )}
               </div>
-            ) : null}
 
-            <div>
-              <button
-                type="button"
-                onClick={() => setMore((open) => !open)}
-                className="text-fg-muted hover:text-fg flex items-center gap-1 text-xs"
-                aria-expanded={more}
-              >
-                <ChevronDown
-                  className={cn('size-3.5 transition-transform', more && 'rotate-180')}
-                />
-                {t('Source and comment')}
-              </button>
-              {more ? (
-                <div className="mt-2 space-y-2">
-                  <Select
-                    className="w-full"
-                    aria-label={t('Source')}
-                    value={channel}
-                    onChange={setChannel}
-                    options={SALE_CHANNELS.map((c) => ({ ...c, label: t(c.label) }))}
-                  />
-                  <Input
-                    value={comment}
-                    onChange={(event) => setComment(event.target.value)}
-                    placeholder={t('Comment')}
-                  />
+              <div className="border-border space-y-3 border-t p-3">
+                {offer && !discounted ? (
+                  <div className="border-primary-border bg-primary-soft/40 rounded-control flex items-start gap-2 border p-2.5">
+                    <Tag className="text-primary mt-0.5 size-4 shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-fg text-sm font-medium">{offer.promotion.name}</p>
+                      <p className="text-fg-muted text-2xs">
+                        {describePromotion(offer.promotion)} {t('— takes')}{' '}
+                        {formatMoney(offer.discount)} {t('off this sale.')}
+                      </p>
+                    </div>
+                    <Button type="button" size="sm" variant="secondary" onClick={applyOffer}>
+                      {t('Apply it')}
+                    </Button>
+                  </div>
+                ) : null}
+
+                {totalsBlock}
+
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setMore((open) => !open)}
+                    className="text-fg-muted hover:text-fg flex items-center gap-1 text-xs"
+                    aria-expanded={more}
+                  >
+                    <ChevronDown
+                      className={cn('size-3.5 transition-transform', more && 'rotate-180')}
+                    />
+                    {t('Source and comment')}
+                  </button>
+                  {more ? (
+                    <div className="mt-2 space-y-2">
+                      <Select
+                        className="w-full"
+                        aria-label={t('Source')}
+                        value={channel}
+                        onChange={setChannel}
+                        options={SALE_CHANNELS.map((c) => ({ ...c, label: t(c.label) }))}
+                      />
+                      <Input
+                        value={comment}
+                        onChange={(event) => setComment(event.target.value)}
+                        placeholder={t('Comment')}
+                      />
+                    </div>
+                  ) : null}
                 </div>
-              ) : null}
-            </div>
 
-            <div className="grid grid-cols-[auto_1fr] gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                size="lg"
-                disabled={cart.length === 0}
-                onClick={park}
-                title={t('Put this sale aside and serve the next customer')}
-              >
-                <Clock />
-                {t('Park')}
-              </Button>
-              <Button type="button" variant="primary" size="lg" disabled={blocked} onClick={pay}>
-                {t('Pay {total}', { total: formatMoney(totals.total) })}
-              </Button>
-            </div>
-            {last && cart.length === 0 ? (
-              <p className="text-fg-subtle text-center text-xs">
-                {t('Last sale')}{' '}
-                <Link
-                  to={paths.sales.orderDetail(last.id)}
-                  className="text-primary font-mono hover:underline"
+                <div className="grid grid-cols-[auto_1fr] gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="lg"
+                    disabled={cart.length === 0}
+                    onClick={park}
+                    title={t('Put this sale aside and serve the next customer')}
+                  >
+                    <Clock />
+                    {t('Park')}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="lg"
+                    disabled={!readyToPay}
+                    onClick={() => update({ step: 'payment' })}
+                  >
+                    {t('To payment')}
+                    <ArrowRight />
+                  </Button>
+                </div>
+                {last && cart.length === 0 ? (
+                  <p className="text-fg-subtle text-center text-xs">
+                    {t('Last sale')}{' '}
+                    <Link
+                      to={paths.sales.orderDetail(last.id)}
+                      className="text-primary font-mono hover:underline"
+                    >
+                      {last.number}
+                    </Link>
+                  </p>
+                ) : null}
+                {cart.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={reset}
+                    className="text-fg-subtle hover:text-danger mx-auto flex items-center gap-1 text-xs"
+                  >
+                    <X className="size-3.5" />
+                    {t('Clear the sale')}
+                  </button>
+                ) : null}
+              </div>
+            </>
+          ) : (
+            <>
+              {/* What is being paid for, read back before the money changes hands. */}
+              <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
+                <div className="border-border rounded-card border p-2.5">
+                  <p className="text-fg-subtle text-2xs">{t('Customer')}</p>
+                  <p className="text-fg text-sm font-semibold">
+                    {buyer.driver?.fullName ?? buyer.client?.name ?? t('Walk-in customer')}
+                  </p>
+                  {buyer.truck || (buyer.client && buyer.driver) ? (
+                    <p className="text-fg-muted text-2xs">
+                      {[buyer.truck?.truck.plate, buyer.driver ? buyer.client?.name : null]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </p>
+                  ) : null}
+                </div>
+                <ul className="divide-border border-border rounded-card divide-y border">
+                  {cart.map((line) => (
+                    <li key={line.id} className="flex items-baseline gap-2 px-2.5 py-2 text-sm">
+                      <span className="text-fg min-w-0 flex-1 truncate" title={line.name}>
+                        {line.name}
+                      </span>
+                      <span className="text-fg-muted shrink-0 tabular-nums">
+                        {formatNumber(line.quantity)} {t(line.unit)}
+                      </span>
+                      <span className="text-fg w-28 shrink-0 text-right font-medium tabular-nums">
+                        {formatMoney(Math.round(lineTotal(line)))}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="border-border space-y-3 border-t p-3">
+                {totalsBlock}
+
+                <div
+                  className="grid grid-cols-3 gap-1.5"
+                  role="radiogroup"
+                  aria-label={t('Payment method')}
                 >
-                  {last.number}
-                </Link>
-              </p>
-            ) : null}
-            {cart.length > 0 ? (
-              <button
-                type="button"
-                onClick={reset}
-                className="text-fg-subtle hover:text-danger mx-auto flex items-center gap-1 text-xs"
-              >
-                <X className="size-3.5" />
-                {t('Clear the sale')}
-              </button>
-            ) : null}
-          </div>
+                  {PAYMENTS.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={payment === option.value}
+                      onClick={() => setPayment(option.value)}
+                      className={cn(
+                        'rounded-control flex flex-col items-center gap-1 border px-1 py-2.5 text-sm transition-colors',
+                        payment === option.value
+                          ? 'border-primary bg-primary-soft text-primary font-medium'
+                          : 'border-border text-fg-muted hover:border-border-strong',
+                      )}
+                    >
+                      <option.icon className="size-5" />
+                      <span className="truncate">{t(option.label)}</span>
+                    </button>
+                  ))}
+                </div>
+                {noDrawer ? (
+                  <p className="text-danger text-2xs">
+                    {t(
+                      'No cash drawer is open at this location — open a shift, or take payment another way',
+                    )}
+                  </p>
+                ) : null}
+                {creditWithoutAccount ? (
+                  <p className="text-danger text-2xs">
+                    {t('On credit needs a client — find one above, or take payment another way.')}
+                  </p>
+                ) : null}
+
+                {payment !== 'credit' ? (
+                  <label className="block space-y-1">
+                    <span className="text-fg-muted text-2xs">{t('Received')}</span>
+                    <Input
+                      type="number"
+                      min={0}
+                      inputMode="numeric"
+                      value={paidText}
+                      onChange={(event) => setPaidText(event.target.value)}
+                      placeholder={String(Math.round(totals.total))}
+                      aria-label={t('Amount paid')}
+                      className="h-11 text-right text-base"
+                    />
+                    {/* Less than the total is left owing — said, not boxed. */}
+                    {paidText !== '' && totals.debt > 0 ? (
+                      <span className="text-danger text-2xs block text-right">
+                        {t('Remaining debt')}: {formatMoney(totals.debt)}
+                      </span>
+                    ) : null}
+                  </label>
+                ) : null}
+
+                <div className="grid grid-cols-[auto_1fr] gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="lg"
+                    onClick={() => update({ step: 'sale' })}
+                  >
+                    <ArrowLeft />
+                    {t('Back')}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="lg"
+                    disabled={blocked}
+                    onClick={pay}
+                  >
+                    {t('Pay {total}', { total: formatMoney(totals.total) })}
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
         </aside>
       </div>
+
+      <Modal
+        open={paidSale !== null}
+        onOpenChange={(open) => (open ? undefined : setPaidSale(null))}
+        title={t('{number} paid', { number: paidSale?.number ?? '' })}
+        description={paidSale ? formatMoney(Math.round(paidSale.total)) : undefined}
+        size="sm"
+        footer={
+          <div className="flex justify-end">
+            <Button type="button" variant="secondary" onClick={() => setPaidSale(null)}>
+              {t('Next sale')}
+            </Button>
+          </div>
+        }
+      >
+        <p className="text-fg-muted mb-3 text-sm">{t('What should be printed?')}</p>
+        <div className="grid grid-cols-2 gap-2">
+          {(
+            [
+              { kind: 'receipt', label: t('Print the receipt'), icon: <ReceiptText /> },
+              { kind: 'waybill', label: t('Waybill'), icon: <FileText /> },
+            ] as const
+          ).map((option) => (
+            <button
+              key={option.kind}
+              type="button"
+              onClick={() => setPrinting(option.kind)}
+              className="border-border hover:border-primary hover:bg-primary-soft/40 rounded-card text-fg [&_svg]:text-primary flex flex-col items-center gap-2 border px-3 py-5 text-sm font-medium transition-colors [&_svg]:size-7"
+            >
+              {option.icon}
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </Modal>
+      {paidSale && printing ? (
+        <PrintSale sale={paidSale} document={printing} onDone={donePrinting} />
+      ) : null}
     </div>
+  )
+}
+
+/** Where the sale on screen is: 1. building it, 2. taking the money. */
+function StepBar({
+  step,
+  canPay,
+  onStep,
+}: {
+  step: 'sale' | 'payment'
+  canPay: boolean
+  onStep: (step: 'sale' | 'payment') => void
+}) {
+  const steps = [
+    { id: 'sale', label: t('Sale'), enabled: true },
+    { id: 'payment', label: t('Payment'), enabled: canPay },
+  ] as const
+  return (
+    <ol className="grid grid-cols-2 gap-1.5">
+      {steps.map((entry, index) => {
+        const current = step === entry.id
+        return (
+          <li key={entry.id}>
+            <button
+              type="button"
+              disabled={!entry.enabled}
+              aria-current={current ? 'step' : undefined}
+              onClick={() => onStep(entry.id)}
+              className={cn(
+                'rounded-control flex w-full items-center gap-2 border px-2.5 py-1.5 text-left text-sm transition-colors disabled:opacity-50',
+                current
+                  ? 'border-primary bg-primary-soft text-primary font-medium'
+                  : 'border-border text-fg-muted hover:border-border-strong',
+              )}
+            >
+              <span
+                className={cn(
+                  'flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-semibold',
+                  current ? 'bg-primary text-primary-fg' : 'bg-surface-inset',
+                )}
+              >
+                {index + 1}
+              </span>
+              {entry.label}
+            </button>
+          </li>
+        )
+      })}
+    </ol>
   )
 }
 

@@ -32,11 +32,20 @@ const here = (group: Group) => sumRows(group, (row) => row.here)
 const everywhere = (group: Group) => sumRows(group, (row) => row.variation.stock)
 
 /** One price, or the range across a product's variations. */
-function price(group: Group) {
+function price(group: Group, format: (value: number) => string = formatMoney) {
   const prices = group.rows.map((row) => row.variation.salePrice).sort((a, b) => a - b)
   const low = prices[0] ?? 0
   const high = prices.at(-1) ?? 0
-  return low === high ? formatMoney(low) : `${formatMoney(low)} – ${formatMoney(high)}`
+  return low === high ? format(low) : `${format(low)} – ${format(high)}`
+}
+
+/**
+ * A UZS price in dollars, at the rate Settings holds — customers often ask in
+ * dollars (client request), so the till shows both, dollars the smaller.
+ */
+function useInUsd() {
+  const usdRate = useDataStore((s) => s.company.usdRate)
+  return (uzs: number) => formatMoneyIn(Math.round((uzs / usdRate) * 100) / 100, 'USD')
 }
 
 /**
@@ -63,6 +72,7 @@ export function TillCatalogue({
   /** What the catalogue sidebar has narrowed the shelf to. */
   browse: { categoryId: string | null; make: string | null; model: string | null; title: string }
 }) {
+  const inUsd = useInUsd()
   const ownColumns = useMemo<TableColumn<Group>[]>(
     () => [
       {
@@ -130,7 +140,12 @@ export function TillCatalogue({
       }
       // The price is what a cashier reads first, so it takes the card's corner.
       renderSales={(group) => (
-        <span className="text-fg text-base font-semibold tabular-nums">{price(group)}</span>
+        <div>
+          <p className="text-fg text-base leading-tight font-semibold tabular-nums">
+            {price(group)}
+          </p>
+          <p className="text-fg-muted text-xs tabular-nums">{price(group, inUsd)}</p>
+        </div>
       )}
       renderDialog={(group, close) => (
         <VariationsDialog
@@ -247,9 +262,7 @@ function TillCard({
   const oems = distinct(variations.map((v) => v.oem))
   const shelves = distinct(variations.map((v) => v.shelfAddress))
   const brand = first.manufacturer ?? first.brandName
-  // Customers often ask in dollars (client request); the rate is Settings'.
-  const usdRate = useDataStore((s) => s.company.usdRate)
-  const inUsd = (uzs: number) => formatMoneyIn(Math.round((uzs / usdRate) * 100) / 100, 'USD')
+  const inUsd = useInUsd()
 
   return (
     <article

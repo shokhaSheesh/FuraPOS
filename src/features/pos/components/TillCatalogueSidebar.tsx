@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
+import { Select } from '@/shared/ui/Select'
 import { cn } from '@/shared/lib/cn'
 import { formatNumber } from '@/shared/lib/format'
 import { t } from '@/shared/i18n'
@@ -18,6 +19,7 @@ import { useDataStore } from '@/data/store'
 import {
   countByCategory,
   groupByProduct,
+  subtreeOf,
   type CatalogueRow,
 } from '@/shared/components/catalogue/browse'
 
@@ -28,6 +30,9 @@ export interface TillBrowse {
   make: string | null
   model: string | null
 }
+
+/** "No filter" in a select, which cannot hold null. */
+const ALL = '__all__'
 
 export const BROWSE_ALL: TillBrowse = {
   mode: 'products',
@@ -77,8 +82,29 @@ export function TillCatalogueSidebar({
 
   const groups = useMemo(() => groupByProduct(rows), [rows])
 
+  /*
+    Each way in narrows by its own tree and filters by the other (client
+    request): «По товарам» is categories with a make and model filter,
+    «По автомобилям» is makes and models with a category filter. Each tree
+    counts only what the other's filter lets through.
+  */
+  const byTruck = useMemo(
+    () =>
+      groups.filter(
+        (g) =>
+          (!value.make || g.vehicleMakes.includes(value.make)) &&
+          (!value.model || g.vehicleModels.includes(value.model)),
+      ),
+    [groups, value.make, value.model],
+  )
+  const byCategory = useMemo(() => {
+    if (!value.categoryId) return groups
+    const ids = subtreeOf(value.categoryId, categories)
+    return groups.filter((g) => ids.has(g.categoryId))
+  }, [groups, value.categoryId, categories])
+
   const categoryTree = useMemo<Node[]>(() => {
-    const counts = countByCategory(groups, categories)
+    const counts = countByCategory(byTruck, categories)
     const build = (parentId: string | null): Node[] =>
       categories
         .filter((category) => category.parentId === parentId)
@@ -92,13 +118,13 @@ export function TillCatalogueSidebar({
         }))
         .filter((node) => node.count > 0)
     return build(null)
-  }, [groups, categories])
+  }, [byTruck, categories])
 
   const truckTree = useMemo<Node[]>(
     () =>
       vehicleMakes
         .map((make) => {
-          const fitting = groups.filter((g) => g.vehicleMakes.includes(make.name))
+          const fitting = byCategory.filter((g) => g.vehicleMakes.includes(make.name))
           return {
             id: `make-${make.id}`,
             name: make.name,
@@ -117,8 +143,41 @@ export function TillCatalogueSidebar({
         })
         .filter((node) => node.count > 0)
         .sort((a, b) => a.name.localeCompare(b.name)),
-    [vehicleMakes, groups],
+    [vehicleMakes, byCategory],
   )
+
+  /** The makes and models on this shelf, for the «По товарам» filters. */
+  const makeOptions = useMemo(
+    () =>
+      vehicleMakes
+        .filter((make) => byCategory.some((g) => g.vehicleMakes.includes(make.name)))
+        .map((make) => make.name)
+        .sort((a, b) => a.localeCompare(b)),
+    [vehicleMakes, byCategory],
+  )
+  const modelOptions = useMemo(
+    () =>
+      (vehicleMakes.find((make) => make.name === value.make)?.models ?? [])
+        .map((model) => model.name)
+        .filter((model) =>
+          byCategory.some(
+            (g) => g.vehicleMakes.includes(value.make ?? '') && g.vehicleModels.includes(model),
+          ),
+        ),
+    [vehicleMakes, byCategory, value.make],
+  )
+  /** Every stocked category, as a path, for the «По автомобилям» filter. */
+  const categoryOptions = useMemo(() => {
+    const counts = countByCategory(byTruck, categories)
+    const pathOf = (id: string | null): string[] => {
+      const category = categories.find((entry) => entry.id === id)
+      return category ? [...pathOf(category.parentId), category.name] : []
+    }
+    return categories
+      .filter((category) => (counts.get(category.id) ?? 0) > 0)
+      .map((category) => ({ value: category.id, label: pathOf(category.id).join(' › ') }))
+      .sort((a, b) => a.label.localeCompare(b.label))
+  }, [byTruck, categories])
 
   const tree = value.mode === 'products' ? categoryTree : truckTree
 
@@ -135,12 +194,17 @@ export function TillCatalogueSidebar({
   }, [tree, q])
 
   const isSelected = (node: Node) =>
-    node.pick.categoryId === value.categoryId &&
-    node.pick.make === value.make &&
-    node.pick.model === value.model
+    value.mode === 'products'
+      ? node.pick.categoryId === value.categoryId
+      : node.pick.make === value.make && node.pick.model === value.model
 
+  /** A tree sets its own dimension and leaves the other's filter as it is. */
   const choose = (node: Node) => {
-    onChange({ mode: value.mode, ...node.pick })
+    onChange(
+      value.mode === 'products'
+        ? { ...value, categoryId: node.pick.categoryId }
+        : { ...value, make: node.pick.make, model: node.pick.model },
+    )
     if (node.children.length && !expanded.includes(node.id)) {
       setExpanded((current) => [...current, node.id])
     }
@@ -151,7 +215,13 @@ export function TillCatalogueSidebar({
       current.includes(id) ? current.filter((entry) => entry !== id) : [...current, id],
     )
 
-  const everything = value.categoryId === null && value.make === null
+  const everything = value.mode === 'products' ? value.categoryId === null : value.make === null
+  const showEverything = () =>
+    onChange(
+      value.mode === 'products'
+        ? { ...value, categoryId: null }
+        : { ...value, make: null, model: null },
+    )
 
   const renderNodes = (nodes: Node[], depth: number): ReactNode =>
     nodes.map((node) => {
@@ -296,13 +366,45 @@ export function TillCatalogueSidebar({
             className="pl-9"
           />
         </div>
+        {value.mode === 'products' ? (
+          <div className="grid grid-cols-2 gap-2">
+            <Select
+              aria-label={t('Truck make')}
+              value={value.make ?? ALL}
+              onChange={(make) =>
+                onChange({ ...value, make: make === ALL ? null : make, model: null })
+              }
+              options={[
+                { value: ALL, label: t('All makes') },
+                ...makeOptions.map((make) => ({ value: make, label: make })),
+              ]}
+            />
+            <Select
+              aria-label={t('Model')}
+              value={value.model ?? ALL}
+              disabled={!value.make}
+              onChange={(model) => onChange({ ...value, model: model === ALL ? null : model })}
+              options={[
+                { value: ALL, label: value.make ? t('All models') : t('Pick a make first') },
+                ...modelOptions.map((model) => ({ value: model, label: model })),
+              ]}
+            />
+          </div>
+        ) : (
+          <Select
+            aria-label={t('Category')}
+            value={value.categoryId ?? ALL}
+            onChange={(id) => onChange({ ...value, categoryId: id === ALL ? null : id })}
+            options={[{ value: ALL, label: t('All categories') }, ...categoryOptions]}
+          />
+        )}
       </div>
 
       <ul className="min-h-0 flex-1 space-y-0.5 overflow-y-auto px-2 pb-3">
         <li>
           <button
             type="button"
-            onClick={() => onChange({ ...BROWSE_ALL, mode: value.mode })}
+            onClick={showEverything}
             className={cn(
               'rounded-control flex w-full items-center gap-2 py-1.5 pr-2 pl-2 text-left text-sm font-medium transition-colors',
               everything ? 'bg-primary text-primary-fg' : 'text-fg hover:bg-surface-muted',
@@ -313,7 +415,7 @@ export function TillCatalogueSidebar({
               {value.mode === 'products' ? t('All products') : t('All trucks')}
             </span>
             <span className={cn('text-2xs tabular-nums', everything ? '' : 'text-fg-subtle')}>
-              {formatNumber(groups.length)}
+              {formatNumber(value.mode === 'products' ? byTruck.length : byCategory.length)}
             </span>
           </button>
         </li>
@@ -333,9 +435,12 @@ export function browseTitle(
   browse: TillBrowse,
   categories: { id: string; name: string }[],
 ): string {
-  if (browse.model) return `${browse.make} ${browse.model}`
-  if (browse.make) return browse.make
-  if (browse.categoryId)
-    return categories.find((category) => category.id === browse.categoryId)?.name ?? ''
-  return browse.mode === 'products' ? t('All products') : t('All trucks')
+  const category = browse.categoryId
+    ? (categories.find((entry) => entry.id === browse.categoryId)?.name ?? null)
+    : null
+  const truck = browse.make ? [browse.make, browse.model].filter(Boolean).join(' ') : null
+  // The tree's choice first, the filter after it: "Двигатель · DAF XF".
+  const parts = browse.mode === 'products' ? [category, truck] : [truck, category]
+  const title = parts.filter(Boolean).join(' · ')
+  return title || (browse.mode === 'products' ? t('All products') : t('All trucks'))
 }

@@ -30,11 +30,15 @@ Two very different surfaces, and this build is the first one:
    «Отложки» and «Касса»** — then the shop and whether its drawer is open. Tabs, not a rail, because «Продажа»'s
    left edge belongs to its **«Каталог запчастей»** sidebar: «По товарам» (categories →
    sub-categories) or «По автомобилям» (truck makes → models), with a search that narrows the tree;
-   only what this shop stocks, with counts. **Cards** are every document's standard cards; the
+   only what this shop stocks, with counts. Each way in filters by the other (client request):
+   «По товарам» has make and model selects, «По автомобилям» a category select. **Cards** are every document's standard cards; the
    **list** is the client's **wide rows**: photo, name, Артикул, OEM, brand and make tags | in
-   stock here, location, shelf cell | price in UZS with USD beneath (Settings' rate) | cart button
+   stock here, location, shelf cell | price in UZS with USD beneath (Settings' rate, on the cards too) | cart button
    — `renderRow` and `browse` on `<ProductCatalogue>`. Photos swipe left and right when a product
-   has several (`<PhotoStrip>`, the variation's `imageUrl` then its `gallery`). The customer is two steps:
+   has several (`<PhotoStrip>`, the variation's `imageUrl` then its `gallery`). The cart panel is **two steps** (client request): **1. Продажа** — driver and truck, cart,
+   promotion, totals, source and comment, Park or «К оплате»; **2. Оплата** — the sale read back,
+   payment method and «Получено» (no change field). Paying opens a dialog with **«Печать чека»**
+   (80 mm receipt) and **«Накладная»** (A4 waybill), printed in place by `PrintSale`. The customer is two steps:
    **1. find the driver** — one search field over owner-drivers and autopark drivers, with an
    add-driver button beside it; **2. choose the truck**. No keyboard shortcuts (client request). The truck decides whose purchase it
    is: his own truck is his own, his autopark's truck puts the sale on the autopark's account; a

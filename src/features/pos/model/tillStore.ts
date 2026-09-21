@@ -18,6 +18,8 @@ export interface TillTab {
   promotionId: string | null
   channel: SaleChannel
   comment: string
+  /** Building the sale, or taking payment for it (client request: two steps). */
+  step: 'sale' | 'payment'
   /** The parked sale this tab carries on with, when it came from «Отложки». */
   parked: { id: string; number: string } | null
 }
@@ -32,6 +34,7 @@ export const blankTab = (): TillTab => ({
   promotionId: null,
   channel: 'desk',
   comment: '',
+  step: 'sale',
   parked: null,
 })
 

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { SaleLine } from '@/features/sales/model/sale'
 import { WALK_IN, type TillBuyer } from './buyer'
+import { BROWSE_ALL, type TillBrowse } from '../components/TillCatalogueSidebar'
 
 /**
  * The till's session: which shop it is standing in, what is in the cart, and
@@ -13,6 +14,9 @@ interface TillState {
   buyer: TillBuyer
   /** The sale just rung up, so it can be opened or its number read out. */
   last: { id: string; number: string } | null
+  /** Where the catalogue sidebar has narrowed the shelf to. */
+  browse: TillBrowse
+  setBrowse: (browse: TillBrowse) => void
   setLocation: (locationId: string) => void
   setCart: (update: SaleLine[] | ((cart: SaleLine[]) => SaleLine[])) => void
   setBuyer: (buyer: TillBuyer) => void
@@ -25,6 +29,8 @@ export const useTillStore = create<TillState>((set) => ({
   cart: [],
   buyer: WALK_IN,
   last: null,
+  browse: BROWSE_ALL,
+  setBrowse: (browse) => set({ browse }),
   // What is in the cart was checked against the other shelf, so it goes.
   setLocation: (locationId) => set({ locationId, cart: [] }),
   setCart: (update) =>

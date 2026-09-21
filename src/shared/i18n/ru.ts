@@ -2381,4 +2381,17 @@ export const ru: Dictionary = {
     'Откройте смену, чтобы принимать наличные и записывать расходы.',
   'Source and comment': 'Источник и комментарий',
   'Transfer payments': 'Переводы',
+  'Find the driver': 'Найти водителя',
+  'Search a driver by name, phone or number plate…':
+    'Поиск водителя по имени, телефону или госномеру…',
+  'Parts catalogue': 'Каталог запчастей',
+  'By products': 'По товарам',
+  'By trucks': 'По автомобилям',
+  'Search the catalogue…': 'Поиск в каталоге…',
+  'Search the catalogue': 'Поиск в каталоге',
+  'All products': 'Все товары',
+  'All trucks': 'Все автомобили',
+  'Nothing in the catalogue matches': 'В каталоге ничего не найдено',
+  Collapse: 'Свернуть',
+  Expand: 'Развернуть',
 }

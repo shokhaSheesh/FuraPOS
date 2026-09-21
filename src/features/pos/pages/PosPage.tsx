@@ -41,6 +41,7 @@ import { useBestPromotion } from '@/features/promotions/api/promotions'
 import { covers, describe as describePromotion } from '@/features/promotions/model/promotion'
 import { addOne, quantityIn, setQuantity, unitsIn } from '../model/cart'
 import { TillCatalogue, type TillRow } from '../components/TillCatalogue'
+import { TillCatalogueSidebar, browseTitle } from '../components/TillCatalogueSidebar'
 import { TillCustomer } from '../components/TillCustomer'
 import { needsTruck } from '../model/buyer'
 import { useTillStore } from '../model/tillStore'
@@ -79,6 +80,9 @@ export default function PosPage() {
   const last = useTillStore((state) => state.last)
   const finish = useTillStore((state) => state.finish)
   const clearSale = useTillStore((state) => state.clear)
+  const browse = useTillStore((state) => state.browse)
+  const setBrowse = useTillStore((state) => state.setBrowse)
+  const categories = useDataStore((s) => s.categorySettings)
   const location = locations.find((l) => l.id === locationId)
   const [payment, setPayment] = useState<PaymentMethod>('cash')
   const [paidText, setPaidText] = useState('')
@@ -224,11 +228,13 @@ export default function PosPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_26rem] 2xl:grid-cols-[minmax(0,1fr)_30rem]">
+      <div className="grid min-h-0 flex-1 grid-cols-[16rem_minmax(0,1fr)_25rem] 2xl:grid-cols-[19rem_minmax(0,1fr)_30rem]">
+        <TillCatalogueSidebar rows={rows} value={browse} onChange={setBrowse} />
         <main className="min-h-0 overflow-y-auto p-4">
           <TillCatalogue
             rows={rows}
             locationName={location?.name ?? ''}
+            browse={{ ...browse, title: browseTitle(browse, categories) }}
             onAdd={(row) => add(row.variation)}
             onSet={(changes) =>
               changes.forEach(({ row, quantity }) => setUnits(row.variation.id, quantity))

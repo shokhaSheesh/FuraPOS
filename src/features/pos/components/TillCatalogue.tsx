@@ -49,6 +49,7 @@ export function TillCatalogue({
   locationName,
   onAdd,
   onSet,
+  browse,
 }: {
   rows: TillRow[]
   locationName: string
@@ -56,6 +57,8 @@ export function TillCatalogue({
   onAdd: (row: TillRow) => void
   /** Quantities set in the variations dialog. */
   onSet: (changes: { row: TillRow; quantity: number }[]) => void
+  /** What the catalogue sidebar has narrowed the shelf to. */
+  browse: { categoryId: string | null; make: string | null; model: string | null; title: string }
 }) {
   const ownColumns = useMemo<TableColumn<Group>[]>(
     () => [
@@ -96,6 +99,7 @@ export function TillCatalogue({
       canSeeCost={false}
       ownColumns={ownColumns}
       showChosen={false}
+      browse={browse}
       renderCard={(group, open) => (
         <TillCard group={group} locationName={locationName} onOpen={open} />
       )}
@@ -250,7 +254,7 @@ function TillCard({
         type="button"
         onClick={onOpen}
         aria-label={t('Open {productName}', { productName: group.productName })}
-        className="rounded-control bg-surface-inset text-fg-subtle flex aspect-[3/2] w-32 shrink-0 items-center justify-center self-center overflow-hidden"
+        className="rounded-control bg-surface-inset text-fg-subtle flex aspect-[3/2] w-28 shrink-0 items-center justify-center self-center overflow-hidden"
       >
         {first.imageUrl ? (
           <img src={first.imageUrl} alt="" className="size-full object-cover" />
@@ -291,7 +295,7 @@ function TillCard({
         </div>
       </div>
 
-      <div className="border-border w-64 shrink-0 space-y-1 self-center border-l pl-4 text-sm">
+      <div className="border-border w-56 shrink-0 space-y-1 self-center border-l pl-4 text-sm 2xl:w-64">
         <p className={cn('flex items-center gap-1.5 font-medium', STOCK_TONE[stockLevel(units)])}>
           <span className="size-2.5 shrink-0 rounded-full border-2 border-current" aria-hidden />
           {t('In stock: {count} {unit}', { count: formatNumber(units), unit: t(first.unit) })}

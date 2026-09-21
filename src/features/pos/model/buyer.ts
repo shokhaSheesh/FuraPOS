@@ -4,7 +4,7 @@ import type { Driver, DriverCapacity, Truck } from '@/features/drivers/model/dri
 /**
  * Who is buying, settled in two steps (client request):
  *
- *   1. find the person or company — one search over drivers and clients;
+ *   1. find the driver — owner-drivers and autopark drivers in one search;
  *   2. pick the truck.
  *
  * The truck is what decides whose purchase it is. A driver who owns a lorry
@@ -15,7 +15,7 @@ import type { Driver, DriverCapacity, Truck } from '@/features/drivers/model/dri
  */
 
 /** Who was found in step 1. Null is a walk-in. */
-export type Party = { kind: 'driver'; driver: Driver } | { kind: 'client'; client: Client } | null
+export type Party = { kind: 'driver'; driver: Driver } | null
 
 /** A truck on offer in step 2, and whose it is. */
 export interface TruckOption {
@@ -67,30 +67,9 @@ export function trucksOfDriver(driver: Driver): TruckOption[] {
   return [...own, ...fleet]
 }
 
-/** A company's fleet: the trucks it has assigned to its drivers, each once. */
-export function fleetOf(client: Client, drivers: Driver[]): TruckOption[] {
-  const seen = new Set<string>()
-  return drivers
-    .filter((driver) => driver.autoparkId === client.id && driver.autoparkTruck)
-    .flatMap((driver) => {
-      const truck = driver.autoparkTruck!
-      if (seen.has(truck.plate)) return []
-      seen.add(truck.plate)
-      return [
-        {
-          truck,
-          capacity: 'autopark' as const,
-          autoparkId: client.id,
-          autoparkName: client.name,
-        },
-      ]
-    })
-}
-
-/** The trucks step 2 offers for whoever was found in step 1. */
-export function trucksOf(party: Party, drivers: Driver[]): TruckOption[] {
-  if (!party) return []
-  return party.kind === 'driver' ? trucksOfDriver(party.driver) : fleetOf(party.client, drivers)
+/** The trucks step 2 offers for the driver found in step 1. */
+export function trucksOf(party: Party): TruckOption[] {
+  return party ? trucksOfDriver(party.driver) : []
 }
 
 /**
@@ -100,16 +79,11 @@ export function trucksOf(party: Party, drivers: Driver[]): TruckOption[] {
 export function resolveBuyer(
   party: Party,
   chosen: TruckOption | null,
-  drivers: Driver[],
   clients: Client[],
 ): TillBuyer {
   if (!party) return WALK_IN
-  const options = trucksOf(party, drivers)
+  const options = trucksOf(party)
   const truck = chosen ?? (options.length === 1 ? options[0]! : null)
-
-  if (party.kind === 'client') {
-    return { party, client: party.client, driver: null, truck, truckChoices: options.length }
-  }
 
   const autopark =
     truck?.capacity === 'autopark'
@@ -121,7 +95,6 @@ export function resolveBuyer(
 /**
  * A driver with several trucks has to say which one before paying: the
  * purchase lands on a truck's history, and on an account the truck decides.
- * A company's fleet is optional — who collected is not always known.
  */
 export const needsTruck = (buyer: TillBuyer) =>
-  buyer.party?.kind === 'driver' && buyer.truckChoices > 1 && buyer.truck === null
+  buyer.party !== null && buyer.truckChoices > 1 && buyer.truck === null

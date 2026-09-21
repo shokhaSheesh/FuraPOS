@@ -81,6 +81,7 @@ export function ProductCatalogue<R extends CatalogueRow>({
   onQuickAdd,
   showChosen = true,
   renderCard,
+  browse,
 }: {
   rows: R[]
   /** Prefix for what this document remembers per browser: view, card fields, list columns. */
@@ -120,6 +121,12 @@ export function ProductCatalogue<R extends CatalogueRow>({
    * a product out as a wide row. Cards then stack one under another.
    */
   renderCard?: (group: ProductGroup<R>, open: () => void) => ReactNode
+  /**
+   * The category, make and model chosen somewhere else — the till's catalogue
+   * sidebar. The catalogue then draws neither its category tiles nor its make
+   * and model selects, and heads the results with `title` instead.
+   */
+  browse?: { categoryId: string | null; make: string | null; model: string | null; title: string }
 }) {
   const categories = useDataStore((s) => s.categorySettings)
   const vehicleMakes = useDataStore((s) => s.vehicleMakes)
@@ -173,11 +180,15 @@ export function ProductCatalogue<R extends CatalogueRow>({
     return known.filter((name) => fitted.has(name))
   }, [make, vehicleMakes, groups])
 
+  // Chosen here, or handed in by a sidebar that does the choosing.
+  const leafId = browse ? browse.categoryId : (path.at(-1) ?? null)
+  const makeFilter = browse ? (browse.make ?? ALL) : make
+  const modelFilter = browse ? (browse.model ?? ALL) : model
+
   const inCategory = useMemo(() => {
-    const leaf = path.at(-1)
-    const within = leaf ? subtreeOf(leaf, categories) : null
+    const within = leafId ? subtreeOf(leafId, categories) : null
     return groups.filter((g) => !within || within.has(g.categoryId))
-  }, [groups, path, categories])
+  }, [groups, leafId, categories])
 
   const matching = useMemo(
     () =>
@@ -185,11 +196,11 @@ export function ProductCatalogue<R extends CatalogueRow>({
         inCategory.filter(
           (g) =>
             matchesSearch(g, search, searchExtra) &&
-            (make === ALL || g.vehicleMakes.includes(make)) &&
-            (model === ALL || g.vehicleModels.includes(model)),
+            (makeFilter === ALL || g.vehicleMakes.includes(makeFilter)) &&
+            (modelFilter === ALL || g.vehicleModels.includes(modelFilter)),
         ),
       ),
-    [inCategory, search, searchExtra, make, model],
+    [inCategory, search, searchExtra, makeFilter, modelFilter],
   )
 
   const { visible, hasMore, shown, total, sentinel, showMore } = useInfiniteRows(matching)
@@ -231,28 +242,30 @@ export function ProductCatalogue<R extends CatalogueRow>({
   return (
     <div className="space-y-3">
       {/* Categories: always the top level, whatever is drilled into below. */}
-      <div className="-m-1 flex gap-2 overflow-x-auto p-1 pb-2">
-        {roots.map((category) => (
+      {browse ? null : (
+        <div className="-m-1 flex gap-2 overflow-x-auto p-1 pb-2">
+          {roots.map((category) => (
+            <CategoryTile
+              key={category.id}
+              active={path[0] === category.id}
+              icon={<Layers />}
+              imageUrl={category.imageUrl}
+              name={category.name}
+              detail={t('{count} products', { count: formatNumber(counts.get(category.id) ?? 0) })}
+              onClick={() => goTo([category.id])}
+            />
+          ))}
           <CategoryTile
-            key={category.id}
-            active={path[0] === category.id}
-            icon={<Layers />}
-            imageUrl={category.imageUrl}
-            name={category.name}
-            detail={t('{count} products', { count: formatNumber(counts.get(category.id) ?? 0) })}
-            onClick={() => goTo([category.id])}
+            active={path.length === 0}
+            icon={<LayoutGrid />}
+            name={t('All categories')}
+            detail={t('{count} products', { count: formatNumber(groups.length) })}
+            onClick={() => goTo([])}
           />
-        ))}
-        <CategoryTile
-          active={path.length === 0}
-          icon={<LayoutGrid />}
-          name={t('All categories')}
-          detail={t('{count} products', { count: formatNumber(groups.length) })}
-          onClick={() => goTo([])}
-        />
-      </div>
+        </div>
+      )}
 
-      {levels.map((level) => {
+      {(browse ? [] : levels).map((level) => {
         const parent = categories.find((c) => c.id === level.id)
         return (
           <div
@@ -285,38 +298,51 @@ export function ProductCatalogue<R extends CatalogueRow>({
 
       <div className="rounded-card border-border bg-surface shadow-card space-y-3 border p-3">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="text-fg-muted text-sm">
-            <strong className="text-fg font-medium">{formatNumber(matching.length)}</strong>{' '}
-            {tn(matching.length, 'product', 'products')}
-          </p>
+          {browse ? (
+            <h2 className="text-fg text-lg font-semibold">
+              {browse.title}{' '}
+              <span className="text-fg-muted text-sm font-normal">
+                ({formatNumber(matching.length)} {tn(matching.length, 'product', 'products')})
+              </span>
+            </h2>
+          ) : (
+            <p className="text-fg-muted text-sm">
+              <strong className="text-fg font-medium">{formatNumber(matching.length)}</strong>{' '}
+              {tn(matching.length, 'product', 'products')}
+            </p>
+          )}
 
           <div className="ml-auto flex flex-wrap items-center gap-2">
-            <Select
-              className="w-40"
-              aria-label={t('Make')}
-              value={make}
-              onChange={(next) => {
-                setMake(next)
-                // A model belongs to one make; keeping it across a change of make
-                // would filter on a pairing that cannot exist.
-                setModel(ALL)
-              }}
-              options={[
-                { value: ALL, label: t('All makes') },
-                ...makes.map((m) => ({ value: m, label: m })),
-              ]}
-            />
-            <Select
-              className="w-40"
-              aria-label={t('Model')}
-              value={model}
-              onChange={setModel}
-              disabled={make === ALL}
-              options={[
-                { value: ALL, label: make === ALL ? t('Pick a make first') : t('All models') },
-                ...models.map((m) => ({ value: m, label: m })),
-              ]}
-            />
+            {browse ? null : (
+              <>
+                <Select
+                  className="w-40"
+                  aria-label={t('Make')}
+                  value={make}
+                  onChange={(next) => {
+                    setMake(next)
+                    // A model belongs to one make; keeping it across a change of make
+                    // would filter on a pairing that cannot exist.
+                    setModel(ALL)
+                  }}
+                  options={[
+                    { value: ALL, label: t('All makes') },
+                    ...makes.map((m) => ({ value: m, label: m })),
+                  ]}
+                />
+                <Select
+                  className="w-40"
+                  aria-label={t('Model')}
+                  value={model}
+                  onChange={setModel}
+                  disabled={make === ALL}
+                  options={[
+                    { value: ALL, label: make === ALL ? t('Pick a make first') : t('All models') },
+                    ...models.map((m) => ({ value: m, label: m })),
+                  ]}
+                />
+              </>
+            )}
             <div className="border-border rounded-control flex items-center border p-0.5">
               <Button
                 type="button"

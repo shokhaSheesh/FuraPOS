@@ -31,10 +31,10 @@ const SECTIONS = [
 ]
 
 /**
- * The till's own frame: a top bar that says which shop and whether its drawer
- * is open, and a narrow rail with the till's two sections — «Продажа», where a
- * sale is rung up, and «Касса», where the cashier sees the drawer and records
- * what was spent from it. No back-office sidebar: the till is its own place.
+ * The till's own frame: one bar with the till's two sections as tabs —
+ * «Продажа», where a sale is rung up, and «Касса», where the cashier sees the
+ * drawer and records what was spent from it — then the shop and whether its
+ * drawer is open. No back-office sidebar: the till is its own place.
  */
 export function PosLayout() {
   const { user, can } = useSession()
@@ -53,9 +53,37 @@ export function PosLayout() {
     <div className="bg-canvas flex h-screen flex-col">
       <header className="border-border bg-surface flex h-14 shrink-0 items-center gap-3 border-b px-4">
         <Logo />
-        <span className="bg-primary-soft text-primary rounded-full px-2.5 py-0.5 text-sm font-semibold">
-          {t('Till')}
-        </span>
+        {/*
+          The till's two sections as tabs in the bar, not a rail: the left edge
+          of «Продажа» belongs to its parts catalogue, and a second sidebar
+          beside it would leave the products a sliver.
+        */}
+        <nav
+          aria-label={t('Till')}
+          className="bg-surface-inset rounded-control flex items-center gap-1 p-1"
+        >
+          {SECTIONS.filter((section) => can(section.permission)).map((section) => (
+            <NavLink
+              key={section.to}
+              to={section.to}
+              end={section.end}
+              className={({ isActive }) =>
+                cn(
+                  'rounded-control flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors [&_svg]:size-4',
+                  isActive ? 'bg-surface text-fg shadow-card' : 'text-fg-muted hover:text-fg',
+                )
+              }
+            >
+              <section.icon />
+              {t(section.label)}
+              {section.to === paths.sales.newSale && cartLines > 0 ? (
+                <span className="bg-primary text-primary-fg min-w-5 rounded-full px-1.5 text-center text-[11px] leading-5 font-semibold">
+                  {cartLines}
+                </span>
+              ) : null}
+            </NavLink>
+          ))}
+        </nav>
         <Select
           className="w-56"
           aria-label={t('Location')}
@@ -89,40 +117,8 @@ export function PosLayout() {
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1">
-        <nav
-          aria-label={t('Till')}
-          className="border-border bg-surface flex w-20 shrink-0 flex-col items-stretch gap-1 border-r p-2"
-        >
-          {SECTIONS.filter((section) => can(section.permission)).map((section) => (
-            <NavLink
-              key={section.to}
-              to={section.to}
-              end={section.end}
-              className={({ isActive }) =>
-                cn(
-                  'rounded-control flex flex-col items-center gap-1 px-1 py-2.5 text-xs font-medium transition-colors',
-                  isActive
-                    ? 'bg-primary-soft text-primary'
-                    : 'text-fg-muted hover:bg-surface-muted hover:text-fg',
-                )
-              }
-            >
-              <span className="relative">
-                <section.icon className="size-5" />
-                {section.to === paths.sales.newSale && cartLines > 0 ? (
-                  <span className="bg-primary text-primary-fg absolute -top-1.5 -right-2.5 min-w-4 rounded-full px-1 text-center text-[10px] leading-4 font-semibold">
-                    {cartLines}
-                  </span>
-                ) : null}
-              </span>
-              {t(section.label)}
-            </NavLink>
-          ))}
-        </nav>
-        <div className="min-h-0 min-w-0 flex-1">
-          <Outlet />
-        </div>
+      <div className="min-h-0 flex-1">
+        <Outlet />
       </div>
     </div>
   )

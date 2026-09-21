@@ -27,21 +27,23 @@ Two very different surfaces, and this build is the first one:
    the till — client request). It writes
    exactly the sale the form did — see `src/features/pos/`. Still part of this web app, not a
    separate domain or an iframed panel as OX does it; no hardware (printer, drawer, scanner) yet.
-   Products show as **wide rows** (client reference): photo, name, Артикул, OEM, brand and make tags
-   | in stock here, location, shelf cell | price | cart button — `renderCard` on `<ProductCatalogue>`.
-   The customer is two steps (client reference): **1. find the client** — one search over drivers
-   and clients (F2) — then **2. choose the truck** (F3). The truck decides whose purchase it is: a
-   driver's own truck is his own, his autopark's truck puts the sale on the autopark's account; a
+   **Layout** (`PosLayout`): one top bar with the till's two sections as **tabs — «Продажа» and
+   «Касса»** — then the shop and whether its drawer is open. Tabs, not a rail, because «Продажа»'s
+   left edge belongs to its **«Каталог запчастей»** sidebar: «По товарам» (categories →
+   sub-categories) or «По автомобилям» (truck makes → models), with a search that narrows the tree;
+   only what this shop stocks, with counts. The products show as **wide rows** (client reference):
+   photo, name, Артикул, OEM, brand and make tags | in stock here, location, shelf cell | price |
+   cart button — `renderCard` and `browse` on `<ProductCatalogue>`. The customer is two steps:
+   **1. find the driver** — one search field over owner-drivers and autopark drivers (F2), with an
+   add-driver button beside it; **2. choose the truck** (F3). The truck decides whose purchase it
+   is: his own truck is his own, his autopark's truck puts the sale on the autopark's account; a
    single truck is chosen for him. See `src/features/pos/model/buyer.ts`. Payment is cash,
-   «Перевод» (the `card` method, renamed) or on credit — credit needs a client; no bank transfer at
-   the till, and no delivery.
-   The till has **its own frame** (`PosLayout`): a top bar with the shop and its drawer, and a rail
-   with two sections — **«Продажа»** (the sale screen) and **«Касса»** (`/pos/cash`): cash in every
-   shop's drawer now, and for this shop how it was reached — float + cash sales + paid in − taken
-   out — with the shift opened or closed there. **Expenses** (client request) are recorded at
-   «Касса» as cash-outs on the open shift with a category (meals, transport, household…), never
-   more than the drawer holds, so the cash-up expects them. The cart and customer live in
-   `tillStore` so stepping between the two sections keeps a half-rung sale.
+   «Перевод» (the `card` method, renamed) or on credit — credit needs an account; no bank transfer,
+   no delivery, no postponing. **«Касса»** (`/pos/cash`): cash in every shop's drawer now, and for
+   this shop how it was reached — float + cash sales + paid in − taken out — with the shift opened
+   or closed there. **Expenses** (client request) are recorded there as cash-outs on the open shift
+   with a category (meals, transport, household…), never more than the drawer holds. The cart,
+   customer and catalogue choice live in `tillStore`, so switching tabs keeps a half-rung sale.
 
 ## Information architecture
 

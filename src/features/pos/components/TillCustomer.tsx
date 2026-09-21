@@ -1,24 +1,21 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import {
-  Building2,
   ChevronRight,
-  Plus,
   Search,
   Truck as TruckIcon,
+  UserPlus,
   UserRound,
   Users,
   X,
 } from 'lucide-react'
 import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
-import { Popover } from '@/shared/ui/Popover'
 import { cn } from '@/shared/lib/cn'
 import { formatMoney } from '@/shared/lib/format'
 import { t } from '@/shared/i18n'
 import { useDataStore } from '@/data/store'
 import { describeTruck, type Driver } from '@/features/drivers/model/driver'
 import { NewDriverModal } from '@/features/sales/components/NewDriverModal'
-import type { Client } from '@/features/sales/api/sales'
 import {
   needsTruck,
   resolveBuyer,
@@ -37,15 +34,11 @@ function driverKind(driver: Driver) {
   return t('Owner-driver')
 }
 
-const clientKind = (client: Client) => (client.type === 'business' ? t('Company') : t('Person'))
-
 /**
  * Who is buying, in the two steps of the client's reference.
  *
- * 1. **Find the client** — one search over drivers and clients alike: owner-
- *    drivers, autopark drivers and the companies and people on account.
- * 2. **Pick the truck** — a driver's own trucks and his autopark's, or a
- *    company's fleet. The truck decides whose purchase it is; a single truck
+ * 1. **Find the driver** — owner-drivers and autopark drivers in one search.
+ * 2. **Pick the truck** — his own trucks and his autopark's. The truck decides whose purchase it is; a single truck
  *    is chosen without asking. See `../model/buyer.ts`.
  *
  * F2 opens the search and F3 the trucks, so a cashier can serve a queue
@@ -60,28 +53,27 @@ export function TillCustomer({
 }) {
   const drivers = useDataStore((s) => s.drivers)
   const clients = useDataStore((s) => s.clients)
-  const [searching, setSearching] = useState(false)
+  const searchRef = useRef<HTMLInputElement>(null)
   const [choosing, setChoosing] = useState(false)
   const [adding, setAdding] = useState(false)
 
-  const options = useMemo(() => trucksOf(buyer.party, drivers), [buyer.party, drivers])
+  const options = useMemo(() => trucksOf(buyer.party), [buyer.party])
 
   const pickParty = (party: Party) => {
-    setSearching(false)
     setChoosing(false)
-    onChange(resolveBuyer(party, null, drivers, clients))
+    onChange(resolveBuyer(party, null, clients))
   }
 
   const pickTruck = (option: TruckOption | null) => {
     setChoosing(false)
-    onChange(resolveBuyer(buyer.party, option, drivers, clients))
+    onChange(resolveBuyer(buyer.party, option, clients))
   }
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'F2') {
         event.preventDefault()
-        setSearching(true)
+        searchRef.current?.focus()
       } else if (event.key === 'F3' && options.length > 0) {
         event.preventDefault()
         setChoosing(true)
@@ -96,22 +88,17 @@ export function TillCustomer({
 
   return (
     <div className="space-y-4">
-      <Step number={1} title={t('Find the client')} hotkey="F2">
-        <PartySearch
-          open={searching}
-          onOpenChange={setSearching}
+      <Step number={1} title={t('Find the driver')} hotkey="F2">
+        <DriverSearch
+          inputRef={searchRef}
           drivers={drivers}
-          clients={clients}
           value={buyer.party}
           onPick={pickParty}
-          onAddDriver={() => {
-            setSearching(false)
-            setAdding(true)
-          }}
+          onAddDriver={() => setAdding(true)}
         />
         <PartyCard
           party={buyer.party}
-          onOpen={() => setSearching(true)}
+          onOpen={() => searchRef.current?.focus()}
           onClear={() => pickParty(null)}
         />
       </Step>
@@ -206,30 +193,10 @@ function PartyCard({
   onOpen: () => void
   onClear: () => void
 }) {
-  const icon =
-    party === null ? (
-      <Users />
-    ) : party.kind === 'driver' ? (
-      <UserRound />
-    ) : party.client.type === 'business' ? (
-      <Building2 />
-    ) : (
-      <UserRound />
-    )
-  const name =
-    party === null
-      ? t('Walk-in customer')
-      : party.kind === 'driver'
-        ? party.driver.fullName
-        : party.client.name
-  const kind =
-    party === null
-      ? t('Retail')
-      : party.kind === 'driver'
-        ? driverKind(party.driver)
-        : clientKind(party.client)
-  const phone =
-    party === null ? null : party.kind === 'driver' ? party.driver.phone : party.client.phone
+  const icon = party === null ? <Users /> : <UserRound />
+  const name = party === null ? t('Walk-in customer') : party.driver.fullName
+  const kind = party === null ? t('Retail') : driverKind(party.driver)
+  const phone = party === null ? null : party.driver.phone
 
   return (
     <div className="border-border rounded-card flex items-center gap-3 border p-2.5">
@@ -340,168 +307,136 @@ function TruckCard({
   )
 }
 
-/** One search over everybody who can buy: drivers first, then clients on account. */
-function PartySearch({
-  open,
-  onOpenChange,
+/**
+ * Step 1's one search field. Typing lists the drivers beneath it — name,
+ * phone, card code or any of his number plates — and choosing one closes the
+ * list. There is no second search inside a popup: the field is the search.
+ */
+function DriverSearch({
+  inputRef,
   drivers,
-  clients,
   value,
   onPick,
   onAddDriver,
 }: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  inputRef: RefObject<HTMLInputElement | null>
   drivers: Driver[]
-  clients: Client[]
   value: Party
   onPick: (party: Party) => void
   onAddDriver: () => void
 }) {
   const [term, setTerm] = useState('')
+  const [open, setOpen] = useState(false)
 
-  const { foundDrivers, foundClients } = useMemo(() => {
+  const found = useMemo(() => {
     const q = term.trim().toLowerCase()
     const digits = q.replace(/\D/g, '')
-    const hit = (texts: (string | null | undefined)[], phone: string | null) =>
-      !q ||
-      texts.some((text) => text?.toLowerCase().includes(q)) ||
-      (digits.length > 2 && (phone ?? '').replace(/\D/g, '').includes(digits))
-    return {
-      foundDrivers: drivers
-        .filter((driver) => driver.status === 'active')
-        .filter((driver) =>
-          hit(
-            [
-              driver.fullName,
-              driver.code,
-              driver.autoparkName,
-              driver.autoparkTruck?.plate,
-              ...driver.ownTrucks.map((truck) => truck.plate),
-            ],
-            driver.phone,
-          ),
-        )
-        .slice(0, 30),
-      foundClients: clients
-        .filter((client) => client.status === 'active')
-        .filter((client) => hit([client.name], client.phone))
-        .slice(0, 30),
-    }
-  }, [drivers, clients, term])
+    return drivers
+      .filter((driver) => driver.status === 'active')
+      .filter(
+        (driver) =>
+          !q ||
+          [
+            driver.fullName,
+            driver.code,
+            driver.autoparkName,
+            driver.autoparkTruck?.plate,
+            ...driver.ownTrucks.map((truck) => truck.plate),
+          ].some((text) => text?.toLowerCase().includes(q)) ||
+          (digits.length > 2 && (driver.phone ?? '').replace(/\D/g, '').includes(digits)),
+      )
+      .slice(0, 30)
+  }, [drivers, term])
 
   const pick = (party: Party) => {
     setTerm('')
+    setOpen(false)
+    inputRef.current?.blur()
     onPick(party)
   }
 
-  const row = (
-    key: string,
-    selected: boolean,
-    title: string,
-    detail: string,
-    onClick: () => void,
-  ) => (
-    <li key={key}>
-      <button
-        type="button"
-        onClick={onClick}
-        className={cn(
-          'hover:bg-canvas flex w-full flex-col rounded-md px-2 py-1.5 text-left',
-          selected && 'bg-primary-soft/40',
-        )}
-      >
-        <span className="text-fg truncate text-sm">{title}</span>
-        <span className="text-fg-subtle text-2xs truncate">{detail}</span>
-      </button>
-    </li>
-  )
-
   return (
-    <Popover
-      open={open}
-      onOpenChange={onOpenChange}
-      className="w-[26rem] p-0"
-      align="start"
-      trigger={
-        <button
-          type="button"
-          className="border-border bg-surface text-fg-muted rounded-control hover:border-border-strong flex h-10 w-full items-center gap-2 border px-3 text-left text-sm"
-        >
-          <Search className="size-4 shrink-0" />
-          <span className="truncate">{t('Search by name, phone or number plate…')}</span>
-        </button>
-      }
-    >
-      <div className="border-border border-b p-2">
+    <div className="flex items-center gap-2">
+      <div className="relative min-w-0 flex-1">
+        <Search className="text-fg-subtle pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
         <Input
-          autoFocus
+          ref={inputRef}
           value={term}
-          onChange={(event) => setTerm(event.target.value)}
-          placeholder={t('Search by name, phone or number plate…')}
-          aria-label={t('Search clients')}
-          className="h-8"
+          onChange={(event) => {
+            setTerm(event.target.value)
+            setOpen(true)
+          }}
+          onFocus={() => setOpen(true)}
+          // Late enough for a click on a result to land first.
+          onBlur={() => setTimeout(() => setOpen(false), 150)}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') setOpen(false)
+            if (event.key === 'Enter' && found[0]) pick({ kind: 'driver', driver: found[0] })
+          }}
+          placeholder={t('Search a driver by name, phone or number plate…')}
+          aria-label={t('Search drivers')}
+          className="pl-9"
         />
+        {open ? (
+          <ul className="border-border bg-surface shadow-popover rounded-control absolute inset-x-0 top-full z-30 mt-1 max-h-80 overflow-y-auto border p-1">
+            {found.map((driver) => (
+              <li key={driver.id}>
+                <button
+                  type="button"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => pick({ kind: 'driver', driver })}
+                  className={cn(
+                    'hover:bg-canvas flex w-full flex-col rounded-md px-2 py-1.5 text-left',
+                    value?.driver.id === driver.id && 'bg-primary-soft/40',
+                  )}
+                >
+                  <span className="text-fg truncate text-sm">{driver.fullName}</span>
+                  <span className="text-fg-subtle text-2xs truncate">
+                    {[
+                      driverKind(driver),
+                      driver.phone,
+                      [...driver.ownTrucks, driver.autoparkTruck]
+                        .filter((truck) => truck !== null)
+                        .map((truck) => truck.plate)
+                        .join(', ') || null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </span>
+                </button>
+              </li>
+            ))}
+            {found.length === 0 ? (
+              <li className="text-fg-subtle px-2 py-3 text-center text-sm">
+                {t('No driver matches')}
+                <button
+                  type="button"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => {
+                    setOpen(false)
+                    onAddDriver()
+                  }}
+                  className="text-primary mt-1 flex w-full items-center justify-center gap-1 text-sm hover:underline"
+                >
+                  <UserPlus className="size-4" />
+                  {t('Add a new owner-driver')}
+                </button>
+              </li>
+            ) : null}
+          </ul>
+        ) : null}
       </div>
-      <ul className="max-h-96 overflow-y-auto p-1">
-        {row('walk-in', value === null, t('Walk-in customer'), t('Retail'), () => pick(null))}
-        {foundDrivers.length ? (
-          <li className="text-fg-subtle text-2xs px-2 pt-2 pb-1 font-semibold tracking-wide uppercase">
-            {t('Drivers')}
-          </li>
-        ) : null}
-        {foundDrivers.map((driver) =>
-          row(
-            driver.id,
-            value?.kind === 'driver' && value.driver.id === driver.id,
-            driver.fullName,
-            [
-              driverKind(driver),
-              driver.phone,
-              [...driver.ownTrucks, driver.autoparkTruck]
-                .filter((truck) => truck !== null)
-                .map((truck) => truck.plate)
-                .join(', ') || null,
-            ]
-              .filter(Boolean)
-              .join(' · '),
-            () => pick({ kind: 'driver', driver }),
-          ),
-        )}
-        {foundClients.length ? (
-          <li className="text-fg-subtle text-2xs px-2 pt-2 pb-1 font-semibold tracking-wide uppercase">
-            {t('Clients')}
-          </li>
-        ) : null}
-        {foundClients.map((client) =>
-          row(
-            client.id,
-            value?.kind === 'client' && value.client.id === client.id,
-            client.name,
-            [
-              clientKind(client),
-              client.phone,
-              client.debt > 0 ? `${t('Owes us')} ${formatMoney(client.debt)}` : null,
-            ]
-              .filter(Boolean)
-              .join(' · '),
-            () => pick({ kind: 'client', client }),
-          ),
-        )}
-        {foundDrivers.length === 0 && foundClients.length === 0 ? (
-          <li className="text-fg-subtle px-2 py-4 text-center text-sm">{t('No client matches')}</li>
-        ) : null}
-        <li className="border-border mt-1 border-t pt-1">
-          <button
-            type="button"
-            onClick={onAddDriver}
-            className="hover:bg-canvas text-fg flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm"
-          >
-            <Plus className="size-4" />
-            {t('Add a new owner-driver')}
-          </button>
-        </li>
-      </ul>
-    </Popover>
+      <Button
+        type="button"
+        variant="secondary"
+        size="icon"
+        className="size-10"
+        aria-label={t('Add a new owner-driver')}
+        title={t('Add a new owner-driver')}
+        onClick={onAddDriver}
+      >
+        <UserPlus />
+      </Button>
+    </div>
   )
 }

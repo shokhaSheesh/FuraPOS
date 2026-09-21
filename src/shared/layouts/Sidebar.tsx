@@ -20,7 +20,15 @@ export function Sidebar() {
   const sections = navigation
     .map((section) => ({
       ...section,
-      items: section.items?.filter((item) => !item.permission || can(item.permission)),
+      items: section.items
+        ?.map((item) => {
+          if (!item.tabs) return item
+          // A tabbed screen opens on the first tab this person may see.
+          const first = item.tabs.find((tab) => can(tab.permission))
+          return first ? { ...item, to: first.to } : null
+        })
+        .filter((item): item is NonNullable<typeof item> => item !== null)
+        .filter((item) => !item.permission || can(item.permission)),
     }))
     .filter((section) =>
       section.items ? section.items.length > 0 : !section.permission || can(section.permission),
@@ -58,7 +66,11 @@ function SidebarSection({ section, collapsed }: { section: NavSection; collapsed
   const toggleSection = useUiStore((state) => state.toggleSection)
 
   const Icon = section.icon
-  const sectionActive = section.items?.some((item) => pathname.startsWith(item.to)) ?? false
+  const sectionActive =
+    section.items?.some(
+      (item) =>
+        pathname.startsWith(item.to) || item.tabs?.some((tab) => pathname.startsWith(tab.to)),
+    ) ?? false
   const open = openSections.includes(section.id) || sectionActive
 
   if (section.to) {
@@ -114,7 +126,9 @@ function SidebarSection({ section, collapsed }: { section: NavSection; collapsed
                 className={({ isActive }) =>
                   cn(
                     'rounded-control mt-0.5 flex items-center gap-2 px-2.5 py-1.5 text-sm',
-                    isActive ? 'bg-primary-soft text-primary font-medium' : rowIdle,
+                    isActive || item.tabs?.some((tab) => pathname.startsWith(tab.to))
+                      ? 'bg-primary-soft text-primary font-medium'
+                      : rowIdle,
                   )
                 }
               >

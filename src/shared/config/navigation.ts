@@ -41,9 +41,23 @@ import { paths } from './paths'
 
 export type NavBadge = 'new' | 'beta'
 
+/** One tab of a screen that is split into tabs, each at its own address. */
+export interface NavTab {
+  label: string
+  to: string
+  permission: string
+  icon?: LucideIcon
+}
+
 export interface NavItem {
   label: string
   to: string
+  /**
+   * A single entry for a screen split into tabs. The entry opens the first tab
+   * the user may see, shows whenever they may see any of them, and stays
+   * highlighted on every one.
+   */
+  tabs?: NavTab[]
   /** Grants required to see this item — `view` on the section it opens. */
   permission?: string
   badge?: NavBadge
@@ -57,6 +71,28 @@ export interface NavItem {
    */
   group?: string
 }
+
+/**
+ * The Sales screen's tabs: what we sell over the counter, what the online
+ * store sells, and what other businesses order from us. Each keeps its own
+ * address, filters and actions; they share a heading and one sidebar entry,
+ * because to the business they are all "sales".
+ */
+export const SALES_TABS: NavTab[] = [
+  {
+    label: 'Offline sales',
+    icon: Receipt,
+    to: paths.sales.orders,
+    permission: 'sales.orders.view',
+  },
+  { label: 'Online sales', icon: Globe, to: paths.sales.online, permission: 'sales.online.view' },
+  {
+    label: 'Partner orders',
+    icon: Handshake,
+    to: paths.sales.partnerOrders,
+    permission: 'sales.partnerOrders.view',
+  },
+]
 
 export interface NavSection {
   id: string
@@ -87,23 +123,12 @@ export const navigation: NavSection[] = [
     label: 'Sales',
     icon: ShoppingCart,
     items: [
+      // One screen, three tabs (client request) — see SALES_TABS.
       {
-        label: 'Offline sales',
+        label: 'All sales',
         icon: Receipt,
         to: paths.sales.orders,
-        permission: 'sales.orders.view',
-      },
-      {
-        label: 'Online sales',
-        icon: Globe,
-        to: paths.sales.online,
-        permission: 'sales.online.view',
-      },
-      {
-        label: 'Partner orders',
-        icon: Handshake,
-        to: paths.sales.partnerOrders,
-        permission: 'sales.partnerOrders.view',
+        tabs: SALES_TABS,
       },
       {
         label: 'Cash shifts',

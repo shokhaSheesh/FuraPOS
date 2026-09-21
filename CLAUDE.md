@@ -36,8 +36,10 @@ Do not rename a nav item or invent a screen without updating that map first.
    KPIs are added (sales, average check, gross margin), and OX's welcome banner is replaced by a
    "Needs attention" list. Widget-by-widget correspondence is in the Dashboard section of
    docs/OX-NAVIGATION-MAP.md.
-2. **Sales** — **Offline sales** (the ledger, plus **New sale** for entering one by hand),
-   **Online sales** (the e-commerce feed, read-only), **Partner orders** and **Cash shifts**.
+2. **Sales** — one **Sales** screen (sidebar: «Все продажи») with three tabs, each at its own
+   address: **Offline sales** (the ledger, plus **New sale** for entering one by hand), **Online
+   sales** (the e-commerce feed, read-only) and **Partner orders** — client request; the tabs are
+   `SALES_TABS` in `navigation.ts`, drawn by `<RouteTabs>`. **Cash shifts** stays its own entry.
 
    **Partner orders** are orders another business has placed _with us_ — the mirror of
    Procurement → Orders. They place it, we accept it and ship it in as many loads as it takes, and

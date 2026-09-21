@@ -27,6 +27,8 @@ import {
   type OnlineSale,
 } from '../model/onlineSale'
 import { t } from '@/shared/i18n'
+import { RouteTabs } from '@/shared/components/RouteTabs'
+import { SALES_TABS } from '@/shared/config/navigation'
 
 /**
  * Online sales — orders placed in the e-commerce app.
@@ -150,7 +152,8 @@ export default function OnlineSalesListPage() {
   return (
     <>
       <PageHeader
-        title={t('Online sales')}
+        title={t('Sales')}
+        tabs={<RouteTabs tabs={SALES_TABS} />}
         description={t(
           'Orders placed in the e-commerce app. View only — they are managed in the app — but every one takes stock from the shop it is picked from.',
         )}

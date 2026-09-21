@@ -2284,4 +2284,7 @@ export const ru: Dictionary = {
   '’s current figure is shown beside it.': ' — текущее значение показано рядом.',
   '”. Check the spelling, or add the product first.':
     '». Проверьте написание или сначала добавьте товар.',
+  Sections: 'Разделы',
+  'Sales taken at the counter, by phone or with delivery — typed in here.':
+    'Продажи с прилавка, по телефону и с доставкой — вводятся здесь.',
 }

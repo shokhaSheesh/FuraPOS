@@ -7,18 +7,25 @@ interface PageHeaderProps {
   action?: ReactNode
   /** Tabs or segmented control sitting under the title. */
   below?: ReactNode
+  /**
+   * The tabs of a screen split into sections, drawn straight under the title
+   * so the description and filters beneath them belong to the tab.
+   */
+  tabs?: ReactNode
 }
 
-export function PageHeader({ title, description, action, below }: PageHeaderProps) {
+export function PageHeader({ title, description, action, below, tabs }: PageHeaderProps) {
   return (
     <div className="space-y-3">
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-fg text-lg font-semibold tracking-tight">{title}</h1>
-          {description ? <p className="text-fg-muted text-sm">{description}</p> : null}
+          {description && !tabs ? <p className="text-fg-muted text-sm">{description}</p> : null}
         </div>
         {action ? <div className="shrink-0">{action}</div> : null}
       </div>
+      {tabs}
+      {description && tabs ? <p className="text-fg-muted text-sm">{description}</p> : null}
       {below}
     </div>
   )

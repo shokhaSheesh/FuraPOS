@@ -27,6 +27,8 @@ import {
   type SaleStatus,
 } from '../model/sale'
 import { t } from '@/shared/i18n'
+import { RouteTabs } from '@/shared/components/RouteTabs'
+import { SALES_TABS } from '@/shared/config/navigation'
 
 const Empty = () => <span className="text-fg-subtle">—</span>
 
@@ -257,6 +259,7 @@ export function SalesListPage({ title, description }: { title: string; descripti
       <PageHeader
         title={title}
         description={description}
+        tabs={<RouteTabs tabs={SALES_TABS} />}
         action={
           <div className="flex items-center gap-2">
             <Button variant="secondary" onClick={exportCsv}>
@@ -357,6 +360,9 @@ export function SalesListPage({ title, description }: { title: string; descripti
 
 export default function AllSalesPage() {
   return (
-    <SalesListPage title={t('All sales')} description={t('Every sale, across every location.')} />
+    <SalesListPage
+      title={t('Sales')}
+      description={t('Sales taken at the counter, by phone or with delivery — typed in here.')}
+    />
   )
 }

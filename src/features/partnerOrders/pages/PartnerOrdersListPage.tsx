@@ -27,6 +27,8 @@ import {
 } from '../model/partnerOrder'
 import { usePartnerOrderStatusCounts, usePartnerOrders } from '../api/partnerOrders'
 import { t } from '@/shared/i18n'
+import { RouteTabs } from '@/shared/components/RouteTabs'
+import { SALES_TABS } from '@/shared/config/navigation'
 
 /**
  * Orders other businesses have placed with us.
@@ -153,7 +155,8 @@ export default function PartnerOrdersListPage() {
   return (
     <>
       <PageHeader
-        title={t('Partner orders')}
+        title={t('Sales')}
+        tabs={<RouteTabs tabs={SALES_TABS} />}
         description={t(
           'What other businesses have ordered from us. They place it, we accept it and send it — in as many loads as it takes — and they tell us what arrived.',
         )}

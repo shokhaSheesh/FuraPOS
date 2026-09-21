@@ -753,6 +753,13 @@ says so rather than pretending otherwise.
 **Nav renamed with it**, at the client's request: `All sales` → **Offline sales**, `Online sales`
 unchanged, **Partner orders** added.
 
+**Then merged into one screen**, also at the client's request: the three are now **tabs of a
+single Sales page** — Offline sales, Online sales, Partner orders — behind one sidebar entry,
+**All sales** («Все продажи»). Each tab keeps its own address (`/sales/orders`, `/sales/online`,
+`/sales/partner-orders`), filters and actions, so links and bookmarks are unchanged; only the
+sidebar and the heading are shared. Cash shifts stays its own entry — it is the cash-up, not a
+kind of sale. The tabs are `SALES_TABS` in `src/shared/config/navigation.ts`.
+
 ### Orders — three kinds, at the client's request
 
 «Закуп 3 ta type bo'ladi». One order screen with a switch at the top, rather than three screens,

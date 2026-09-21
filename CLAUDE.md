@@ -26,6 +26,10 @@ Two very different surfaces, and this build is the first one:
    customer, the promotion that applies, payment method and change, and Pay / Postpone. It writes
    exactly the sale the form did — see `src/features/pos/`. Still part of this web app, not a
    separate domain or an iframed panel as OX does it; no hardware (printer, drawer, scanner) yet.
+   Products show as **wide rows** (client reference): photo, name, Артикул, OEM, brand and make tags
+   | in stock here, location, shelf cell | price | cart button — `renderCard` on `<ProductCatalogue>`.
+   The customer is found by **client search** (name or phone) above the driver picker. Payment is
+   cash, card or on credit — no bank transfer at the till, and no delivery.
 
 ## Information architecture
 
@@ -51,9 +55,11 @@ Do not rename a nav item or invent a screen without updating that map first.
 
    The ledger: The lifecycle views are
    counted filter chips on the ledger (`/sales/orders?status=open`), not separate nav entries. The status
-   set is OX's, verbatim: open / new / processed / delivering / delivered / completed / postponed /
-   deleted — a fulfilment lifecycle, not POS leftovers. Deleted sales are excluded from All sales
-   and its totals, so a cancelled sale never counts toward revenue.
+   set is OX's **without its two delivery states**: open / new / processed / completed / postponed /
+   deleted. Delivery on offline sales (the states «Доставляется» / «Доставлено», the address, cost
+   and courier, the columns and the detail tab) was **removed at the client's request** — an offline
+   sale leaves with the customer. Online sales keep their own delivery. Deleted sales are excluded
+   from All sales and its totals, so a cancelled sale never counts toward revenue.
    Field-by-field correspondence with OX is in docs/OX-NAVIGATION-MAP.md.
 
 3. **Products / Services** — product list, transfers, corrections, stocktaking, goods receipt,

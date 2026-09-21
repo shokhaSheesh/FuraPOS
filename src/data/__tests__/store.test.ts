@@ -58,7 +58,6 @@ describe('data store', () => {
       lines: [line({ discountPercent: 10 })],
       status: 'completed',
       expiresAt: null,
-      delivery: null,
     })
 
     expect(useDataStore.getState().sales).toHaveLength(before + 1)
@@ -79,7 +78,6 @@ describe('data store', () => {
       lines: [line()],
       status: 'open',
       expiresAt: null,
-      delivery: null,
     })
 
     const updated = useDataStore.getState().updateSale(sale.id, { paid: 999_999_999 })
@@ -98,7 +96,6 @@ describe('data store', () => {
       lines: [line()],
       status: 'open',
       expiresAt: null,
-      delivery: null,
     })
     expect(sale.finishedAt).toBeNull()
 

@@ -532,7 +532,6 @@ export interface CreateSaleInput {
   lines: SaleLine[]
   status: SaleStatus
   expiresAt: string | null
-  delivery: Sale['delivery']
   /** Set when the seller applied a promotion on the New sale screen. */
   promotionId?: string | null
   /** Who collected the parts, scanned at the counter. */
@@ -803,11 +802,9 @@ export const useDataStore = create<CatalogState>((set, get) => ({
       lines: input.lines,
       subtotal: totals.subtotal,
       discount: totals.discount,
-      deliveryCost: input.delivery?.cost ?? 0,
-      total: totals.total + (input.delivery?.cost ?? 0),
+      total: totals.total,
       paid: input.paid,
-      debt: Math.max(0, totals.total + (input.delivery?.cost ?? 0) - input.paid),
-      delivery: input.delivery,
+      debt: Math.max(0, totals.total - input.paid),
       expiresAt: input.expiresAt,
       createdAt: now,
       updatedAt: now,
@@ -833,7 +830,7 @@ export const useDataStore = create<CatalogState>((set, get) => ({
           debt: Math.max(0, sale.total - paid),
           updatedAt: new Date().toISOString(),
           finishedAt:
-            status === 'completed' || status === 'delivered'
+            status === 'completed'
               ? (sale.finishedAt ?? new Date().toISOString())
               : sale.finishedAt,
         }

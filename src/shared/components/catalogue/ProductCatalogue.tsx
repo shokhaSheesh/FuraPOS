@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type ReactNode } from 'react'
+import { Fragment, useCallback, useMemo, useState, type ReactNode } from 'react'
 import { Folder, LayoutGrid, Layers, List, Package, Plus, Search, Settings2 } from 'lucide-react'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { ScrollSentinel } from '@/shared/components/ScrollSentinel'
@@ -80,6 +80,7 @@ export function ProductCatalogue<R extends CatalogueRow>({
   renderDialog,
   onQuickAdd,
   showChosen = true,
+  renderCard,
 }: {
   rows: R[]
   /** Prefix for what this document remembers per browser: view, card fields, list columns. */
@@ -114,6 +115,11 @@ export function ProductCatalogue<R extends CatalogueRow>({
   onQuickAdd?: (group: ProductGroup<R>) => boolean
   /** The sticky "Chosen" bar. Off where the screen shows its own cart. */
   showChosen?: boolean
+  /**
+   * A card of the screen's own, in place of the standard one — the till lays
+   * a product out as a wide row. Cards then stack one under another.
+   */
+  renderCard?: (group: ProductGroup<R>, open: () => void) => ReactNode
 }) {
   const categories = useDataStore((s) => s.categorySettings)
   const vehicleMakes = useDataStore((s) => s.vehicleMakes)
@@ -335,7 +341,7 @@ export function ProductCatalogue<R extends CatalogueRow>({
             </div>
             {/* The list's Columns menu lands here, where the cards' Fields menu sits. */}
             {view === 'table' ? <div ref={setColumnsSlot} className="flex" /> : null}
-            {view === 'cards' ? (
+            {view === 'cards' && !renderCard ? (
               <Popover
                 align="end"
                 className="max-h-[min(28rem,var(--radix-popover-content-available-height))] w-64 overflow-y-auto p-1"
@@ -431,18 +437,30 @@ export function ProductCatalogue<R extends CatalogueRow>({
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] gap-3">
-            {visible.map((group) => (
-              <ProductCard
-                key={group.productId}
-                group={group}
-                has={has}
-                canSeeCost={canSeeCost}
-                renderStats={renderStats}
-                renderSales={renderSales}
-                onOpen={() => openGroup(group)}
-              />
-            ))}
+          <div
+            className={
+              renderCard
+                ? 'space-y-2'
+                : 'grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] gap-3'
+            }
+          >
+            {visible.map((group) =>
+              renderCard ? (
+                <Fragment key={group.productId}>
+                  {renderCard(group, () => openGroup(group))}
+                </Fragment>
+              ) : (
+                <ProductCard
+                  key={group.productId}
+                  group={group}
+                  has={has}
+                  canSeeCost={canSeeCost}
+                  renderStats={renderStats}
+                  renderSales={renderSales}
+                  onOpen={() => openGroup(group)}
+                />
+              ),
+            )}
           </div>
           <ScrollSentinel
             ref={sentinel}

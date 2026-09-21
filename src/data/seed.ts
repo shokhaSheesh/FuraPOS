@@ -912,14 +912,10 @@ export const sales: Sale[] = Array.from({ length: 420 }, (_, index) => {
     'open',
     'new',
     'processed',
-    'delivering',
-    'delivered',
     'postponed',
   ] as const)
-  const settled = status === 'completed' || status === 'delivered'
+  const settled = status === 'completed'
   const paid = settled ? total : random() > 0.6 ? Math.round(total / 2) : 0
-  const needsDelivery = status === 'delivering' || status === 'delivered'
-  const deliveryCost = needsDelivery ? between(20_000, 90_000) : 0
   const createdAt = new Date(
     Date.now() -
       daysAgo * 86_400_000 -
@@ -953,20 +949,11 @@ export const sales: Sale[] = Array.from({ length: 420 }, (_, index) => {
     channel: pick(['desk', 'desk', 'phone', 'online'] as const),
     comment: null,
     lines,
-    delivery: needsDelivery
-      ? {
-          address: `Ташкент, ул. ${pick(['Амира Темура', 'Бунёдкор', 'Навои', 'Чилонзор'])}, ${between(1, 90)}`,
-          cost: deliveryCost,
-          scheduledFor: new Date(createdAt.getTime() + 86_400_000).toISOString().slice(0, 10),
-          courier: pick(['Sardor', 'Jasur', 'Otabek']),
-        }
-      : null,
     subtotal,
     discount,
-    deliveryCost,
-    total: total + deliveryCost,
+    total,
     paid,
-    debt: Math.max(0, total + deliveryCost - paid),
+    debt: Math.max(0, total - paid),
     expiresAt:
       status === 'postponed' ? new Date(createdAt.getTime() + 3 * 86_400_000).toISOString() : null,
     createdAt: createdAt.toISOString(),
@@ -2334,7 +2321,7 @@ export const companySettings: CompanySettings = {
   allowOverCreditLimit: false,
   // Deliberately not `open` or `postponed`: an unfinished sale is not revenue,
   // and counting it would flatter every figure in Analytics.
-  revenueStatuses: ['completed', 'delivered', 'processed'],
+  revenueStatuses: ['completed', 'processed'],
   updatedAt: new Date(Date.now() - 30 * 86_400_000).toISOString(),
 }
 

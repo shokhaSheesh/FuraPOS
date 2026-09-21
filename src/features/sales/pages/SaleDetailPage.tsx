@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
-import { ArrowLeft, HandCoins, MapPin, RotateCcw, Trash2, Truck } from 'lucide-react'
+import { ArrowLeft, HandCoins, RotateCcw, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { ProductThumb } from '@/shared/components/ProductThumb'
@@ -136,7 +136,6 @@ export default function SaleDetailPage() {
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone={status?.tone ?? 'neutral'}>{t(status?.label ?? sale.status)}</Badge>
             <Badge>{t(SALE_CHANNELS.find((c) => c.value === sale.channel)?.label ?? '')}</Badge>
-            {sale.delivery ? <Badge tone="info">{t('Delivery')}</Badge> : null}
             {sale.expiresAt ? (
               <Badge tone="warning">
                 {t('Expires')} {formatDate(sale.expiresAt)}
@@ -158,15 +157,18 @@ export default function SaleDetailPage() {
           value={sale.debt > 0 ? formatMoney(sale.debt) : '—'}
           tone={sale.debt > 0 ? 'danger' : undefined}
         />
-        <Metric label={t('Items')} value={`${formatNumber(units)} in ${sale.lines.length} lines`} />
+        <Metric
+          label={t('Items')}
+          value={t('{units} in {lines} lines', {
+            units: formatNumber(units),
+            lines: sale.lines.length,
+          })}
+        />
       </div>
 
       <Tabs
         items={[
           { value: 'overview', label: t('Overview'), content: <Overview sale={sale} /> },
-          ...(sale.delivery
-            ? [{ value: 'delivery', label: t('Delivery'), content: <Delivery sale={sale} /> }]
-            : []),
           {
             value: 'activity',
             label: t('Activity'),
@@ -287,7 +289,7 @@ function Overview({ sale }: { sale: Sale }) {
                     {line.categoryName ?? <span className="text-fg-subtle">—</span>}
                   </td>
                   <td className="px-3 py-2 text-right tabular-nums">
-                    {formatNumber(line.quantity)} {line.unit}
+                    {formatNumber(line.quantity)} {t(line.unit)}
                   </td>
                   <td className="px-3 py-2 text-right tabular-nums">
                     {formatMoney(line.unitPrice)}
@@ -307,9 +309,6 @@ function Overview({ sale }: { sale: Sale }) {
           <Row label={t('Subtotal')} value={formatMoney(sale.subtotal)} />
           {sale.discount > 0 ? (
             <Row label={t('Discount')} value={`− ${formatMoney(sale.discount)}`} tone="warning" />
-          ) : null}
-          {sale.deliveryCost > 0 ? (
-            <Row label={t('Delivery')} value={`+ ${formatMoney(sale.deliveryCost)}`} />
           ) : null}
           <div className="border-border flex items-baseline justify-between border-t pt-2">
             <span className="text-fg text-sm font-medium">{t('Total')}</span>
@@ -373,35 +372,6 @@ function Overview({ sale }: { sale: Sale }) {
         </Card>
       </div>
     </div>
-  )
-}
-
-function Delivery({ sale }: { sale: Sale }) {
-  if (!sale.delivery) return null
-  return (
-    <Card className="max-w-2xl">
-      <CardHeader>
-        <CardTitle>{t('Delivery')}</CardTitle>
-      </CardHeader>
-      <CardBody className="space-y-3">
-        <p className="text-fg flex items-start gap-2 text-sm">
-          <MapPin className="text-fg-subtle mt-0.5 size-4 shrink-0" />
-          {sale.delivery.address}
-        </p>
-        <div className="space-y-2">
-          <Row label={t('Cost')} value={formatMoney(sale.delivery.cost)} />
-          <Row
-            label={t('Scheduled for')}
-            value={sale.delivery.scheduledFor ? formatDate(sale.delivery.scheduledFor) : 'Not set'}
-          />
-          <Row label={t('Courier')} value={sale.delivery.courier ?? 'Not assigned'} />
-        </div>
-        <p className="text-fg-subtle text-2xs flex items-center gap-2">
-          <Truck className="size-3.5" />
-          {t('The sale completes once it has been delivered and settled.')}
-        </p>
-      </CardBody>
-    </Card>
   )
 }
 

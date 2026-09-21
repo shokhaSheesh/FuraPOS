@@ -2309,4 +2309,18 @@ export const ru: Dictionary = {
   '{number} paid': '{number} оплачена',
   '{number} postponed': '{number} отложена',
   '{number} accepted for delivery': '{number} принята на доставку',
+  'Search a client by name or phone…': 'Найдите клиента по имени или телефону…',
+  'Search clients': 'Поиск клиентов',
+  'No client matches': 'Клиент не найден',
+  'In stock: {count} {unit}': 'В наличии: {count} {unit}',
+  Cell: 'Ячейка',
+  'Open the product card': 'Открыть карточку товара',
+  'Source, comment, hold until': 'Источник, комментарий, отложить до',
+  'Ring up the first sale on the till.': 'Пробейте первую продажу на кассе.',
+  'Sales rung up on the till, at the counter or by phone.':
+    'Продажи, пробитые на кассе, — с прилавка или по телефону.',
+  SKU: 'Артикул',
+  'from {price}': 'от {price}',
+  l: 'л',
+  '{units} in {lines} lines': '{units} ед. в {lines} стр.',
 }

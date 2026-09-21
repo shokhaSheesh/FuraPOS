@@ -16,5 +16,4 @@ export const SALE_FILTER_OVERRIDES: FieldOverrides<Sale> = {
   channel: { type: 'options', optionLabel: labelFrom(SALE_CHANNELS) },
   paymentMethod: { type: 'options', optionLabel: labelFrom(PAYMENT_METHODS) },
   items: { get: (sale) => sale.lines.reduce((sum, line) => sum + line.quantity, 0) },
-  deliveryDate: { type: 'date', get: (sale) => sale.delivery?.scheduledFor ?? null },
 }

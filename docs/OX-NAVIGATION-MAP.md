@@ -1728,6 +1728,11 @@ lifecycle, exactly what a counter that also takes phone orders needs. This also 
 open question about the Sales sub-pages — Open, Closed, Postponed and Deleted sales each map onto a
 real status, so all four screens earn their place.
 
+**Later, the two delivery states were dropped** at the client's request, together with delivery on
+offline sales altogether (address, cost, courier, the Delivery columns and detail tab): an offline
+sale leaves with the customer. The set is now `open / new / processed / completed / postponed /
+deleted`, and a processed sale goes straight to completed. Online sales keep their own delivery.
+
 Completing a sale that requires delivery moves it to **processed**, not completed: goods that still
 have to reach the customer are not a finished sale.
 

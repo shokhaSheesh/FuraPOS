@@ -6,7 +6,6 @@ import {
   Clock,
   CreditCard,
   HandCoins,
-  Landmark,
   LogOut,
   Minus,
   Plus,
@@ -52,7 +51,6 @@ import { NOBODY, TillCustomer, needsTruck, type TillBuyer } from '../components/
 const PAYMENTS: { value: PaymentMethod; label: string; icon: typeof Banknote }[] = [
   { value: 'cash', label: 'Cash', icon: Banknote },
   { value: 'card', label: 'Card', icon: CreditCard },
-  { value: 'transfer', label: 'Bank transfer', icon: Landmark },
   { value: 'credit', label: 'On credit', icon: HandCoins },
 ]
 
@@ -89,9 +87,6 @@ export default function PosPage() {
   const [more, setMore] = useState(false)
   const [channel, setChannel] = useState<SaleChannel>('desk')
   const [comment, setComment] = useState('')
-  const [deliveryOn, setDeliveryOn] = useState(false)
-  const [address, setAddress] = useState('')
-  const [deliveryCostText, setDeliveryCostText] = useState('')
   const [holdUntil, setHoldUntil] = useState<Date | null>(null)
   /** The sale just rung up, so the cashier can open it or hand over a number. */
   const [last, setLast] = useState<{ id: string; number: string } | null>(null)
@@ -177,11 +172,9 @@ export default function PosPage() {
 
   /* --- paying ------------------------------------------------------------- */
 
-  const deliveryCost = deliveryOn ? Number(deliveryCostText) || 0 : 0
-  const totals = computeTotals(cart, Number(paidText) || 0, deliveryCost)
+  const totals = computeTotals(cart, Number(paidText) || 0)
   const units = unitsIn(cart)
-  const blocked =
-    cart.length === 0 || noDrawer || needsTruck(buyer) || (deliveryOn && address.trim().length < 3)
+  const blocked = cart.length === 0 || noDrawer || needsTruck(buyer)
 
   const reset = () => {
     setCart([])
@@ -191,19 +184,13 @@ export default function PosPage() {
     setAppliedPromotionId(null)
     setChannel('desk')
     setComment('')
-    setDeliveryOn(false)
-    setAddress('')
-    setDeliveryCostText('')
     setHoldUntil(null)
     setMore(false)
     setSaleKey((key) => key + 1)
   }
 
   const ring = (intent: 'pay' | 'hold') => {
-    // A sale still to be delivered is not finished: it goes on as processed
-    // and the delivery states carry it the rest of the way.
-    const status: SaleStatus =
-      intent === 'hold' ? 'postponed' : deliveryOn ? 'processed' : 'completed'
+    const status: SaleStatus = intent === 'hold' ? 'postponed' : 'completed'
     createSale.mutate(
       {
         clientId: buyer.client?.id ?? null,
@@ -216,9 +203,6 @@ export default function PosPage() {
         paid: intent === 'pay' ? Number(paidText) || totals.total : 0,
         lines: cart,
         promotionId: appliedPromotionId,
-        delivery: deliveryOn
-          ? { address: address.trim(), cost: deliveryCost, scheduledFor: null, courier: null }
-          : null,
         expiresAt:
           intent === 'hold'
             ? (holdUntil ?? new Date(Date.now() + 3 * 86_400_000)).toISOString()
@@ -231,9 +215,7 @@ export default function PosPage() {
           toast.success(
             intent === 'hold'
               ? t('{number} postponed', { number: sale.number })
-              : deliveryOn
-                ? t('{number} accepted for delivery', { number: sale.number })
-                : t('{number} paid', { number: sale.number }),
+              : t('{number} paid', { number: sale.number }),
           )
           reset()
         },
@@ -352,9 +334,6 @@ export default function PosPage() {
                   − {formatMoney(totals.discount)}
                 </Row>
               ) : null}
-              {totals.deliveryCost > 0 ? (
-                <Row label={t('Delivery')}>+ {formatMoney(totals.deliveryCost)}</Row>
-              ) : null}
               <div className="flex items-baseline justify-between pt-1">
                 <span className="text-fg font-medium">{t('To pay')}</span>
                 <span className="text-fg text-2xl font-semibold tabular-nums">
@@ -364,7 +343,7 @@ export default function PosPage() {
             </div>
 
             <div
-              className="grid grid-cols-4 gap-1.5"
+              className="grid grid-cols-3 gap-1.5"
               role="radiogroup"
               aria-label={t('Payment method')}
             >
@@ -429,7 +408,7 @@ export default function PosPage() {
                 <ChevronDown
                   className={cn('size-3.5 transition-transform', more && 'rotate-180')}
                 />
-                {t('Source, delivery, comment')}
+                {t('Source, comment, hold until')}
               </button>
               {more ? (
                 <div className="mt-2 space-y-2">
@@ -445,32 +424,6 @@ export default function PosPage() {
                     onChange={(event) => setComment(event.target.value)}
                     placeholder={t('Comment')}
                   />
-                  <label className="text-fg-muted flex cursor-pointer items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={deliveryOn}
-                      onChange={(event) => setDeliveryOn(event.target.checked)}
-                      className="accent-primary size-4"
-                    />
-                    {t('Delivery')}
-                  </label>
-                  {deliveryOn ? (
-                    <div className="grid grid-cols-[1fr_7rem] gap-2">
-                      <Input
-                        value={address}
-                        onChange={(event) => setAddress(event.target.value)}
-                        placeholder={t('Street, building, flat')}
-                      />
-                      <Input
-                        type="number"
-                        min={0}
-                        value={deliveryCostText}
-                        onChange={(event) => setDeliveryCostText(event.target.value)}
-                        placeholder={t('Cost')}
-                        className="text-right"
-                      />
-                    </div>
-                  ) : null}
                   <DatePicker
                     value={holdUntil}
                     onChange={setHoldUntil}
@@ -500,9 +453,7 @@ export default function PosPage() {
                 disabled={blocked}
                 onClick={() => ring('pay')}
               >
-                {deliveryOn
-                  ? t('Accept order')
-                  : t('Pay {total}', { total: formatMoney(totals.total) })}
+                {t('Pay {total}', { total: formatMoney(totals.total) })}
               </Button>
             </div>
             {cart.length > 0 ? (

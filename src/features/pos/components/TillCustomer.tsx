@@ -18,6 +18,7 @@ import {
 import { DriverPicker } from '@/features/sales/components/DriverPicker'
 import { NewDriverModal } from '@/features/sales/components/NewDriverModal'
 import type { Client } from '@/features/sales/api/sales'
+import { ClientPicker } from './ClientPicker'
 
 /** Who is buying: whose account the sale lands on, who collected it, and for which truck. */
 export interface TillBuyer {
@@ -78,6 +79,8 @@ export function TillCustomer({
 
   return (
     <div className="space-y-2">
+      {/* Whose account it goes on. Picking an autopark driver below sets it too. */}
+      <ClientPicker value={buyer.client} onChange={(client) => onChange({ ...buyer, client })} />
       <SegmentedControl
         aria-label={t('Which kind of driver is buying')}
         value={section}

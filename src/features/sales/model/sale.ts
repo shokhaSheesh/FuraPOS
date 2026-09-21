@@ -5,13 +5,12 @@ import { t } from '@/shared/i18n'
 export type PaymentMethod = 'cash' | 'card' | 'transfer' | 'credit'
 
 /**
- * OX's status set, adopted verbatim (Новые / Обработано / Доставляется /
- * Доставлено / Завершён / Отложки / Открыто / Удалено). The delivery states
- * are not POS leftovers — they are an order-fulfilment lifecycle, which is
- * exactly what a counter that also takes phone orders needs.
+ * OX's status set without its two delivery states. «Доставляется» and
+ * «Доставлено» were dropped at the client's request along with delivery
+ * itself: an offline sale leaves with the customer, so the lifecycle is
+ * open / new / postponed → processed → completed, or deleted.
  */
-export type SaleStatus =
-  'open' | 'new' | 'processed' | 'delivering' | 'delivered' | 'completed' | 'postponed' | 'deleted'
+export type SaleStatus = 'open' | 'new' | 'processed' | 'completed' | 'postponed' | 'deleted'
 
 export const SALE_STATUSES: {
   value: SaleStatus
@@ -21,8 +20,6 @@ export const SALE_STATUSES: {
   { value: 'open', label: 'Open', tone: 'neutral' },
   { value: 'new', label: 'New', tone: 'info' },
   { value: 'processed', label: 'Processed', tone: 'info' },
-  { value: 'delivering', label: 'Delivering', tone: 'warning' },
-  { value: 'delivered', label: 'Delivered', tone: 'success' },
   { value: 'completed', label: 'Completed', tone: 'success' },
   { value: 'postponed', label: 'Postponed', tone: 'warning' },
   { value: 'deleted', label: 'Deleted', tone: 'danger' },
@@ -121,10 +118,8 @@ export interface Sale {
   channel: SaleChannel
   comment: string | null
   lines: SaleLine[]
-  delivery: SaleDelivery | null
   subtotal: number
   discount: number
-  deliveryCost: number
   total: number
   paid: number
   /** total - paid, floored at zero. What the client still owes. */
@@ -137,14 +132,6 @@ export interface Sale {
   finishedAt: IsoDate | null
 }
 
-export interface SaleDelivery {
-  address: string
-  cost: number
-  /** Planned delivery date, ISO day. */
-  scheduledFor: string | null
-  courier: string | null
-}
-
 /* --- money -------------------------------------------------------------- */
 
 export const lineGross = (line: SaleLine) => line.quantity * line.unitPrice
@@ -154,7 +141,6 @@ export const lineTotal = (line: SaleLine) => lineGross(line) - lineDiscount(line
 export interface SaleTotals {
   subtotal: number
   discount: number
-  deliveryCost: number
   total: number
   change: number
   debt: number
@@ -164,15 +150,13 @@ export interface SaleTotals {
  * One place computes the money, so the lines table, the totals panel and the
  * payload can never disagree. Nothing here is stored — always derive.
  */
-export function computeTotals(lines: SaleLine[], paid: number, deliveryCost = 0): SaleTotals {
+export function computeTotals(lines: SaleLine[], paid: number): SaleTotals {
   const subtotal = lines.reduce((sum, line) => sum + lineGross(line), 0)
   const discount = lines.reduce((sum, line) => sum + lineDiscount(line), 0)
-  // Delivery is charged on top of goods, and is never discounted.
-  const total = subtotal - discount + deliveryCost
+  const total = subtotal - discount
   return {
     subtotal,
     discount,
-    deliveryCost,
     total,
     change: Math.max(0, paid - total),
     debt: Math.max(0, total - paid),
@@ -196,13 +180,6 @@ export const saleLineSchema = z.object({
   discountPercent: z.number().min(0).max(100),
 })
 
-export const saleDeliverySchema = z.object({
-  address: z.string().min(3, 'A delivery needs an address'),
-  cost: z.number().nonnegative(),
-  scheduledFor: z.string().nullable(),
-  courier: z.string().nullable(),
-})
-
 export const saleDraftSchema = z.object({
   clientId: z.string().nullable(),
   locationId: z.string().min(1, 'Pick a location'),
@@ -210,7 +187,6 @@ export const saleDraftSchema = z.object({
   channel: z.enum(['desk', 'phone', 'online']),
   comment: z.string(),
   paid: z.number().nonnegative(),
-  delivery: saleDeliverySchema.nullable(),
   expiresAt: z.string().nullable(),
   lines: z.array(saleLineSchema).min(1, 'Add at least one product'),
 })
@@ -231,10 +207,6 @@ export function nextStep(status: SaleStatus): { to: SaleStatus; label: string } 
       return { to: 'processed', label: t('Mark as processed') }
     // 'deleted' and 'completed' fall through to null: both are terminal.
     case 'processed':
-      return { to: 'delivering', label: t('Send for delivery') }
-    case 'delivering':
-      return { to: 'delivered', label: t('Mark as delivered') }
-    case 'delivered':
       return { to: 'completed', label: t('Complete sale') }
     default:
       return null

@@ -52,18 +52,16 @@ describe('sale totals', () => {
     expect(totals.change).toBe(0)
   })
 
-  it('adds delivery on top of goods, and never discounts it', () => {
-    const totals = computeTotals([line({ discountPercent: 50 })], 0, 30_000)
+  it('takes the discount off the goods', () => {
+    const totals = computeTotals([line({ discountPercent: 50 })], 0)
     expect(totals.discount).toBe(100_000)
-    expect(totals.deliveryCost).toBe(30_000)
-    expect(totals.total).toBe(130_000)
+    expect(totals.total).toBe(100_000)
   })
 
   it('is zero across the board with no lines', () => {
     expect(computeTotals([], 0)).toEqual({
       subtotal: 0,
       discount: 0,
-      deliveryCost: 0,
       total: 0,
       change: 0,
       debt: 0,
@@ -76,7 +74,7 @@ describe('sale totals', () => {
  * wrong step here is a wrong button on screen.
  */
 describe('sale lifecycle', () => {
-  it('walks a delivery order to completion in fixed steps', () => {
+  it('walks a sale to completion in fixed steps', () => {
     const path: SaleStatus[] = ['open']
     let guard = 0
     while (guard++ < 10) {
@@ -84,7 +82,7 @@ describe('sale lifecycle', () => {
       if (!step) break
       path.push(step.to)
     }
-    expect(path).toEqual(['open', 'processed', 'delivering', 'delivered', 'completed'])
+    expect(path).toEqual(['open', 'processed', 'completed'])
   })
 
   it('offers nothing further once a sale is finished or deleted', () => {
@@ -108,8 +106,6 @@ describe('status catalogue', () => {
       open: true,
       new: true,
       processed: true,
-      delivering: true,
-      delivered: true,
       completed: true,
       postponed: true,
       deleted: true,

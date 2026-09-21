@@ -126,29 +126,12 @@ const columns: TableColumn<Sale>[] = [
     cell: ({ row }) => formatMoney(row.original.total),
   },
   {
-    accessorKey: 'deliveryCost',
-    header: 'Delivery',
-    meta: { align: 'right' },
-    cell: ({ row }) =>
-      row.original.deliveryCost > 0 ? formatMoney(row.original.deliveryCost) : <Empty />,
-  },
-  {
     accessorKey: 'debt',
     header: 'Debt',
     meta: { align: 'right' },
     cell: ({ row }) =>
       row.original.debt > 0 ? (
         <span className="text-danger font-medium">{formatMoney(row.original.debt)}</span>
-      ) : (
-        <Empty />
-      ),
-  },
-  {
-    id: 'deliveryDate',
-    header: 'Delivery date',
-    cell: ({ row }) =>
-      row.original.delivery?.scheduledFor ? (
-        formatDate(row.original.delivery.scheduledFor)
       ) : (
         <Empty />
       ),
@@ -182,8 +165,6 @@ const HIDDEN_BY_DEFAULT = [
   'updatedAt',
   'finishedAt',
   'expiresAt',
-  'deliveryCost',
-  'deliveryDate',
   'subtotal',
   'discount',
   'comment',
@@ -339,7 +320,7 @@ export function SalesListPage({ title, description }: { title: string; descripti
           ) : (
             <EmptyState
               title={t('No sales yet')}
-              description={t('Record the first sale taken at the desk, by phone or on delivery.')}
+              description={t('Ring up the first sale on the till.')}
               action={
                 showCreate ? (
                   <Button variant="primary" asChild>
@@ -362,7 +343,7 @@ export default function AllSalesPage() {
   return (
     <SalesListPage
       title={t('Sales')}
-      description={t('Sales taken at the counter, by phone or with delivery — typed in here.')}
+      description={t('Sales rung up on the till, at the counter or by phone.')}
     />
   )
 }

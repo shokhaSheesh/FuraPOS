@@ -37,10 +37,29 @@ export const MOVEMENT_REASONS: { value: string; label: string; kind: MovementKin
   { value: 'other', label: 'Something else', kind: 'in' },
 ]
 
+/**
+ * What a cashier spent the drawer's money on (client request) — a petty
+ * expense has a category, so a month of them adds up to something readable
+ * instead of a column of "other".
+ */
+export const EXPENSE_CATEGORIES: { value: string; label: string }[] = [
+  { value: 'meal', label: 'Meals' },
+  { value: 'transport', label: 'Transport and taxi' },
+  { value: 'household', label: 'Household and cleaning' },
+  { value: 'office', label: 'Office and stationery' },
+  { value: 'loading', label: 'Loaders' },
+  { value: 'other', label: 'Other' },
+]
+
+export const expenseCategoryLabel = (value: string | null | undefined) =>
+  t(EXPENSE_CATEGORIES.find((entry) => entry.value === value)?.label ?? 'Other')
+
 export interface CashMovement {
   id: Id
   kind: MovementKind
   reason: string
+  /** For a petty expense: what it was spent on. */
+  category?: string | null
   amount: number
   comment: string | null
   at: IsoDate

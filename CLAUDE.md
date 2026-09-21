@@ -23,7 +23,8 @@ Two very different surfaces, and this build is the first one:
    A full-screen cash desk opened from the sidebar and from every "New sale" button (same tab —
    the demo data lives in one tab's memory, so a sale rung up elsewhere would never reach the ledger); it **replaces the New sale form**. Same catalogue as every document (categories, make →
    model, cards; a single-variation product goes straight into the cart on a tap), a cart with the
-   customer, the promotion that applies, payment method and change, and Pay / Postpone. It writes
+   customer, the promotion that applies, payment method and change, and Pay (no postponing at
+   the till — client request). It writes
    exactly the sale the form did — see `src/features/pos/`. Still part of this web app, not a
    separate domain or an iframed panel as OX does it; no hardware (printer, drawer, scanner) yet.
    Products show as **wide rows** (client reference): photo, name, Артикул, OEM, brand and make tags
@@ -34,6 +35,13 @@ Two very different surfaces, and this build is the first one:
    single truck is chosen for him. See `src/features/pos/model/buyer.ts`. Payment is cash,
    «Перевод» (the `card` method, renamed) or on credit — credit needs a client; no bank transfer at
    the till, and no delivery.
+   The till has **its own frame** (`PosLayout`): a top bar with the shop and its drawer, and a rail
+   with two sections — **«Продажа»** (the sale screen) and **«Касса»** (`/pos/cash`): cash in every
+   shop's drawer now, and for this shop how it was reached — float + cash sales + paid in − taken
+   out — with the shift opened or closed there. **Expenses** (client request) are recorded at
+   «Касса» as cash-outs on the open shift with a category (meals, transport, household…), never
+   more than the drawer holds, so the cash-up expects them. The cart and customer live in
+   `tillStore` so stepping between the two sections keeps a half-rung sale.
 
 ## Information architecture
 

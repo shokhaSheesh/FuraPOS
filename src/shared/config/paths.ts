@@ -22,6 +22,8 @@ export const paths = {
      * office. Every "New sale" in the product opens it.
      */
     newSale: '/pos',
+    /** The till's cash desk: the drawer at each shop, and what was spent from it. */
+    tillCash: '/pos/cash',
     orders: '/sales/orders', // OX: /app/sells/orders
     /**
      * A status view is the ledger with a filter, not a page of its own — the

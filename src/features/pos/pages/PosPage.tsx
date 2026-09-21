@@ -3,10 +3,8 @@ import { Link } from 'react-router'
 import {
   Banknote,
   ChevronDown,
-  Clock,
   ArrowRightLeft,
   HandCoins,
-  LogOut,
   Minus,
   Plus,
   ShoppingCart,
@@ -19,16 +17,13 @@ import { ProductThumb } from '@/shared/components/ProductThumb'
 import { NumberField } from '@/shared/components/NumberField'
 import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
-import { Logo } from '@/shared/ui/Logo'
 import { Select } from '@/shared/ui/Select'
-import { DatePicker } from '@/shared/ui/DatePicker'
 import { toast } from '@/shared/ui/toast'
 import { cn } from '@/shared/lib/cn'
 import { formatMoney, formatNumber } from '@/shared/lib/format'
 import { demandAt } from '@/shared/lib/demand'
 import { paths } from '@/shared/config/paths'
-import { LanguageMenu, t, tn } from '@/shared/i18n'
-import { useSession } from '@/app/providers/SessionProvider'
+import { t, tn } from '@/shared/i18n'
 import { useDataStore } from '@/data/store'
 import type { VariationRow } from '@/features/products/model/product'
 import { useCreateSale } from '@/features/sales/api/sales'
@@ -47,7 +42,8 @@ import { covers, describe as describePromotion } from '@/features/promotions/mod
 import { addOne, quantityIn, setQuantity, unitsIn } from '../model/cart'
 import { TillCatalogue, type TillRow } from '../components/TillCatalogue'
 import { TillCustomer } from '../components/TillCustomer'
-import { WALK_IN, needsTruck, type TillBuyer } from '../model/buyer'
+import { needsTruck } from '../model/buyer'
+import { useTillStore } from '../model/tillStore'
 
 const PAYMENTS: { value: PaymentMethod; label: string; icon: typeof Banknote }[] = [
   { value: 'cash', label: 'Cash', icon: Banknote },
@@ -69,19 +65,21 @@ const PAYMENTS: { value: PaymentMethod; label: string; icon: typeof Banknote }[]
  * the same way.
  */
 export default function PosPage() {
-  const { user } = useSession()
   const locations = useDataStore((s) => s.locations)
   const variations = useDataStore((s) => s.variations)
   const sales = useDataStore((s) => s.sales)
   const createSale = useCreateSale()
 
-  // The cashier's own shop when their account names one.
-  const [locationId, setLocationId] = useState<string>(
-    () => user?.locationIds[0] ?? locations[0]?.id ?? '',
-  )
+  // The session — shop, cart, buyer — outlives a step over to «Касса».
+  const locationId = useTillStore((state) => state.locationId) ?? ''
+  const cart = useTillStore((state) => state.cart)
+  const setCart = useTillStore((state) => state.setCart)
+  const buyer = useTillStore((state) => state.buyer)
+  const setBuyer = useTillStore((state) => state.setBuyer)
+  const last = useTillStore((state) => state.last)
+  const finish = useTillStore((state) => state.finish)
+  const clearSale = useTillStore((state) => state.clear)
   const location = locations.find((l) => l.id === locationId)
-  const [cart, setCart] = useState<SaleLine[]>([])
-  const [buyer, setBuyer] = useState<TillBuyer>(WALK_IN)
   const [payment, setPayment] = useState<PaymentMethod>('cash')
   const [paidText, setPaidText] = useState('')
   const [appliedPromotionId, setAppliedPromotionId] = useState<string | null>(null)
@@ -89,9 +87,6 @@ export default function PosPage() {
   const [more, setMore] = useState(false)
   const [channel, setChannel] = useState<SaleChannel>('desk')
   const [comment, setComment] = useState('')
-  const [holdUntil, setHoldUntil] = useState<Date | null>(null)
-  /** The sale just rung up, so the cashier can open it or hand over a number. */
-  const [last, setLast] = useState<{ id: string; number: string } | null>(null)
   /** Remounts the customer block on a new sale, so its own choices clear too. */
   const [saleKey, setSaleKey] = useState(0)
 
@@ -180,21 +175,27 @@ export default function PosPage() {
   const creditWithoutAccount = payment === 'credit' && buyer.client === null
   const blocked = cart.length === 0 || noDrawer || needsTruck(buyer) || creditWithoutAccount
 
-  const reset = () => {
-    setCart([])
-    setBuyer(WALK_IN)
+  /** Back to an empty till: the form's own fields, and the session's cart and buyer. */
+  const resetFields = () => {
     setPayment('cash')
     setPaidText('')
     setAppliedPromotionId(null)
     setChannel('desk')
     setComment('')
-    setHoldUntil(null)
     setMore(false)
     setSaleKey((key) => key + 1)
   }
 
-  const ring = (intent: 'pay' | 'hold') => {
-    const status: SaleStatus = intent === 'hold' ? 'postponed' : 'completed'
+  const reset = () => {
+    clearSale()
+    resetFields()
+  }
+
+  /*
+    A till sale is paid and gone. Postponing was dropped at the client's
+    request: an order put aside for later is not something the counter does.
+  */
+  const pay = () => {
     createSale.mutate(
       {
         clientId: buyer.client?.id ?? null,
@@ -205,71 +206,24 @@ export default function PosPage() {
         channel,
         comment,
         // On credit nothing changes hands; otherwise an empty field means paid in full.
-        paid: intent === 'pay' && payment !== 'credit' ? Number(paidText) || totals.total : 0,
+        paid: payment !== 'credit' ? Number(paidText) || totals.total : 0,
         lines: cart,
         promotionId: appliedPromotionId,
-        expiresAt:
-          intent === 'hold'
-            ? (holdUntil ?? new Date(Date.now() + 3 * 86_400_000)).toISOString()
-            : null,
-        status,
+        expiresAt: null,
+        status: 'completed' satisfies SaleStatus,
       },
       {
         onSuccess: (sale) => {
-          setLast({ id: sale.id, number: sale.number })
-          toast.success(
-            intent === 'hold'
-              ? t('{number} postponed', { number: sale.number })
-              : t('{number} paid', { number: sale.number }),
-          )
-          reset()
+          finish({ id: sale.id, number: sale.number })
+          toast.success(t('{number} paid', { number: sale.number }))
+          resetFields()
         },
       },
     )
   }
 
   return (
-    <div className="bg-canvas flex h-screen flex-col">
-      <header className="border-border bg-surface flex h-14 shrink-0 items-center gap-3 border-b px-4">
-        <Logo />
-        <span className="bg-primary-soft text-primary rounded-full px-2.5 py-0.5 text-sm font-semibold">
-          {t('Till')}
-        </span>
-        <Select
-          className="w-56"
-          aria-label={t('Location')}
-          value={locationId}
-          onChange={(next) => {
-            if (next === locationId) return
-            setLocationId(next)
-            // What is in the cart was checked against the other shelf.
-            if (cart.length) {
-              setCart([])
-              toast.info(t('Cart cleared — stock differs by location'))
-            }
-          }}
-          options={locations.map((l) => ({ value: l.id, label: l.name }))}
-        />
-        <ShiftPill open={openShift !== null} name={openShift?.registerName} />
-        <div className="ml-auto flex items-center gap-2">
-          {last ? (
-            <Button variant="ghost" size="sm" asChild>
-              <Link to={paths.sales.orderDetail(last.id)}>
-                {t('Last sale')} <span className="font-mono">{last.number}</span>
-              </Link>
-            </Button>
-          ) : null}
-          <span className="text-fg-muted text-sm">{user?.name}</span>
-          <LanguageMenu />
-          <Button variant="secondary" size="sm" asChild>
-            <Link to={paths.sales.orders}>
-              <LogOut />
-              {t('Back office')}
-            </Link>
-          </Button>
-        </div>
-      </header>
-
+    <div className="flex h-full flex-col">
       <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_26rem] 2xl:grid-cols-[minmax(0,1fr)_30rem]">
         <main className="min-h-0 overflow-y-auto p-4">
           <TillCatalogue
@@ -434,7 +388,7 @@ export default function PosPage() {
                 <ChevronDown
                   className={cn('size-3.5 transition-transform', more && 'rotate-180')}
                 />
-                {t('Source, comment, hold until')}
+                {t('Source and comment')}
               </button>
               {more ? (
                 <div className="mt-2 space-y-2">
@@ -450,38 +404,31 @@ export default function PosPage() {
                     onChange={(event) => setComment(event.target.value)}
                     placeholder={t('Comment')}
                   />
-                  <DatePicker
-                    value={holdUntil}
-                    onChange={setHoldUntil}
-                    placeholder={t('Hold until — 3 days by default')}
-                    minDate={new Date()}
-                  />
                 </div>
               ) : null}
             </div>
 
-            <div className="grid grid-cols-[auto_1fr] gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                size="lg"
-                disabled={blocked}
-                onClick={() => ring('hold')}
-                title={t('Postpone')}
-              >
-                <Clock />
-                {t('Postpone')}
-              </Button>
-              <Button
-                type="button"
-                variant="primary"
-                size="lg"
-                disabled={blocked}
-                onClick={() => ring('pay')}
-              >
-                {t('Pay {total}', { total: formatMoney(totals.total) })}
-              </Button>
-            </div>
+            <Button
+              type="button"
+              variant="primary"
+              size="lg"
+              className="w-full"
+              disabled={blocked}
+              onClick={pay}
+            >
+              {t('Pay {total}', { total: formatMoney(totals.total) })}
+            </Button>
+            {last && cart.length === 0 ? (
+              <p className="text-fg-subtle text-center text-xs">
+                {t('Last sale')}{' '}
+                <Link
+                  to={paths.sales.orderDetail(last.id)}
+                  className="text-primary font-mono hover:underline"
+                >
+                  {last.number}
+                </Link>
+              </p>
+            ) : null}
             {cart.length > 0 ? (
               <button
                 type="button"
@@ -496,19 +443,6 @@ export default function PosPage() {
         </aside>
       </div>
     </div>
-  )
-}
-
-function ShiftPill({ open, name }: { open: boolean; name?: string }) {
-  return (
-    <span
-      className={cn(
-        'rounded-full px-2.5 py-0.5 text-xs font-medium',
-        open ? 'bg-success-soft text-success' : 'bg-warning-soft text-warning',
-      )}
-    >
-      {open ? t('Drawer open · {name}', { name }) : t('No drawer open — cash is off')}
-    </span>
   )
 }
 

@@ -299,7 +299,15 @@ interface CatalogState {
   ) => { ok: true } | { ok: false; error: string }
   addCashMovement: (
     id: string,
-    input: { kind: CashMovement['kind']; reason: string; amount: number; comment: string | null },
+    input: {
+      kind: CashMovement['kind']
+      reason: string
+      amount: number
+      comment: string | null
+      category?: string | null
+      /** Who took the money out or put it in. Defaults to the demo owner. */
+      by?: string
+    },
   ) => { ok: true } | { ok: false; error: string }
   createDriver: (input: DriverDraft) => Driver
   updateDriver: (id: string, input: DriverDraft) => void
@@ -1924,11 +1932,12 @@ export const useDataStore = create<CatalogState>((set, get) => ({
     // fact would silently change a variance somebody already signed off.
     if (shift.status === 'closed') return { ok: false, error: 'That shift is closed' }
 
+    const { by, ...rest } = input
     const movement: CashMovement = {
       id: `mov-${shift.movements.length + 1}-${Date.now()}`,
-      ...input,
+      ...rest,
       at: new Date().toISOString(),
-      by: 'Akhmet Dauletmuratov',
+      by: by ?? 'Akhmet Dauletmuratov',
     }
     set({
       cashShifts: get().cashShifts.map((entry) =>

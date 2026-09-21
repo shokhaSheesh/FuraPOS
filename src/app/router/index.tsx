@@ -8,6 +8,7 @@ import { paths } from '@/shared/config/paths'
 import { HomeRoute, RequireAuth, RequirePermission } from './guards'
 import { RouteError } from './RouteError'
 import { t } from '@/shared/i18n'
+import { PosLayout } from '@/features/pos/components/PosLayout'
 
 const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPage'))
 const DriversPage = lazy(() => import('@/features/drivers/pages/DriversPage'))
@@ -75,6 +76,7 @@ const OrdersListPage = lazy(() => import('@/features/orders/pages/OrdersListPage
 const OrderPage = lazy(() => import('@/features/orders/pages/OrderPage'))
 const OrderImportPage = lazy(() => import('@/features/orders/pages/OrderImportPage'))
 const PosPage = lazy(() => import('@/features/pos/pages/PosPage'))
+const PosCashPage = lazy(() => import('@/features/pos/pages/PosCashPage'))
 const AllSalesPage = lazy(() => import('@/features/sales/pages/SalesListPage'))
 const SaleDetailPage = lazy(() => import('@/features/sales/pages/SaleDetailPage'))
 
@@ -113,7 +115,15 @@ const routes: RouteObject[] = [
   {
     path: paths.sales.newSale,
     errorElement: <RouteError />,
-    element: <RequireAuth>{page(<PosPage />, 'sales.orders.create')}</RequireAuth>,
+    element: (
+      <RequireAuth>
+        <PosLayout />
+      </RequireAuth>
+    ),
+    children: [
+      { index: true, element: page(<PosPage />, 'sales.orders.create') },
+      { path: paths.sales.tillCash, element: page(<PosCashPage />, 'sales.cashShifts.view') },
+    ],
   },
   {
     path: paths.procurement.orderDocument(),

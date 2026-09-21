@@ -19,6 +19,7 @@ import { useDataStore } from '@/data/store'
 import { useCashShift, useShiftActions } from '../api/shifts'
 import {
   MOVEMENT_REASONS,
+  expenseCategoryLabel,
   movementsIn,
   movementsOut,
   reasonLabel,
@@ -225,7 +226,15 @@ export default function CashShiftDetailPage() {
                     <ArrowUpRight className="text-warning size-4 shrink-0" />
                   )}
                   <div className="min-w-0 flex-1">
-                    <p className="text-fg text-sm">{reasonLabel(entry.reason)}</p>
+                    <p className="text-fg text-sm">
+                      {reasonLabel(entry.reason)}
+                      {entry.category ? (
+                        <span className="text-fg-muted">
+                          {' '}
+                          · {expenseCategoryLabel(entry.category)}
+                        </span>
+                      ) : null}
+                    </p>
                     <p className="text-fg-subtle text-2xs truncate">
                       {entry.by}
                       {entry.comment ? ` · ${entry.comment}` : ''}

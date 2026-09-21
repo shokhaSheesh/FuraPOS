@@ -48,7 +48,7 @@ export function Modal({
   submitting = false,
   children,
   primary,
-  secondaryLabel = 'Cancel',
+  secondaryLabel = t('Cancel'),
   footer,
 }: ModalProps) {
   // A half-closed modal mid-write leaves the user guessing whether it saved,

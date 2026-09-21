@@ -19,7 +19,6 @@ import { ProductPicker } from '@/shared/components/ProductPicker'
 import { ProductThumb } from '@/shared/components/ProductThumb'
 import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
-import { Select } from '@/shared/ui/Select'
 import { Modal } from '@/shared/ui/Modal'
 import { toast } from '@/shared/ui/toast'
 import { cn } from '@/shared/lib/cn'
@@ -32,10 +31,8 @@ import type { VariationRow } from '@/features/products/model/product'
 import {
   computeTotals,
   lineTotal,
-  SALE_CHANNELS,
   type Sale,
   type PaymentMethod,
-  type SaleChannel,
   type SaleLine,
   type SaleStatus,
 } from '@/features/sales/model/sale'
@@ -98,7 +95,6 @@ export default function PosPage() {
   const setPayment = (next: PaymentMethod) => update({ payment: next })
   const setPaidText = (next: string) => update({ paidText: next })
   const setAppliedPromotionId = (next: string | null) => update({ promotionId: next })
-  const setChannel = (next: SaleChannel) => update({ channel: next })
   const setComment = (next: string) => update({ comment: next })
   /** Everything a counter sale rarely needs, folded away until it does. */
   const [more, setMore] = useState(false)
@@ -371,23 +367,17 @@ export default function PosPage() {
                     <ChevronDown
                       className={cn('size-3.5 transition-transform', more && 'rotate-180')}
                     />
-                    {t('Source and comment')}
+                    {t('Comment')}
                   </button>
+                  {/* No source picker (client request): a till sale is a counter sale. */}
                   {more ? (
-                    <div className="mt-2 space-y-2">
-                      <Select
-                        className="w-full"
-                        aria-label={t('Source')}
-                        value={channel}
-                        onChange={setChannel}
-                        options={SALE_CHANNELS.map((c) => ({ ...c, label: t(c.label) }))}
-                      />
-                      <Input
-                        value={comment}
-                        onChange={(event) => setComment(event.target.value)}
-                        placeholder={t('Comment')}
-                      />
-                    </div>
+                    <Input
+                      className="mt-2"
+                      value={comment}
+                      onChange={(event) => setComment(event.target.value)}
+                      placeholder={t('Comment')}
+                      aria-label={t('Comment')}
+                    />
                   ) : null}
                 </div>
 

@@ -38,7 +38,7 @@ Two very different surfaces, and this build is the first one:
    stock here, location, shelf cell | price in UZS with USD beneath (Settings' rate, on the cards too) | cart button
    — `renderRow` and `browse` on `<ProductCatalogue>`. Photos swipe left and right when a product
    has several (`<PhotoStrip>`, the variation's `imageUrl` then its `gallery`). The cart panel is **two steps** (client request): **1. Продажа** — driver and truck, cart,
-   promotion, totals, source and comment, Park or «К оплате»; **2. Оплата** — the sale read back,
+   promotion, totals, a comment (no source picker — client request), Park or «К оплате»; **2. Оплата** — the sale read back,
    payment method and «Получено» (no change field). Paying opens a dialog with **«Печать чека»**
    (80 mm receipt) and **«Накладная»** (A4 waybill), printed in place by `PrintSale`. The customer is two steps:
    **1. find the driver** — one search field over owner-drivers and autopark drivers, with an

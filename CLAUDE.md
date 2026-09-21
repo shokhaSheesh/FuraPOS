@@ -42,7 +42,7 @@ Two very different surfaces, and this build is the first one:
    payment method and «Получено» (no change field). Paying opens a dialog with **«Печать чека»**
    (80 mm receipt) and **«Накладная»** (A4 waybill), printed in place by `PrintSale`. The customer is two steps:
    **1. find the driver** — one search field over owner-drivers and autopark drivers, with an
-   add-driver button beside it, which goes away once he is chosen; **2. choose the truck** — a
+   add-driver button beside it, which goes away once he is chosen; **2. choose the truck** — a card-styled
    select when he has several, a card when he has one. No keyboard shortcuts (client request). The truck decides whose purchase it
    is: his own truck is his own, his autopark's truck puts the sale on the autopark's account; a
    single truck is chosen for him. See `src/features/pos/model/buyer.ts`. Payment is cash,

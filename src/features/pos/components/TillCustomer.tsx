@@ -1,8 +1,16 @@
 import { useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
-import { Search, Truck as TruckIcon, UserPlus, UserRound, X } from 'lucide-react'
+import {
+  Check,
+  ChevronDown,
+  Search,
+  Truck as TruckIcon,
+  UserPlus,
+  UserRound,
+  X,
+} from 'lucide-react'
 import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
-import { Select } from '@/shared/ui/Select'
+import { Popover } from '@/shared/ui/Popover'
 import { cn } from '@/shared/lib/cn'
 import { formatMoney } from '@/shared/lib/format'
 import { t } from '@/shared/i18n'
@@ -81,26 +89,13 @@ export function TillCustomer({
             <TruckCard option={options[0]!} />
           ) : (
             <div className="space-y-1.5">
-              <Select
-                className="w-full"
-                aria-label={t('Truck')}
-                placeholder={t('Which truck is it for?')}
-                value={buyer.truck ? keyOf(buyer.truck) : undefined}
-                onChange={(key) =>
-                  pickTruck(options.find((option) => keyOf(option) === key) ?? null)
-                }
-                options={options.map((option) => ({
-                  value: keyOf(option),
-                  label: `${option.truck.plate} · ${describeTruck(option.truck) || t('Truck')} · ${
-                    option.capacity === 'autopark'
-                      ? t('Autopark «{autopark}»', { autopark: option.autoparkName })
-                      : t('His own')
-                  }`,
-                }))}
+              <TruckPicker
+                options={options}
+                value={buyer.truck}
+                keyOf={keyOf}
+                onChange={pickTruck}
               />
-              {buyer.truck ? (
-                <CapacityTag option={buyer.truck} />
-              ) : needsTruck(buyer) ? (
+              {needsTruck(buyer) ? (
                 <p className="text-danger text-2xs">
                   {t('Say which truck this is for — it decides whose purchase it is.')}
                 </p>
@@ -191,14 +186,14 @@ function PartyCard({ driver, onClear }: { driver: Driver; onClear: () => void })
   )
 }
 
-/** The one truck a driver has: shown, not chosen. */
-function TruckCard({ option }: { option: TruckOption }) {
+/** A truck as the till shows it: model, number plate, and whose purchase it makes. */
+function TruckBody({ option }: { option: TruckOption }) {
   return (
-    <div className="border-border rounded-card flex items-center gap-3 border p-2.5">
+    <>
       <Tile>
         <TruckIcon />
       </Tile>
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 text-left">
         <p className="text-fg truncate text-sm font-medium">
           {describeTruck(option.truck) || t('Truck')}
         </p>
@@ -209,7 +204,95 @@ function TruckCard({ option }: { option: TruckOption }) {
           <CapacityTag option={option} />
         </div>
       </div>
+    </>
+  )
+}
+
+/** The one truck a driver has: shown, not chosen. */
+function TruckCard({ option }: { option: TruckOption }) {
+  return (
+    <div className="border-border rounded-card flex items-center gap-3 border p-2.5">
+      <TruckBody option={option} />
     </div>
+  )
+}
+
+/**
+ * Several trucks: a dropdown drawn as the truck cards themselves (client
+ * reference), closed on the one chosen — so it reads the same before and after.
+ */
+function TruckPicker({
+  options,
+  value,
+  keyOf,
+  onChange,
+}: {
+  options: TruckOption[]
+  value: TruckOption | null
+  keyOf: (option: TruckOption) => string
+  onChange: (option: TruckOption) => void
+}) {
+  const [open, setOpen] = useState(false)
+  return (
+    <Popover
+      open={open}
+      onOpenChange={setOpen}
+      className="w-[var(--radix-popover-trigger-width)] space-y-1 p-1.5"
+      trigger={
+        <button
+          type="button"
+          aria-label={t('Truck')}
+          className={cn(
+            'rounded-card flex w-full items-center gap-3 border p-2.5 transition-colors',
+            open ? 'border-primary' : 'border-border hover:border-border-strong',
+          )}
+        >
+          {value ? (
+            <TruckBody option={value} />
+          ) : (
+            <>
+              <Tile>
+                <TruckIcon />
+              </Tile>
+              <span className="text-fg-subtle flex-1 text-left text-sm">
+                {t('Which truck is it for?')}
+              </span>
+            </>
+          )}
+          <ChevronDown
+            className={cn(
+              'text-fg-subtle size-4 shrink-0 transition-transform',
+              open && 'rotate-180',
+            )}
+          />
+        </button>
+      }
+    >
+      <div role="listbox" aria-label={t('Truck')} className="space-y-1">
+        {options.map((option) => {
+          const selected = value !== null && keyOf(value) === keyOf(option)
+          return (
+            <button
+              key={keyOf(option)}
+              type="button"
+              role="option"
+              aria-selected={selected}
+              onClick={() => {
+                onChange(option)
+                setOpen(false)
+              }}
+              className={cn(
+                'rounded-control flex w-full items-center gap-3 p-2 transition-colors',
+                selected ? 'bg-primary-soft/60' : 'hover:bg-surface-muted',
+              )}
+            >
+              <TruckBody option={option} />
+              {selected ? <Check className="text-primary size-4 shrink-0" /> : null}
+            </button>
+          )
+        })}
+      </div>
+    </Popover>
   )
 }
 

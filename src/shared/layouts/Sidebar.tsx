@@ -123,6 +123,7 @@ function SidebarSection({ section, collapsed }: { section: NavSection; collapsed
               <NavLink
                 to={item.to}
                 end={item.end}
+                target={item.newTab ? '_blank' : undefined}
                 className={({ isActive }) =>
                   cn(
                     'rounded-control mt-0.5 flex items-center gap-2 px-2.5 py-1.5 text-sm',

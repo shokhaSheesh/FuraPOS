@@ -268,7 +268,7 @@ export function SalesListPage({ title, description }: { title: string; descripti
             </Button>
             {showCreate ? (
               <Button variant="primary" asChild>
-                <Link to={paths.sales.newSale}>
+                <Link to={paths.sales.newSale} target="_blank">
                   <Plus />
                   {t('New sale')}
                 </Link>
@@ -343,7 +343,7 @@ export function SalesListPage({ title, description }: { title: string; descripti
               action={
                 showCreate ? (
                   <Button variant="primary" asChild>
-                    <Link to={paths.sales.newSale}>
+                    <Link to={paths.sales.newSale} target="_blank">
                       <Plus />
                       {t('New sale')}
                     </Link>

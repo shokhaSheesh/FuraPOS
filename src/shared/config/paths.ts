@@ -17,8 +17,11 @@ export const paths = {
 
   sales: {
     root: '/sales',
-    /** Manual sale entry — this product has no cashier POS. */
-    newSale: '/sales/new',
+    /**
+     * Where a sale is rung up: the till, a screen of its own outside the back
+     * office. Every "New sale" in the product opens it, in a new tab.
+     */
+    newSale: '/pos',
     orders: '/sales/orders', // OX: /app/sells/orders
     /**
      * A status view is the ledger with a filter, not a page of its own — the

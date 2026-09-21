@@ -74,7 +74,7 @@ const EmployeeFormPage = lazy(() => import('@/features/employees/pages/EmployeeF
 const OrdersListPage = lazy(() => import('@/features/orders/pages/OrdersListPage'))
 const OrderPage = lazy(() => import('@/features/orders/pages/OrderPage'))
 const OrderImportPage = lazy(() => import('@/features/orders/pages/OrderImportPage'))
-const NewSalePage = lazy(() => import('@/features/sales/pages/NewSalePage'))
+const PosPage = lazy(() => import('@/features/pos/pages/PosPage'))
 const AllSalesPage = lazy(() => import('@/features/sales/pages/SalesListPage'))
 const SaleDetailPage = lazy(() => import('@/features/sales/pages/SaleDetailPage'))
 
@@ -108,6 +108,13 @@ function todo(title: string, permission?: string, description?: string): ReactNo
 const routes: RouteObject[] = [
   /* The printable order sits outside the shell: a sheet of A4 with no sidebar
      or top bar, so what is on screen is exactly what saves to PDF. */
+  /* The till is a screen of its own — no sidebar, no top bar — opened in a
+     new tab from the back office, as a cash desk would be. */
+  {
+    path: paths.sales.newSale,
+    errorElement: <RouteError />,
+    element: <RequireAuth>{page(<PosPage />, 'sales.orders.create')}</RequireAuth>,
+  },
   {
     path: paths.procurement.orderDocument(),
     errorElement: <RouteError />,
@@ -135,7 +142,6 @@ const routes: RouteObject[] = [
 
       // --- Sales ---------------------------------------------------------
       { path: paths.sales.root, element: <Navigate to={paths.sales.orders} replace /> },
-      { path: paths.sales.newSale, element: page(<NewSalePage />, 'sales.orders.create') },
       { path: paths.sales.orders, element: page(<AllSalesPage />, 'sales.orders.view') },
       { path: paths.sales.orderDetail(), element: page(<SaleDetailPage />, 'sales.orders.view') },
       {

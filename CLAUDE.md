@@ -19,10 +19,13 @@ Two very different surfaces, and this build is the first one:
 
 1. **Back-office web app** (this project) — the admin/manager dashboard: inventory, sales history,
    staff, finance, marketing, settings. Desktop-first, dense data tables, sidebar navigation.
-2. ~~POS terminal app~~ — **cut.** There is no cashier POS in this product. Sales are entered
-   manually in the back office on the New sale screen. OX does ship a separate POS (a different
-   domain, iframed into the back office as a floating panel) and its sidebar "Новая продажа" merely
-   navigates to the Cash shifts list; we do neither.
+2. **The till** («Касса», `/pos`) — **back in scope at the client's request** (it had been cut).
+   A full-screen cash desk opened in its own browser tab from the sidebar and from every "New sale"
+   button; it **replaces the New sale form**. Same catalogue as every document (categories, make →
+   model, cards; a single-variation product goes straight into the cart on a tap), a cart with the
+   customer, the promotion that applies, payment method and change, and Pay / Postpone. It writes
+   exactly the sale the form did — see `src/features/pos/`. Still part of this web app, not a
+   separate domain or an iframed panel as OX does it; no hardware (printer, drawer, scanner) yet.
 
 ## Information architecture
 
@@ -37,7 +40,7 @@ Do not rename a nav item or invent a screen without updating that map first.
    "Needs attention" list. Widget-by-widget correspondence is in the Dashboard section of
    docs/OX-NAVIGATION-MAP.md.
 2. **Sales** — one **Sales** screen (sidebar: «Все продажи») with three tabs, each at its own
-   address: **Offline sales** (the ledger, plus **New sale** for entering one by hand), **Online
+   address: **Offline sales** (the ledger; **New sale** opens the till), **Online
    sales** (the e-commerce feed, read-only) and **Partner orders** — client request; the tabs are
    `SALES_TABS` in `navigation.ts`, drawn by `<RouteTabs>`. **Cash shifts** stays its own entry.
 
@@ -121,7 +124,8 @@ These are the structural ideas worth carrying into a fresh build, not just cosme
 ## Explicit non-goals for this build (yet)
 
 - No real payment processing — a sale records _how_ it was paid, it does not charge anything.
-- **No cashier POS, at all.** Not a separate app, not an embedded one. Sales are typed in by hand.
+- **No till hardware.** The till is a screen; receipt printers, cash drawers and card terminals
+  are not connected, and a barcode scanner works only as the keyboard it pretends to be.
 - **No Integrations, Partner program, Support, Webhooks or AI / MCP screens.** All five exist in
   OX and are cut from this build. The AI/MCP connector in particular is worth revisiting later —
   letting a business point Claude read-only at its own sales/stock/client data via a copyable

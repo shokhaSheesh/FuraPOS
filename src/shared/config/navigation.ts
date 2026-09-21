@@ -23,6 +23,7 @@ import {
   PackagePlus,
   Printer,
   Receipt,
+  ScanBarcode,
   ScanLine,
   Settings,
   ShieldCheck,
@@ -63,6 +64,8 @@ export interface NavItem {
   badge?: NavBadge
   /** Exact match only (used for index routes that would otherwise stay active). */
   end?: boolean
+  /** Opens in a browser tab of its own — the till, which is not part of the back office. */
+  newTab?: boolean
   /** Shown beside the label, as the sections' own icons are. */
   icon?: LucideIcon
   /**
@@ -123,6 +126,14 @@ export const navigation: NavSection[] = [
     label: 'Sales',
     icon: ShoppingCart,
     items: [
+      // The till: where a sale is rung up (client request). Its own tab.
+      {
+        label: 'Till',
+        icon: ScanBarcode,
+        to: paths.sales.newSale,
+        permission: 'sales.orders.create',
+        newTab: true,
+      },
       // One screen, three tabs (client request) — see SALES_TABS.
       {
         label: 'All sales',

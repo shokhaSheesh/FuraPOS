@@ -35,8 +35,8 @@ OX shows badges on two sections: **Закупки** is `New`, **Финансы**
 
 | OX (ru)           | Ours (en)        | OX route                                |
 | ----------------- | ---------------- | --------------------------------------- |
-| OX POS Касса      | _(not in scope)_ | `/app/sells/cashdesk-info`              |
-| Новая продажа     | New sale         | _(no route — navigates to Cash shifts)_ |
+| OX POS Касса      | Till («Касса»)   | `/app/sells/cashdesk-info`              |
+| Новая продажа     | New sale → Till  | _(no route — navigates to Cash shifts)_ |
 | Все продажи       | All sales        | `/app/sells/orders`                     |
 | Кассовые смены    | _(not in scope)_ | `/app/sells/shifts`                     |
 | Закрытые продажи  | _(not in scope)_ | `/app/sells/closed`                     |
@@ -1624,7 +1624,10 @@ where it is recorded so nobody "fixes" it by adding them back:
   (`furasentr--ox-sys--com.oxpos.oxapp.io`, passed `userId`, `language`, `theme`, `subdomain`),
   embedded in the back office as a 375×700 draggable panel with minimise / maximise / close.
   Their sidebar "Новая продажа" does not open it — it navigates to `/app/sells/shifts`, because a
-  sale needs an open shift. We build neither: sales are entered by hand on our New sale screen.
+  sale needs an open shift. We first built neither and entered sales by hand on a New sale
+  form. **Then, at the client's request, the till came back** — as a full-screen page of this app
+  (`/pos`), opened in its own tab from a sidebar entry «Касса» and from every "New sale" button,
+  and the form was retired. Same rule as OX: cash needs an open drawer at that location.
 
 ## What we had that OX does not
 

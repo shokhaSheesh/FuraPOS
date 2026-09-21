@@ -78,6 +78,8 @@ export function ProductCatalogue<R extends CatalogueRow>({
   actions,
   summary,
   renderDialog,
+  onQuickAdd,
+  showChosen = true,
 }: {
   rows: R[]
   /** Prefix for what this document remembers per browser: view, card fields, list columns. */
@@ -105,6 +107,13 @@ export function ProductCatalogue<R extends CatalogueRow>({
   summary?: ReactNode
   /** The dialog a card's + opens; `group` is null while none is open. */
   renderDialog: (group: ProductGroup<R> | null, close: () => void) => ReactNode
+  /**
+   * Handles a + on its own, without the dialog, when it returns true — the
+   * till adds a product with a single variation straight to the cart.
+   */
+  onQuickAdd?: (group: ProductGroup<R>) => boolean
+  /** The sticky "Chosen" bar. Off where the screen shows its own cart. */
+  showChosen?: boolean
 }) {
   const categories = useDataStore((s) => s.categorySettings)
   const vehicleMakes = useDataStore((s) => s.vehicleMakes)
@@ -182,7 +191,13 @@ export function ProductCatalogue<R extends CatalogueRow>({
   const chosenProducts = groups.filter((g) => g.chosen > 0).length
   const chosenUnits = groups.reduce((sum, g) => sum + g.chosen, 0)
   const open = openId ? (groups.find((g) => g.productId === openId) ?? null) : null
-  const openGroup = useCallback((group: ProductGroup<R>) => setOpenId(group.productId), [])
+  const openGroup = useCallback(
+    (group: ProductGroup<R>) => {
+      if (onQuickAdd?.(group)) return
+      setOpenId(group.productId)
+    },
+    [onQuickAdd],
+  )
   const close = useCallback(() => setOpenId(null), [])
 
   const allOwn: OwnCardField[] = [{ id: 'variations', label: t('Variations') }, ...ownFields]
@@ -425,7 +440,7 @@ export function ProductCatalogue<R extends CatalogueRow>({
                 canSeeCost={canSeeCost}
                 renderStats={renderStats}
                 renderSales={renderSales}
-                onOpen={() => setOpenId(group.productId)}
+                onOpen={() => openGroup(group)}
               />
             ))}
           </div>
@@ -440,17 +455,19 @@ export function ProductCatalogue<R extends CatalogueRow>({
       )}
 
       {/* What is on the document so far, wherever in the catalogue you are. */}
-      <div className="border-border bg-surface shadow-card rounded-card sticky bottom-3 z-10 flex flex-wrap items-center gap-x-8 gap-y-1 border px-4 py-3">
-        <p className="text-fg-muted text-sm">
-          {t('Chosen:')}{' '}
-          <strong className="text-fg font-medium">
-            {formatNumber(chosenProducts)} {tn(chosenProducts, 'product', 'products')}
-          </strong>{' '}
-          · <strong className="text-fg font-medium">{formatNumber(chosenUnits)}</strong>{' '}
-          {t('units')}
-        </p>
-        {summary}
-      </div>
+      {showChosen ? (
+        <div className="border-border bg-surface shadow-card rounded-card sticky bottom-3 z-10 flex flex-wrap items-center gap-x-8 gap-y-1 border px-4 py-3">
+          <p className="text-fg-muted text-sm">
+            {t('Chosen:')}{' '}
+            <strong className="text-fg font-medium">
+              {formatNumber(chosenProducts)} {tn(chosenProducts, 'product', 'products')}
+            </strong>{' '}
+            · <strong className="text-fg font-medium">{formatNumber(chosenUnits)}</strong>{' '}
+            {t('units')}
+          </p>
+          {summary}
+        </div>
+      ) : null}
 
       {renderDialog(open, close)}
     </div>

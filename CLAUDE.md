@@ -20,16 +20,20 @@ Two very different surfaces, and this build is the first one:
 1. **Back-office web app** (this project) — the admin/manager dashboard: inventory, sales history,
    staff, finance, marketing, settings. Desktop-first, dense data tables, sidebar navigation.
 2. **The till** («Касса», `/pos`) — **back in scope at the client's request** (it had been cut).
-   A full-screen cash desk opened in its own browser tab from the sidebar and from every "New sale"
-   button; it **replaces the New sale form**. Same catalogue as every document (categories, make →
+   A full-screen cash desk opened from the sidebar and from every "New sale" button (same tab —
+   the demo data lives in one tab's memory, so a sale rung up elsewhere would never reach the ledger); it **replaces the New sale form**. Same catalogue as every document (categories, make →
    model, cards; a single-variation product goes straight into the cart on a tap), a cart with the
    customer, the promotion that applies, payment method and change, and Pay / Postpone. It writes
    exactly the sale the form did — see `src/features/pos/`. Still part of this web app, not a
    separate domain or an iframed panel as OX does it; no hardware (printer, drawer, scanner) yet.
    Products show as **wide rows** (client reference): photo, name, Артикул, OEM, brand and make tags
    | in stock here, location, shelf cell | price | cart button — `renderCard` on `<ProductCatalogue>`.
-   The customer is found by **client search** (name or phone) above the driver picker. Payment is
-   cash, card or on credit — no bank transfer at the till, and no delivery.
+   The customer is two steps (client reference): **1. find the client** — one search over drivers
+   and clients (F2) — then **2. choose the truck** (F3). The truck decides whose purchase it is: a
+   driver's own truck is his own, his autopark's truck puts the sale on the autopark's account; a
+   single truck is chosen for him. See `src/features/pos/model/buyer.ts`. Payment is cash,
+   «Перевод» (the `card` method, renamed) or on credit — credit needs a client; no bank transfer at
+   the till, and no delivery.
 
 ## Information architecture
 

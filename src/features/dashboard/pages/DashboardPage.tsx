@@ -37,9 +37,7 @@ export default function DashboardPage() {
         description={t('Today at a glance, across all locations.')}
         action={
           <Button variant="primary" asChild>
-            <Link to={paths.sales.newSale} target="_blank">
-              {t('New sale')}
-            </Link>
+            <Link to={paths.sales.newSale}>{t('New sale')}</Link>
           </Button>
         }
         below={

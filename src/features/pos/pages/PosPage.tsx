@@ -4,7 +4,7 @@ import {
   Banknote,
   ChevronDown,
   Clock,
-  CreditCard,
+  ArrowRightLeft,
   HandCoins,
   LogOut,
   Minus,
@@ -46,17 +46,19 @@ import { useBestPromotion } from '@/features/promotions/api/promotions'
 import { covers, describe as describePromotion } from '@/features/promotions/model/promotion'
 import { addOne, quantityIn, setQuantity, unitsIn } from '../model/cart'
 import { TillCatalogue, type TillRow } from '../components/TillCatalogue'
-import { NOBODY, TillCustomer, needsTruck, type TillBuyer } from '../components/TillCustomer'
+import { TillCustomer } from '../components/TillCustomer'
+import { WALK_IN, needsTruck, type TillBuyer } from '../model/buyer'
 
 const PAYMENTS: { value: PaymentMethod; label: string; icon: typeof Banknote }[] = [
   { value: 'cash', label: 'Cash', icon: Banknote },
-  { value: 'card', label: 'Card', icon: CreditCard },
+  // Paid by transfer from a card or a phone app — «Перевод» (client request).
+  { value: 'card', label: 'Card transfer', icon: ArrowRightLeft },
   { value: 'credit', label: 'On credit', icon: HandCoins },
 ]
 
 /**
- * The till (client request): a screen of its own, opened from the sidebar in
- * a new tab, where a sale is rung up rather than filled in.
+ * The till (client request): a screen of its own, opened from the sidebar,
+ * where a sale is rung up rather than filled in.
  *
  * It replaces the New sale form. The shelf is on the left, browsed the way
  * every document in the product picks parts — categories, make and model,
@@ -79,7 +81,7 @@ export default function PosPage() {
   )
   const location = locations.find((l) => l.id === locationId)
   const [cart, setCart] = useState<SaleLine[]>([])
-  const [buyer, setBuyer] = useState<TillBuyer>(NOBODY)
+  const [buyer, setBuyer] = useState<TillBuyer>(WALK_IN)
   const [payment, setPayment] = useState<PaymentMethod>('cash')
   const [paidText, setPaidText] = useState('')
   const [appliedPromotionId, setAppliedPromotionId] = useState<string | null>(null)
@@ -174,11 +176,13 @@ export default function PosPage() {
 
   const totals = computeTotals(cart, Number(paidText) || 0)
   const units = unitsIn(cart)
-  const blocked = cart.length === 0 || noDrawer || needsTruck(buyer)
+  /** Credit is a debt on somebody's account, so it needs somebody. */
+  const creditWithoutAccount = payment === 'credit' && buyer.client === null
+  const blocked = cart.length === 0 || noDrawer || needsTruck(buyer) || creditWithoutAccount
 
   const reset = () => {
     setCart([])
-    setBuyer(NOBODY)
+    setBuyer(WALK_IN)
     setPayment('cash')
     setPaidText('')
     setAppliedPromotionId(null)
@@ -195,12 +199,13 @@ export default function PosPage() {
       {
         clientId: buyer.client?.id ?? null,
         driverId: buyer.driver?.id ?? null,
-        truckPlate: buyer.truckPlate,
+        truckPlate: buyer.truck?.truck.plate ?? null,
         locationId,
         paymentMethod: payment,
         channel,
         comment,
-        paid: intent === 'pay' ? Number(paidText) || totals.total : 0,
+        // On credit nothing changes hands; otherwise an empty field means paid in full.
+        paid: intent === 'pay' && payment !== 'credit' ? Number(paidText) || totals.total : 0,
         lines: cart,
         promotionId: appliedPromotionId,
         expiresAt:
@@ -249,7 +254,7 @@ export default function PosPage() {
         <div className="ml-auto flex items-center gap-2">
           {last ? (
             <Button variant="ghost" size="sm" asChild>
-              <Link to={paths.sales.orderDetail(last.id)} target="_blank">
+              <Link to={paths.sales.orderDetail(last.id)}>
                 {t('Last sale')} <span className="font-mono">{last.number}</span>
               </Link>
             </Button>
@@ -374,7 +379,13 @@ export default function PosPage() {
               </p>
             ) : null}
 
-            {payment === 'cash' ? (
+            {creditWithoutAccount ? (
+              <p className="text-danger text-2xs">
+                {t('On credit needs a client — find one above, or take payment another way.')}
+              </p>
+            ) : null}
+
+            {payment !== 'credit' ? (
               <div className="grid grid-cols-2 items-end gap-2">
                 <label className="space-y-1">
                   <span className="text-fg-muted text-2xs">{t('Received')}</span>
@@ -389,12 +400,27 @@ export default function PosPage() {
                     className="text-right"
                   />
                 </label>
-                <div className="rounded-control bg-surface-muted px-3 py-1.5 text-right">
-                  <p className="text-fg-subtle text-2xs">{t('Change due')}</p>
-                  <p className="text-success font-semibold tabular-nums">
-                    {formatMoney(totals.change)}
-                  </p>
-                </div>
+                {/* Less than the total leaves a debt; more is change — which only cash gives. */}
+                {paidText !== '' && totals.debt > 0 ? (
+                  <div className="rounded-control bg-danger-soft px-3 py-1.5 text-right">
+                    <p className="text-danger text-2xs">{t('Remaining debt')}</p>
+                    <p className="text-danger font-semibold tabular-nums">
+                      {formatMoney(totals.debt)}
+                    </p>
+                  </div>
+                ) : payment === 'cash' ? (
+                  <div className="rounded-control bg-surface-muted px-3 py-1.5 text-right">
+                    <p className="text-fg-subtle text-2xs">{t('Change due')}</p>
+                    <p className="text-success font-semibold tabular-nums">
+                      {formatMoney(totals.change)}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="rounded-control bg-surface-muted px-3 py-1.5 text-right">
+                    <p className="text-fg-subtle text-2xs">{t('Remaining debt')}</p>
+                    <p className="text-fg font-semibold tabular-nums">{formatMoney(0)}</p>
+                  </div>
+                )}
               </div>
             ) : null}
 

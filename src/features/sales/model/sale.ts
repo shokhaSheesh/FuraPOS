@@ -40,7 +40,7 @@ export const SALE_CHANNELS: { value: SaleChannel; label: string }[] = [
 
 export const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
   { value: 'cash', label: 'Cash' },
-  { value: 'card', label: 'Card' },
+  { value: 'card', label: 'Card transfer' },
   { value: 'transfer', label: 'Bank transfer' },
   { value: 'credit', label: 'On credit' },
 ]

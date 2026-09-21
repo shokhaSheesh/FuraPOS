@@ -108,8 +108,8 @@ function todo(title: string, permission?: string, description?: string): ReactNo
 const routes: RouteObject[] = [
   /* The printable order sits outside the shell: a sheet of A4 with no sidebar
      or top bar, so what is on screen is exactly what saves to PDF. */
-  /* The till is a screen of its own — no sidebar, no top bar — opened in a
-     new tab from the back office, as a cash desk would be. */
+  /* The till is a screen of its own — no sidebar, no top bar — opened from
+     the back office and left by its Back office button. */
   {
     path: paths.sales.newSale,
     errorElement: <RouteError />,

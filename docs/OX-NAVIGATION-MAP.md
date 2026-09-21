@@ -1626,7 +1626,7 @@ where it is recorded so nobody "fixes" it by adding them back:
   Their sidebar "Новая продажа" does not open it — it navigates to `/app/sells/shifts`, because a
   sale needs an open shift. We first built neither and entered sales by hand on a New sale
   form. **Then, at the client's request, the till came back** — as a full-screen page of this app
-  (`/pos`), opened in its own tab from a sidebar entry «Касса» and from every "New sale" button,
+  (`/pos`), opened from a sidebar entry «Касса» and from every "New sale" button,
   and the form was retired. Same rule as OX: cash needs an open drawer at that location.
 
 ## What we had that OX does not

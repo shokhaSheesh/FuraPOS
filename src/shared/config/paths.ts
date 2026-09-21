@@ -19,7 +19,7 @@ export const paths = {
     root: '/sales',
     /**
      * Where a sale is rung up: the till, a screen of its own outside the back
-     * office. Every "New sale" in the product opens it, in a new tab.
+     * office. Every "New sale" in the product opens it.
      */
     newSale: '/pos',
     orders: '/sales/orders', // OX: /app/sells/orders

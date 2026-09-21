@@ -30,14 +30,16 @@ Two very different surfaces, and this build is the first one:
    «Отложки» and «Касса»** — then the shop and whether its drawer is open. Tabs, not a rail, because «Продажа»'s
    left edge belongs to its **«Каталог запчастей»** sidebar: «По товарам» (categories →
    sub-categories) or «По автомобилям» (truck makes → models), with a search that narrows the tree;
-   only what this shop stocks, with counts. The products show as **wide rows** (client reference):
-   photo, name, Артикул, OEM, brand and make tags | in stock here, location, shelf cell | price |
-   cart button — `renderCard` and `browse` on `<ProductCatalogue>`. The customer is two steps:
+   only what this shop stocks, with counts. **Cards** are every document's standard cards; the
+   **list** is the client's **wide rows**: photo, name, Артикул, OEM, brand and make tags | in
+   stock here, location, shelf cell | price in UZS with USD beneath (Settings' rate) | cart button
+   — `renderRow` and `browse` on `<ProductCatalogue>`. Photos swipe left and right when a product
+   has several (`<PhotoStrip>`, the variation's `imageUrl` then its `gallery`). The customer is two steps:
    **1. find the driver** — one search field over owner-drivers and autopark drivers, with an
    add-driver button beside it; **2. choose the truck**. No keyboard shortcuts (client request). The truck decides whose purchase it
    is: his own truck is his own, his autopark's truck puts the sale on the autopark's account; a
    single truck is chosen for him. See `src/features/pos/model/buyer.ts`. Payment is cash,
-   «Перевод» (the `card` method, renamed) or on credit — credit needs an account; no bank transfer,
+   «Перевод» (the `card` method, renamed) or «В долг» (`credit`) — credit needs an account; no bank transfer,
    no delivery. **Several sales at once** (client request): numbered tabs above the cart, `+` opens
    another, each with its own cart, driver and payment. **«Отложки»** (`/pos/parked`, client
    request): «Отложить» saves the sale as `postponed` and frees the tab; «Продолжить» reopens it

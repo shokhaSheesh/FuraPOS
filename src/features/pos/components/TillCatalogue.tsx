@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router'
 import { DropdownMenu } from 'radix-ui'
-import { MoreVertical, Package, ShoppingCart } from 'lucide-react'
+import { MoreVertical, ShoppingCart } from 'lucide-react'
 import { Button } from '@/shared/ui/Button'
 import { cn } from '@/shared/lib/cn'
 import { paths } from '@/shared/config/paths'
@@ -15,7 +15,10 @@ import {
 } from '@/shared/components/catalogue/VariationsDialog'
 import { sumRows, type CatalogueRow, type ProductGroup } from '@/shared/components/catalogue/browse'
 import type { TableColumn } from '@/shared/components/table/features'
-import { formatMoney, formatNumber } from '@/shared/lib/format'
+import { formatMoney, formatMoneyIn, formatNumber } from '@/shared/lib/format'
+import { PhotoStrip } from '@/shared/components/catalogue/PhotoStrip'
+import { photosOf } from '@/shared/components/catalogue/browse'
+import { useDataStore } from '@/data/store'
 import { t, tn } from '@/shared/i18n'
 
 /** A variation on the till's shelf: what this shop holds of it. */
@@ -100,7 +103,8 @@ export function TillCatalogue({
       ownColumns={ownColumns}
       showChosen={false}
       browse={browse}
-      renderCard={(group, open) => (
+      // The list is the client's wide rows; the cards are every document's cards.
+      renderRow={(group, open) => (
         <TillCard group={group} locationName={locationName} onOpen={open} />
       )}
       onQuickAdd={(group) => {
@@ -182,6 +186,7 @@ export function TillCatalogue({
               meta: { align: 'right' },
               cell: ({ row }) => (
                 <QuantityStepper
+                  size="lg"
                   value={row.original.draft.quantity}
                   max={row.original.row.here}
                   label={row.original.row.variation.fullName}
@@ -197,12 +202,12 @@ export function TillCatalogue({
 }
 
 /** The cheapest price, as a shop quotes a part that comes in several versions. */
-function fromPrice(group: Group) {
+function fromPrice(group: Group, format: (value: number) => string = formatMoney) {
   const prices = group.rows.map((row) => row.variation.salePrice)
   const low = Math.min(...prices)
   return prices.some((value) => value !== low)
-    ? t('from {price}', { price: formatMoney(low) })
-    : formatMoney(low)
+    ? t('from {price}', { price: format(low) })
+    : format(low)
 }
 
 const STOCK_TONE = { critical: 'text-danger', low: 'text-caution', good: 'text-success' } as const
@@ -242,6 +247,9 @@ function TillCard({
   const oems = distinct(variations.map((v) => v.oem))
   const shelves = distinct(variations.map((v) => v.shelfAddress))
   const brand = first.manufacturer ?? first.brandName
+  // Customers often ask in dollars (client request); the rate is Settings'.
+  const usdRate = useDataStore((s) => s.company.usdRate)
+  const inUsd = (uzs: number) => formatMoneyIn(Math.round((uzs / usdRate) * 100) / 100, 'USD')
 
   return (
     <article
@@ -250,18 +258,13 @@ function TillCard({
         group.chosen > 0 ? 'border-primary' : 'border-border',
       )}
     >
-      <button
-        type="button"
-        onClick={onOpen}
-        aria-label={t('Open {productName}', { productName: group.productName })}
-        className="rounded-control bg-surface-inset text-fg-subtle flex aspect-[3/2] w-28 shrink-0 items-center justify-center self-center overflow-hidden"
-      >
-        {first.imageUrl ? (
-          <img src={first.imageUrl} alt="" className="size-full object-cover" />
-        ) : (
-          <Package className="size-6" aria-hidden />
-        )}
-      </button>
+      <PhotoStrip
+        photos={photosOf(group)}
+        label={group.productName}
+        onOpen={onOpen}
+        iconClassName="size-6"
+        className="rounded-control aspect-[3/2] w-28 shrink-0 self-center"
+      />
 
       <div className="min-w-0 flex-1 space-y-0.5 self-center">
         <h3 className="text-fg line-clamp-2 font-semibold" title={group.productName}>
@@ -312,6 +315,7 @@ function TillCard({
         <p className="text-fg text-lg leading-tight font-semibold tabular-nums">
           {fromPrice(group)}
         </p>
+        <p className="text-fg-muted text-sm tabular-nums">{fromPrice(group, inUsd)}</p>
         <p className="text-fg-subtle text-xs">/ {t(first.unit)}</p>
       </div>
 

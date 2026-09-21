@@ -1226,7 +1226,7 @@ export const ru: Dictionary = {
   'Oldest first — across {length} {p1}': 'Сначала старые — по {length} {p1}',
   'On account': 'В долг',
   'on average.': 'в среднем.',
-  'On credit': 'В кредит',
+  'On credit': 'В долг',
   'On hand': 'В наличии',
   'On the shelf': 'На полке',
   'One barcode, one price, one line on a sale.':
@@ -2340,7 +2340,7 @@ export const ru: Dictionary = {
   'Search by name, phone or number plate…': 'Поиск по имени, телефону или госномеру…',
   Clients: 'Клиенты',
   'On credit needs a client — find one above, or take payment another way.':
-    'В кредит — только клиенту: найдите его выше или примите оплату иначе.',
+    'В долг — только клиенту: найдите его выше или примите оплату иначе.',
   'Cash desk': 'Касса',
   Meals: 'Питание',
   'Transport and taxi': 'Транспорт и такси',
@@ -2371,7 +2371,7 @@ export const ru: Dictionary = {
   'Paid in by hand': 'Внесено вручную',
   'Taken out': 'Выдано',
   'Transfers — not in the drawer': 'Переводы — не в кассе',
-  'On credit — not in the drawer': 'В кредит — не в кассе',
+  'On credit — not in the drawer': 'В долг — не в кассе',
   'Money in and out': 'Движение денег',
   'Nothing spent yet': 'Расходов пока нет',
   'Expenses paid from this drawer appear here.':
@@ -2424,4 +2424,6 @@ export const ru: Dictionary = {
   'Change the quantity': 'Изменить количество',
   'Hide the parts catalogue': 'Скрыть каталог запчастей',
   'Show the parts catalogue': 'Показать каталог запчастей',
+  'Previous photo': 'Предыдущее фото',
+  'Next photo': 'Следующее фото',
 }

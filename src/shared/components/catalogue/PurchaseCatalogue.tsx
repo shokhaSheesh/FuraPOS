@@ -317,6 +317,7 @@ export function PurchaseCatalogue({
               meta: { align: 'right' },
               cell: ({ row }) => (
                 <QuantityStepper
+                  size="lg"
                   value={row.original.draft.quantity}
                   label={row.original.row.variation.fullName}
                   onChange={(quantity) => set(row.original.row, { quantity })}

@@ -930,6 +930,8 @@ export const useDataStore = create<CatalogState>((set, get) => ({
           ...resolveStock(variation.stockByLocation, get().locations),
           // Kept when the form did not send one — it only does when it changed.
           imageUrl: variation.imageUrl ?? previous?.imageUrl ?? null,
+          // The form has no field for the extra photos yet, so they are kept.
+          gallery: variation.gallery ?? previous?.gallery,
         }
       }),
       updatedAt: new Date().toISOString(),

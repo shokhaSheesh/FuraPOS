@@ -200,6 +200,7 @@ export function TransferCatalogue({
               meta: { align: 'right' },
               cell: ({ row }) => (
                 <QuantityStepper
+                  size="lg"
                   value={row.original.draft.quantity}
                   max={row.original.row.atSource}
                   label={row.original.row.variation.fullName}

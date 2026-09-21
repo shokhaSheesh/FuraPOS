@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useMemo, useState, type ReactNode } from 'react'
-import { Folder, LayoutGrid, Layers, List, Package, Plus, Search, Settings2 } from 'lucide-react'
+import { Folder, LayoutGrid, Layers, List, Plus, Search, Settings2 } from 'lucide-react'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { ScrollSentinel } from '@/shared/components/ScrollSentinel'
 import type { TableColumn } from '@/shared/components/table/features'
@@ -23,6 +23,8 @@ import {
   type ProductGroup,
 } from './browse'
 import { CATALOGUE_CARD_FIELDS } from './cardFields'
+import { PhotoStrip } from './PhotoStrip'
+import { photosOf } from './browse'
 import { ProductGroupTable } from './ProductGroupTable'
 import { t, tn } from '@/shared/i18n'
 
@@ -80,7 +82,7 @@ export function ProductCatalogue<R extends CatalogueRow>({
   renderDialog,
   onQuickAdd,
   showChosen = true,
-  renderCard,
+  renderRow,
   browse,
 }: {
   rows: R[]
@@ -117,10 +119,10 @@ export function ProductCatalogue<R extends CatalogueRow>({
   /** The sticky "Chosen" bar. Off where the screen shows its own cart. */
   showChosen?: boolean
   /**
-   * A card of the screen's own, in place of the standard one — the till lays
-   * a product out as a wide row. Cards then stack one under another.
+   * The list view as a stack of the screen's own wide rows, in place of the
+   * table — the till's list (client request). Cards stay the standard cards.
    */
-  renderCard?: (group: ProductGroup<R>, open: () => void) => ReactNode
+  renderRow?: (group: ProductGroup<R>, open: () => void) => ReactNode
   /**
    * The category, make and model chosen somewhere else — the till's catalogue
    * sidebar. The catalogue then draws neither its category tiles nor its make
@@ -366,8 +368,8 @@ export function ProductCatalogue<R extends CatalogueRow>({
               </Button>
             </div>
             {/* The list's Columns menu lands here, where the cards' Fields menu sits. */}
-            {view === 'table' ? <div ref={setColumnsSlot} className="flex" /> : null}
-            {view === 'cards' && !renderCard ? (
+            {view === 'table' && !renderRow ? <div ref={setColumnsSlot} className="flex" /> : null}
+            {view === 'cards' ? (
               <Popover
                 align="end"
                 className="max-h-[min(28rem,var(--radix-popover-content-available-height))] w-64 overflow-y-auto p-1"
@@ -418,7 +420,7 @@ export function ProductCatalogue<R extends CatalogueRow>({
         </div>
       </div>
 
-      {view === 'table' ? (
+      {view === 'table' && !renderRow ? (
         <ProductGroupTable
           storageKey={`${storageKey}-products`}
           groups={visible}
@@ -465,15 +467,15 @@ export function ProductCatalogue<R extends CatalogueRow>({
         <>
           <div
             className={
-              renderCard
+              view === 'table'
                 ? 'space-y-2'
                 : 'grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] gap-3'
             }
           >
             {visible.map((group) =>
-              renderCard ? (
+              view === 'table' && renderRow ? (
                 <Fragment key={group.productId}>
-                  {renderCard(group, () => openGroup(group))}
+                  {renderRow(group, () => openGroup(group))}
                 </Fragment>
               ) : (
                 <ProductCard
@@ -597,7 +599,6 @@ function ProductCard<R extends CatalogueRow>({
   renderSales?: (group: ProductGroup<R>, has: (id: string) => boolean) => ReactNode
   onOpen: () => void
 }) {
-  const first = group.rows[0]!.variation
   const variations = group.rows.map((row) => row.variation)
   const extras = CATALOGUE_CARD_FIELDS.filter(
     (field) => has(field.id) && (canSeeCost || !field.costOnly),
@@ -610,18 +611,12 @@ function ProductCard<R extends CatalogueRow>({
         group.chosen > 0 ? 'border-primary' : 'border-border',
       )}
     >
-      <button
-        type="button"
-        onClick={onOpen}
-        className="bg-surface-inset text-fg-subtle flex aspect-[3/2] items-center justify-center overflow-hidden"
-        aria-label={t('Open {productName}', { productName: group.productName })}
-      >
-        {first.imageUrl ? (
-          <img src={first.imageUrl} alt="" className="size-full object-cover" />
-        ) : (
-          <Package className="size-8" aria-hidden />
-        )}
-      </button>
+      <PhotoStrip
+        photos={photosOf(group)}
+        label={group.productName}
+        onOpen={onOpen}
+        className="aspect-[3/2]"
+      />
 
       <div className="flex flex-1 flex-col gap-2 p-3">
         <div>

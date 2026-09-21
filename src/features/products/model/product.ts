@@ -103,6 +103,11 @@ export interface ProductVariation {
   shelfAddress: string | null
 
   imageUrl: string | null
+  /**
+   * More photos after `imageUrl` — other angles, the box, the label (client
+   * request). Cards and the till let you swipe through them.
+   */
+  gallery?: string[]
   status: ProductStatus
 }
 
@@ -402,6 +407,7 @@ export const variationFormSchema = z.object({
   status: z.enum(['active', 'archived', 'draft']),
   /** A data URL, or null — see ImageField. */
   imageUrl: z.string().nullable(),
+  gallery: z.array(z.string()).optional(),
   stockByLocation: z.array(stockAtLocationFormSchema),
   optionValues: z.array(z.object({ optionId: z.string(), value: z.string() })),
 })

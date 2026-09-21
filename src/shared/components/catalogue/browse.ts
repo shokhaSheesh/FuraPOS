@@ -146,3 +146,12 @@ export const stockLevel = (units: number): StockLevel =>
 export function bestSellingFirst<G extends ProductGroup<CatalogueRow>>(groups: G[]): G[] {
   return [...groups].sort((a, b) => b.demand[3] - a.demand[3] || b.demand[6] - a.demand[6])
 }
+
+/** Every photo of a product once, first variation's first: its photo, then its gallery. */
+export function photosOf<R extends CatalogueRow>(group: ProductGroup<R>): string[] {
+  const all = group.rows.flatMap((row) => [
+    row.variation.imageUrl,
+    ...(row.variation.gallery ?? []),
+  ])
+  return [...new Set(all.filter((src): src is string => Boolean(src)))]
+}

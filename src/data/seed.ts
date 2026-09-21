@@ -308,6 +308,8 @@ export const products: Product[] = Array.from({ length: 137 }, (_, index) => {
           ? `${(index % 3) + 1}-${pick(['A', 'B', 'C'])}-${between(1, 20)}-${between(1, 9)}`
           : null,
       imageUrl: productPhoto(index),
+      // Every third product has a few more angles, by position — no draw.
+      ...(index % 3 === 0 ? { gallery: [productPhoto(index + 1), productPhoto(index + 2)] } : {}),
       status: 'active' as const,
     }
     // MOQ used to be drawn last, after the shelf. It has left the product, but

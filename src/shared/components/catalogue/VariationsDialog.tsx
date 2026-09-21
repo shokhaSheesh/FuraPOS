@@ -6,6 +6,7 @@ import { ProductThumb } from '@/shared/components/ProductThumb'
 import type { TableColumn } from '@/shared/components/table/features'
 import { Button } from '@/shared/ui/Button'
 import { Modal } from '@/shared/ui/Modal'
+import { cn } from '@/shared/lib/cn'
 import { formatNumber } from '@/shared/lib/format'
 import {
   buildProductFieldColumns,
@@ -146,6 +147,7 @@ function OpenProduct<R extends CatalogueRow>({
       title={group.productName}
       description={`${group.categoryPath} · ${group.rows.length} ${tn(group.rows.length, 'variation', 'variations')}`}
       size="xl"
+      tall
       footer={
         <div className="flex flex-wrap items-center justify-between gap-3">
           <span className="text-fg-muted text-sm">
@@ -215,20 +217,24 @@ export function QuantityStepper({
   max,
   label,
   onChange,
+  size = 'sm',
 }: {
   value: number
   max?: number
+  /** `lg` in the variations dialog, where quantities are the whole job (client request). */
+  size?: 'sm' | 'lg'
   /** What is being counted, for the buttons' names — the variation's full name. */
   label: string
   onChange: (next: number) => void
 }) {
+  const button = size === 'lg' ? 'size-9 [&_svg]:size-4.5' : 'size-6 [&_svg]:size-3.5'
   return (
-    <div className="flex items-center justify-end gap-1">
+    <div className={cn('flex items-center justify-end', size === 'lg' ? 'gap-1.5' : 'gap-1')}>
       <Button
         type="button"
         variant="secondary"
         size="icon"
-        className="size-6 [&_svg]:size-3.5"
+        className={button}
         aria-label={t('One fewer {label}', { label: label })}
         disabled={value <= 0}
         onClick={() => onChange(value - 1)}
@@ -236,7 +242,7 @@ export function QuantityStepper({
         <Minus />
       </Button>
       <NumberField
-        className="h-6 w-14 px-1.5 text-xs"
+        className={size === 'lg' ? 'h-9 w-16 px-2 text-center text-sm' : 'h-6 w-14 px-1.5 text-xs'}
         nullable={false}
         min={0}
         aria-label={t('Quantity of {label}', { label: label })}
@@ -247,7 +253,7 @@ export function QuantityStepper({
         type="button"
         variant="secondary"
         size="icon"
-        className="size-6 [&_svg]:size-3.5"
+        className={button}
         aria-label={t('One more {label}', { label: label })}
         disabled={max !== undefined && value >= max}
         onClick={() => onChange(value + 1)}

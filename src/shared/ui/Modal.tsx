@@ -19,6 +19,11 @@ export interface ModalProps {
   description?: string
   size?: keyof typeof sizes
   /**
+   * A fixed, tall body for a table that is worked in rather than glanced at —
+   * the variations dialog — so it does not jump in height between products.
+   */
+  tall?: boolean
+  /**
    * True while the modal's action is in flight. This is the whole point of the
    * component: while submitting, Esc / backdrop / ✕ are all inert, the footer
    * is disabled, and the spinner sits on the primary button.
@@ -45,6 +50,7 @@ export function Modal({
   title,
   description,
   size = 'md',
+  tall = false,
   submitting = false,
   children,
   primary,
@@ -66,7 +72,8 @@ export function Modal({
           onPointerDownOutside={guard}
           onInteractOutside={guard}
           className={cn(
-            'fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col',
+            'fixed top-1/2 left-1/2 z-50 flex w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col',
+            tall ? 'h-[min(46rem,92vh)]' : 'max-h-[85vh]',
             'rounded-card border-border bg-surface shadow-modal border',
             sizes[size],
           )}

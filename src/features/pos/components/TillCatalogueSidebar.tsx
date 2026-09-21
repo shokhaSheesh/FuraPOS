@@ -1,5 +1,15 @@
 import { useMemo, useState, type ReactNode } from 'react'
-import { ChevronRight, Folder, LayoutGrid, Package, Search, Truck } from 'lucide-react'
+import {
+  ChevronRight,
+  Folder,
+  LayoutGrid,
+  Package,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Search,
+  Truck,
+} from 'lucide-react'
+import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
 import { cn } from '@/shared/lib/cn'
 import { formatNumber } from '@/shared/lib/format'
@@ -50,10 +60,15 @@ export function TillCatalogueSidebar({
   rows,
   value,
   onChange,
+  open,
+  onToggle,
 }: {
   rows: CatalogueRow[]
   value: TillBrowse
   onChange: (next: TillBrowse) => void
+  /** Folded, the sidebar is a rail with one button, and the results take its room. */
+  open: boolean
+  onToggle: () => void
 }) {
   const categories = useDataStore((s) => s.categorySettings)
   const vehicleMakes = useDataStore((s) => s.vehicleMakes)
@@ -207,10 +222,40 @@ export function TillCatalogueSidebar({
       )
     })
 
+  if (!open) {
+    return (
+      <aside className="border-border bg-surface flex min-h-0 flex-col items-center border-r py-3">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label={t('Show the parts catalogue')}
+          title={t('Show the parts catalogue')}
+          onClick={onToggle}
+        >
+          <PanelLeftOpen />
+        </Button>
+      </aside>
+    )
+  }
+
   return (
     <aside className="border-border bg-surface flex min-h-0 flex-col border-r">
       <div className="space-y-3 p-3 pb-2">
-        <h2 className="text-fg text-base font-semibold">{t('Parts catalogue')}</h2>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-fg truncate text-base font-semibold">{t('Parts catalogue')}</h2>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="-mr-1 size-8"
+            aria-label={t('Hide the parts catalogue')}
+            title={t('Hide the parts catalogue')}
+            onClick={onToggle}
+          >
+            <PanelLeftClose />
+          </Button>
+        </div>
         <div className="bg-surface-inset rounded-control grid grid-cols-2 gap-1 p-1">
           {(
             [
@@ -228,15 +273,16 @@ export function TillCatalogueSidebar({
                 onChange({ ...BROWSE_ALL, mode: entry.mode })
                 setTerm('')
               }}
+              title={entry.label}
               className={cn(
-                'rounded-control flex items-center justify-center gap-1.5 px-1.5 py-2 text-xs font-medium whitespace-nowrap transition-colors [&_svg]:size-4 [&_svg]:shrink-0',
+                'rounded-control flex min-w-0 items-center justify-center gap-1 px-1 py-2 text-xs font-medium transition-colors [&_svg]:size-3.5 [&_svg]:shrink-0',
                 value.mode === entry.mode
                   ? 'bg-primary text-primary-fg shadow-card'
                   : 'text-fg-muted hover:text-fg',
               )}
             >
               {entry.icon}
-              {entry.label}
+              <span className="truncate">{entry.label}</span>
             </button>
           ))}
         </div>

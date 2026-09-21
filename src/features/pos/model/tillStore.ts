@@ -47,7 +47,10 @@ interface TillState {
   /** The sale just rung up, so it can be opened or its number read out. */
   last: { id: string; number: string } | null
   browse: TillBrowse
+  /** Whether the «Каталог запчастей» sidebar is open or folded to a rail. */
+  catalogueOpen: boolean
   setBrowse: (browse: TillBrowse) => void
+  toggleCatalogue: () => void
   setLocation: (locationId: string) => void
   /** Changes the sale on screen. */
   update: (patch: Partial<Omit<TillTab, 'id'>>) => void
@@ -67,7 +70,9 @@ export const useTillStore = create<TillState>((set) => ({
   activeId: first.id,
   last: null,
   browse: BROWSE_ALL,
+  catalogueOpen: true,
   setBrowse: (browse) => set({ browse }),
+  toggleCatalogue: () => set((state) => ({ catalogueOpen: !state.catalogueOpen })),
   // Every open cart was checked against the other shelf, so all of them go.
   setLocation: (locationId) => {
     const tab = blankTab()

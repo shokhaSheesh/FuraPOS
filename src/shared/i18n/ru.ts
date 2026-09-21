@@ -2419,4 +2419,9 @@ export const ru: Dictionary = {
   'The customer is not coming back for it. It moves to deleted sales and can be restored from the back office.':
     'Покупатель за ней не вернётся. Продажа уйдёт в удалённые — восстановить её можно в бэк-офисе.',
   'Carrying on with parked sale {number}': 'Продолжение отложенной продажи {number}',
+  '{price} each': '{price} за ед.',
+  'Remove {label}': 'Убрать {label}',
+  'Change the quantity': 'Изменить количество',
+  'Hide the parts catalogue': 'Скрыть каталог запчастей',
+  'Show the parts catalogue': 'Показать каталог запчастей',
 }

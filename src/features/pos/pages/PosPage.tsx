@@ -6,8 +6,6 @@ import {
   Clock,
   ArrowRightLeft,
   HandCoins,
-  Minus,
-  Plus,
   ShoppingCart,
   Tag,
   Trash2,
@@ -15,7 +13,6 @@ import {
 } from 'lucide-react'
 import { ProductPicker } from '@/shared/components/ProductPicker'
 import { ProductThumb } from '@/shared/components/ProductThumb'
-import { NumberField } from '@/shared/components/NumberField'
 import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
 import { Select } from '@/shared/ui/Select'
@@ -81,6 +78,8 @@ export default function PosPage() {
   const finish = useTillStore((state) => state.finish)
   const browse = useTillStore((state) => state.browse)
   const setBrowse = useTillStore((state) => state.setBrowse)
+  const catalogueOpen = useTillStore((state) => state.catalogueOpen)
+  const toggleCatalogue = useTillStore((state) => state.toggleCatalogue)
   const rewriteSale = useDataStore((s) => s.rewriteSale)
   const categories = useDataStore((s) => s.categorySettings)
   const location = locations.find((l) => l.id === locationId)
@@ -237,8 +236,21 @@ export default function PosPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="grid min-h-0 flex-1 grid-cols-[16rem_minmax(0,1fr)_25rem] 2xl:grid-cols-[19rem_minmax(0,1fr)_30rem]">
-        <TillCatalogueSidebar rows={rows} value={browse} onChange={setBrowse} />
+      <div
+        className={cn(
+          'grid min-h-0 flex-1',
+          catalogueOpen
+            ? 'grid-cols-[17rem_minmax(0,1fr)_25rem] 2xl:grid-cols-[19rem_minmax(0,1fr)_30rem]'
+            : 'grid-cols-[3.5rem_minmax(0,1fr)_25rem] 2xl:grid-cols-[3.5rem_minmax(0,1fr)_30rem]',
+        )}
+      >
+        <TillCatalogueSidebar
+          rows={rows}
+          value={browse}
+          onChange={setBrowse}
+          open={catalogueOpen}
+          onToggle={toggleCatalogue}
+        />
         <main className="min-h-0 overflow-y-auto p-4">
           <TillCatalogue
             rows={rows}
@@ -278,7 +290,7 @@ export default function PosPage() {
                   <CartLine
                     key={line.id}
                     line={line}
-                    max={stockHere(variations.find((v) => v.id === line.variationId)!)}
+                    variation={variations.find((v) => v.id === line.variationId)}
                     onQuantity={(quantity) => setUnits(line.variationId, quantity)}
                   />
                 ))}
@@ -473,63 +485,103 @@ export default function PosPage() {
   )
 }
 
+/** The code alone, as the shop reads it off a box: "SKU-00013-L" → "00013". */
+const skuDigits = (sku: string) => sku.match(/\d+/)?.[0] ?? sku
+
+/**
+ * One line of the cart, as the client's reference draws it: photo, name, the
+ * code and which variation (left, right…) | how many and the line total, with
+ * the unit price beneath. No steppers — a tap on the card adds one more; the
+ * count is typed over by tapping it, and the bin takes the line out.
+ */
 function CartLine({
   line,
-  max,
+  variation,
   onQuantity,
 }: {
   line: SaleLine
-  max: number
+  variation: VariationRow | undefined
   onQuantity: (quantity: number) => void
 }) {
-  const gross = line.quantity * line.unitPrice
-  const net = gross * (1 - line.discountPercent / 100)
+  // What is being typed over the count; saved on Enter or leaving the field.
+  const [editing, setEditing] = useState<string | null>(null)
+  const commit = () => {
+    if (editing === null) return
+    const next = Number(editing)
+    if (editing.trim() !== '' && Number.isFinite(next)) onQuantity(next)
+    setEditing(null)
+  }
+  const net = line.quantity * line.unitPrice * (1 - line.discountPercent / 100)
+  const name = variation?.productName ?? line.name
+  // A product with one variation has nothing to tell apart.
+  const kind = variation && variation.fullName !== variation.productName ? variation.name : null
   return (
-    <li className="flex items-center gap-2.5 px-3 py-2.5">
+    <li className="group flex items-center gap-3 px-3 py-2.5">
       <ProductThumb src={line.imageUrl} size="sm" />
       <div className="min-w-0 flex-1">
-        <p className="text-fg truncate text-sm font-medium" title={line.name}>
-          {line.name}
+        <p className="text-fg truncate text-sm font-semibold" title={line.name}>
+          {name}
         </p>
-        <p className="text-fg-subtle text-2xs font-mono">
-          {line.sku} · {formatMoney(line.unitPrice)}
-          {line.discountPercent > 0 ? ` · −${line.discountPercent}%` : ''}
+        <p className="text-fg-subtle text-2xs mt-0.5 flex items-center gap-1.5">
+          <span className="font-mono">{skuDigits(line.sku)}</span>
+          {kind ? (
+            <span className="bg-primary-soft text-primary rounded px-1.5 py-px font-medium">
+              {kind}
+            </span>
+          ) : null}
+          {line.discountPercent > 0 ? (
+            <span className="text-success">−{line.discountPercent}%</span>
+          ) : null}
         </p>
       </div>
-      <div className="flex items-center gap-1">
-        <Button
-          type="button"
-          variant="secondary"
-          size="icon"
-          className="size-7 [&_svg]:size-3.5"
-          aria-label={t('One fewer {label}', { label: line.name })}
-          onClick={() => onQuantity(line.quantity - 1)}
-        >
-          {line.quantity > 1 ? <Minus /> : <Trash2 />}
-        </Button>
-        <NumberField
-          className="h-7 w-12 px-1 text-center text-sm"
-          nullable={false}
-          min={0}
-          aria-label={t('Quantity of {label}', { label: line.name })}
-          value={line.quantity}
-          onChange={(next) => onQuantity(next ?? 0)}
-        />
-        <Button
-          type="button"
-          variant="secondary"
-          size="icon"
-          className="size-7 [&_svg]:size-3.5"
-          aria-label={t('One more {label}', { label: line.name })}
-          disabled={line.quantity >= max}
-          onClick={() => onQuantity(line.quantity + 1)}
-        >
-          <Plus />
-        </Button>
+      <div className="shrink-0 text-right">
+        <div className="flex items-baseline justify-end gap-2">
+          {editing !== null ? (
+            <Input
+              autoFocus
+              type="number"
+              inputMode="numeric"
+              min={0}
+              className="h-7 w-14 px-1 text-center text-sm"
+              aria-label={t('Quantity of {label}', { label: line.name })}
+              value={editing}
+              onChange={(event) => setEditing(event.target.value)}
+              onFocus={(event) => event.target.select()}
+              onBlur={commit}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') commit()
+                if (event.key === 'Escape') setEditing(null)
+              }}
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setEditing(String(line.quantity))}
+              title={t('Change the quantity')}
+              aria-label={t('Quantity of {label}', { label: line.name })}
+              className="text-fg-muted hover:text-fg text-sm font-semibold whitespace-nowrap tabular-nums hover:underline"
+            >
+              {formatNumber(line.quantity)} {t(line.unit)}
+            </button>
+          )}
+          <span className="text-fg text-sm font-semibold whitespace-nowrap tabular-nums">
+            {formatMoney(Math.round(net))}
+          </span>
+        </div>
+        <p className="text-fg-subtle text-2xs whitespace-nowrap tabular-nums">
+          {t('{price} each', { price: formatMoney(line.unitPrice) })}
+        </p>
       </div>
-      <span className="text-fg w-28 text-right text-sm font-semibold tabular-nums">
-        {formatMoney(Math.round(net))}
-      </span>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="hover:text-danger size-7 shrink-0 [&_svg]:size-3.5"
+        aria-label={t('Remove {label}', { label: line.name })}
+        onClick={() => onQuantity(0)}
+      >
+        <Trash2 />
+      </Button>
     </li>
   )
 }

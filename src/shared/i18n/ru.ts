@@ -2438,4 +2438,7 @@ export const ru: Dictionary = {
   'Thank you for your purchase!': 'Спасибо за покупку!',
   'Recipient': 'Получатель',
   'Released by': 'Отпустил',
+  'No driver chosen — a walk-in sale.': 'Водитель не выбран — розничная продажа.',
+  'Which truck is it for?': 'Для какого автомобиля?',
+  'Choose another driver': 'Выбрать другого водителя',
 }

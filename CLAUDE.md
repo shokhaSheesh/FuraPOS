@@ -27,11 +27,13 @@ Two very different surfaces, and this build is the first one:
    exactly the sale the form did — see `src/features/pos/`. Still part of this web app, not a
    separate domain or an iframed panel as OX does it; no hardware (printer, drawer, scanner) yet.
    **Layout** (`PosLayout`): one top bar with the till's three sections as **tabs — «Продажа»,
-   «Отложки» and «Касса»** — then the shop and whether its drawer is open. Tabs, not a rail, because «Продажа»'s
+   «Отложки» and «Касса»** — then the cashier's shop (from their login, not a selector — client request) and whether its
+   drawer is open. Tabs, not a rail, because «Продажа»'s
    left edge belongs to its **«Каталог запчастей»** sidebar: «По товарам» (categories →
    sub-categories) or «По автомобилям» (truck makes → models), with a search that narrows the tree;
-   only what this shop stocks, with counts. Each way in filters by the other (client request):
-   «По товарам» has make and model selects, «По автомобилям» a category select. **Cards** are every document's standard cards; the
+   only what this shop stocks, with counts. Each way in filters by the other (client request),
+   with the selects beside the view switcher (`TillFilters`, via `tools` on `<ProductCatalogue>`):
+   «По товарам» has make and model, «По автомобилям» a category. **Cards** are every document's standard cards; the
    **list** is the client's **wide rows**: photo, name, Артикул, OEM, brand and make tags | in
    stock here, location, shelf cell | price in UZS with USD beneath (Settings' rate, on the cards too) | cart button
    — `renderRow` and `browse` on `<ProductCatalogue>`. Photos swipe left and right when a product
@@ -40,7 +42,8 @@ Two very different surfaces, and this build is the first one:
    payment method and «Получено» (no change field). Paying opens a dialog with **«Печать чека»**
    (80 mm receipt) and **«Накладная»** (A4 waybill), printed in place by `PrintSale`. The customer is two steps:
    **1. find the driver** — one search field over owner-drivers and autopark drivers, with an
-   add-driver button beside it; **2. choose the truck**. No keyboard shortcuts (client request). The truck decides whose purchase it
+   add-driver button beside it, which goes away once he is chosen; **2. choose the truck** — a
+   select when he has several, a card when he has one. No keyboard shortcuts (client request). The truck decides whose purchase it
    is: his own truck is his own, his autopark's truck puts the sale on the autopark's account; a
    single truck is chosen for him. See `src/features/pos/model/buyer.ts`. Payment is cash,
    «Перевод» (the `card` method, renamed) or «В долг» (`credit`) — credit needs an account; no bank transfer,

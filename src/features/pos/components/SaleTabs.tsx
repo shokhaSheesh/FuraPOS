@@ -37,9 +37,9 @@ export function SaleTabs() {
           <div
             key={tab.id}
             className={cn(
-              'rounded-control flex shrink-0 items-center border text-sm font-medium transition-colors',
+              'rounded-control flex shrink-0 items-center border text-sm transition-colors',
               active
-                ? 'border-primary bg-primary text-primary-fg'
+                ? 'border-primary-border bg-primary-soft text-primary font-medium'
                 : 'border-border text-fg-muted hover:border-border-strong hover:text-fg',
             )}
           >
@@ -55,7 +55,7 @@ export function SaleTabs() {
                 <span
                   className={cn(
                     'min-w-5 rounded-full px-1.5 text-center text-[11px] leading-5 tabular-nums',
-                    active ? 'bg-primary-fg/20' : 'bg-surface-inset',
+                    active ? 'bg-surface text-primary' : 'bg-surface-inset',
                   )}
                 >
                   {formatNumber(units)}
@@ -78,7 +78,7 @@ export function SaleTabs() {
         onClick={() => openTab()}
         aria-label={t('Another sale')}
         title={t('Another sale')}
-        className="border-border text-fg-muted hover:border-primary hover:text-primary rounded-control flex size-8 shrink-0 items-center justify-center border border-dashed"
+        className="text-fg-subtle hover:bg-primary-soft hover:text-primary rounded-control flex size-8 shrink-0 items-center justify-center transition-colors"
       >
         <Plus className="size-4" />
       </button>

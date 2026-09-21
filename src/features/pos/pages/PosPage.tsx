@@ -47,6 +47,7 @@ import { addOne, quantityIn, setQuantity, unitsIn } from '../model/cart'
 import { TillCatalogue, type TillRow } from '../components/TillCatalogue'
 import { TillCatalogueSidebar, browseTitle } from '../components/TillCatalogueSidebar'
 import { TillCustomer } from '../components/TillCustomer'
+import { TillFilters } from '../components/TillFilters'
 import { WALK_IN, needsTruck, type TillBuyer } from '../model/buyer'
 import { useActiveTab, useTillStore } from '../model/tillStore'
 import { SaleTabs } from '../components/SaleTabs'
@@ -291,6 +292,7 @@ export default function PosPage() {
             rows={rows}
             locationName={location?.name ?? ''}
             browse={{ ...browse, title: browseTitle(browse, categories) }}
+            tools={<TillFilters rows={rows} value={browse} onChange={setBrowse} />}
             onAdd={(row) => add(row.variation)}
             onSet={(changes) =>
               changes.forEach(({ row, quantity }) => setUnits(row.variation.id, quantity))
@@ -441,7 +443,7 @@ export default function PosPage() {
               <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
                 <div className="border-border rounded-card border p-2.5">
                   <p className="text-fg-subtle text-2xs">{t('Customer')}</p>
-                  <p className="text-fg text-sm font-semibold">
+                  <p className="text-fg text-sm font-medium">
                     {buyer.driver?.fullName ?? buyer.client?.name ?? t('Walk-in customer')}
                   </p>
                   {buyer.truck || (buyer.client && buyer.driver) ? (
@@ -632,8 +634,8 @@ function StepBar({
             >
               <span
                 className={cn(
-                  'flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-semibold',
-                  current ? 'bg-primary text-primary-fg' : 'bg-surface-inset',
+                  'flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-medium',
+                  current ? 'bg-surface text-primary' : 'bg-surface-inset',
                 )}
               >
                 {index + 1}
@@ -681,7 +683,7 @@ function CartLine({
     <li className="group flex items-center gap-3 px-3 py-2.5">
       <ProductThumb src={line.imageUrl} size="sm" />
       <div className="min-w-0 flex-1">
-        <p className="text-fg truncate text-sm font-semibold" title={line.name}>
+        <p className="text-fg truncate text-sm font-medium" title={line.name}>
           {name}
         </p>
         <p className="text-fg-subtle text-2xs mt-0.5 flex items-center gap-1.5">
@@ -721,7 +723,7 @@ function CartLine({
               onClick={() => setEditing(String(line.quantity))}
               title={t('Change the quantity')}
               aria-label={t('Quantity of {label}', { label: line.name })}
-              className="text-fg-muted hover:text-fg text-sm font-semibold whitespace-nowrap tabular-nums hover:underline"
+              className="text-fg-muted hover:text-fg text-sm whitespace-nowrap tabular-nums hover:underline"
             >
               {formatNumber(line.quantity)} {t(line.unit)}
             </button>

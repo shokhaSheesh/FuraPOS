@@ -84,6 +84,7 @@ export function ProductCatalogue<R extends CatalogueRow>({
   showChosen = true,
   renderRow,
   browse,
+  tools,
 }: {
   rows: R[]
   /** Prefix for what this document remembers per browser: view, card fields, list columns. */
@@ -129,6 +130,8 @@ export function ProductCatalogue<R extends CatalogueRow>({
    * and model selects, and heads the results with `title` instead.
    */
   browse?: { categoryId: string | null; make: string | null; model: string | null; title: string }
+  /** The screen's own filters, just before the view switcher — the till's make and model. */
+  tools?: ReactNode
 }) {
   const categories = useDataStore((s) => s.categorySettings)
   const vehicleMakes = useDataStore((s) => s.vehicleMakes)
@@ -345,6 +348,7 @@ export function ProductCatalogue<R extends CatalogueRow>({
                 />
               </>
             )}
+            {tools}
             <div className="border-border rounded-control flex items-center border p-0.5">
               <Button
                 type="button"

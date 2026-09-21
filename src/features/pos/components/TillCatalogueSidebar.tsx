@@ -11,7 +11,6 @@ import {
 } from 'lucide-react'
 import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
-import { Select } from '@/shared/ui/Select'
 import { cn } from '@/shared/lib/cn'
 import { formatNumber } from '@/shared/lib/format'
 import { t } from '@/shared/i18n'
@@ -19,9 +18,9 @@ import { useDataStore } from '@/data/store'
 import {
   countByCategory,
   groupByProduct,
-  subtreeOf,
   type CatalogueRow,
 } from '@/shared/components/catalogue/browse'
+import { fitsTruck, inCategory } from '../model/browseFilter'
 
 /** What the sidebar has narrowed the shelf to. */
 export interface TillBrowse {
@@ -30,9 +29,6 @@ export interface TillBrowse {
   make: string | null
   model: string | null
 }
-
-/** "No filter" in a select, which cannot hold null. */
-const ALL = '__all__'
 
 export const BROWSE_ALL: TillBrowse = {
   mode: 'products',
@@ -82,26 +78,12 @@ export function TillCatalogueSidebar({
 
   const groups = useMemo(() => groupByProduct(rows), [rows])
 
-  /*
-    Each way in narrows by its own tree and filters by the other (client
-    request): «По товарам» is categories with a make and model filter,
-    «По автомобилям» is makes and models with a category filter. Each tree
-    counts only what the other's filter lets through.
-  */
-  const byTruck = useMemo(
-    () =>
-      groups.filter(
-        (g) =>
-          (!value.make || g.vehicleMakes.includes(value.make)) &&
-          (!value.model || g.vehicleModels.includes(value.model)),
-      ),
-    [groups, value.make, value.model],
+  // Each tree counts only what the other way in's filter lets through.
+  const byTruck = useMemo(() => fitsTruck(groups, value), [groups, value])
+  const byCategory = useMemo(
+    () => inCategory(groups, value, categories),
+    [groups, value, categories],
   )
-  const byCategory = useMemo(() => {
-    if (!value.categoryId) return groups
-    const ids = subtreeOf(value.categoryId, categories)
-    return groups.filter((g) => ids.has(g.categoryId))
-  }, [groups, value.categoryId, categories])
 
   const categoryTree = useMemo<Node[]>(() => {
     const counts = countByCategory(byTruck, categories)
@@ -145,39 +127,6 @@ export function TillCatalogueSidebar({
         .sort((a, b) => a.name.localeCompare(b.name)),
     [vehicleMakes, byCategory],
   )
-
-  /** The makes and models on this shelf, for the «По товарам» filters. */
-  const makeOptions = useMemo(
-    () =>
-      vehicleMakes
-        .filter((make) => byCategory.some((g) => g.vehicleMakes.includes(make.name)))
-        .map((make) => make.name)
-        .sort((a, b) => a.localeCompare(b)),
-    [vehicleMakes, byCategory],
-  )
-  const modelOptions = useMemo(
-    () =>
-      (vehicleMakes.find((make) => make.name === value.make)?.models ?? [])
-        .map((model) => model.name)
-        .filter((model) =>
-          byCategory.some(
-            (g) => g.vehicleMakes.includes(value.make ?? '') && g.vehicleModels.includes(model),
-          ),
-        ),
-    [vehicleMakes, byCategory, value.make],
-  )
-  /** Every stocked category, as a path, for the «По автомобилям» filter. */
-  const categoryOptions = useMemo(() => {
-    const counts = countByCategory(byTruck, categories)
-    const pathOf = (id: string | null): string[] => {
-      const category = categories.find((entry) => entry.id === id)
-      return category ? [...pathOf(category.parentId), category.name] : []
-    }
-    return categories
-      .filter((category) => (counts.get(category.id) ?? 0) > 0)
-      .map((category) => ({ value: category.id, label: pathOf(category.id).join(' › ') }))
-      .sort((a, b) => a.label.localeCompare(b.label))
-  }, [byTruck, categories])
 
   const tree = value.mode === 'products' ? categoryTree : truckTree
 
@@ -233,7 +182,7 @@ export function TillCatalogueSidebar({
             className={cn(
               'rounded-control flex items-center gap-1 pr-2 text-sm transition-colors',
               selected
-                ? 'bg-primary text-primary-fg font-medium'
+                ? 'bg-primary-soft text-primary font-medium'
                 : 'text-fg hover:bg-surface-muted',
             )}
           >
@@ -270,13 +219,11 @@ export function TillCatalogueSidebar({
                   <Folder className="size-4 shrink-0 opacity-70" />
                 )
               ) : null}
-              <span className={cn('flex-1 truncate', depth === 0 && 'font-medium')}>
-                {node.name}
-              </span>
+              <span className="flex-1 truncate">{node.name}</span>
               <span
                 className={cn(
                   'text-2xs tabular-nums',
-                  selected ? 'text-primary-fg/80' : 'text-fg-subtle',
+                  selected ? 'text-primary/70' : 'text-fg-subtle',
                 )}
               >
                 {formatNumber(node.count)}
@@ -313,7 +260,7 @@ export function TillCatalogueSidebar({
     <aside className="border-border bg-surface flex min-h-0 flex-col border-r">
       <div className="space-y-3 p-3 pb-2">
         <div className="flex items-center justify-between gap-2">
-          <h2 className="text-fg truncate text-base font-semibold">{t('Parts catalogue')}</h2>
+          <h2 className="text-fg truncate text-sm font-medium">{t('Parts catalogue')}</h2>
           <Button
             type="button"
             variant="ghost"
@@ -347,7 +294,7 @@ export function TillCatalogueSidebar({
               className={cn(
                 'rounded-control flex min-w-0 items-center justify-center gap-1 px-1 py-2 text-xs font-medium transition-colors [&_svg]:size-3.5 [&_svg]:shrink-0',
                 value.mode === entry.mode
-                  ? 'bg-primary text-primary-fg shadow-card'
+                  ? 'bg-surface text-primary shadow-card'
                   : 'text-fg-muted hover:text-fg',
               )}
             >
@@ -366,38 +313,6 @@ export function TillCatalogueSidebar({
             className="pl-9"
           />
         </div>
-        {value.mode === 'products' ? (
-          <div className="grid grid-cols-2 gap-2">
-            <Select
-              aria-label={t('Truck make')}
-              value={value.make ?? ALL}
-              onChange={(make) =>
-                onChange({ ...value, make: make === ALL ? null : make, model: null })
-              }
-              options={[
-                { value: ALL, label: t('All makes') },
-                ...makeOptions.map((make) => ({ value: make, label: make })),
-              ]}
-            />
-            <Select
-              aria-label={t('Model')}
-              value={value.model ?? ALL}
-              disabled={!value.make}
-              onChange={(model) => onChange({ ...value, model: model === ALL ? null : model })}
-              options={[
-                { value: ALL, label: value.make ? t('All models') : t('Pick a make first') },
-                ...modelOptions.map((model) => ({ value: model, label: model })),
-              ]}
-            />
-          </div>
-        ) : (
-          <Select
-            aria-label={t('Category')}
-            value={value.categoryId ?? ALL}
-            onChange={(id) => onChange({ ...value, categoryId: id === ALL ? null : id })}
-            options={[{ value: ALL, label: t('All categories') }, ...categoryOptions]}
-          />
-        )}
       </div>
 
       <ul className="min-h-0 flex-1 space-y-0.5 overflow-y-auto px-2 pb-3">
@@ -406,8 +321,10 @@ export function TillCatalogueSidebar({
             type="button"
             onClick={showEverything}
             className={cn(
-              'rounded-control flex w-full items-center gap-2 py-1.5 pr-2 pl-2 text-left text-sm font-medium transition-colors',
-              everything ? 'bg-primary text-primary-fg' : 'text-fg hover:bg-surface-muted',
+              'rounded-control flex w-full items-center gap-2 py-1.5 pr-2 pl-2 text-left text-sm transition-colors',
+              everything
+                ? 'bg-primary-soft text-primary font-medium'
+                : 'text-fg hover:bg-surface-muted',
             )}
           >
             <LayoutGrid className="size-4 opacity-70" />

@@ -1,15 +1,8 @@
 import { useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
-import {
-  ChevronRight,
-  Search,
-  Truck as TruckIcon,
-  UserPlus,
-  UserRound,
-  Users,
-  X,
-} from 'lucide-react'
+import { Search, Truck as TruckIcon, UserPlus, UserRound, X } from 'lucide-react'
 import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
+import { Select } from '@/shared/ui/Select'
 import { cn } from '@/shared/lib/cn'
 import { formatMoney } from '@/shared/lib/format'
 import { t } from '@/shared/i18n'
@@ -52,70 +45,68 @@ export function TillCustomer({
   const drivers = useDataStore((s) => s.drivers)
   const clients = useDataStore((s) => s.clients)
   const searchRef = useRef<HTMLInputElement>(null)
-  const [choosing, setChoosing] = useState(false)
   const [adding, setAdding] = useState(false)
 
   const options = useMemo(() => trucksOf(buyer.party), [buyer.party])
+  const keyOf = (option: TruckOption) => `${option.capacity}-${option.truck.plate}`
 
-  const pickParty = (party: Party) => {
-    setChoosing(false)
-    onChange(resolveBuyer(party, null, clients))
-  }
-
-  const pickTruck = (option: TruckOption | null) => {
-    setChoosing(false)
+  const pickParty = (party: Party) => onChange(resolveBuyer(party, null, clients))
+  const pickTruck = (option: TruckOption | null) =>
     onChange(resolveBuyer(buyer.party, option, clients))
-  }
-
-  // The list shows while there is a truck still to choose, or on request.
-  const showTrucks = options.length > 1 && (choosing || buyer.truck === null)
 
   return (
     <div className="space-y-4">
       <Step number={1} title={t('Find the driver')}>
-        <DriverSearch
-          inputRef={searchRef}
-          drivers={drivers}
-          value={buyer.party}
-          onPick={pickParty}
-          onAddDriver={() => setAdding(true)}
-        />
-        <PartyCard
-          party={buyer.party}
-          onOpen={() => searchRef.current?.focus()}
-          onClear={() => pickParty(null)}
-        />
+        {/* Once he is found the search has done its job; the × brings it back. */}
+        {buyer.party ? (
+          <PartyCard driver={buyer.party.driver} onClear={() => pickParty(null)} />
+        ) : (
+          <>
+            <DriverSearch
+              inputRef={searchRef}
+              drivers={drivers}
+              value={buyer.party}
+              onPick={pickParty}
+              onAddDriver={() => setAdding(true)}
+            />
+            <p className="text-fg-subtle text-2xs">{t('No driver chosen — a walk-in sale.')}</p>
+          </>
+        )}
       </Step>
 
       {options.length > 0 ? (
         <Step number={2} title={t('Choose the truck')}>
-          {showTrucks ? (
-            <div className="max-h-56 space-y-1.5 overflow-y-auto">
-              {options.map((option) => (
-                <TruckCard
-                  key={`${option.capacity}-${option.truck.plate}`}
-                  option={option}
-                  selected={buyer.truck?.truck.plate === option.truck.plate}
-                  onClick={() => pickTruck(option)}
-                />
-              ))}
-              {needsTruck(buyer) ? (
+          {options.length === 1 ? (
+            // One truck is chosen for him; there is nothing to pick.
+            <TruckCard option={options[0]!} />
+          ) : (
+            <div className="space-y-1.5">
+              <Select
+                className="w-full"
+                aria-label={t('Truck')}
+                placeholder={t('Which truck is it for?')}
+                value={buyer.truck ? keyOf(buyer.truck) : undefined}
+                onChange={(key) =>
+                  pickTruck(options.find((option) => keyOf(option) === key) ?? null)
+                }
+                options={options.map((option) => ({
+                  value: keyOf(option),
+                  label: `${option.truck.plate} · ${describeTruck(option.truck) || t('Truck')} · ${
+                    option.capacity === 'autopark'
+                      ? t('Autopark «{autopark}»', { autopark: option.autoparkName })
+                      : t('His own')
+                  }`,
+                }))}
+              />
+              {buyer.truck ? (
+                <CapacityTag option={buyer.truck} />
+              ) : needsTruck(buyer) ? (
                 <p className="text-danger text-2xs">
                   {t('Say which truck this is for — it decides whose purchase it is.')}
                 </p>
               ) : null}
             </div>
-          ) : buyer.truck ? (
-            <TruckCard
-              option={buyer.truck}
-              selected
-              onChange={options.length > 1 ? () => setChoosing(true) : undefined}
-              onClear={
-                // One truck is chosen for him; clearing it would change nothing.
-                options.length > 1 ? () => pickTruck(null) : undefined
-              }
-            />
-          ) : null}
+          )}
         </Step>
       ) : null}
 
@@ -134,11 +125,29 @@ export function TillCustomer({
   )
 }
 
+/** Whose purchase the truck makes it: his own, or his autopark's. */
+function CapacityTag({ option }: { option: TruckOption }) {
+  return (
+    <span
+      className={cn(
+        'inline-block rounded-full px-2 py-0.5 text-[11px] font-medium',
+        option.capacity === 'autopark'
+          ? 'bg-primary-soft text-primary'
+          : 'bg-surface-inset text-fg-muted',
+      )}
+    >
+      {option.capacity === 'autopark'
+        ? t('Autopark «{autopark}»', { autopark: option.autoparkName })
+        : t('His own')}
+    </span>
+  )
+}
+
 function Step({ number, title, children }: { number: number; title: string; children: ReactNode }) {
   return (
     <section className="space-y-2">
       <div className="flex items-center justify-between">
-        <h2 className="text-fg text-sm font-semibold">
+        <h2 className="text-fg text-sm font-medium">
           {number}. {title}
         </h2>
       </div>
@@ -155,125 +164,51 @@ function Tile({ children }: { children: ReactNode }) {
   )
 }
 
-function PartyCard({
-  party,
-  onOpen,
-  onClear,
-}: {
-  party: Party
-  onOpen: () => void
-  onClear: () => void
-}) {
-  const icon = party === null ? <Users /> : <UserRound />
-  const name = party === null ? t('Walk-in customer') : party.driver.fullName
-  const kind = party === null ? t('Retail') : driverKind(party.driver)
-  const phone = party === null ? null : party.driver.phone
-
+function PartyCard({ driver, onClear }: { driver: Driver; onClear: () => void }) {
   return (
     <div className="border-border rounded-card flex items-center gap-3 border p-2.5">
-      <Tile>{icon}</Tile>
-      <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left">
-        <p className="text-fg truncate text-sm font-semibold">{name}</p>
+      <Tile>
+        <UserRound />
+      </Tile>
+      <div className="min-w-0 flex-1">
+        <p className="text-fg truncate text-sm font-medium">{driver.fullName}</p>
         <p className="text-fg-muted text-2xs truncate">
-          {t('Type')}: {kind}
-          {phone ? ` · ${phone}` : ''}
+          {driverKind(driver)}
+          {driver.phone ? ` · ${driver.phone}` : ''}
         </p>
-      </button>
-      {party ? (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          aria-label={t('Clear the client')}
-          onClick={onClear}
-        >
-          <X />
-        </Button>
-      ) : (
-        <ChevronRight className="text-fg-subtle size-4 shrink-0" />
-      )}
+      </div>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        aria-label={t('Clear the client')}
+        title={t('Choose another driver')}
+        onClick={onClear}
+      >
+        <X />
+      </Button>
     </div>
   )
 }
 
-function TruckCard({
-  option,
-  selected,
-  onClick,
-  onChange,
-  onClear,
-}: {
-  option: TruckOption
-  selected: boolean
-  onClick?: () => void
-  onChange?: () => void
-  onClear?: () => void
-}) {
-  const body = (
-    <>
+/** The one truck a driver has: shown, not chosen. */
+function TruckCard({ option }: { option: TruckOption }) {
+  return (
+    <div className="border-border rounded-card flex items-center gap-3 border p-2.5">
       <Tile>
         <TruckIcon />
       </Tile>
-      <div className="min-w-0 flex-1 text-left">
-        <p className="text-fg truncate text-sm font-semibold">
+      <div className="min-w-0 flex-1">
+        <p className="text-fg truncate text-sm font-medium">
           {describeTruck(option.truck) || t('Truck')}
         </p>
         <p className="text-fg-muted text-2xs">
           {t('Number plate')}: <span className="text-fg font-mono">{option.truck.plate}</span>
         </p>
-        <span
-          className={cn(
-            'mt-1 inline-block rounded px-1.5 py-0.5 text-[11px] font-medium',
-            option.capacity === 'autopark'
-              ? 'bg-primary-soft text-primary'
-              : 'bg-surface-inset text-fg-muted',
-          )}
-        >
-          {option.capacity === 'autopark'
-            ? t('Autopark «{autopark}»', { autopark: option.autoparkName })
-            : t('His own')}
-        </span>
-        {onChange ? (
-          <div className="mt-1.5">
-            <Button type="button" variant="secondary" size="sm" onClick={onChange}>
-              {t('Change the truck')}
-            </Button>
-          </div>
-        ) : null}
+        <div className="mt-1">
+          <CapacityTag option={option} />
+        </div>
       </div>
-    </>
-  )
-
-  if (onClick) {
-    return (
-      <button
-        type="button"
-        onClick={onClick}
-        className={cn(
-          'rounded-card flex w-full items-center gap-3 border p-2.5 transition-colors',
-          selected
-            ? 'border-primary bg-primary-soft/40'
-            : 'border-border hover:border-border-strong',
-        )}
-      >
-        {body}
-      </button>
-    )
-  }
-  return (
-    <div className="border-border rounded-card flex items-start gap-3 border p-2.5">
-      {body}
-      {onClear ? (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          aria-label={t('Clear the truck')}
-          onClick={onClear}
-        >
-          <X />
-        </Button>
-      ) : null}
     </div>
   )
 }

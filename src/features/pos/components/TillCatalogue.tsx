@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { DropdownMenu } from 'radix-ui'
 import { MoreVertical, ShoppingCart } from 'lucide-react'
@@ -62,6 +62,7 @@ export function TillCatalogue({
   onAdd,
   onSet,
   browse,
+  tools,
 }: {
   rows: TillRow[]
   locationName: string
@@ -71,6 +72,8 @@ export function TillCatalogue({
   onSet: (changes: { row: TillRow; quantity: number }[]) => void
   /** What the catalogue sidebar has narrowed the shelf to. */
   browse: { categoryId: string | null; make: string | null; model: string | null; title: string }
+  /** Filters beside the view switcher. */
+  tools?: ReactNode
 }) {
   const inUsd = useInUsd()
   const ownColumns = useMemo<TableColumn<Group>[]>(
@@ -113,6 +116,7 @@ export function TillCatalogue({
       ownColumns={ownColumns}
       showChosen={false}
       browse={browse}
+      tools={tools}
       // The list is the client's wide rows; the cards are every document's cards.
       renderRow={(group, open) => (
         <TillCard group={group} locationName={locationName} onOpen={open} />
@@ -280,7 +284,7 @@ function TillCard({
       />
 
       <div className="min-w-0 flex-1 space-y-0.5 self-center">
-        <h3 className="text-fg line-clamp-2 font-semibold" title={group.productName}>
+        <h3 className="text-fg line-clamp-2 font-medium" title={group.productName}>
           {group.productName}
         </h3>
         <p className="text-fg-muted text-sm">
@@ -291,7 +295,7 @@ function TillCard({
         </p>
         <div className="flex flex-wrap gap-1.5 pt-1">
           {brand ? (
-            <span className="bg-primary-soft text-primary rounded px-2 py-0.5 text-xs font-semibold">
+            <span className="bg-primary-soft text-primary rounded px-2 py-0.5 text-xs font-medium">
               {brand}
             </span>
           ) : null}

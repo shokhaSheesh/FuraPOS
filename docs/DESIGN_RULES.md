@@ -184,8 +184,8 @@ Fixed and identical on every screen — `AppShell`:
 
 | Element                             | Radius                  | Shadow           |
 | ----------------------------------- | ----------------------- | ---------------- |
-| Cards, tables, modals               | `rounded-card` (10px)   | `shadow-card`    |
-| Buttons, inputs, badges-on-controls | `rounded-control` (6px) | none             |
+| Cards, tables, modals               | `rounded-card` (12px)   | `shadow-card`    |
+| Buttons, inputs, badges-on-controls | `rounded-control` (8px) | none             |
 | Popovers, dropdowns                 | `rounded-control`       | `shadow-popover` |
 | Modals                              | `rounded-card`          | `shadow-modal`   |
 | Avatars, status dots, pills         | `rounded-full`          | none             |

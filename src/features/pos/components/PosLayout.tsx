@@ -1,10 +1,8 @@
 import { useEffect, useMemo } from 'react'
 import { Link, NavLink, Outlet } from 'react-router'
-import { Clock, LogOut, ShoppingCart, Wallet } from 'lucide-react'
+import { Clock, LogOut, MapPin, ShoppingCart, Wallet } from 'lucide-react'
 import { Button } from '@/shared/ui/Button'
 import { Logo } from '@/shared/ui/Logo'
-import { Select } from '@/shared/ui/Select'
-import { toast } from '@/shared/ui/toast'
 import { cn } from '@/shared/lib/cn'
 import { paths } from '@/shared/config/paths'
 import { LanguageMenu, t } from '@/shared/i18n'
@@ -101,28 +99,22 @@ export function PosLayout() {
               <section.icon />
               {t(section.label)}
               {section.badge === 'open' && openSales > 0 ? (
-                <span className="bg-primary text-primary-fg min-w-5 rounded-full px-1.5 text-center text-[11px] leading-5 font-semibold">
+                <span className="bg-primary-soft text-primary min-w-5 rounded-full px-1.5 text-center text-[11px] leading-5 font-medium">
                   {openSales}
                 </span>
               ) : section.badge === 'parked' && parkedHere > 0 ? (
-                <span className="bg-warning-soft text-warning min-w-5 rounded-full px-1.5 text-center text-[11px] leading-5 font-semibold">
+                <span className="bg-warning-soft text-warning min-w-5 rounded-full px-1.5 text-center text-[11px] leading-5 font-medium">
                   {parkedHere}
                 </span>
               ) : null}
             </NavLink>
           ))}
         </nav>
-        <Select
-          className="w-56"
-          aria-label={t('Location')}
-          value={locationId ?? undefined}
-          onChange={(next) => {
-            if (next === locationId) return
-            setLocation(next)
-            if (openSales) toast.info(t('Cart cleared — stock differs by location'))
-          }}
-          options={locations.map((l) => ({ value: l.id, label: l.name }))}
-        />
+        {/* The cashier's own shop, known from their login — not something to pick. */}
+        <span className="text-fg-muted flex items-center gap-1.5 text-sm">
+          <MapPin className="size-4" />
+          {locations.find((l) => l.id === locationId)?.name}
+        </span>
         <span
           className={cn(
             'rounded-full px-2.5 py-0.5 text-xs font-medium',

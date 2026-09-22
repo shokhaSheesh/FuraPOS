@@ -2469,16 +2469,10 @@ export const ru: Dictionary = {
     'У учётной записи ещё нет роли. Попросите администратора назначить её.',
   Owner: 'Владелец',
   'This account may not work at the till.': 'У этой учётной записи нет доступа к кассе.',
-  'New from the supplier': 'Новинки поставщика',
-  'New from {supplierName}': 'Новинки: {supplierName}',
-  'What they have added to their price list lately.': 'Что поставщик недавно добавил в свой прайс.',
-  'Add to the document': 'Добавить в документ',
-  'Their price list is empty': 'Прайс поставщика пуст',
   'Nothing to show until they list something.':
     'Здесь появятся товары, когда поставщик их добавит.',
-  'listed {date}': 'в прайсе с {date}',
-  'New to us — add it': 'Новое для нас — создать',
   'Generated if left empty': 'Сгенерируем, если оставить пустым',
   '{name} at {location}': '{name} — {location}',
   'Left or right': 'Левая или правая',
+  'Newly listed': 'Новинка',
 }

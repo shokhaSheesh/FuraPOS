@@ -220,9 +220,9 @@ Conventions that are load-bearing — follow them rather than inventing per-scre
   purchases, prices) per variation. Orders and receipts use `<PurchaseCatalogue>` over
   `buildPurchaseRows`. Unfinished documents have a Save button and say so when you leave, and step
   through with **Назад / Далее** as well as by the step circles (client request). Creating a product
-  from a document comes back to it (`state.from` on the product form, client request), and a
-  supplier document carries **«Новинки поставщика»** — what they have listed lately, ours to add
-  straight onto the document, theirs-only offering the product form (`SupplierNewProducts`).
+  from a document comes back to it (`state.from` on the product form, client request), and on a
+  supplier document a card the supplier has listed in the last 45 days is marked **«Новинка»** on
+  its photo (`newFromSupplier` on the purchase row, `renderPhotoBadge` on `<ProductCatalogue>`).
 - **The interface is Russian; English is the source.** Every user-facing string goes through
   `t()` from `@/shared/i18n`, keyed by the English text itself — `t('Add products')` — so an
   untranslated string renders as readable English rather than `orders.list.empty.title`, and

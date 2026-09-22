@@ -44,10 +44,6 @@ import { USD_RATE } from '@/data/seed'
 import type { VariationRow } from '@/features/products/model/product'
 import { catalogueFor } from '@/features/suppliers/model/catalogue'
 import { GenerateOrderModal } from '../components/GenerateOrderModal'
-import {
-  SupplierNewProducts,
-  SupplierNewProductsButton,
-} from '@/features/suppliers/components/SupplierNewProducts'
 import { buildOrderLineColumns, type OrderRow } from '../components/orderLineColumns'
 import { ownCatalogue } from '../model/ownCatalogue'
 import { planCatalogueRows } from '@/features/receipts/model/lineRows'
@@ -311,7 +307,6 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
   const [cards, setCards] = useState(false)
   const [search, setSearch] = useState('')
   const [suggesting, setSuggesting] = useState(false)
-  const [showingNew, setShowingNew] = useState(false)
   const sales = useDataStore((s) => s.sales)
   const locationName = useDataStore(
     (s) => s.locations.find((l) => l.id === order.locationId)?.name ?? 'this location',
@@ -332,6 +327,8 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
                 price: entry.product.price,
                 currency: entry.product.currency,
                 supplierSku: order.kind === 'supplier' ? entry.product.supplierSku : null,
+                // Only a supplier keeps a price list with dates on it.
+                listedAt: order.kind === 'supplier' ? entry.product.updatedAt : null,
               },
             ]
           : [],
@@ -467,16 +464,6 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
     writeLines(next)
   }
 
-  const newFromSupplier = (
-    <SupplierNewProducts
-      open={showingNew}
-      onOpenChange={setShowingNew}
-      entries={catalogue}
-      supplierName={order.supplierName ?? ''}
-      onAdd={applyChanges}
-    />
-  )
-
   const suggestModal = (
     <GenerateOrderModal
       open={suggesting}
@@ -536,9 +523,6 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
           onApply={applyChanges}
           actions={
             <>
-              {order.kind === 'supplier' && catalogue.length > 0 ? (
-                <SupplierNewProductsButton onClick={() => setShowingNew(true)} />
-              ) : null}
               <Button type="button" variant="primary" onClick={() => setSuggesting(true)}>
                 <Wand2 />
                 {t('Suggest')}
@@ -571,7 +555,6 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
           }
         />
         {suggestModal}
-        {newFromSupplier}
       </>
     )
   }
@@ -675,7 +658,6 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
       />
 
       {suggestModal}
-      {newFromSupplier}
     </>
   )
 }

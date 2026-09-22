@@ -125,6 +125,15 @@ export function PurchaseCatalogue({
     <ProductCatalogue
       rows={rows}
       storageKey={storageKey}
+      // What the supplier has listed lately, said on the card itself rather
+      // than in a list of its own (client request).
+      renderPhotoBadge={(group) =>
+        group.rows.some((row) => row.newFromSupplier) ? (
+          <span className="bg-primary text-primary-fg rounded-full px-2 py-0.5 text-[11px] font-medium shadow-sm">
+            {t('Newly listed')}
+          </span>
+        ) : null
+      }
       ownFieldsTitle={t('This {noun}', { noun: noun })}
       ownFields={[
         { id: 'atLocation', label: t('At {locationName}', { locationName: locationName }) },

@@ -19,7 +19,15 @@ export interface PurchaseRow extends CatalogueRow {
   atLocation: number
   /** What was expected, from the order behind a delivery. Null when nothing was. */
   expected: number | null
+  /** The supplier put it on their price list lately — the card marks it «Новинка». */
+  newFromSupplier: boolean
 }
+
+/** How recently a supplier has to have listed something for it to read as new. */
+export const NEW_FOR_DAYS = 45
+
+export const listedRecently = (listedAt: string | null | undefined, now = Date.now()) =>
+  Boolean(listedAt && now - new Date(listedAt).getTime() <= NEW_FOR_DAYS * 86_400_000)
 
 /** Something on offer: a line of a supplier's catalogue, or of ours. */
 export interface PurchaseOffer {
@@ -27,6 +35,8 @@ export interface PurchaseOffer {
   price: number
   currency: Currency
   supplierSku: string | null
+  /** When the supplier last listed it, where they keep a price list of their own. */
+  listedAt?: string | null
 }
 
 /** A line already on the document, in the terms both documents share. */
@@ -76,6 +86,7 @@ export function buildPurchaseRows({
       supplierSku: offer?.supplierSku ?? null,
       atLocation: atLocation(variation),
       expected: line?.expected ?? null,
+      newFromSupplier: listedRecently(offer?.listedAt),
     }
   }
 

@@ -83,6 +83,7 @@ export function ProductCatalogue<R extends CatalogueRow>({
   onQuickAdd,
   showChosen = true,
   renderRow,
+  renderPhotoBadge,
   browse,
   tools,
 }: {
@@ -132,6 +133,8 @@ export function ProductCatalogue<R extends CatalogueRow>({
   browse?: { categoryId: string | null; make: string | null; model: string | null; title: string }
   /** The screen's own filters, just before the view switcher — the till's make and model. */
   tools?: ReactNode
+  /** A small label over a card's photo — «Новинка» on a purchase document. */
+  renderPhotoBadge?: (group: ProductGroup<R>) => ReactNode
 }) {
   const categories = useDataStore((s) => s.categorySettings)
   const vehicleMakes = useDataStore((s) => s.vehicleMakes)
@@ -489,6 +492,7 @@ export function ProductCatalogue<R extends CatalogueRow>({
                   canSeeCost={canSeeCost}
                   renderStats={renderStats}
                   renderSales={renderSales}
+                  badge={renderPhotoBadge?.(group)}
                   onOpen={() => openGroup(group)}
                 />
               ),
@@ -594,11 +598,14 @@ function ProductCard<R extends CatalogueRow>({
   canSeeCost,
   renderStats,
   renderSales,
+  badge,
   onOpen,
 }: {
   group: ProductGroup<R>
   has: (id: string) => boolean
   canSeeCost: boolean
+  /** Drawn over the top-left of the photo. */
+  badge?: ReactNode
   renderStats?: (group: ProductGroup<R>, has: (id: string) => boolean) => ReactNode
   renderSales?: (group: ProductGroup<R>, has: (id: string) => boolean) => ReactNode
   onOpen: () => void
@@ -615,12 +622,15 @@ function ProductCard<R extends CatalogueRow>({
         group.chosen > 0 ? 'border-primary' : 'border-border',
       )}
     >
-      <PhotoStrip
-        photos={photosOf(group)}
-        label={group.productName}
-        onOpen={onOpen}
-        className="aspect-[3/2]"
-      />
+      <div className="relative">
+        <PhotoStrip
+          photos={photosOf(group)}
+          label={group.productName}
+          onOpen={onOpen}
+          className="aspect-[3/2]"
+        />
+        {badge ? <div className="absolute top-1.5 left-1.5">{badge}</div> : null}
+      </div>
 
       <div className="flex flex-1 flex-col gap-2 p-3">
         <div>

@@ -16,10 +16,6 @@ import { EmptyState } from '@/shared/components/EmptyState'
 import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
 import { AddProductsMenu } from '@/shared/components/AddProductsMenu'
-import {
-  SupplierNewProducts,
-  SupplierNewProductsButton,
-} from '@/features/suppliers/components/SupplierNewProducts'
 import { PurchaseCatalogue } from '@/shared/components/catalogue/PurchaseCatalogue'
 import { buildPurchaseRows, type PurchaseOffer } from '@/shared/components/catalogue/purchaseRows'
 import type { VariationDraft } from '@/shared/components/catalogue/VariationsDialog'
@@ -324,7 +320,6 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
   const update = useUpdateReceipt(receipt.id)
   const { rows: all, fromCatalogue } = useLineRows(receipt)
   const [cards, setCards] = useState(false)
-  const [showingNew, setShowingNew] = useState(false)
   const [search, setSearch] = useState('')
   const variations = useDataStore((s) => s.variations)
   const supplierProducts = useDataStore((s) => s.supplierProducts)
@@ -353,6 +348,7 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
                     price: entry.product.price,
                     currency: entry.product.currency,
                     supplierSku: entry.product.supplierSku,
+                    listedAt: entry.product.updatedAt,
                   },
                 ]
               : [],
@@ -512,13 +508,6 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
   if (editable) {
     return (
       <>
-        <SupplierNewProducts
-          open={showingNew}
-          onOpenChange={setShowingNew}
-          entries={supplierCatalogue}
-          supplierName={receipt.supplierName ?? ''}
-          onAdd={applyChanges}
-        />
         <PurchaseCatalogue
           rows={pickRows}
           storageKey="receipt"
@@ -529,10 +518,6 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
           onApply={applyChanges}
           actions={
             <>
-              {/* What this supplier has listed lately (client request). */}
-              {supplierCatalogue.length > 0 ? (
-                <SupplierNewProductsButton onClick={() => setShowingNew(true)} />
-              ) : null}
               {!fromCatalogue ? (
                 <AddProductsMenu
                   onUploadSpreadsheet={() =>

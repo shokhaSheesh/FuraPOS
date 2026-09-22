@@ -57,7 +57,7 @@ export function ProductVariationsTable({
 
   return (
     <div className="border-border rounded-card overflow-hidden border">
-      <div className="overflow-x-auto">
+      <div className="scroll-x-quiet overflow-x-auto">
         <table className="w-max min-w-full text-sm">
           <thead className="bg-canvas">
             <tr className="text-fg-muted text-2xs tracking-wide uppercase">
@@ -204,7 +204,7 @@ export function ProductVariationsTable({
                     {() => (
                       <Input
                         className="h-8 w-28"
-                        placeholder={t('Left')}
+                        placeholder={t('Left or right')}
                         aria-label={t('Part — {name}', { name: name })}
                         {...form.register(`variations.${index}.partSide`)}
                       />

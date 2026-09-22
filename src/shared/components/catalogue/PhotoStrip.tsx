@@ -60,7 +60,7 @@ export function PhotoStrip({
           const el = event.currentTarget
           setIndex(Math.round(el.scrollLeft / Math.max(1, el.clientWidth)))
         }}
-        className="flex size-full snap-x snap-mandatory [scrollbar-width:none] overflow-x-auto overscroll-x-contain [&::-webkit-scrollbar]:hidden"
+        className="scroll-x-quiet flex size-full snap-x snap-mandatory [scrollbar-width:none] overflow-x-auto overscroll-x-contain [&::-webkit-scrollbar]:hidden"
       >
         {photos.map((src, at) => (
           <button

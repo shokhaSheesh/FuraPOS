@@ -248,7 +248,7 @@ export function ProductCatalogue<R extends CatalogueRow>({
     <div className="space-y-3">
       {/* Categories: always the top level, whatever is drilled into below. */}
       {browse ? null : (
-        <div className="-m-1 flex gap-2 overflow-x-auto p-1 pb-2">
+        <div className="scroll-x-quiet -m-1 flex gap-2 overflow-x-auto p-1 pb-2">
           {roots.map((category) => (
             <CategoryTile
               key={category.id}
@@ -275,7 +275,7 @@ export function ProductCatalogue<R extends CatalogueRow>({
         return (
           <div
             key={level.id}
-            className="border-primary-border bg-primary-soft/40 rounded-card flex gap-2 overflow-x-auto border border-dashed p-2"
+            className="border-primary-border bg-primary-soft/40 rounded-card scroll-x-quiet flex gap-2 overflow-x-auto border border-dashed p-2"
           >
             <CategoryTile
               compact

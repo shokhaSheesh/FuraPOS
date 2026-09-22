@@ -513,7 +513,7 @@ export function DataTable<T extends RowData>({
       ) : null}
       {columnsMenuContainer ? createPortal(columnsMenu, columnsMenuContainer) : null}
 
-      <div ref={scrollRef} className="overflow-x-auto">
+      <div ref={scrollRef} className="scroll-x-quiet overflow-x-auto">
         {/*
           `min-w-max` is what makes the scroll real. Without it the table is
           only ever as wide as its container, so a table with more columns than

@@ -125,7 +125,7 @@ export function WalletPanel({
                 transactions.length === 0 ? (
                   <p className="text-fg-subtle py-4 text-center text-sm">{labels.ledgerEmpty}</p>
                 ) : (
-                  <div className="border-border rounded-card overflow-x-auto border">
+                  <div className="border-border rounded-card scroll-x-quiet overflow-x-auto border">
                     <table className="w-full text-sm">
                       <thead className="bg-canvas">
                         <tr className="text-fg-muted text-2xs tracking-wide uppercase">

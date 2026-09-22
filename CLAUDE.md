@@ -251,6 +251,14 @@ Conventions that are load-bearing — follow them rather than inventing per-scre
   `text-fg-muted`, `border-border`). The palette is light blue and white (client request): sky blue `#0A7BC4` with white
   text for primary actions, light blue `#E6F3FC` for soft fills, a white sidebar. Nothing blue means
   "warning" — warning is orange.
+- **A number field carries no spinners, and a scrolling table no scrollbar** (client request):
+  `input[type=number]` is `appearance: textfield` in `global.css`, and anything scrolling sideways
+  takes `.scroll-x-quiet`. Where stepping is the job — a cart line, an opening stock count, a
+  document's quantities — the screen draws `<QuantityStepper>` instead.
+- **A product's SKU and barcode are generated when left empty** (client request) —
+  `features/products/model/codes.ts`: `SKU-00042` carrying on from the catalogue, and a valid
+  EAN-13 in the 200–299 range shops are given for their own use. Both fields are marked required
+  and say they will be filled in.
 - **`src/data/seed.ts` is the dataset.** Changing a screen's data shape means changing the seed and
   its test.
 

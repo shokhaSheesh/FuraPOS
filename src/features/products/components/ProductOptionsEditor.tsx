@@ -81,7 +81,7 @@ export function ProductOptionsEditor({
                 id={p.id}
                 value={option.values}
                 onChange={(values) => update(index, { values })}
-                placeholder={t('Left')}
+                placeholder={t('Left or right')}
               />
             )}
           </Field>

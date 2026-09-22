@@ -132,7 +132,7 @@ export default function DriverDetailPage() {
               {t('He has collected nothing yet.')}
             </p>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="scroll-x-quiet overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-canvas">
                   <tr className="text-fg-muted text-2xs tracking-wide uppercase">

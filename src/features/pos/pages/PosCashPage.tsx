@@ -127,7 +127,7 @@ export default function PosCashPage() {
         <CardHeader>
           <CardTitle>{t('By location')}</CardTitle>
         </CardHeader>
-        <CardBody className="overflow-x-auto p-0">
+        <CardBody className="scroll-x-quiet overflow-x-auto p-0">
           <table className="w-full min-w-max text-sm">
             <thead className="bg-canvas">
               <tr className="text-fg-muted text-2xs tracking-wide uppercase">

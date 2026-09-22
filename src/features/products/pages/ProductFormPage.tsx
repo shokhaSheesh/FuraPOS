@@ -21,6 +21,7 @@ import { Select } from '@/shared/ui/Select'
 import { toast } from '@/shared/ui/toast'
 import { paths } from '@/shared/config/paths'
 import { useDataStore } from '@/data/store'
+import { generateBarcode, generateSku } from '../model/codes'
 import {
   useBrands,
   useCategories,
@@ -188,6 +189,7 @@ export function ProductForm({
 
   /** Which models belong to which truck brand, for keeping the two in step. */
   const vehicleMakeSettings = useDataStore((s) => s.vehicleMakes)
+  const allVariations = useDataStore((s) => s.variations)
   const modelsByMake = useMemo(
     () =>
       vehicleMakeSettings.map((make) => ({
@@ -381,6 +383,35 @@ export function ProductForm({
           message: 'Already used by another variation',
         })
         return
+      }
+
+      /*
+        A part that came in a plain box still has to be found at the till, so a
+        blank SKU or barcode is filled in rather than refused (client request).
+        Codes already in the catalogue — and the ones handed out a line above —
+        are what the next code is checked against.
+      */
+      const usedSkus = new Set(allVariations.map((v) => v.sku))
+      const usedBarcodes = new Set(
+        allVariations.map((v) => v.barcode).filter((code): code is string => Boolean(code)),
+      )
+      for (const variation of values.variations) {
+        if (!variation.enabled && values.variationMode !== 'single') continue
+        if (variation.sku.trim()) usedSkus.add(variation.sku.trim())
+        if (variation.barcode?.trim()) usedBarcodes.add(variation.barcode.trim())
+      }
+      for (const variation of values.variations) {
+        if (!variation.enabled && values.variationMode !== 'single') continue
+        if (!variation.sku.trim()) {
+          const side =
+            variation.partSide ?? variation.optionValues.map((entry) => entry.value).at(-1) ?? null
+          variation.sku = generateSku(usedSkus, side)
+          usedSkus.add(variation.sku)
+        }
+        if (!variation.barcode?.trim()) {
+          variation.barcode = generateBarcode(usedBarcodes)
+          usedBarcodes.add(variation.barcode)
+        }
       }
 
       const singleMode = values.variationMode === 'single'
@@ -701,12 +732,27 @@ export function ProductForm({
                     <Field
                       label={t('SKU')}
                       required
+                      hint={t('Generated if left empty')}
                       error={form.formState.errors.variations?.[0]?.sku?.message}
                     >
-                      {(p) => <Input {...p} {...form.register('variations.0.sku')} />}
+                      {(p) => (
+                        <Input
+                          {...p}
+                          placeholder={t('Generated if left empty')}
+                          {...form.register('variations.0.sku')}
+                        />
+                      )}
                     </Field>
-                    <Field label={t('Barcode')}>
-                      {(p) => <Input {...p} {...form.register('variations.0.barcode')} />}
+                    {/* Required, and generated when nobody types one: a part
+                        with no barcode cannot be scanned at the till. */}
+                    <Field label={t('Barcode')} required hint={t('Generated if left empty')}>
+                      {(p) => (
+                        <Input
+                          {...p}
+                          placeholder={t('Generated if left empty')}
+                          {...form.register('variations.0.barcode')}
+                        />
+                      )}
                     </Field>
                   </div>
                 ) : (
@@ -816,7 +862,7 @@ export function ProductForm({
                       {(p) => (
                         <Input
                           {...p}
-                          placeholder={t('Left')}
+                          placeholder={t('Left or right')}
                           {...form.register('variations.0.partSide')}
                         />
                       )}

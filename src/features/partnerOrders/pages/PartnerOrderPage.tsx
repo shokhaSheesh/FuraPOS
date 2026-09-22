@@ -209,7 +209,7 @@ function ShipmentsStep({ order }: { order: PartnerOrder }) {
               }
             />
           ) : (
-            <div className="overflow-x-auto">
+            <div className="scroll-x-quiet overflow-x-auto">
               <table className="w-full min-w-max text-sm">
                 <thead className="bg-canvas">
                   <tr className="text-fg-muted text-2xs tracking-wide uppercase">
@@ -286,7 +286,7 @@ function ShipmentsStep({ order }: { order: PartnerOrder }) {
             )}
           </Field>
 
-          <div className="border-border rounded-card overflow-x-auto border">
+          <div className="border-border rounded-card scroll-x-quiet overflow-x-auto border">
             <table className="w-full text-sm">
               <thead className="bg-canvas">
                 <tr className="text-fg-muted text-2xs tracking-wide uppercase">
@@ -361,7 +361,7 @@ function LineTable({ order }: { order: PartnerOrder }) {
   const canSeeMoney = can('sales.orders.view')
 
   return (
-    <div className="overflow-x-auto">
+    <div className="scroll-x-quiet overflow-x-auto">
       <table className="w-full min-w-max text-sm">
         <thead className="bg-canvas">
           <tr className="text-fg-muted text-2xs tracking-wide uppercase">

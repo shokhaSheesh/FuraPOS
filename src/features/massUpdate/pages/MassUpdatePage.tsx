@@ -240,7 +240,7 @@ export default function MassUpdatePage() {
                 </div>
               </CardHeader>
               <CardBody className="space-y-3">
-                <div className="border-border rounded-control overflow-x-auto border">
+                <div className="border-border rounded-control scroll-x-quiet overflow-x-auto border">
                   <table className="border-collapse text-sm">
                     <thead>
                       <tr>
@@ -594,7 +594,7 @@ function FileStep({
                 {t('Remove')}
               </Button>
             </div>
-            <div className="overflow-x-auto">
+            <div className="scroll-x-quiet overflow-x-auto">
               <table className="border-collapse text-xs">
                 <tbody>
                   {grid.slice(0, 5).map((row, rowIndex) => (
@@ -857,7 +857,7 @@ function HistoryCard({ records }: { records: MassUpdateRecord[] }) {
             {t('No updates have been run yet.')}
           </p>
         ) : (
-          <div className="border-border overflow-x-auto border-t">
+          <div className="border-border scroll-x-quiet overflow-x-auto border-t">
             <table className="w-full text-sm">
               <thead className="bg-surface-muted">
                 <tr className="text-fg-muted text-2xs tracking-wide uppercase">

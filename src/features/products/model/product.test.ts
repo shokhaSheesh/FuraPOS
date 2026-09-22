@@ -257,7 +257,7 @@ describe('combinations that are not sold', () => {
     expect(result.success).toBe(true)
   })
 
-  it('still asks a sold combination for one', () => {
+  it('lets a sold combination save without one — it is generated', () => {
     const result = productFormSchema.safeParse(
       values({
         variationMode: 'multiple',
@@ -265,8 +265,8 @@ describe('combinations that are not sold', () => {
         variations: [variation(), variation({ sku: '' })],
       }),
     )
-    expect(result.success).toBe(false)
-    expect(result.error?.issues.some((i) => i.message === 'SKU is required')).toBe(true)
+    // A blank SKU is generated on save, so it is not a reason to refuse.
+    expect(result.success).toBe(true)
   })
 
   it('refuses a product where nothing is sold', () => {

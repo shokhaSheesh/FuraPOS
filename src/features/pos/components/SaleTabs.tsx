@@ -29,7 +29,7 @@ export function SaleTabs() {
   }
 
   return (
-    <div className="flex items-center gap-1.5 overflow-x-auto">
+    <div className="scroll-x-quiet flex items-center gap-1.5 overflow-x-auto">
       {tabs.map((tab, index) => {
         const active = tab.id === activeId
         const units = unitsIn(tab.cart)

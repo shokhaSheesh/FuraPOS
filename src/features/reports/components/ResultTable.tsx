@@ -36,7 +36,7 @@ export function ResultTable({
   const rows = limit ? result.rows.slice(0, limit) : result.rows
 
   return (
-    <div className="border-border rounded-card overflow-x-auto border">
+    <div className="border-border rounded-card scroll-x-quiet overflow-x-auto border">
       <table className="w-full text-sm">
         <thead className="bg-canvas">
           <tr className="text-fg-muted text-2xs tracking-wide uppercase">

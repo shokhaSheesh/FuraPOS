@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { Download, Plus } from 'lucide-react'
+import { RowActions } from '@/shared/components/RowActions'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
 import { ColumnFilterSearch } from '@/shared/components/ColumnFilterSearch'
@@ -21,6 +22,7 @@ import { SALE_FILTER_OVERRIDES } from '../model/saleFilterFields'
 import { useDataStore } from '@/data/store'
 import {
   PAYMENT_METHODS,
+  lineTotal,
   SALE_CHANNELS,
   SALE_STATUSES,
   type Sale,
@@ -31,6 +33,24 @@ import { RouteTabs } from '@/shared/components/RouteTabs'
 import { SALES_TABS } from '@/shared/config/navigation'
 
 const Empty = () => <span className="text-fg-subtle">—</span>
+
+/** One sale's lines as a spreadsheet — what was sold, for how much (client request). */
+export function downloadSale(sale: Sale) {
+  downloadCsv(
+    `${sale.number}.csv`,
+    ['SKU', 'Product', 'Unit', 'Quantity', 'Unit price', 'Discount, %', 'Line total'],
+    sale.lines.map((line) => [
+      line.sku,
+      line.name,
+      line.unit,
+      line.quantity,
+      line.unitPrice,
+      line.discountPercent,
+      Math.round(lineTotal(line)),
+    ]),
+  )
+  toast.success(t('{number} downloaded', { number: sale.number }))
+}
 
 const columns: TableColumn<Sale>[] = [
   {
@@ -157,6 +177,19 @@ const columns: TableColumn<Sale>[] = [
         <Badge tone={status?.tone ?? 'neutral'}>{t(status?.label ?? row.original.status)}</Badge>
       )
     },
+  },
+  {
+    id: 'actions',
+    header: '',
+    enableHiding: false,
+    meta: { align: 'right' },
+    cell: ({ row }) => (
+      <RowActions
+        actions={[
+          { label: t('Download'), icon: Download, onSelect: () => downloadSale(row.original) },
+        ]}
+      />
+    ),
   },
 ]
 

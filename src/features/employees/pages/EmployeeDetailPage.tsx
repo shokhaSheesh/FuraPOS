@@ -191,7 +191,7 @@ export default function EmployeeDetailPage() {
                   : t('This role does not usually take sales.')}
               </p>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="scroll-x-quiet overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-canvas">
                     <tr className="text-fg-muted text-2xs tracking-wide uppercase">

@@ -493,7 +493,7 @@ export function SpreadsheetImport({
             ) : null}
           </CardHeader>
           <CardBody className="p-0">
-            <div className="overflow-x-auto">
+            <div className="scroll-x-quiet overflow-x-auto">
               <table className="w-full min-w-max text-sm">
                 <thead>
                   <tr className="bg-canvas">

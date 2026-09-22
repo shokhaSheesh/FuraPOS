@@ -434,17 +434,11 @@ export const productFormSchema = z
     variations: z.array(variationFormSchema).min(1, 'Add at least one variation'),
   })
   .superRefine((values, ctx) => {
-    // A combination that is not sold is not asked for — that is the whole
-    // point of switching it off — so SKU is required per sold row here rather
-    // than on the field itself.
-    values.variations.forEach((variation, index) => {
-      if (!variation.enabled || variation.sku.trim()) return
-      ctx.addIssue({
-        code: 'custom',
-        path: ['variations', index, 'sku'],
-        message: 'SKU is required',
-      })
-    })
+    /*
+      A blank SKU or barcode is filled in on save rather than refused (client
+      request) — see `model/codes.ts`. What cannot be resolved that way is two
+      sold rows sharing a code, which the form checks before it saves.
+    */
 
     if (values.variationMode !== 'multiple') return
 

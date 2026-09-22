@@ -1,8 +1,8 @@
 import { Check } from 'lucide-react'
 import type { UseFormReturn } from 'react-hook-form'
+import { QuantityStepper } from '@/shared/components/catalogue/VariationsDialog'
 import { Controller } from 'react-hook-form'
 import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
-import { NumberField } from '@/shared/components/NumberField'
 import { cn } from '@/shared/lib/cn'
 import { formatNumber } from '@/shared/lib/format'
 import { combinationName, type ProductFormValues } from '../model/product'
@@ -95,7 +95,7 @@ export function ProductStockSection({
         {t('Pick a location above to enter quantities against it.')}
       </p>
     ) : (
-      <div className="border-border rounded-card overflow-x-auto border">
+      <div className="border-border rounded-card scroll-x-quiet overflow-x-auto border">
         <table className="w-full text-sm">
           <thead className="bg-canvas">
             <tr className="text-fg-muted text-2xs tracking-wide uppercase">
@@ -143,13 +143,16 @@ export function ProductStockSection({
                             control={form.control}
                             name={`variations.${index}.stockByLocation.${locationIndex}.quantity`}
                             render={({ field }) => (
-                              <NumberField
-                                className="w-24"
-                                nullable={false}
-                                aria-label={t('Quantity at {name}', { name: location.name })}
-                                value={field.value}
-                                onChange={(v) => field.onChange(v ?? 0)}
-                                onBlur={field.onBlur}
+                              // Stepped as well as typed (client request): an
+                              // opening count is usually a handful of units.
+                              <QuantityStepper
+                                size="lg"
+                                value={Number.isFinite(field.value) ? field.value : 0}
+                                label={t('{name} at {location}', {
+                                  name: variation.sku || productName || t('This product'),
+                                  location: location.name,
+                                })}
+                                onChange={(quantity) => field.onChange(quantity)}
                               />
                             )}
                           />

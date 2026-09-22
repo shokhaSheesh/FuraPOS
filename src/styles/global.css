@@ -88,3 +88,34 @@
     background: white;
   }
 }
+
+/*
+ * Number fields carry no spinners (client request). The tiny up/down arrows
+ * are a nuisance in a dense table — they sit under the cursor where the value
+ * is, and nobody nudges a price one unit at a time. Where stepping *is* the
+ * job, the screen draws its own − / + buttons.
+ */
+input[type='number'] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/*
+ * A table that scrolls sideways does so without a scrollbar across it (client
+ * request): the bar sat under the last row and read as a black stripe in the
+ * table. The trackpad, the shift-wheel and the keyboard all still scroll it.
+ */
+.scroll-x-quiet {
+  scrollbar-width: none;
+}
+
+.scroll-x-quiet::-webkit-scrollbar {
+  display: none;
+}

@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router'
+import { useLocation, useNavigate } from 'react-router'
 import { DropdownMenu } from 'radix-ui'
 import { ChevronDown, Plus, Upload } from 'lucide-react'
 import { Button } from '@/shared/ui/Button'
@@ -24,6 +24,7 @@ export function AddProductsMenu({
   label?: string
 }) {
   const navigate = useNavigate()
+  const location = useLocation()
 
   const options = [
     {
@@ -36,7 +37,15 @@ export function AddProductsMenu({
       icon: Plus,
       label: t('Create a new product'),
       hint: t('For something we have never carried before'),
-      onSelect: () => navigate(paths.products.new),
+      /*
+        Back to this document once the product exists (client request): somebody
+        halfway through booking a delivery in who has to create a part should
+        carry on where they stopped, not land on the product list.
+      */
+      onSelect: () =>
+        navigate(paths.products.new, {
+          state: { from: `${location.pathname}${location.search}` },
+        }),
     },
   ]
 

@@ -5,6 +5,7 @@ import {
   Ban,
   Check,
   FileText,
+  ArrowRight,
   LayoutGrid,
   List,
   PackageCheck,
@@ -43,6 +44,10 @@ import { USD_RATE } from '@/data/seed'
 import type { VariationRow } from '@/features/products/model/product'
 import { catalogueFor } from '@/features/suppliers/model/catalogue'
 import { GenerateOrderModal } from '../components/GenerateOrderModal'
+import {
+  SupplierNewProducts,
+  SupplierNewProductsButton,
+} from '@/features/suppliers/components/SupplierNewProducts'
 import { buildOrderLineColumns, type OrderRow } from '../components/orderLineColumns'
 import { ownCatalogue } from '../model/ownCatalogue'
 import { planCatalogueRows } from '@/features/receipts/model/lineRows'
@@ -150,19 +155,33 @@ export default function OrderPage() {
             {late ? t(' — {p0} days late', { p0: formatNumber(late) }) : ''}
           </span>
         ) : null}
-        {editable ? (
-          <Button
-            variant="secondary"
-            className="ml-auto"
-            onClick={() => {
-              openedWith.current = snapshot(order)
-              toast.success(t('{number} saved as unfinished', { number: order.number }))
-            }}
-          >
-            <Save />
-            {t('Save')}
-          </Button>
-        ) : null}
+        {/* Through the steps in order (client request), not only by the circles. */}
+        <div className="ml-auto flex items-center gap-2">
+          {step > 1 ? (
+            <Button variant="secondary" onClick={() => setStep(step - 1)}>
+              <ArrowLeft />
+              {t('Back')}
+            </Button>
+          ) : null}
+          {editable ? (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                openedWith.current = snapshot(order)
+                toast.success(t('{number} saved as unfinished', { number: order.number }))
+              }}
+            >
+              <Save />
+              {t('Save')}
+            </Button>
+          ) : null}
+          {step < STEPS.length ? (
+            <Button variant="primary" onClick={() => setStep(step + 1)}>
+              {t('Continue')}
+              <ArrowRight />
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       <Steps steps={STEPS} current={step} onSelect={setStep} selectable wide />
@@ -292,6 +311,7 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
   const [cards, setCards] = useState(false)
   const [search, setSearch] = useState('')
   const [suggesting, setSuggesting] = useState(false)
+  const [showingNew, setShowingNew] = useState(false)
   const sales = useDataStore((s) => s.sales)
   const locationName = useDataStore(
     (s) => s.locations.find((l) => l.id === order.locationId)?.name ?? 'this location',
@@ -447,6 +467,16 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
     writeLines(next)
   }
 
+  const newFromSupplier = (
+    <SupplierNewProducts
+      open={showingNew}
+      onOpenChange={setShowingNew}
+      entries={catalogue}
+      supplierName={order.supplierName ?? ''}
+      onAdd={applyChanges}
+    />
+  )
+
   const suggestModal = (
     <GenerateOrderModal
       open={suggesting}
@@ -506,6 +536,9 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
           onApply={applyChanges}
           actions={
             <>
+              {order.kind === 'supplier' && catalogue.length > 0 ? (
+                <SupplierNewProductsButton onClick={() => setShowingNew(true)} />
+              ) : null}
               <Button type="button" variant="primary" onClick={() => setSuggesting(true)}>
                 <Wand2 />
                 {t('Suggest')}
@@ -538,6 +571,7 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
           }
         />
         {suggestModal}
+        {newFromSupplier}
       </>
     )
   }
@@ -641,6 +675,7 @@ function ProductsStep({ order, editable }: { order: PurchaseOrder; editable: boo
       />
 
       {suggestModal}
+      {newFromSupplier}
     </>
   )
 }

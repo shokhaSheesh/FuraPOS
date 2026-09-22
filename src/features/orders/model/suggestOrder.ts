@@ -25,6 +25,12 @@ import { DAYS_PER_MONTH, SUGGEST_AT_OR_BELOW, unitsSoldAt } from '@/shared/lib/d
  * `SUGGEST_AT_OR_BELOW`. The arithmetic on its own proposes a top-up for
  * anything at all short, and an order full of threes is not an order anybody
  * places.
+ *
+ * An **empty** shelf is the exception (client request): a variation at zero is
+ * proposed whether or not it sold in the window, because it cannot sell what
+ * it has none of, and a part with a left and a right where only the left has
+ * run out is exactly the case the buyer opens this for. With nothing sold to
+ * size it, it is proposed at the supplier's minimum, or one.
  */
 
 export interface OrderSuggestion {
@@ -68,16 +74,18 @@ export function suggestOrder({
     // reason from. Buying it is a judgement call, not an arithmetic one.
     if (!entry.variation) continue
 
-    // Not until the shelf is nearly empty. Being below the last window's sales
-    // is not a reason to buy; being nearly out is. See SUGGEST_AT_OR_BELOW.
-    if (entry.stock > SUGGEST_AT_OR_BELOW) continue
+    // Out of stock is reason enough on its own; otherwise not until the shelf
+    // is nearly empty. Being below the last window's sales is not a reason to
+    // buy; being nearly out is. See SUGGEST_AT_OR_BELOW.
+    const empty = entry.stock <= 0
+    if (!empty && entry.stock > SUGGEST_AT_OR_BELOW) continue
 
     // Null location: this is about the business, not one shelf.
     const sold = unitsSoldAt(sales, entry.variation.id, null, months, now)
-    if (sold === 0) continue
+    if (sold === 0 && !empty) continue
 
-    const shortfall = sold - entry.stock
-    if (shortfall <= 0) continue
+    const shortfall = Math.max(0, sold - entry.stock)
+    if (shortfall <= 0 && !empty) continue
 
     const { product } = entry
     suggestions.push({
@@ -93,9 +101,11 @@ export function suggestOrder({
       sold,
       stock: entry.stock,
       shortfall,
-      // They will not break a carton, so the minimum wins where it is larger.
-      suggested: Math.max(shortfall, product.moq ?? 0),
-      daysOfCover: entry.stock / (sold / windowDays),
+      // They will not break a carton, so the minimum wins where it is larger;
+      // an empty shelf with no sales behind it is proposed at one.
+      suggested: Math.max(shortfall, product.moq ?? 0, empty ? 1 : 0),
+      // Nothing on the shelf covers nothing, however briskly it sells.
+      daysOfCover: empty ? 0 : entry.stock / (sold / windowDays),
     })
   }
 

@@ -83,9 +83,28 @@ describe('suggestOrder', () => {
     )
   })
 
-  it('suggests nothing for a part that has not sold', () => {
+  it('suggests nothing for a stocked part that has not sold', () => {
     // A full warehouse of something nobody buys is not a reason to buy more.
-    expect(run([entry({ id: 'a', variationId: 'var-a', stock: 0 })], [])).toEqual([])
+    expect(run([entry({ id: 'a', variationId: 'var-a', stock: 25 })], [])).toEqual([])
+  })
+
+  it('proposes a variation that is out of stock, even with nothing sold behind it', () => {
+    // The client's case: a part with a left and a right, the left run out.
+    // It cannot sell what it has none of, so being empty is reason enough.
+    const [suggestion] = run([entry({ id: 'a', variationId: 'var-a', stock: 0 })], [])
+    expect(suggestion?.suggested).toBe(1)
+    expect(suggestion?.daysOfCover).toBe(0)
+
+    const [carton] = run([entry({ id: 'b', variationId: 'var-b', stock: 0, moq: 20 })], [])
+    expect(carton?.suggested).toBe(20)
+  })
+
+  it('puts an empty shelf before one that still has a few', () => {
+    const entries = [
+      entry({ id: 'a', variationId: 'var-a', stock: 2 }),
+      entry({ id: 'b', variationId: 'var-b', stock: 0 }),
+    ]
+    expect(run(entries, [sale('var-a', 20)]).map((s) => s.supplierProductId)).toEqual(['b', 'a'])
   })
 
   it('skips what the supplier lists but we have never stocked', () => {

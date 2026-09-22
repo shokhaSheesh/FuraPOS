@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router'
 import {
   ArrowLeft,
   FileText,
+  ArrowRight,
   LayoutGrid,
   List,
   PackageCheck,
@@ -15,6 +16,10 @@ import { EmptyState } from '@/shared/components/EmptyState'
 import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
 import { AddProductsMenu } from '@/shared/components/AddProductsMenu'
+import {
+  SupplierNewProducts,
+  SupplierNewProductsButton,
+} from '@/features/suppliers/components/SupplierNewProducts'
 import { PurchaseCatalogue } from '@/shared/components/catalogue/PurchaseCatalogue'
 import { buildPurchaseRows, type PurchaseOffer } from '@/shared/components/catalogue/purchaseRows'
 import type { VariationDraft } from '@/shared/components/catalogue/VariationsDialog'
@@ -152,19 +157,33 @@ export default function GoodsReceiptPage() {
             </Link>
           </Button>
         ) : null}
-        {editable ? (
-          <Button
-            variant="secondary"
-            className="ml-auto"
-            onClick={() => {
-              openedWith.current = snapshot(receipt)
-              toast.success(t('{number} saved as unfinished', { number: receipt.number }))
-            }}
-          >
-            <Save />
-            {t('Save')}
-          </Button>
-        ) : null}
+        {/* Through the steps in order (client request), not only by the circles. */}
+        <div className="ml-auto flex items-center gap-2">
+          {step > 1 ? (
+            <Button variant="secondary" onClick={() => setStep(step - 1)}>
+              <ArrowLeft />
+              {t('Back')}
+            </Button>
+          ) : null}
+          {editable ? (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                openedWith.current = snapshot(receipt)
+                toast.success(t('{number} saved as unfinished', { number: receipt.number }))
+              }}
+            >
+              <Save />
+              {t('Save')}
+            </Button>
+          ) : null}
+          {step < STEPS.length ? (
+            <Button variant="primary" onClick={() => setStep(step + 1)}>
+              {t('Continue')}
+              <ArrowRight />
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       <Steps steps={STEPS} current={step} onSelect={setStep} selectable wide />
@@ -305,6 +324,7 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
   const update = useUpdateReceipt(receipt.id)
   const { rows: all, fromCatalogue } = useLineRows(receipt)
   const [cards, setCards] = useState(false)
+  const [showingNew, setShowingNew] = useState(false)
   const [search, setSearch] = useState('')
   const variations = useDataStore((s) => s.variations)
   const supplierProducts = useDataStore((s) => s.supplierProducts)
@@ -492,6 +512,13 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
   if (editable) {
     return (
       <>
+        <SupplierNewProducts
+          open={showingNew}
+          onOpenChange={setShowingNew}
+          entries={supplierCatalogue}
+          supplierName={receipt.supplierName ?? ''}
+          onAdd={applyChanges}
+        />
         <PurchaseCatalogue
           rows={pickRows}
           storageKey="receipt"
@@ -501,11 +528,19 @@ function ProductsStep({ receipt, editable }: { receipt: GoodsReceipt; editable: 
           showExpected={Boolean(receipt.orderId)}
           onApply={applyChanges}
           actions={
-            !fromCatalogue ? (
-              <AddProductsMenu
-                onUploadSpreadsheet={() => navigate(paths.products.goodsReceiptImport(receipt.id))}
-              />
-            ) : null
+            <>
+              {/* What this supplier has listed lately (client request). */}
+              {supplierCatalogue.length > 0 ? (
+                <SupplierNewProductsButton onClick={() => setShowingNew(true)} />
+              ) : null}
+              {!fromCatalogue ? (
+                <AddProductsMenu
+                  onUploadSpreadsheet={() =>
+                    navigate(paths.products.goodsReceiptImport(receipt.id))
+                  }
+                />
+              ) : null}
+            </>
           }
           summary={
             newToUs > 0 ? (

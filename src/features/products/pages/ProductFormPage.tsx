@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router'
+import { Link, useLocation, useNavigate, useParams } from 'react-router'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowLeft } from 'lucide-react'
@@ -130,13 +130,18 @@ const emptyVariation = (
  */
 export default function ProductFormPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { productId } = useParams()
   const editing = Boolean(productId && productId !== 'new')
+  /** The document that sent us here, when one did — a goods receipt, an order. */
+  const from = (location.state as { from?: string } | null)?.from ?? null
   return (
     <ProductForm
       productId={productId}
-      onSaved={(id) => navigate(paths.products.detail(id))}
-      onCancel={() => navigate(editing ? paths.products.detail(productId!) : paths.products.list)}
+      onSaved={(id) => navigate(from ?? paths.products.detail(id))}
+      onCancel={() =>
+        navigate(from ?? (editing ? paths.products.detail(productId!) : paths.products.list))
+      }
     />
   )
 }

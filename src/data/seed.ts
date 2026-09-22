@@ -94,6 +94,7 @@ export const brands = [
  */
 /** The role seeded supplier logins hold — defined with the other roles below. */
 const SUPPLIER_ROLE_ID = 'role-6'
+const CASHIER_ROLE_ID = 'role-7'
 
 export const suppliers: Supplier[] = [
   {
@@ -556,6 +557,7 @@ const roleSpecs: { id: string; name: string; keys: string[] }[] = [
     id: 'role-3',
     name: 'Seller',
     keys: [
+      ...expand('sales.till', ['view']),
       // Deliberately no `products.cost`: a seller who can see the cost price
       // can work out how far they are allowed to discount.
       ...expand('sales.orders', ['view', 'create', 'edit']),
@@ -605,6 +607,24 @@ export const roles: Role[] = [
     later shifts. What a supplier's manager may reach is the orders we place
     with them — never our sales, stock figures or prices.
   */
+  /*
+    The till's own role (client request): takes payment and runs the drawer,
+    and sees nothing of the back office beyond the sales it makes. Added after
+    the others with fixed dates, for the same reason the supplier role is.
+  */
+  {
+    id: CASHIER_ROLE_ID,
+    name: 'Cashier',
+    permissions: [
+      ...expand('sales.till', ['view']),
+      ...expand('sales.orders', ['view', 'create', 'edit']),
+      ...expand('sales.cashShifts', ['view', 'create', 'edit']),
+      ...expand('products.list', ['view']),
+    ],
+    isSystem: false,
+    createdAt: new Date(Date.now() - 200 * 86_400_000).toISOString(),
+    updatedAt: new Date(Date.now() - 200 * 86_400_000).toISOString(),
+  },
   {
     id: SUPPLIER_ROLE_ID,
     name: 'Supplier',

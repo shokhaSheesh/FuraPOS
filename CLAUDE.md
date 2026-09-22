@@ -26,10 +26,12 @@ Two very different surfaces, and this build is the first one:
    customer, the promotion that applies, payment method and change, and Pay or Park. It writes
    exactly the sale the form did — see `src/features/pos/`. Still part of this web app, not a
    separate domain or an iframed panel as OX does it; no hardware (printer, drawer, scanner) yet.
-   **The till has its own sign-in** (`TillLogin`, client request): opening it asks «Кто за кассой?»
-   — the active staff of this shop whose role may sell, as tiles — then that person's password.
-   Their name goes on every sale (`sellerId` on `createSale`), the header shows them with «Выйти»,
-   the till's sections follow *their* role, and leaving the till or «Выйти» locks it again.
+   **The till has its own sign-in** (`TillLogin`, client request): a login and a password, nothing
+   else — it is not the back-office session, and it is what «Касса» in the sidebar opens. The role
+   must hold **`sales.till.view`**, which the Owner, **Продавец** and the new **Кассир** role have;
+   anything else is turned away. Their name goes on every sale (`sellerId` on `createSale`), the
+   till stands in *their* shop, the header shows them with «Выйти», the sections follow their role,
+   and leaving the till or «Выйти» locks it again.
    **Layout** (`PosLayout`): one top bar with the till's three sections as **tabs — «Продажа»,
    «Отложки» and «Касса»** — then the cashier's shop (from their login, not a selector — client request) and whether its
    drawer is open. Tabs, not a rail, because «Продажа»'s

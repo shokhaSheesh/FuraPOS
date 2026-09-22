@@ -2462,4 +2462,5 @@ export const ru: Dictionary = {
   'This account has been closed.': 'Учётная запись закрыта.',
   'This account has no role yet. Ask an administrator to assign one.': 'У учётной записи ещё нет роли. Попросите администратора назначить её.',
   Owner: 'Владелец',
+  'This account may not work at the till.': 'У этой учётной записи нет доступа к кассе.',
 }

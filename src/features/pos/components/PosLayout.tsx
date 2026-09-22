@@ -81,8 +81,8 @@ export function PosLayout() {
   const can = (permission: string) =>
     Boolean(operator?.permissions.includes('*') || operator?.permissions.includes(permission))
 
-  if (!locationId) return null
-  if (!operator) return <TillLogin locationId={locationId} />
+  // The till asks who is opening it before it shows anything (client request).
+  if (!operator) return <TillLogin />
 
   return (
     <div className="bg-canvas flex h-screen flex-col">

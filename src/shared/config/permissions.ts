@@ -37,6 +37,8 @@ export const permissionTree: readonly PermissionNode[] = [
       { key: 'sales.partnerOrders', label: 'Partner orders', actions: ['view', 'edit'] },
       { key: 'sales.online', label: 'Online sales', actions: readExport },
       { key: 'sales.cashShifts', label: 'Cash shifts', actions: crud },
+      // Signing in at the till itself — the owner, a seller and a cashier.
+      { key: 'sales.till', label: 'Till', actions: readOnly },
     ],
   },
   {

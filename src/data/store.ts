@@ -551,6 +551,8 @@ export interface CreateSaleInput {
   driverId?: string | null
   /** The truck the purchase was for — his own, or his autopark's. */
   truckPlate?: string | null
+  /** Who rang it up — the person signed in at the till. Absent means the owner. */
+  sellerId?: string | null
 }
 
 type VariationInput = Omit<
@@ -747,12 +749,13 @@ const usageText = ({ products, trucks }: { products: number; trucks: number }) =
  * about totals, the drawer it lands in or who it is attributed to.
  */
 function saleFrom(
-  state: Pick<CatalogState, 'clients' | 'locations' | 'drivers' | 'cashShifts'>,
+  state: Pick<CatalogState, 'clients' | 'locations' | 'drivers' | 'cashShifts' | 'employees'>,
   input: CreateSaleInput,
   identity: Pick<Sale, 'id' | 'number' | 'createdAt'>,
 ): Sale {
   const totals = computeTotals(input.lines, input.paid)
   const client = state.clients.find((c) => c.id === input.clientId)
+  const seller = input.sellerId ? state.employees.find((e) => e.id === input.sellerId) : undefined
   const now = new Date().toISOString()
   return {
     id: identity.id,
@@ -763,9 +766,9 @@ function saleFrom(
     clientName: client?.name ?? null,
     locationId: input.locationId,
     locationName: state.locations.find((l) => l.id === input.locationId)?.name ?? '—',
-    // No auth in this build: every sale is made by the signed-in user.
-    sellerId: 'emp-1',
-    sellerName: 'Akhmet Dauletmuratov',
+    // The person signed in at the till; the owner when a sale comes from elsewhere.
+    sellerId: seller?.id ?? 'emp-1',
+    sellerName: seller?.fullName ?? 'Akhmet Dauletmuratov',
     promotionId: input.promotionId ?? null,
     /*
         The two facts the customer-facing apps read: the driver so his own

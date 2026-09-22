@@ -24,6 +24,14 @@ export interface TillTab {
   parked: { id: string; number: string } | null
 }
 
+/** The person signed in at the till. */
+export interface TillOperator {
+  id: string
+  name: string
+  roleName: string
+  permissions: string[]
+}
+
 let nextId = 1
 export const blankTab = (): TillTab => ({
   id: `tab-${nextId++}`,
@@ -50,6 +58,14 @@ interface TillState {
   /** The sale just rung up, so it can be opened or its number read out. */
   last: { id: string; number: string } | null
   browse: TillBrowse
+  /**
+   * Who is at the till (client request: the till has its own sign-in). Their
+   * name goes on every sale, and their role decides what the till lets them do.
+   * Null means the till is locked and shows its sign-in screen.
+   */
+  operator: TillOperator | null
+  signInTill: (operator: TillOperator) => void
+  signOutTill: () => void
   /** Whether the «Каталог запчастей» sidebar is open or folded to a rail. */
   catalogueOpen: boolean
   setBrowse: (browse: TillBrowse) => void
@@ -73,6 +89,9 @@ export const useTillStore = create<TillState>((set) => ({
   activeId: first.id,
   last: null,
   browse: BROWSE_ALL,
+  operator: null,
+  signInTill: (operator) => set({ operator }),
+  signOutTill: () => set({ operator: null }),
   catalogueOpen: true,
   setBrowse: (browse) => set({ browse }),
   toggleCatalogue: () => set((state) => ({ catalogueOpen: !state.catalogueOpen })),

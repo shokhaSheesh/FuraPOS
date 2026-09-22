@@ -67,6 +67,22 @@ describe('data store', () => {
     expect(sale.number).toMatch(/^S-\d{5}$/)
   })
 
+  it('puts whoever is signed in at the till on the sale', () => {
+    const sale = useDataStore.getState().createSale({
+      clientId: null,
+      locationId: 'loc-2',
+      channel: 'desk',
+      paymentMethod: 'cash',
+      comment: '',
+      paid: 100_000,
+      lines: [line()],
+      status: 'completed',
+      expiresAt: null,
+      sellerId: 'emp-2',
+    })
+    expect(sale).toMatchObject({ sellerId: 'emp-2', sellerName: 'Mansurbek Akchaev' })
+  })
+
   it('finishes a parked sale in place, not as a second sale', () => {
     const store = useDataStore.getState()
     const input = {

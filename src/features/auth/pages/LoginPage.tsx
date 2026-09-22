@@ -35,7 +35,7 @@ export default function LoginPage() {
     event.preventDefault()
     const result = signIn(login, password)
     if (!result.ok) {
-      setError(result.error)
+      setError(t(result.error))
       return
     }
     navigate(from, { replace: true })

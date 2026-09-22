@@ -228,7 +228,10 @@ export default function PosPage() {
     })
 
   /** The sale on screen as the store takes it, in a given state. */
+  const operator = useTillStore((state) => state.operator)
   const saleInput = (status: SaleStatus, paid: number) => ({
+    // Whoever is signed in at the till rang it up.
+    sellerId: operator?.id ?? null,
     clientId: buyer.client?.id ?? null,
     driverId: buyer.driver?.id ?? null,
     truckPlate: buyer.truck?.truck.plate ?? null,

@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react'
 import { Link, NavLink, Outlet } from 'react-router'
-import { Clock, LogOut, MapPin, ShoppingCart, Wallet } from 'lucide-react'
+import { Clock, Lock, LogOut, MapPin, ShoppingCart, Wallet } from 'lucide-react'
 import { Button } from '@/shared/ui/Button'
 import { Logo } from '@/shared/ui/Logo'
 import { cn } from '@/shared/lib/cn'
@@ -10,6 +10,7 @@ import { useSession } from '@/app/providers/SessionProvider'
 import { useDataStore } from '@/data/store'
 import { useOpenShiftAt } from '@/features/cashShifts/api/shifts'
 import { useTillStore } from '../model/tillStore'
+import { TillLogin } from './TillLogin'
 
 const SECTIONS: {
   to: string
@@ -52,7 +53,9 @@ const SECTIONS: {
  * drawer is open. No back-office sidebar: the till is its own place.
  */
 export function PosLayout() {
-  const { user, can } = useSession()
+  const { user } = useSession()
+  const operator = useTillStore((s) => s.operator)
+  const signOutTill = useTillStore((s) => s.signOutTill)
   const locations = useDataStore((s) => s.locations)
   const locationId = useTillStore((s) => s.locationId)
   const setLocation = useTillStore((s) => s.setLocation)
@@ -70,6 +73,16 @@ export function PosLayout() {
   useEffect(() => {
     if (!locationId) setLocation(user?.locationIds[0] ?? locations[0]?.id ?? '')
   }, [locationId, setLocation, user, locations])
+
+  // Leaving the till locks it: the next time anyone opens it, it asks who they are.
+  useEffect(() => () => signOutTill(), [signOutTill])
+
+  /** What the person at the till may do — their role, not the back office's. */
+  const can = (permission: string) =>
+    Boolean(operator?.permissions.includes('*') || operator?.permissions.includes(permission))
+
+  if (!locationId) return null
+  if (!operator) return <TillLogin locationId={locationId} />
 
   return (
     <div className="bg-canvas flex h-screen flex-col">
@@ -126,7 +139,19 @@ export function PosLayout() {
             : t('No drawer open — cash is off')}
         </span>
         <div className="ml-auto flex items-center gap-2">
-          <span className="text-fg-muted text-sm">{user?.name}</span>
+          <span className="text-right leading-tight">
+            <span className="text-fg block text-sm">{operator.name}</span>
+            <span className="text-fg-subtle text-2xs block">{t(operator.roleName)}</span>
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={signOutTill}
+            title={t('Lock the till for the next person')}
+          >
+            <Lock />
+            {t('Sign out')}
+          </Button>
           <LanguageMenu />
           <Button variant="secondary" size="sm" asChild>
             <Link to={paths.sales.orders}>

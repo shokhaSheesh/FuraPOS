@@ -42,6 +42,8 @@ export default function GeneralSettingsPage() {
     usdRate: company.usdRate,
     paymentMethods: company.paymentMethods,
     allowOverCreditLimit: company.allowOverCreditLimit,
+    allowZeroSale: company.allowZeroSale,
+    allowSaleWithoutClient: company.allowSaleWithoutClient,
     revenueStatuses: company.revenueStatuses,
   })
   const [showErrors, setShowErrors] = useState(false)
@@ -218,6 +220,42 @@ export default function GeneralSettingsPage() {
               checked={draft.allowOverCreditLimit}
               onCheckedChange={(allowOverCreditLimit) =>
                 setDraft((c) => ({ ...c, allowOverCreditLimit }))
+              }
+            />
+          </label>
+
+          <label className="flex items-center justify-between gap-3">
+            <span className="min-w-0">
+              <span className="text-fg block text-sm font-medium">
+                {t('Allow a sale for 0 UZS')}
+              </span>
+              <span className="text-fg-subtle text-2xs">
+                {t(
+                  'A full discount or a part with no price. Off, the till will not take payment for nothing.',
+                )}
+              </span>
+            </span>
+            <Switch
+              aria-label={t('Allow a sale for 0 UZS')}
+              checked={draft.allowZeroSale}
+              onCheckedChange={(allowZeroSale) => setDraft((c) => ({ ...c, allowZeroSale }))}
+            />
+          </label>
+
+          <label className="flex items-center justify-between gap-3">
+            <span className="min-w-0">
+              <span className="text-fg block text-sm font-medium">
+                {t('Allow a sale without a client')}
+              </span>
+              <span className="text-fg-subtle text-2xs">
+                {t('A walk-in sale. Off, the till asks for the driver before payment.')}
+              </span>
+            </span>
+            <Switch
+              aria-label={t('Allow a sale without a client')}
+              checked={draft.allowSaleWithoutClient}
+              onCheckedChange={(allowSaleWithoutClient) =>
+                setDraft((c) => ({ ...c, allowSaleWithoutClient }))
               }
             />
           </label>

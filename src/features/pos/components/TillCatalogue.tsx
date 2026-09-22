@@ -86,7 +86,7 @@ export function TillCatalogue({
       },
       {
         id: 'here',
-        header: t('At {locationName}', { locationName }),
+        header: t('Stock'),
         meta: { align: 'right' },
         cell: ({ row }) => <StockPill side="mine" units={here(row.original)} />,
       },
@@ -106,7 +106,7 @@ export function TillCatalogue({
       storageKey="till"
       ownFieldsTitle={t('The till')}
       ownFields={[
-        { id: 'here', label: t('At {locationName}', { locationName }) },
+        { id: 'here', label: t('Stock') },
         { id: 'everywhere', label: t('All locations') },
       ]}
       defaultFields={['variations', 'here']}
@@ -129,13 +129,7 @@ export function TillCatalogue({
       renderStats={(group, has) =>
         has('here') || has('everywhere') ? (
           <div className="grid grid-cols-2 gap-1.5">
-            {has('here') ? (
-              <StockBox
-                side="mine"
-                label={t('At {locationName}', { locationName })}
-                units={here(group)}
-              />
-            ) : null}
+            {has('here') ? <StockBox side="mine" label={t('Stock')} units={here(group)} /> : null}
             {has('everywhere') ? (
               <StockBox side="theirs" label={t('All locations')} units={everywhere(group)} />
             ) : null}
@@ -170,12 +164,7 @@ export function TillCatalogue({
           stats={(open) => (
             <>
               <div className="min-w-32 flex-1">
-                <StockBox
-                  large
-                  side="mine"
-                  label={t('At {locationName}', { locationName })}
-                  units={here(open)}
-                />
+                <StockBox large side="mine" label={t('Stock')} units={here(open)} />
               </div>
               <DialogStat label={t('Price')} value={price(open)} />
               <DialogStat label={t('Variations')} value={formatNumber(open.rows.length)} />
@@ -194,7 +183,7 @@ export function TillCatalogue({
             },
             {
               id: 'here',
-              header: t('At {locationName}', { locationName }),
+              header: t('Stock'),
               meta: { align: 'right' },
               cell: ({ row }) => <StockPill side="mine" units={row.original.row.here} />,
             },

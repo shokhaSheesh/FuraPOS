@@ -35,12 +35,15 @@ Two very different surfaces, and this build is the first one:
    with the selects beside the view switcher (`TillFilters`, via `tools` on `<ProductCatalogue>`):
    «По товарам» has make and model, «По автомобилям» a category. **Cards** are every document's standard cards; the
    **list** is the client's **wide rows**: photo, name, Артикул, OEM, brand and make tags | in
-   stock here, location, shelf cell | price in UZS with USD beneath (Settings' rate, on the cards too) | cart button
+   stock here, location, shelf cell | price in UZS with USD beneath (Settings' rate, on the cards too; written «USD», never «$») | cart button
    — `renderRow` and `browse` on `<ProductCatalogue>`. Photos swipe left and right when a product
-   has several (`<PhotoStrip>`, the variation's `imageUrl` then its `gallery`). The cart panel is **two steps** (client request): **1. Продажа** — driver and truck, cart,
+   has several (`<PhotoStrip>`, the variation's `imageUrl` then its `gallery`), and open full
+   size with the rest beside them. A card's stock box reads «Остаток». The cart panel is **two steps** (client request): **1. Продажа** — driver and truck, cart,
    promotion, totals, a comment (no source picker — client request), Park or «К оплате»; **2. Оплата** — the sale read back,
    payment method and «Получено» (no change field). Paying opens a dialog with **«Печать чека»**
-   (80 mm receipt) and **«Накладная»** (A4 waybill), printed in place by `PrintSale`. The customer is two steps:
+   (80 mm receipt), **«Накладная»** (A4 waybill) — printed in place by `PrintSale` — or «Без чека».
+   Two switches in Settings → General (client request) govern it: **a sale for 0 UZS** (off by
+   default) and **a sale without a client** (on by default; off, the driver is required). The customer is two steps:
    **1. find the driver** — one search field over owner-drivers and autopark drivers, with an
    add-driver button beside it, which goes away once he is chosen; **2. choose the truck** — a card-styled
    select when he has several, a card when he has one. No keyboard shortcuts (client request). The truck decides whose purchase it

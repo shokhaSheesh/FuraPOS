@@ -32,6 +32,10 @@ export interface CompanySettings {
    * Off means the limit is a rule; on means it is a warning.
    */
   allowOverCreditLimit: boolean
+  /** Whether a sale can go through at 0 UZS — a 100% discount, a part with no price (client request). */
+  allowZeroSale: boolean
+  /** Whether the till can sell without a driver chosen — a walk-in sale (client request). */
+  allowSaleWithoutClient: boolean
   /**
    * Which sale statuses count towards revenue.
    *
@@ -61,6 +65,8 @@ export const companySchema = z.object({
   usdRate: z.number().positive('A rate of zero would make every cost zero'),
   paymentMethods: z.array(z.string()).min(1, 'A sale has to be payable somehow'),
   allowOverCreditLimit: z.boolean(),
+  allowZeroSale: z.boolean(),
+  allowSaleWithoutClient: z.boolean(),
   revenueStatuses: z.array(z.string()).min(1, 'Something has to count as revenue'),
 })
 

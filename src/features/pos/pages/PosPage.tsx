@@ -186,9 +186,14 @@ export default function PosPage() {
   const units = unitsIn(cart)
   /** Credit is a debt on somebody's account, so it needs somebody. */
   const creditWithoutAccount = payment === 'credit' && buyer.client === null
+  // The two rules Settings can switch (client request).
+  const company = useDataStore((s) => s.company)
+  const clientMissing = !company.allowSaleWithoutClient && buyer.party === null
+  const zeroBlocked = !company.allowZeroSale && cart.length > 0 && totals.total <= 0
+
   /** Step 1 is done: something to sell, and whose purchase it is. */
-  const readyToPay = cart.length > 0 && !needsTruck(buyer)
-  const blocked = !readyToPay || noDrawer || creditWithoutAccount
+  const readyToPay = cart.length > 0 && !needsTruck(buyer) && !clientMissing
+  const blocked = !readyToPay || noDrawer || creditWithoutAccount || zeroBlocked
 
   const totalsBlock = (
     <div className="space-y-1 text-sm">
@@ -381,6 +386,11 @@ export default function PosPage() {
                   ) : null}
                 </div>
 
+                {clientMissing && cart.length > 0 ? (
+                  <p className="text-danger text-2xs">
+                    {t('Choose the driver — a sale without a client is switched off in Settings.')}
+                  </p>
+                ) : null}
                 <div className="grid grid-cols-[auto_1fr] gap-2">
                   <Button
                     type="button"
@@ -495,6 +505,11 @@ export default function PosPage() {
                     )}
                   </p>
                 ) : null}
+                {zeroBlocked ? (
+                  <p className="text-danger text-2xs">
+                    {t('A sale for 0 UZS is switched off in Settings.')}
+                  </p>
+                ) : null}
                 {creditWithoutAccount ? (
                   <p className="text-danger text-2xs">
                     {t('On credit needs a client — find one above, or take payment another way.')}
@@ -558,7 +573,7 @@ export default function PosPage() {
         footer={
           <div className="flex justify-end">
             <Button type="button" variant="secondary" onClick={() => setPaidSale(null)}>
-              {t('Next sale')}
+              {t('No receipt')}
             </Button>
           </div>
         }

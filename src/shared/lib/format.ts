@@ -62,6 +62,9 @@ export const formatMoneyIn = (value: number, currency: string) =>
     : numberFormat(`money:${currency}`, {
         style: 'currency',
         currency,
+        // "73,87 USD", never "$": the code is how the shop writes it (client request),
+        // and it reads the same as "UZS" beside it.
+        currencyDisplay: 'code',
         // Foreign prices are quoted to the cent; ours are whole sums.
         maximumFractionDigits: 2,
       }).format(value)

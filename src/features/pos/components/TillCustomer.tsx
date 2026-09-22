@@ -52,6 +52,7 @@ export function TillCustomer({
 }) {
   const drivers = useDataStore((s) => s.drivers)
   const clients = useDataStore((s) => s.clients)
+  const allowWalkIn = useDataStore((s) => s.company.allowSaleWithoutClient)
   const searchRef = useRef<HTMLInputElement>(null)
   const [adding, setAdding] = useState(false)
 
@@ -77,7 +78,9 @@ export function TillCustomer({
               onPick={pickParty}
               onAddDriver={() => setAdding(true)}
             />
-            <p className="text-fg-subtle text-2xs">{t('No driver chosen — a walk-in sale.')}</p>
+            {allowWalkIn ? (
+              <p className="text-fg-subtle text-2xs">{t('No driver chosen — a walk-in sale.')}</p>
+            ) : null}
           </>
         )}
       </Step>

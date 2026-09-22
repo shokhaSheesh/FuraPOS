@@ -2321,6 +2321,8 @@ export const companySettings: CompanySettings = {
   usdRate: USD_RATE,
   paymentMethods: ['cash', 'card', 'transfer', 'credit'],
   allowOverCreditLimit: false,
+  allowZeroSale: false,
+  allowSaleWithoutClient: true,
   // Deliberately not `open` or `postponed`: an unfinished sale is not revenue,
   // and counting it would flatter every figure in Analytics.
   revenueStatuses: ['completed', 'processed'],

@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router'
-import { ArrowLeft, Ban, Check, Truck } from 'lucide-react'
+import { ArrowLeft, Ban, Check, Download, Truck } from 'lucide-react'
+import { DataTable } from '@/shared/components/DataTable'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
@@ -17,7 +18,15 @@ import { toast } from '@/shared/ui/toast'
 import { paths } from '@/shared/config/paths'
 import { useSession } from '@/app/providers/SessionProvider'
 import { formatDate, formatDateTime, formatMoney, formatNumber } from '@/shared/lib/format'
+import { downloadCsv } from '@/shared/lib/csv'
 import { USD_RATE } from '@/data/seed'
+import { useDataStore } from '@/data/store'
+import type { TableColumn } from '@/shared/components/table/features'
+import type { VariationRow } from '@/features/products/model/product'
+import {
+  buildProductFieldColumns,
+  PRODUCT_FIELD_COLUMN_IDS,
+} from '@/features/products/components/productFieldColumns'
 import {
   canCancel,
   canShip,
@@ -29,7 +38,9 @@ import {
   partnerStatusLabel,
   partnerStatusTone,
   shippedValue,
+  partnerOrderCsv,
   type PartnerOrder,
+  type PartnerOrderLine,
 } from '../model/partnerOrder'
 import { usePartnerOrder, usePartnerOrderActions } from '../api/partnerOrders'
 import { t } from '@/shared/i18n'
@@ -116,6 +127,19 @@ function OrderStep({ order }: { order: PartnerOrder }) {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            {/* The same sheet the list hands out, from the order itself. */}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                const sheet = partnerOrderCsv(order)
+                downloadCsv(sheet.name, sheet.head, sheet.rows)
+                toast.success(t('{number} downloaded', { number: order.number }))
+              }}
+            >
+              <Download />
+              {t('Download')}
+            </Button>
             {canCancel(order.status) && mayEdit ? (
               <Button variant="secondary" size="sm" onClick={() => setConfirmCancel(true)}>
                 <Ban />
@@ -165,6 +189,13 @@ function OrderStep({ order }: { order: PartnerOrder }) {
       />
     </>
   )
+}
+
+/** A line of a partner's order, with our catalogue row behind it. */
+interface PartnerRow {
+  key: string
+  line: PartnerOrderLine
+  variation: VariationRow | undefined
 }
 
 /* --- step 2: shipments --------------------------------------------------- */
@@ -359,77 +390,117 @@ function ShipmentsStep({ order }: { order: PartnerOrder }) {
 function LineTable({ order }: { order: PartnerOrder }) {
   const { can } = useSession()
   const canSeeMoney = can('sales.orders.view')
+  const variations = useDataStore((s) => s.variations)
+  const [columnsSlot, setColumnsSlot] = useState<HTMLElement | null>(null)
+
+  /*
+    The catalogue's own fields, switchable from Columns like every other
+    document (client request) — somebody reading an order reads the same
+    catalogue as somebody managing it. The order's own numbers go straight
+    after the identity block.
+  */
+  const rows = useMemo<PartnerRow[]>(
+    () =>
+      order.lines.map((line) => ({
+        key: line.id,
+        line,
+        variation: variations.find((entry) => entry.id === line.variationId),
+      })),
+    [order.lines, variations],
+  )
+
+  const columns = useMemo(() => {
+    const fields = buildProductFieldColumns<PartnerRow>({
+      variationOf: (row) => row.variation,
+      canSeeCost: false,
+    })
+    const identityIds = PRODUCT_FIELD_COLUMN_IDS.slice(0, PRODUCT_FIELD_COLUMN_IDS.indexOf('stock'))
+    const isIdentity = (column: TableColumn<PartnerRow>) => identityIds.includes(column.id ?? '')
+
+    const own: TableColumn<PartnerRow>[] = [
+      {
+        id: 'ordered',
+        header: t('Ordered'),
+        enableHiding: false,
+        meta: { align: 'right' },
+        cell: ({ row }) => (
+          <span className="text-fg-muted tabular-nums">
+            {formatNumber(row.original.line.orderedQuantity)} {row.original.line.unit}
+          </span>
+        ),
+      },
+      {
+        id: 'shipped',
+        header: t('Sent'),
+        enableHiding: false,
+        meta: { align: 'right' },
+        cell: ({ row }) => (
+          <span className="text-fg tabular-nums">
+            {formatNumber(row.original.line.shippedQuantity)}
+          </span>
+        ),
+      },
+      {
+        id: 'outstanding',
+        header: t('Still to send'),
+        enableHiding: false,
+        meta: { align: 'right' },
+        cell: ({ row }) => {
+          const left = lineOutstanding(row.original.line)
+          return left === 0 ? (
+            <span className="text-success">{t('complete')}</span>
+          ) : (
+            <span className="text-warning font-medium tabular-nums">{formatNumber(left)}</span>
+          )
+        },
+      },
+      ...(canSeeMoney
+        ? [
+            {
+              id: 'unitPrice',
+              header: t('Price'),
+              meta: { align: 'right' as const },
+              cell: ({ row }: { row: { original: PartnerRow } }) => (
+                <span className="text-fg-muted tabular-nums">
+                  {formatMoney(row.original.line.unitPrice)}
+                </span>
+              ),
+            } satisfies TableColumn<PartnerRow>,
+          ]
+        : []),
+    ]
+
+    return [...fields.filter(isIdentity), ...own, ...fields.filter((c) => !isIdentity(c))]
+  }, [canSeeMoney])
 
   return (
-    <div className="scroll-x-quiet overflow-x-auto">
-      <table className="w-full min-w-max text-sm">
-        <thead className="bg-canvas">
-          <tr className="text-fg-muted text-2xs tracking-wide uppercase">
-            <th className="px-4 py-2 text-left font-semibold">{t('Product')}</th>
-            <th className="px-4 py-2 text-right font-semibold">{t('Ordered')}</th>
-            <th className="px-4 py-2 text-right font-semibold">{t('Sent')}</th>
-            <th className="px-4 py-2 text-right font-semibold">{t('Still to send')}</th>
-            {canSeeMoney ? (
-              <th className="px-4 py-2 text-right font-semibold">{t('Price')}</th>
-            ) : null}
-          </tr>
-        </thead>
-        <tbody>
-          {order.lines.map((line) => {
-            const left = lineOutstanding(line)
-            return (
-              <tr key={line.id} className="border-border border-t">
-                <td className="px-4 py-2">
-                  <Link
-                    to={paths.products.detail(line.productId)}
-                    className="flex items-center gap-2.5 hover:underline"
-                  >
-                    <ProductThumb src={line.imageUrl} size="sm" />
-                    <div className="min-w-0">
-                      <p className="text-fg font-medium">{line.name}</p>
-                      <p className="text-fg-subtle text-2xs font-mono">
-                        {line.sku}
-                        <StorageAddress variationId={line.variationId} />
-                      </p>
-                    </div>
-                  </Link>
-                </td>
-                <td className="text-fg-muted px-4 py-2 text-right tabular-nums">
-                  {formatNumber(line.orderedQuantity)} {line.unit}
-                </td>
-                <td className="text-fg px-4 py-2 text-right tabular-nums">
-                  {formatNumber(line.shippedQuantity)}
-                </td>
-                <td className="px-4 py-2 text-right tabular-nums">
-                  {left === 0 ? (
-                    <span className="text-success">{t('complete')}</span>
-                  ) : (
-                    <span className="text-warning font-medium">{formatNumber(left)}</span>
-                  )}
-                </td>
-                {canSeeMoney ? (
-                  <td className="text-fg-muted px-4 py-2 text-right tabular-nums">
-                    {formatMoney(line.unitPrice)}
-                  </td>
-                ) : null}
-              </tr>
-            )
-          })}
-        </tbody>
-        {canSeeMoney ? (
-          <tfoot>
-            <tr className="text-fg-muted border-border border-t">
-              <td className="px-4 py-2" colSpan={4}>
+    <div className="space-y-2">
+      <div ref={setColumnsSlot} className="flex justify-end px-4" />
+      <DataTable
+        reorderableColumns
+        storageKey="partner-order-lines"
+        columnsMenuContainer={columnsSlot}
+        columns={columns}
+        initialHidden={PRODUCT_FIELD_COLUMN_IDS.filter(
+          (id) => !['productName', 'name', 'sku', 'stock'].includes(id),
+        )}
+        data={rows}
+        total={rows.length}
+        getRowId={(row) => row.key}
+        footer={
+          canSeeMoney ? (
+            <div className="text-fg-muted flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm">
+              <span>
                 {formatNumber(outstandingUnits(order))} {t('units still to send')}
-              </td>
-              <td className="text-fg px-4 py-2 text-right font-medium tabular-nums">
+              </span>
+              <span className="text-fg font-medium tabular-nums">
                 {formatMoney(Math.round(shippedValue(order, USD_RATE)))} {t('sent of')}{' '}
                 {formatMoney(Math.round(orderValue(order, USD_RATE)))}
-              </td>
-            </tr>
-          </tfoot>
-        ) : null}
-      </table>
+              </span>
+            </div>
+          ) : null
+        }
+      />
     </div>
   )
 }

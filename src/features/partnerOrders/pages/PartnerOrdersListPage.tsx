@@ -1,6 +1,10 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router'
+import { Download } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
+import { RowActions } from '@/shared/components/RowActions'
+import { toast } from '@/shared/ui/toast'
+import { downloadCsv } from '@/shared/lib/csv'
 import { DataTable } from '@/shared/components/DataTable'
 import { ColumnFilterSearch } from '@/shared/components/ColumnFilterSearch'
 import { PARTNER_ORDER_FILTER_OVERRIDES } from '../model/partnerOrderFilterFields'
@@ -16,6 +20,7 @@ import { formatDate, formatMoney, formatNumber, formatPercent } from '@/shared/l
 import { useDataStore } from '@/data/store'
 import { USD_RATE } from '@/data/seed'
 import {
+  partnerOrderCsv,
   orderedUnits,
   orderValue,
   outstandingUnits,
@@ -49,6 +54,13 @@ export default function PartnerOrdersListPage() {
   const scope = { f: query.f, search: query.search, client: query.client }
   const { data, isLoading } = usePartnerOrders(query)
   const { data: counts } = usePartnerOrderStatusCounts(scope)
+
+  /** Their order's lines as a spreadsheet. */
+  const download = (order: PartnerOrder) => {
+    const sheet = partnerOrderCsv(order)
+    downloadCsv(sheet.name, sheet.head, sheet.rows)
+    toast.success(t('{number} downloaded', { number: order.number }))
+  }
 
   const columns = useMemo<TableColumn<PartnerOrder>[]>(
     () => [
@@ -148,7 +160,21 @@ export default function PartnerOrdersListPage() {
         header: t('Note'),
         cell: ({ row }) => row.original.comment ?? <span className="text-fg-subtle">—</span>,
       },
+      {
+        id: 'actions',
+        header: '',
+        enableHiding: false,
+        meta: { align: 'right' },
+        cell: ({ row }) => (
+          <RowActions
+            actions={[
+              { label: t('Download'), icon: Download, onSelect: () => download(row.original) },
+            ]}
+          />
+        ),
+      },
     ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [canSeeMoney],
   )
 

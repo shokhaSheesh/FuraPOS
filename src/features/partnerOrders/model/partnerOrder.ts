@@ -165,3 +165,24 @@ export const canCancel = (status: PartnerOrderStatus) =>
 export function statusAfterShipping(order: Pick<PartnerOrder, 'lines'>): PartnerOrderStatus {
   return outstandingUnits(order) === 0 ? 'shipped' : 'partial'
 }
+
+/**
+ * One partner order as a spreadsheet (client request) — what they asked for,
+ * what has gone and what is still owed to them.
+ */
+export function partnerOrderCsv(order: PartnerOrder) {
+  return {
+    name: `${order.number}.csv`,
+    head: ['SKU', 'Product', 'Unit', 'Ordered', 'Sent', 'Still to send', 'Unit price', 'Currency'],
+    rows: order.lines.map((line) => [
+      line.sku,
+      line.name,
+      line.unit,
+      line.orderedQuantity,
+      line.shippedQuantity,
+      lineOutstanding(line),
+      line.unitPrice,
+      line.currency,
+    ]),
+  }
+}

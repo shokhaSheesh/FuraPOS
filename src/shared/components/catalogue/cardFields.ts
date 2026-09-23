@@ -110,7 +110,11 @@ export const CATALOGUE_CARD_FIELDS: {
         (v) => v.costCurrency,
       ),
   },
-  { id: 'brandName', label: 'Supplier', value: (vs) => distinct(vs.map((v) => v.brandName)) },
+  {
+    id: 'brandName',
+    label: 'Manufacturer brand',
+    value: (vs) => distinct(vs.map((v) => v.brandName)),
+  },
   { id: 'categoryPath', label: 'Category', value: (vs) => distinct(vs.map((v) => v.categoryPath)) },
   { id: 'partSide', label: 'Part', value: (vs) => distinct(vs.map((v) => v.partSide)) },
   { id: 'oem', label: 'OEM', value: (vs) => distinct(vs.map((v) => v.oem)) },

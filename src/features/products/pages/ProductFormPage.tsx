@@ -613,7 +613,7 @@ export function ProductForm({
                     <CardTitle>{t('Where it belongs')}</CardTitle>
                   </CardHeader>
                   <CardBody>
-                    <Field label={t('Supplier')} hint={t('Who we buy it from')}>
+                    <Field label={t('Manufacturer brand')} hint={t('Who made the part')}>
                       {(p) => (
                         <Controller
                           control={form.control}

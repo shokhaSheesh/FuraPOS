@@ -3,12 +3,13 @@ import { Printer, Tags, Trash2, X } from 'lucide-react'
 import { Modal } from '@/shared/ui/Modal'
 import { Button } from '@/shared/ui/Button'
 import { Select } from '@/shared/ui/Select'
+import { Field } from '@/shared/components/Field'
 import { ProductThumb } from '@/shared/components/ProductThumb'
 import { QuantityStepper } from '@/shared/components/catalogue/VariationsDialog'
 import { formatDate, formatMoney, formatNumber } from '@/shared/lib/format'
 import { t, tn } from '@/shared/i18n'
 import { useDataStore } from '@/data/store'
-import { perRow, perSheet, type PrintTemplate } from '../model/template'
+import { kindLabel, perRow, perSheet, type PrintTemplate } from '../model/template'
 import { TemplatePreview, type PreviewValues } from './TemplatePreview'
 
 /** How many labels are wanted of each variation, by variation id. */
@@ -138,16 +139,23 @@ export function LabelBasket({
         }
       >
         <div className="space-y-3">
-          <Select
-            className="w-full"
-            aria-label={t('Template')}
-            value={template?.id}
-            onChange={setTemplateId}
-            options={templates.map((entry) => ({
-              value: entry.id,
-              label: `${entry.name} — ${entry.widthMm}×${entry.heightMm} ${t('mm')}`,
-            }))}
-          />
+          <Field
+            label={t('Template')}
+            hint={t('Any template you have made — a part sticker, a shelf card, a receipt.')}
+          >
+            {(p) => (
+              <Select
+                {...p}
+                className="w-full"
+                value={template?.id}
+                onChange={setTemplateId}
+                options={templates.map((entry) => ({
+                  value: entry.id,
+                  label: `${entry.name} · ${kindLabel(entry.kind)} — ${entry.widthMm}×${entry.heightMm} ${t('mm')}`,
+                }))}
+              />
+            )}
+          </Field>
 
           <ul className="divide-border border-border rounded-card divide-y border">
             {chosen.map(({ variation, copies }) => (

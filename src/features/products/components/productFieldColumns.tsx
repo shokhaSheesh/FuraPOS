@@ -148,7 +148,7 @@ export function buildProductFieldColumns<T extends RowData>({
       : []),
     {
       id: 'brandName',
-      header: t('Supplier'),
+      header: t('Manufacturer brand'),
       cell: ({ row }) => text(variationOf(row.original)?.brandName),
     },
     {

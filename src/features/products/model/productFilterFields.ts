@@ -58,7 +58,7 @@ export function productFilterFields(
     },
     {
       id: 'brandName',
-      label: t('Supplier'),
+      label: t('Manufacturer brand'),
       type: 'options',
       get: (v) => v.brandName,
       options: distinct(variations.map((v) => v.brandName)),

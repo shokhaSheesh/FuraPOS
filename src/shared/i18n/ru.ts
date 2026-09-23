@@ -2497,4 +2497,6 @@ export const ru: Dictionary = {
   'No print template exists yet — make one under Print templates.': 'Шаблонов печати пока нет — создайте его в «Шаблоны для печати».',
   labels: ['этикетка', 'этикетки', 'этикеток'],
   sheets: ['лист', 'листа', 'листов'],
+  'Manufacturer brand': 'Бренд производителя',
+  'Any template you have made — a part sticker, a shelf card, a receipt.': 'Любой созданный шаблон — этикетка товара, ценник на полку, чек.',
 }

@@ -19,10 +19,10 @@ const variations = [
   variation('v3', 'p2', null, 'SKU-2'),
 ]
 const categories = [{ id: 'cat-2', name: 'Brakes', path: 'Chassis > Brakes' }]
-const suppliers = [{ id: 'brand-1', name: 'Bosch' }]
+const brands = [{ id: 'brand-1', name: 'Bosch' }]
 
 const plan = (rows: string[][], roles: ColumnRole[]) =>
-  planMassUpdate({ rows, roles, variations, categories, suppliers })
+  planMassUpdate({ rows, roles, variations, categories, brands })
 
 describe('choosing what each column is', () => {
   it('needs a key and something to update', () => {
@@ -118,7 +118,7 @@ describe('the plan', () => {
     expect(planCounts(result)).toEqual({ products: 0, variations: 0, stock: 1 })
   })
 
-  it('looks categories and suppliers up by name, and reports what it cannot find', () => {
+  it('looks categories and brands up by name, and reports what it cannot find', () => {
     const result = plan(
       [
         ['SKU-2', 'chassis > brakes', 'bosch'],
@@ -127,7 +127,7 @@ describe('the plan', () => {
       [
         { kind: 'key', keyType: 'sku' },
         { kind: 'action', action: 'category' },
-        { kind: 'action', action: 'supplier' },
+        { kind: 'action', action: 'brand' },
       ],
     )
     expect(result.productPatches.get('p2')).toMatchObject({
@@ -136,7 +136,7 @@ describe('the plan', () => {
     })
     expect(result.errors).toEqual([
       'Row 2: no category called "Nowhere"',
-      'Row 2: no supplier called "Nobody"',
+      'Row 2: no brand called "Nobody"',
     ])
   })
 
@@ -174,7 +174,7 @@ describe('running it', () => {
       ],
       variations: state.variations,
       categories: state.categories,
-      suppliers: state.brands,
+      brands: state.brands,
     })
     const record = state.applyMassUpdate({ fileName: 'prices.xlsx', totalRows: 1, plan: result })
 

@@ -63,7 +63,7 @@ export default function MassUpdatePage() {
   const canSeeCost = can('products.cost.view')
   const variations = useDataStore((s) => s.variations)
   const categories = useDataStore((s) => s.categories)
-  const suppliers = useDataStore((s) => s.brands)
+  const brands = useDataStore((s) => s.brands)
   const locations = useDataStore((s) => s.locations)
   const history = useDataStore((s) => s.massUpdates)
   const presets = useDataStore((s) => s.massUpdatePresets)
@@ -129,7 +129,7 @@ export default function MassUpdatePage() {
   }
 
   const run = () => {
-    const plan = planMassUpdate({ rows, roles, variations, categories, suppliers })
+    const plan = planMassUpdate({ rows, roles, variations, categories, brands })
     const record = applyMassUpdate({ fileName, totalRows: rows.length, plan })
     setDone(record)
     toast.success(t('Update finished'))
@@ -917,7 +917,7 @@ function InfoPanel() {
       tone: 'text-primary bg-primary-soft',
       title: t('Any field'),
       text: t(
-        'Sale and supplier prices, names, categories, suppliers, makes, storage address, stock and more.',
+        'Sale and supplier prices, names, categories, brands, makes, storage address, stock and more.',
       ),
     },
     {

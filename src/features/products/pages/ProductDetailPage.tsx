@@ -238,7 +238,7 @@ function VariationsTable({ product }: { product: Product }) {
 function Details({ product }: { product: Product }) {
   const rows: [string, React.ReactNode][] = [
     ['Category', product.categoryPath],
-    ['Supplier', product.brandName ?? <Empty />],
+    ['Manufacturer brand', product.brandName ?? <Empty />],
     ['Product brand', product.manufacturer ?? <Empty />],
     [
       'Description',

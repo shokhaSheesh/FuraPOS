@@ -41,7 +41,7 @@ export type ActionType =
   | 'wholesalePrice'
   | 'quantity'
   | 'shelfAddress'
-  | 'supplier'
+  | 'brand'
   | 'category'
   | 'partSide'
   | 'oem'
@@ -87,7 +87,7 @@ export const ACTIONS: ActionSpec[] = [
     needsCurrency: true,
     costOnly: true,
   },
-  { value: 'supplier', label: 'Supplier', allow: ANY_KEY },
+  { value: 'brand', label: 'Manufacturer brand', allow: ANY_KEY },
   { value: 'category', label: 'Category', allow: ANY_KEY },
   { value: 'partSide', label: 'Part', allow: VARIATION_KEYS },
   { value: 'oem', label: 'OEM', allow: VARIATION_KEYS },
@@ -267,13 +267,13 @@ export function planMassUpdate({
   roles,
   variations,
   categories,
-  suppliers,
+  brands,
 }: {
   rows: string[][]
   roles: ColumnRole[]
   variations: VariationRow[]
   categories: readonly { id: string; name: string; path: string }[]
-  suppliers: readonly { id: string; name: string }[]
+  brands: readonly { id: string; name: string }[]
 }): MassUpdatePlan {
   const productPatches = new Map<Id, ProductPatch>()
   const variationPatches = new Map<Id, VariationPatch>()
@@ -343,13 +343,13 @@ export function planMassUpdate({
             })
             break
           }
-          case 'supplier': {
-            const supplier = suppliers.find((s) => same(s.name, cell))
-            if (!supplier) {
-              errors.push(`Row ${line}: no supplier called "${cell}"`)
+          case 'brand': {
+            const brand = brands.find((entry) => same(entry.name, cell))
+            if (!brand) {
+              errors.push(`Row ${line}: no brand called "${cell}"`)
               return
             }
-            patchProduct(target.productId, { brandId: supplier.id, brandName: supplier.name })
+            patchProduct(target.productId, { brandId: brand.id, brandName: brand.name })
             break
           }
           case 'variationName':

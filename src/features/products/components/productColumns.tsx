@@ -130,10 +130,10 @@ export function buildProductColumns({
           },
         ] as TableColumn<VariationRow>[])
       : []),
-    // Поставщик
+    // Бренд — кто сделал деталь (Bosch, Denso…), не поставщик
     {
       accessorKey: 'brandName',
-      header: t('Supplier'),
+      header: t('Manufacturer brand'),
       cell: ({ row }) => text(row.original.brandName),
     },
     // Название продукта

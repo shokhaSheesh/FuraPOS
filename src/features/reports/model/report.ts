@@ -192,7 +192,6 @@ export interface ReportDefinition {
   defaultPeriod: ReportPeriod
   chart: ReportChart
   /** Which measure the chart draws. The first one when unset. */
-  chartMeasure: string | null
   /**
    * Pinned into the sidebar. OX's «Добавить в меню»; kept because a report
    * somebody runs every Monday should not need finding first.
@@ -322,7 +321,6 @@ export const reportDraftSchema = z.object({
   measures: z.array(z.string()).min(1, 'Pick at least one thing to measure'),
   defaultPeriod: z.enum(['today', 'week', 'month', 'quarter', 'year', 'all']),
   chart: z.enum(['none', 'bar', 'line', 'donut']),
-  chartMeasure: z.string().nullable(),
   pinned: z.boolean(),
 })
 

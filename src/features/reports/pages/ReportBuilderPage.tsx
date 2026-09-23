@@ -42,7 +42,6 @@ interface State {
   measures: string[]
   defaultPeriod: ReportPeriod
   chart: ReportChart
-  chartMeasure: string | null
   pinned: boolean
 }
 
@@ -70,7 +69,6 @@ export default function ReportBuilderPage() {
     measures: ['revenue', 'units'],
     defaultPeriod: 'month',
     chart: 'bar',
-    chartMeasure: null,
     pinned: false,
   })
   const [showErrors, setShowErrors] = useState(false)
@@ -84,16 +82,15 @@ export default function ReportBuilderPage() {
         measures: existing.measures,
         defaultPeriod: existing.defaultPeriod,
         chart: existing.chart,
-        chartMeasure: existing.chartMeasure,
         pinned: existing.pinned,
       })
     }
   }, [existing])
 
   const schema = SOURCE_SCHEMAS[state.source]
-  // The first measure unless one was chosen, so the chart is never blank.
-  const chartMeasure = state.chartMeasure ?? state.measures[0] ?? ''
   const preview = usePreview(state.source, state.dimensions, state.measures)
+  // Narrowed once, so each measure's chart knows it is not 'none'.
+  const chart = state.chart
   const parsed = reportDraftSchema.safeParse(state)
   const errors = showErrors && !parsed.success ? parsed.error.flatten().fieldErrors : {}
 
@@ -237,26 +234,6 @@ export default function ReportBuilderPage() {
               )}
             </Field>
 
-            {state.chart !== 'none' && canChart(state.dimensions) ? (
-              <Field
-                label={t('Draw which measure')}
-                hint={t('One series only — measures are on different scales')}
-              >
-                {(p) => (
-                  <Select
-                    {...p}
-                    className="w-full"
-                    value={chartMeasure}
-                    onChange={(chartMeasure) => setState((c) => ({ ...c, chartMeasure }))}
-                    options={state.measures.map((key) => ({
-                      value: key,
-                      label: t(schema.measures.find((m) => m.key === key)?.label ?? key),
-                    }))}
-                  />
-                )}
-              </Field>
-            ) : null}
-
             <label className="flex items-center justify-between gap-3 pt-1">
               <span className="min-w-0">
                 <span className="text-fg block text-sm font-medium">{t('Pin to the sidebar')}</span>
@@ -345,14 +322,19 @@ export default function ReportBuilderPage() {
         <CardBody>
           {preview && state.measures.length > 0 ? (
             <div className="space-y-4">
-              {state.chart !== 'none' && canChart(state.dimensions) && chartMeasure ? (
-                <ReportChartView
-                  source={state.source}
-                  dimension={state.dimensions[0]!}
-                  measure={chartMeasure}
-                  chart={state.chart}
-                  result={preview}
-                />
+              {chart !== 'none' && canChart(state.dimensions) ? (
+                <div className="grid gap-4 2xl:grid-cols-2">
+                  {state.measures.map((measure) => (
+                    <ReportChartView
+                      key={measure}
+                      source={state.source}
+                      dimension={state.dimensions[0]!}
+                      measure={measure}
+                      chart={chart}
+                      result={preview}
+                    />
+                  ))}
+                </div>
               ) : null}
               <ResultTable
                 source={state.source}

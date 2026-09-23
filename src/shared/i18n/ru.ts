@@ -2533,4 +2533,5 @@ export const ru: Dictionary = {
   'Last paid {date}': 'Последняя оплата {date}',
   'Never paid us': 'Оплат не было',
   'Nothing has been paid against his purchases': 'По его закупкам оплат не было',
+  '{measure} by {dimension}': '{measure} по: {dimension}',
 }

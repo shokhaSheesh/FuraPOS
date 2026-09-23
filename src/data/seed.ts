@@ -1849,22 +1849,19 @@ export const reports: ReportDefinition[] = (
       null,
     ],
   ] as const
-).map(
-  ([name, source, dimensions, measures, defaultPeriod, pinned, chart, chartMeasure], index) => ({
-    id: `rep-${index + 1}`,
-    name,
-    source,
-    dimensions: [...dimensions],
-    measures: [...measures],
-    defaultPeriod,
-    chart,
-    chartMeasure,
-    pinned,
-    createdBy: index % 2 === 0 ? 'Akhmet Dauletmuratov' : 'Nodira Rasulova',
-    createdAt: new Date(Date.now() - between(20, 200) * 86_400_000).toISOString(),
-    updatedAt: new Date(Date.now() - between(1, 19) * 86_400_000).toISOString(),
-  }),
-)
+).map(([name, source, dimensions, measures, defaultPeriod, pinned, chart], index) => ({
+  id: `rep-${index + 1}`,
+  name,
+  source,
+  dimensions: [...dimensions],
+  measures: [...measures],
+  defaultPeriod,
+  chart,
+  pinned,
+  createdBy: index % 2 === 0 ? 'Akhmet Dauletmuratov' : 'Nodira Rasulova',
+  createdAt: new Date(Date.now() - between(20, 200) * 86_400_000).toISOString(),
+  updatedAt: new Date(Date.now() - between(1, 19) * 86_400_000).toISOString(),
+}))
 
 /**
  * Print templates.

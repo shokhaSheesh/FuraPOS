@@ -234,9 +234,9 @@ describe('driverSchema', () => {
 })
 
 describe('statusLabel', () => {
-  it('reads in plain words', () => {
-    expect(statusLabel('active')).toBe('Driving')
-    expect(statusLabel('inactive')).toBe('No longer driving')
+  it('has two, worded plainly', () => {
+    expect(statusLabel('active')).toBe('Active')
+    expect(statusLabel('inactive')).toBe('Inactive')
   })
 })
 

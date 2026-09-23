@@ -54,6 +54,9 @@ export default function ReportViewPage() {
     )
   }
 
+  // Narrowed once, so every chart below knows it is not 'none'.
+  const chart = report.chart
+
   return (
     <>
       <Button variant="link" size="sm" className="h-auto px-0" asChild>
@@ -116,20 +119,28 @@ export default function ReportViewPage() {
       >
         {result ? (
           <div className="space-y-3">
-            {report.chart !== 'none' && canChart(report.dimensions) ? (
-              // The shape first, the numbers under it — a hundred rows of
-              // figures hide a trend that one glance at a chart gives away.
-              <Card>
-                <CardBody>
-                  <ReportChartView
-                    source={report.source}
-                    dimension={report.dimensions[0]!}
-                    measure={report.chartMeasure ?? report.measures[0]!}
-                    chart={report.chart}
-                    result={result}
-                  />
-                </CardBody>
-              </Card>
+            {/*
+              The shape first, the numbers under it — a hundred rows of figures
+              hide a trend that one glance at a chart gives away. One chart per
+              measure (client request): revenue and margin are different
+              questions and belong on different axes, never in one drawing.
+            */}
+            {chart !== 'none' && canChart(report.dimensions) ? (
+              <div className="grid gap-3 xl:grid-cols-2">
+                {report.measures.map((measure) => (
+                  <Card key={measure}>
+                    <CardBody>
+                      <ReportChartView
+                        source={report.source}
+                        dimension={report.dimensions[0]!}
+                        measure={measure}
+                        chart={chart}
+                        result={result}
+                      />
+                    </CardBody>
+                  </Card>
+                ))}
+              </div>
             ) : null}
             <Card>
               <CardBody>

@@ -168,7 +168,10 @@ export function ReportChartView({
       </div>
 
       <p className="text-fg-subtle text-2xs">
-        {measureLabel} by {dimensionLabel.toLowerCase()}
+        {t('{measure} by {dimension}', {
+          measure: measureLabel,
+          dimension: dimensionLabel.toLowerCase(),
+        })}
         {result.rows.length > CHART_TOP_N && !isTimeDimension(dimension)
           ? chart === 'donut'
             ? t(' — top {CHART_TOP_N}, the rest as "Other".', { CHART_TOP_N: CHART_TOP_N })

@@ -21,8 +21,9 @@ import { t } from '@/shared/i18n'
 export type DriverStatus = 'active' | 'inactive'
 
 export const DRIVER_STATUSES: { value: DriverStatus; label: string }[] = [
-  { value: 'active', label: 'Driving' },
-  { value: 'inactive', label: 'No longer driving' },
+  // Two, and worded plainly (client request).
+  { value: 'active', label: 'Active' },
+  { value: 'inactive', label: 'Inactive' },
 ]
 
 /**

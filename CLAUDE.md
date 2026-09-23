@@ -131,7 +131,9 @@ Do not rename a nav item or invent a screen without updating that map first.
    in-module menu; we surface them directly in the sidebar under those two headings.
 7. **Marketing** — promotions. Autoparks (the CRM, with the wallet + AI-insights component) and
    drivers live under Users; OX's groups, cashback, SMS and digital campaigns and coupons were cut.
-8. **Analytics** — report generator and product logs. The customer report was built and then
+8. **Analytics** — report generator and product logs. A report draws **one chart per measure**
+   (client request): revenue, cost and margin are different questions on different scales, so they
+   are never crowded onto one drawing and there is nothing to choose between. The customer report was built and then
    **cut at the client's request**.
 9. **My uploads** — an async job log for bulk imports (not a file manager) — filename, user, job
    type, status.

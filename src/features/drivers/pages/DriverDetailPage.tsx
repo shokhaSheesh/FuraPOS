@@ -97,18 +97,23 @@ export default function DriverDetailPage() {
         out of the door.
       */}
       <div className="grid gap-3 sm:grid-cols-3">
-        <Stat
-          label={t('Owed on his own account')}
-          value={formatMoney(Math.round(owed.own))}
-          hint={
-            driver.creditLimit === null
-              ? t('No credit — he pays at the counter')
-              : t('{left} of {limit} left', {
-                  left: formatMoney(Math.round(headroom ?? 0)),
-                  limit: formatMoney(driver.creditLimit),
-                })
-          }
-        />
+        {/* An autopark driver buys on the company's limit, never on one of
+            his own (client request), so the stat only makes sense for a man
+            with a truck of his own. */}
+        {driver.ownTrucks.length > 0 ? (
+          <Stat
+            label={t('Owed on his own account')}
+            value={formatMoney(Math.round(owed.own))}
+            hint={
+              driver.creditLimit === null
+                ? t('No credit — he pays at the counter')
+                : t('{left} of {limit} left', {
+                    left: formatMoney(Math.round(headroom ?? 0)),
+                    limit: formatMoney(driver.creditLimit),
+                  })
+            }
+          />
+        ) : null}
         {[...owed.byAutopark].map(([clientId, amount]) => (
           <Stat
             key={clientId}
@@ -184,6 +189,7 @@ export default function DriverDetailPage() {
                     <th className="px-4 py-2 text-left font-semibold">{t('Truck')}</th>
                     <th className="px-4 py-2 text-left font-semibold">{t('Bought for')}</th>
                     <th className="px-4 py-2 text-right font-semibold">{t('Total')}</th>
+                    <th className="px-4 py-2 text-right font-semibold">{t('Still owed')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -205,6 +211,14 @@ export default function DriverDetailPage() {
                       <td className="text-fg-muted px-4 py-2">{sale.clientName ?? t('Himself')}</td>
                       <td className="text-fg px-4 py-2 text-right font-medium tabular-nums">
                         {formatMoney(sale.total)}
+                      </td>
+                      {/* Which purchases the debt above is actually made of. */}
+                      <td className="px-4 py-2 text-right tabular-nums">
+                        {sale.debt > 0 ? (
+                          <span className="text-danger">{formatMoney(Math.round(sale.debt))}</span>
+                        ) : (
+                          <span className="text-fg-subtle">{t('Paid')}</span>
+                        )}
                       </td>
                     </tr>
                   ))}

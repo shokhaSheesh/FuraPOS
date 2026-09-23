@@ -124,8 +124,14 @@ export default function DriversPage() {
   const save = () => {
     setShowErrors(true)
     if (!parsed.success) return
-    if (editing) actions.update(editing.id, parsed.data)
-    else actions.create(parsed.data)
+    // A man with no truck of his own buys on his company's limit, so his own
+    // is not kept (client request) — it would sit there meaning nothing.
+    const values = {
+      ...parsed.data,
+      creditLimit: parsed.data.ownTrucks.length > 0 ? parsed.data.creditLimit : null,
+    }
+    if (editing) actions.update(editing.id, values)
+    else actions.create(values)
     setOpen(false)
     toast.success(editing ? 'Saved' : `${draft.fullName} added`)
   }
@@ -227,6 +233,36 @@ export default function DriversPage() {
         ),
       },
       {
+        id: 'owed',
+        header: t('Owes us'),
+        meta: { align: 'right' },
+        cell: ({ row }) => {
+          const owed = driverDebt(sales, row.original.id)
+          if (owed.total <= 0) return <span className="text-fg-subtle">—</span>
+          const underAutoparks = owed.total - owed.own
+          return (
+            <span className="inline-block text-right">
+              <span className="text-danger font-medium tabular-nums">
+                {formatMoney(Math.round(owed.total))}
+              </span>
+              {/* Whose account each part of it sits on. */}
+              {owed.own > 0 && underAutoparks > 0 ? (
+                <span className="text-fg-subtle text-2xs block">
+                  {t('{own} his own · {company} under autoparks', {
+                    own: formatMoney(Math.round(owed.own)),
+                    company: formatMoney(Math.round(underAutoparks)),
+                  })}
+                </span>
+              ) : (
+                <span className="text-fg-subtle text-2xs block">
+                  {owed.own > 0 ? t('on his own account') : t('under an autopark')}
+                </span>
+              )}
+            </span>
+          )
+        },
+      },
+      {
         id: 'creditLimit',
         header: t('Credit limit'),
         meta: { align: 'right' },
@@ -266,9 +302,13 @@ export default function DriversPage() {
 
     // An owner-driver has no autopark, so the column is nothing but dashes
     // in that tab.
-    return section === 'independent' ? all.filter((column) => column.id !== 'autopark') : all
+    // An owner-driver has no autopark, and an autopark driver buys on his
+    // company's limit rather than one of his own (client request).
+    if (section === 'independent') return all.filter((column) => column.id !== 'autopark')
+    if (section === 'autopark') return all.filter((column) => column.id !== 'creditLimit')
+    return all
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [can, section])
+  }, [can, section, sales])
 
   /** Everyone in this tab, with what they owe and what they may owe. */
   const download = () => {
@@ -560,8 +600,10 @@ export default function DriversPage() {
                 />
               )}
             </Field>
-            {/* What he may run up on his own account (client request). */}
+            {/* Only an owner-driver has a limit of his own: an autopark
+                driver buys on the company's (client request). */}
             <Field
+              className={draft.ownTrucks.length === 0 ? 'hidden' : undefined}
               label={t('Credit limit')}
               hint={t('What he may owe on his own account. Empty means he pays at the counter.')}
               error={errors.creditLimit?.[0]}

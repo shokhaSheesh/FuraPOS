@@ -2523,4 +2523,7 @@ export const ru: Dictionary = {
   '{count} drivers downloaded': 'Скачано водителей: {count}',
   '{count} orders downloaded': 'Скачано заказов: {count}',
   'Past his credit limit of {limit} — he already owes {owed}.': 'Превышен кредитный лимит {limit} — он уже должен {owed}.',
+  '{own} his own · {company} under autoparks': '{own} свой · {company} под автопарками',
+  'on his own account': 'на своём счёте',
+  'under an autopark': 'под автопарком',
 }

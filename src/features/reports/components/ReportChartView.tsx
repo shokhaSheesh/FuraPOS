@@ -83,6 +83,8 @@ export function ReportChartView({
     />
   )
 
+  const total = data.reduce((sum, entry) => sum + entry.value, 0)
+
   if (data.length === 0) {
     return (
       <p className="text-fg-subtle py-10 text-center text-sm">
@@ -166,6 +168,32 @@ export function ReportChartView({
           )}
         </ResponsiveContainer>
       </div>
+
+      {/*
+        A donut is many series in one drawing, so it needs a key to read it by
+        (client request, and what the dataviz rules require of two or more
+        series). The swatch carries the identity; the words stay in text ink.
+        Bars and lines are one series and are named by the caption instead.
+      */}
+      {chart === 'donut' ? (
+        <ul className="flex flex-wrap gap-x-4 gap-y-1.5">
+          {data.map((entry, index) => {
+            const share = total > 0 ? entry.value / total : 0
+            return (
+              <li key={entry.label} className="flex items-center gap-1.5 text-xs">
+                <span
+                  aria-hidden
+                  className="size-2.5 shrink-0 rounded-[2px]"
+                  style={{ background: series[index % series.length] }}
+                />
+                <span className="text-fg-muted">{entry.label}</span>
+                <span className="text-fg tabular-nums">{render(entry.value)}</span>
+                <span className="text-fg-subtle tabular-nums">{formatPercent(share)}</span>
+              </li>
+            )
+          })}
+        </ul>
+      ) : null}
 
       <p className="text-fg-subtle text-2xs">
         {t('{measure} by {dimension}', {

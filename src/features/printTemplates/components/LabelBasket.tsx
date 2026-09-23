@@ -189,9 +189,14 @@ export function LabelBasket({
             ))}
           </ul>
 
+          {/*
+            The sheet itself is never shown on screen (client request): a
+            hundred parts would be a hundred previews to scroll past. It is
+            still here for the printer, which is the only thing that reads it.
+          */}
           {template ? (
             <div
-              className="print-sheet bg-canvas rounded-card grid max-h-72 gap-2 overflow-y-auto p-3"
+              className="print-sheet hidden gap-2 print:grid"
               style={{ gridTemplateColumns: `repeat(${columns}, max-content)` }}
             >
               {labels.map((label) => (

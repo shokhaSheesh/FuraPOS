@@ -1,4 +1,6 @@
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { Button } from '@/shared/ui/Button'
+import { QuantityStepper } from '@/shared/components/catalogue/VariationsDialog'
 import { Badge } from '@/shared/ui/Badge'
 import { RowActions } from '@/shared/components/RowActions'
 import { ProductThumb } from '@/shared/components/ProductThumb'
@@ -30,6 +32,7 @@ export function buildProductColumns({
   canDelete,
   canSeeCost,
   stockColumnsFor = [],
+  labels,
 }: {
   onEdit: (row: VariationRow) => void
   onDelete: (row: VariationRow) => void
@@ -38,8 +41,52 @@ export function buildProductColumns({
   canSeeCost: boolean
   /** One quantity column per location, placed right after Quantity. Empty for none. */
   stockColumnsFor?: readonly { id: string; name: string }[]
+  /** Labels wanted of each row, as the print basket holds them (client request). */
+  labels?: {
+    copiesOf: (row: VariationRow) => number
+    onChange: (row: VariationRow, copies: number) => void
+  }
 }): TableColumn<VariationRow>[] {
   const columns: TableColumn<VariationRow>[] = [
+    // How many labels to print, first on the row as OX puts it: found while
+    // reading the catalogue, printed from the basket at the corner.
+    ...(labels
+      ? [
+          {
+            id: 'labels',
+            header: t('Labels'),
+            enableSorting: false,
+            enableHiding: false,
+            cell: ({ row }: { row: { original: VariationRow } }) => {
+              const copies = labels.copiesOf(row.original)
+              // The row opens the product; picking a label must not.
+              return (
+                <div onClick={(event) => event.stopPropagation()}>
+                  {copies > 0 ? (
+                    <QuantityStepper
+                      value={copies}
+                      label={row.original.fullName}
+                      onChange={(next) => labels.onChange(row.original, next)}
+                    />
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="icon"
+                      className="size-7 [&_svg]:size-3.5"
+                      aria-label={t('Label {label}', { label: row.original.fullName })}
+                      title={t('Add a label to print')}
+                      onClick={() => labels.onChange(row.original, 1)}
+                    >
+                      <Plus />
+                    </Button>
+                  )}
+                </div>
+              )
+            },
+          } satisfies TableColumn<VariationRow>,
+        ]
+      : []),
     // Рисунок
     {
       id: 'image',
@@ -299,6 +346,8 @@ const rank = (column: TableColumn<VariationRow>) => {
  * Columns menu, and their order is remembered.
  */
 export const PRODUCT_COLUMN_ORDER = [
+  // How many labels to print, first on the row as OX puts it
+  'labels',
   // What the row is
   'image',
   'productName',

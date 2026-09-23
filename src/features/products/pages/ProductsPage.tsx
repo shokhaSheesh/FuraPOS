@@ -4,6 +4,7 @@ import { ChevronDown, Download, FileUp, LayoutGrid, List, PencilLine, Plus } fro
 import { DropdownMenu } from 'radix-ui'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
+import { LabelBasket, type LabelPicks } from '@/features/printTemplates/components/LabelBasket'
 import { FilterSearch } from '@/shared/components/FilterSearch'
 import { decodeFilters, encodeFilters } from '@/shared/lib/fieldFilters'
 import { useDataStore } from '@/data/store'
@@ -78,6 +79,9 @@ export default function ProductsPage() {
     }
   }
 
+  /** Labels waiting to be printed, gathered across pages and views. */
+  const [labels, setLabels] = useState<LabelPicks>({})
+
   const columns = useMemo(
     () =>
       buildProductColumns({
@@ -89,8 +93,19 @@ export default function ProductsPage() {
         // A column per location, off until picked from Columns. Pointless once
         // the list is split or filtered by location: Quantity already is that.
         stockColumnsFor: view === 'variations' && !locationId ? locationData.items : [],
+        // Labels are picked off the row itself (client request).
+        labels: {
+          copiesOf: (variation) => labels[variation.id] ?? 0,
+          onChange: (variation, copies) =>
+            setLabels((current) => {
+              const next = { ...current }
+              if (copies > 0) next[variation.id] = copies
+              else delete next[variation.id]
+              return next
+            }),
+        },
       }),
-    [can, navigate, view, locationId, locationData.items],
+    [can, navigate, view, locationId, locationData.items, labels],
   )
 
   /*
@@ -383,8 +398,9 @@ export default function ProductsPage() {
           reorderableColumns
           key={view}
           // Bumped when the default order changed, so a stored order from the
-          // old column set does not survive into the new one.
-          storageKey={view === 'variations' ? 'products-v2' : `products-v2-${view}`}
+          // old column set does not survive into the new one — v3 puts the
+          // label picker first, where OX has it.
+          storageKey={view === 'variations' ? 'products-v3' : `products-v3-${view}`}
           columns={columns}
           initialHidden={hidden}
           getRowId={productRowId}
@@ -472,6 +488,8 @@ export default function ProductsPage() {
         submitting={deleteVariation.isPending}
         onConfirm={confirmDelete}
       />
+
+      <LabelBasket picks={labels} onChange={setLabels} />
     </>
   )
 }

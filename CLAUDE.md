@@ -262,6 +262,10 @@ Conventions that are load-bearing — follow them rather than inventing per-scre
   `input[type=number]` is `appearance: textfield` in `global.css`, and anything scrolling sideways
   takes `.scroll-x-quiet`. Where stepping is the job — a cart line, an opening stock count, a
   document's quantities — the screen draws `<QuantityStepper>` instead.
+- **Labels are printed off the product list** (client request, as OX does it): the first column of
+  every row is a `+` that becomes a − / count / + stepper, what is picked gathers in a basket at
+  the corner of the screen across pages and views, and `<LabelBasket>` prints the lot on one sheet
+  with the template chosen there.
 - **A product's SKU and barcode are generated when left empty** (client request) —
   `features/products/model/codes.ts`: `SKU-00042` carrying on from the catalogue, and a valid
   EAN-13 in the 200–299 range shops are given for their own use. Both fields are marked required

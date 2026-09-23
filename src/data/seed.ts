@@ -47,6 +47,15 @@ import type { PurchaseOrder } from '@/features/orders/model/order'
 import type { WalletTransaction } from '@/shared/types/wallet'
 
 /** Kept in step with the dashboard's exchange-rate widget. */
+/**
+ * The code that lets somebody out of the till and into the back office
+ * (client request). It belongs to the business, not to a person: a cashier
+ * signed in to sell should not reach stock, costs and wages by walking there.
+ * Fixed here because this build has no backend; a real one keeps it server
+ * side and never ships it to the browser.
+ */
+export const BACK_OFFICE_PIN = '2468'
+
 export const USD_RATE = 12_225
 
 /** Seeded PRNG so the mock dataset is identical on every reload. */
@@ -650,7 +659,9 @@ export const employees: Employee[] = (
     ['Mansurbek Akchaev', 'role-3', 'loc-2', 'active', 1, 5_500_000],
     ['Dilshod Yusupov', 'role-3', 'loc-3', 'active', 2, 5_500_000],
     ['Nodira Rasulova', 'role-2', 'loc-2', 'active', 3, 9_000_000],
-    ['Sardor Tashmatov', 'role-4', 'loc-1', 'active', 41, 6_200_000],
+    // The cashier of the central warehouse, so a till there has somebody to
+    // hand over to — the role itself is new (client request).
+    ['Sardor Tashmatov', CASHIER_ROLE_ID, 'loc-1', 'active', 41, 6_200_000],
     ['Gulnora Kamilova', 'role-5', null, 'active', 63, 8_400_000],
     ['Jasur Ibragimov', 'role-3', 'loc-3', 'suspended', 22, 5_500_000],
     ['Aziza Yuldasheva', 'role-3', 'loc-2', 'active', 2, 5_500_000],

@@ -30,8 +30,11 @@ Two very different surfaces, and this build is the first one:
    else — it is not the back-office session, and it is what «Касса» in the sidebar opens. The role
    must hold **`sales.till.view`**, which the Owner, **Продавец** and the new **Кассир** role have;
    anything else is turned away. Their name goes on every sale (`sellerId` on `createSale`), the
-   till stands in *their* shop, the header shows them with «Выйти», the sections follow their role,
-   and leaving the till or «Выйти» locks it again.
+   till stands in *their* shop, the header shows them with «Выйти» and **hands the till over**
+   (`TillSwitchUser`: the other staff of this shop who may sell, each asked for their own password), the sections follow their role,
+   and leaving the till or «Выйти» locks it again. **«Бэк-офис» asks for the business's own code**
+   (`BACK_OFFICE_PIN` in the seed, typed on an on-screen keypad — a till may have no keyboard),
+   so somebody signed in to sell cannot walk into stock, costs and wages.
    **Layout** (`PosLayout`): one top bar with the till's three sections as **tabs — «Продажа»,
    «Отложки» and «Касса»** — then the cashier's shop (from their login, not a selector — client request) and whether its
    drawer is open. Tabs, not a rail, because «Продажа»'s
@@ -45,8 +48,12 @@ Two very different surfaces, and this build is the first one:
    — `renderRow` and `browse` on `<ProductCatalogue>`. Photos swipe left and right when a product
    has several (`<PhotoStrip>`, the variation's `imageUrl` then its `gallery`), and open full
    size with the rest beside them. A card's stock box reads «Остаток». The cart panel is **two steps** (client request): **1. Продажа** — driver and truck, cart,
-   promotion, totals, a comment (no source picker — client request), Park or «К оплате»; **2. Оплата** — the sale read back,
-   payment method and «Получено» (no change field). Paying opens a dialog with **«Печать чека»**
+   promotion, totals with a **discount typed at the counter** (`DiscountControl`, % or a sum off,
+   spread across the lines as one percentage), a comment (no source picker — client request), Park
+   or «К оплате»; **2. Оплата** — the sale read back,
+   payment method and «Получено» — grouped as it is typed («200 000»), with «Без сдачи» to fill the
+   total exactly, and the remaining debt or the change said beneath it. The Pay button always shows
+   what the **sale** costs, which is not what was handed over. Paying opens a dialog with **«Печать чека»**
    (80 mm receipt), **«Накладная»** (A4 waybill) — printed in place by `PrintSale` — or «Без чека».
    Two switches in Settings → General (client request) govern it: **a sale for 0 UZS** (off by
    default) and **a sale without a client** (on by default; off, the driver is required). The customer is two steps:

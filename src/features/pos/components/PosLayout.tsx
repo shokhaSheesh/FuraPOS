@@ -1,5 +1,5 @@
-import { useEffect, useMemo } from 'react'
-import { Link, NavLink, Outlet } from 'react-router'
+import { useEffect, useMemo, useState } from 'react'
+import { NavLink, Outlet, useNavigate } from 'react-router'
 import { Clock, Lock, LogOut, MapPin, ShoppingCart, Wallet } from 'lucide-react'
 import { Button } from '@/shared/ui/Button'
 import { Logo } from '@/shared/ui/Logo'
@@ -11,6 +11,8 @@ import { useDataStore } from '@/data/store'
 import { useOpenShiftAt } from '@/features/cashShifts/api/shifts'
 import { useTillStore } from '../model/tillStore'
 import { TillLogin } from './TillLogin'
+import { TillSwitchUser } from './TillSwitchUser'
+import { BackOfficePin } from './BackOfficePin'
 
 const SECTIONS: {
   to: string
@@ -55,6 +57,8 @@ const SECTIONS: {
 export function PosLayout() {
   const { user } = useSession()
   const operator = useTillStore((s) => s.operator)
+  const [leaving, setLeaving] = useState(false)
+  const navigate = useNavigate()
   const signOutTill = useTillStore((s) => s.signOutTill)
   const locations = useDataStore((s) => s.locations)
   const locationId = useTillStore((s) => s.locationId)
@@ -86,6 +90,14 @@ export function PosLayout() {
 
   return (
     <div className="bg-canvas flex h-screen flex-col">
+      <BackOfficePin
+        open={leaving}
+        onOpenChange={setLeaving}
+        onUnlocked={() => {
+          setLeaving(false)
+          navigate(paths.sales.orders)
+        }}
+      />
       <header className="border-border bg-surface flex h-14 shrink-0 items-center gap-3 border-b px-4">
         <Logo />
         {/*
@@ -139,10 +151,7 @@ export function PosLayout() {
             : t('No drawer open — cash is off')}
         </span>
         <div className="ml-auto flex items-center gap-2">
-          <span className="text-right leading-tight">
-            <span className="text-fg block text-sm">{operator.name}</span>
-            <span className="text-fg-subtle text-2xs block">{t(operator.roleName)}</span>
-          </span>
+          <TillSwitchUser />
           <Button
             variant="ghost"
             size="sm"
@@ -153,11 +162,10 @@ export function PosLayout() {
             {t('Sign out')}
           </Button>
           <LanguageMenu />
-          <Button variant="secondary" size="sm" asChild>
-            <Link to={paths.sales.orders}>
-              <LogOut />
-              {t('Back office')}
-            </Link>
+          {/* The back office is behind the business's own code, not this session. */}
+          <Button variant="secondary" size="sm" onClick={() => setLeaving(true)}>
+            <LogOut />
+            {t('Back office')}
           </Button>
         </div>
       </header>

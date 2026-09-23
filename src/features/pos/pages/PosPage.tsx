@@ -10,6 +10,7 @@ import {
   Clock,
   ArrowRightLeft,
   HandCoins,
+  Percent,
   ShoppingCart,
   Tag,
   Trash2,
@@ -20,6 +21,8 @@ import { ProductThumb } from '@/shared/components/ProductThumb'
 import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
 import { Modal } from '@/shared/ui/Modal'
+import { Popover } from '@/shared/ui/Popover'
+import { SegmentedControl } from '@/shared/ui/SegmentedControl'
 import { toast } from '@/shared/ui/toast'
 import { cn } from '@/shared/lib/cn'
 import { formatMoney, formatNumber } from '@/shared/lib/format'
@@ -195,16 +198,32 @@ export default function PosPage() {
   const readyToPay = cart.length > 0 && !needsTruck(buyer) && !clientMissing
   const blocked = !readyToPay || noDrawer || creditWithoutAccount || zeroBlocked
 
+  /*
+    A discount given at the counter (client request) — haggling is normal in
+    this trade. It is spread across the lines as a percentage, exactly as an
+    applied promotion is, so a sale carries one kind of discount and every
+    report reads it the same way.
+  */
+  const setDiscount = (percent: number) => {
+    const safe = Math.max(0, Math.min(100, Math.round(percent * 100) / 100))
+    setCart((current) => current.map((line) => ({ ...line, discountPercent: safe })))
+    if (safe === 0) setAppliedPromotionId(null)
+  }
+
   const totalsBlock = (
     <div className="space-y-1 text-sm">
       <Row label={`${t('Subtotal')} · ${formatNumber(units)} ${tn(units, 'unit', 'units')}`}>
         {formatMoney(totals.subtotal)}
       </Row>
-      {totals.discount > 0 ? (
-        <Row label={t('Discount')} tone="text-warning">
-          − {formatMoney(totals.discount)}
-        </Row>
-      ) : null}
+      <div className="flex items-baseline justify-between">
+        <span className="text-fg-muted">{t('Discount')}</span>
+        <DiscountControl
+          gross={totals.subtotal}
+          discount={totals.discount}
+          disabled={cart.length === 0}
+          onApply={setDiscount}
+        />
+      </div>
       <div className="flex items-baseline justify-between pt-1">
         <span className="text-fg font-medium">{t('To pay')}</span>
         <span className="text-fg text-2xl font-semibold tabular-nums">
@@ -521,21 +540,33 @@ export default function PosPage() {
 
                 {payment !== 'credit' ? (
                   <label className="block space-y-1">
-                    <span className="text-fg-muted text-2xs">{t('Received')}</span>
+                    <span className="text-fg-muted text-2xs flex items-center justify-between">
+                      {t('Received')}
+                      <button
+                        type="button"
+                        onClick={() => setPaidText(String(Math.round(totals.total)))}
+                        className="text-primary hover:underline"
+                      >
+                        {t('Exact amount')}
+                      </button>
+                    </span>
+                    {/* Grouped as it is typed — «200 000», never «200000». */}
                     <Input
-                      type="number"
-                      min={0}
                       inputMode="numeric"
-                      value={paidText}
-                      onChange={(event) => setPaidText(event.target.value)}
-                      placeholder={String(Math.round(totals.total))}
+                      value={paidText === '' ? '' : formatNumber(Number(paidText))}
+                      onChange={(event) => setPaidText(event.target.value.replace(/\D/g, ''))}
+                      placeholder={formatNumber(Math.round(totals.total))}
                       aria-label={t('Amount paid')}
                       className="h-11 text-right text-base"
                     />
-                    {/* Less than the total is left owing — said, not boxed. */}
+                    {/* Less than the total is left owing, more is change back. */}
                     {paidText !== '' && totals.debt > 0 ? (
                       <span className="text-danger text-2xs block text-right">
                         {t('Remaining debt')}: {formatMoney(totals.debt)}
+                      </span>
+                    ) : paidText !== '' && totals.change > 0 ? (
+                      <span className="text-fg-muted text-2xs block text-right">
+                        {t('Change due')}: {formatMoney(totals.change)}
                       </span>
                     ) : null}
                   </label>
@@ -605,6 +636,97 @@ export default function PosPage() {
         <PrintSale sale={paidSale} document={printing} onDone={donePrinting} />
       ) : null}
     </div>
+  )
+}
+
+/**
+ * A discount typed at the counter, as a percentage or as a sum off (client
+ * request). Both end up as the same per-line percentage, so a sale never
+ * carries two kinds of discount that have to be reconciled later.
+ */
+function DiscountControl({
+  gross,
+  discount,
+  disabled,
+  onApply,
+}: {
+  gross: number
+  discount: number
+  disabled: boolean
+  onApply: (percent: number) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const [mode, setMode] = useState<'percent' | 'amount'>('percent')
+  const [text, setText] = useState('')
+
+  const apply = () => {
+    const value = Number(text.replace(/\s/g, '').replace(',', '.')) || 0
+    onApply(mode === 'percent' ? value : gross > 0 ? (value / gross) * 100 : 0)
+    setText('')
+    setOpen(false)
+  }
+
+  return (
+    <Popover
+      open={open}
+      onOpenChange={setOpen}
+      align="end"
+      className="w-64 space-y-2 p-3"
+      trigger={
+        <button
+          type="button"
+          disabled={disabled}
+          className={cn(
+            'rounded-control -mr-1 flex items-center gap-1 px-1.5 py-0.5 text-sm transition-colors disabled:opacity-50',
+            discount > 0 ? 'text-warning font-medium' : 'text-primary hover:bg-primary-soft/60',
+          )}
+        >
+          <Percent className="size-3.5" />
+          {discount > 0 ? `− ${formatMoney(discount)}` : t('Add')}
+        </button>
+      }
+    >
+      <SegmentedControl
+        aria-label={t('Discount')}
+        value={mode}
+        onChange={setMode}
+        options={[
+          { value: 'percent', label: '%' },
+          { value: 'amount', label: 'UZS' },
+        ]}
+      />
+      <Input
+        autoFocus
+        inputMode="decimal"
+        value={text}
+        onChange={(event) => setText(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') apply()
+        }}
+        placeholder={mode === 'percent' ? '10' : formatNumber(Math.round(gross * 0.1))}
+        aria-label={t('Discount')}
+        className="text-right"
+      />
+      <div className="flex items-center gap-2">
+        {discount > 0 ? (
+          <Button
+            type="button"
+            variant="secondary"
+            className="flex-1"
+            onClick={() => {
+              onApply(0)
+              setText('')
+              setOpen(false)
+            }}
+          >
+            {t('Remove')}
+          </Button>
+        ) : null}
+        <Button type="button" variant="primary" className="flex-1" onClick={apply}>
+          {t('Apply')}
+        </Button>
+      </div>
+    </Popover>
   )
 }
 

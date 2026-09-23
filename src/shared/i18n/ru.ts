@@ -2526,4 +2526,11 @@ export const ru: Dictionary = {
   '{own} his own · {company} under autoparks': '{own} свой · {company} под автопарками',
   'on his own account': 'на своём счёте',
   'under an autopark': 'под автопарком',
+  'Sort by debt': 'Сортировка по долгу',
+  'Any debt': 'Любой долг',
+  'Owes most first': 'Сначала больший долг',
+  'Owes least first': 'Сначала меньший долг',
+  'Last paid {date}': 'Последняя оплата {date}',
+  'Never paid us': 'Оплат не было',
+  'Nothing has been paid against his purchases': 'По его закупкам оплат не было',
 }

@@ -17,6 +17,7 @@ import {
   type Truck,
 } from '../model/driver'
 import { useDataStore } from '@/data/store'
+import { lastPaymentAt } from '@/features/sales/model/sale'
 import { t } from '@/shared/i18n'
 
 /**
@@ -35,6 +36,7 @@ export default function DriverDetailPage() {
   const clients = useDataStore((state) => state.clients)
   const owed = driverDebt(everySale, driverId ?? '')
   const headroom = driver ? driverHeadroom(driver, owed.own) : null
+  const paidAt = lastPaymentAt(sales)
 
   if (!driver) {
     return (
@@ -87,6 +89,12 @@ export default function DriverDetailPage() {
           label={t('Last bought')}
           value={lastSale ? formatDate(lastSale.createdAt) : '—'}
           hint={lastSale?.truckPlate ?? undefined}
+        />
+        {/* When money last came in from him (client request). */}
+        <Stat
+          label={t('Last paid')}
+          value={paidAt ? formatDate(paidAt) : t('Never')}
+          hint={paidAt ? undefined : t('Nothing has been paid against his purchases')}
         />
       </div>
 

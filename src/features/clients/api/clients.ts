@@ -40,6 +40,9 @@ export function buildClientStats(sales: Sale[]): Map<string, ClientStats> {
     if (!current.lastSaleAt || sale.createdAt > current.lastSaleAt) {
       current.lastSaleAt = sale.createdAt
     }
+    if (sale.lastPaidAt && (!current.lastPaidAt || sale.lastPaidAt > current.lastPaidAt)) {
+      current.lastPaidAt = sale.lastPaidAt
+    }
 
     seenProducts.set(sale.clientId, products)
     stats.set(sale.clientId, current)
@@ -66,6 +69,8 @@ export interface ClientFilters {
   search?: unknown
   type?: unknown
   lens?: unknown
+  /** 'least' puts whoever owes least first; the list leads with the most owed. */
+  owed?: unknown
 }
 
 export function useClients(filters: ClientFilters = {}) {
@@ -104,13 +109,14 @@ export function useClients(filters: ClientFilters = {}) {
       .sort((a, b) => {
         const byStatus = Number(a.status === 'archived') - Number(b.status === 'archived')
         if (byStatus !== 0) return byStatus
-        if (b.debt !== a.debt) return b.debt - a.debt
+        // Least owing first when asked for it (client request); most otherwise.
+        if (b.debt !== a.debt) return filters.owed === 'least' ? a.debt - b.debt : b.debt - a.debt
         return b.stats.revenue - a.stats.revenue
       })
 
     const matching = applyQueryFilters(items, filters.f, gettersOf(CLIENT_FILTER_OVERRIDES))
     return { data: { items: matching, total: matching.length }, isLoading: false }
-  }, [clients, sales, filters.type, filters.lens, filters.search, filters.f])
+  }, [clients, sales, filters.type, filters.lens, filters.search, filters.f, filters.owed])
 }
 
 export function useClient(id: string | undefined) {

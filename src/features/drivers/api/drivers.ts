@@ -5,6 +5,7 @@ import { DRIVER_FILTER_OVERRIDES } from '../model/driverFilterFields'
 import { useDataStore } from '@/data/store'
 import { matches } from '@/data/query'
 import {
+  driverDebt,
   inSection,
   type Driver,
   type DriverDraft,
@@ -13,9 +14,17 @@ import {
 } from '../model/driver'
 
 export function useDrivers(
-  filters: { search?: unknown; section?: unknown; status?: unknown; f?: unknown } = {},
+  filters: {
+    search?: unknown
+    section?: unknown
+    status?: unknown
+    f?: unknown
+    /** 'most' or 'least' — sorted by what they still owe us (client request). */
+    owed?: unknown
+  } = {},
 ) {
   const drivers = useDataStore((s) => s.drivers)
+  const sales = useDataStore((s) => s.sales)
 
   return useMemo(() => {
     const items = drivers
@@ -43,8 +52,19 @@ export function useDrivers(
       .sort((a, b) => a.fullName.localeCompare(b.fullName))
 
     const matching = applyQueryFilters(items, filters.f, gettersOf(DRIVER_FILTER_OVERRIDES))
-    return { data: { items: matching, total: matching.length }, isLoading: false }
-  }, [drivers, filters.section, filters.status, filters.search, filters.f])
+
+    // Who owes the most — the list a collections call is made from.
+    const owed = filters.owed as 'most' | 'least' | undefined
+    const sorted = owed
+      ? [...matching].sort((a, b) => {
+          const left = driverDebt(sales, a.id).total
+          const right = driverDebt(sales, b.id).total
+          return owed === 'most' ? right - left : left - right
+        })
+      : matching
+
+    return { data: { items: sorted, total: sorted.length }, isLoading: false }
+  }, [drivers, sales, filters.section, filters.status, filters.search, filters.f, filters.owed])
 }
 
 /**

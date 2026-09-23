@@ -126,6 +126,12 @@ export default function ClientDetailPage() {
                 : `${formatMoney(client.headroom ?? 0)} of credit left`
           }
           tone={client.overLimit ? 'danger' : undefined}
+          // When money last came in from them (client request).
+          footer={
+            stats.lastPaidAt
+              ? t('Last paid {date}', { date: formatDate(stats.lastPaidAt) })
+              : t('Never paid us')
+          }
         />
         <Figure
           label={t('Bought all time')}
@@ -278,11 +284,14 @@ function Figure({
   value,
   meta,
   tone,
+  footer,
 }: {
   label: string
   value: string
   meta: string
   tone?: 'danger'
+  /** A second line under the meta — when they last paid, on the debt figure. */
+  footer?: string
 }) {
   return (
     <Card className="p-4">
@@ -293,6 +302,7 @@ function Figure({
         {value}
       </p>
       <p className="text-fg-subtle text-2xs">{meta}</p>
+      {footer ? <p className="text-fg-subtle text-2xs">{footer}</p> : null}
     </Card>
   )
 }

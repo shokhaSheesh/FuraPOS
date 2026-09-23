@@ -122,7 +122,9 @@ Do not rename a nav item or invent a screen without updating that map first.
    drivers; every tab shows **what each driver owes us**, split by whose account it sits on. Only an
    owner-driver carries a **credit limit** — an autopark driver buys on his company's — and a
    driver's page shows what he owes on his own account against that limit, what he has run up **in
-   each autopark's name**, and which purchases the debt is made of (`driverDebt`, client request) (granular per-module tree, supports partial/indeterminate access, not just on/off).
+   each autopark's name**, and which purchases the debt is made of (`driverDebt`, client request).
+   Both lists also carry **when they last paid us** (`lastPaidAt` on a sale, `lastPaymentAt`) and a
+   **sort by what they owe**, most or least first (granular per-module tree, supports partial/indeterminate access, not just on/off).
 6. **Finance** `beta` — dashboard, transactions, contracts, invoices, budget, scenarios; then a
    **Reports** group (P&L, cashflow, receivables, payables, cash forecast, employee settlements)
    and a **Setup** group (accounts, categories, period lock, taxes). OX nests these behind a second

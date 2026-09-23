@@ -4,6 +4,7 @@ import { Plus, Building2 } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
 import { ColumnFilterSearch } from '@/shared/components/ColumnFilterSearch'
+import { Select } from '@/shared/ui/Select'
 import { CLIENT_FILTER_OVERRIDES } from '../model/clientFilterFields'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
@@ -42,7 +43,13 @@ export default function ClientsPage() {
     this list would be somebody who cannot hold a contract — and the type
     filter that used to sit above the table now has one answer.
   */
-  const filters = { f: query.f, search: query.search, type: 'business' as const, lens: query.lens }
+  const filters = {
+    f: query.f,
+    search: query.search,
+    type: 'business' as const,
+    lens: query.lens,
+    owed: query.owed,
+  }
   const { data, isLoading } = useClients(filters)
   const { data: counts } = useClientCounts(filters)
 
@@ -91,6 +98,16 @@ export default function ClientsPage() {
             </div>
           )
         },
+      },
+      {
+        id: 'lastPaid',
+        header: t('Last paid'),
+        cell: ({ row }) =>
+          row.original.stats.lastPaidAt ? (
+            <span className="text-fg-muted">{formatDate(row.original.stats.lastPaidAt)}</span>
+          ) : (
+            <span className="text-fg-subtle">{t('Never')}</span>
+          ),
       },
       {
         id: 'creditLimit',
@@ -210,13 +227,26 @@ export default function ClientsPage() {
         total={data.total}
         isLoading={isLoading}
         toolbar={
-          <ColumnFilterSearch
-            columns={columns}
-            rows={everyClient.items}
-            overrides={CLIENT_FILTER_OVERRIDES}
-            query={query}
-            setQuery={setQuery}
-          />
+          <div className="flex flex-1 flex-wrap items-center gap-2">
+            <ColumnFilterSearch
+              columns={columns}
+              rows={everyClient.items}
+              overrides={CLIENT_FILTER_OVERRIDES}
+              query={query}
+              setQuery={setQuery}
+            />
+            {/* Who to call first, or who is nearly clear (client request). */}
+            <Select
+              className="w-52"
+              aria-label={t('Sort by debt')}
+              value={(query.owed as string) || ''}
+              onChange={(owed) => setQuery({ owed: owed || null })}
+              options={[
+                { value: '', label: t('Owes most first') },
+                { value: 'least', label: t('Owes least first') },
+              ]}
+            />
+          </div>
         }
         pagination={{ page: Number(query.page ?? 1), pageSize: Number(query.pageSize ?? 25) }}
         onPaginationChange={({ page, pageSize }) => setQuery({ page, pageSize })}

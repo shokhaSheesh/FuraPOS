@@ -792,6 +792,8 @@ function saleFrom(
     total: totals.total,
     paid: input.paid,
     debt: Math.max(0, totals.total - input.paid),
+    // Money handed over now is money paid now.
+    lastPaidAt: input.paid > 0 ? now : null,
     expiresAt: input.expiresAt,
     createdAt: identity.createdAt,
     updatedAt: now,

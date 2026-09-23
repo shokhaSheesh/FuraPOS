@@ -74,6 +74,8 @@ export interface ClientStats {
   units: number
   averageCheck: number
   lastSaleAt: IsoDate | null
+  /** When money last came in from them (client request). */
+  lastPaidAt: IsoDate | null
   /** Distinct products they have ever bought — how broad the relationship is. */
   products: number
 }
@@ -84,6 +86,7 @@ export const EMPTY_CLIENT_STATS: ClientStats = {
   units: 0,
   averageCheck: 0,
   lastSaleAt: null,
+  lastPaidAt: null,
   products: 0,
 }
 

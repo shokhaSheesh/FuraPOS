@@ -12,7 +12,8 @@ import { RowActions } from '@/shared/components/RowActions'
 import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
 import { downloadCsv } from '@/shared/lib/csv'
-import { formatMoney } from '@/shared/lib/format'
+import { formatDate, formatMoney } from '@/shared/lib/format'
+import { lastPaymentAt } from '@/features/sales/model/sale'
 import { Badge } from '@/shared/ui/Badge'
 import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
@@ -67,7 +68,13 @@ export default function DriversPage() {
   // because "all drivers" is not a group anybody sells to.
   const section = (query.section as DriverSection) ?? 'all'
   const { data: everyDriver } = useDrivers({ section })
-  const { data } = useDrivers({ search: query.search, section, status: query.status, f: query.f })
+  const { data } = useDrivers({
+    search: query.search,
+    section,
+    status: query.status,
+    f: query.f,
+    owed: query.owed,
+  })
   const counts = useDriverCounts()
   const actions = useDriverActions()
   const clients = useDataStore((s) => s.clients)
@@ -263,6 +270,18 @@ export default function DriversPage() {
         },
       },
       {
+        id: 'lastPaid',
+        header: t('Last paid'),
+        cell: ({ row }) => {
+          const paid = lastPaymentAt(sales.filter((sale) => sale.driverId === row.original.id))
+          return paid ? (
+            <span className="text-fg-muted">{formatDate(paid)}</span>
+          ) : (
+            <span className="text-fg-subtle">{t('Never')}</span>
+          )
+        },
+      },
+      {
         id: 'creditLimit',
         header: t('Credit limit'),
         meta: { align: 'right' },
@@ -384,7 +403,9 @@ export default function DriversPage() {
               <Download />
               {t('Export')}
             </Button>
-            {can('users.drivers.create') ? (
+            {/* Adding belongs to a capacity — the tab you are in says which
+                (client request), so «Все водители» does not offer it. */}
+            {can('users.drivers.create') && section !== 'all' ? (
               <Button variant="primary" onClick={() => openFor(null)}>
                 <Plus />
                 {t('Add driver')}
@@ -401,6 +422,17 @@ export default function DriversPage() {
           overrides={DRIVER_FILTER_OVERRIDES}
           query={query}
           setQuery={setQuery}
+        />
+        <Select
+          className="w-52"
+          aria-label={t('Sort by debt')}
+          value={(query.owed as string) || ''}
+          onChange={(owed) => setQuery({ owed: owed || null })}
+          options={[
+            { value: '', label: t('Any debt') },
+            { value: 'most', label: t('Owes most first') },
+            { value: 'least', label: t('Owes least first') },
+          ]}
         />
         <Select
           className="w-44"
@@ -524,6 +556,26 @@ export default function DriversPage() {
             {errors.ownTrucks?.[0] ? (
               <p className="text-danger text-2xs">{errors.ownTrucks[0]}</p>
             ) : null}
+            {/*
+              His own credit, beside his own trucks — an autopark driver buys
+              on the company's limit, so it is hidden for a man who only drives
+              for one (client request).
+            */}
+            {draft.ownTrucks.length > 0 || draft.autoparkId === null ? (
+              <Field
+                label={t('Credit limit')}
+                hint={t('What he may owe on his own account. Empty means he pays at the counter.')}
+                error={errors.creditLimit?.[0]}
+              >
+                {(p) => (
+                  <NumberField
+                    {...p}
+                    value={draft.creditLimit}
+                    onChange={(creditLimit) => setDraft((c) => ({ ...c, creditLimit }))}
+                  />
+                )}
+              </Field>
+            ) : null}
           </div>
 
           <div className="border-border rounded-card space-y-3 border p-3">
@@ -597,22 +649,6 @@ export default function DriversPage() {
                   value={draft.status}
                   onChange={(status) => setDraft((c) => ({ ...c, status: status as DriverStatus }))}
                   options={DRIVER_STATUSES.map((option) => ({ ...option, label: t(option.label) }))}
-                />
-              )}
-            </Field>
-            {/* Only an owner-driver has a limit of his own: an autopark
-                driver buys on the company's (client request). */}
-            <Field
-              className={draft.ownTrucks.length === 0 ? 'hidden' : undefined}
-              label={t('Credit limit')}
-              hint={t('What he may owe on his own account. Empty means he pays at the counter.')}
-              error={errors.creditLimit?.[0]}
-            >
-              {(p) => (
-                <NumberField
-                  {...p}
-                  value={draft.creditLimit}
-                  onChange={(creditLimit) => setDraft((c) => ({ ...c, creditLimit }))}
                 />
               )}
             </Field>

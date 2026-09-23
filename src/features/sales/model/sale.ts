@@ -130,6 +130,12 @@ export interface Sale {
   updatedAt: IsoDate
   /** When the sale reached a terminal state. Null while it is still moving. */
   finishedAt: IsoDate | null
+  /**
+   * When money last came in against this sale (client request) — a driver or
+   * an autopark is asked "when did they last pay us", and the answer is the
+   * latest of these across their sales. Null means nothing has been paid.
+   */
+  lastPaidAt: IsoDate | null
 }
 
 /* --- money -------------------------------------------------------------- */
@@ -211,4 +217,16 @@ export function nextStep(status: SaleStatus): { to: SaleStatus; label: string } 
     default:
       return null
   }
+}
+
+/**
+ * When money last came in across a set of sales (client request) — the answer
+ * to "when did they last pay us", asked of a driver or of an autopark.
+ */
+export function lastPaymentAt(sales: Pick<Sale, 'lastPaidAt'>[]): string | null {
+  let latest: string | null = null
+  for (const sale of sales) {
+    if (sale.lastPaidAt && (latest === null || sale.lastPaidAt > latest)) latest = sale.lastPaidAt
+  }
+  return latest
 }

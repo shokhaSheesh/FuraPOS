@@ -992,6 +992,8 @@ export const sales: Sale[] = Array.from({ length: 420 }, (_, index) => {
     createdAt: createdAt.toISOString(),
     updatedAt: createdAt.toISOString(),
     finishedAt: settled ? createdAt.toISOString() : null,
+    // Whatever was paid was handed over at the counter, on the day.
+    lastPaidAt: paid > 0 ? createdAt.toISOString() : null,
   }
 })
 

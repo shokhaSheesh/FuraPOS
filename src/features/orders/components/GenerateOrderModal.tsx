@@ -41,7 +41,7 @@ export function GenerateOrderModal({
 }) {
   const sales = useDataStore((s) => s.sales)
   const variations = useDataStore((s) => s.variations)
-  const [months, setMonths] = useState<'3' | '6'>('3')
+  const [months, setMonths] = useState<'1' | '3'>('1')
   const [dropped, setDropped] = useState<string[]>([])
   /** Quantities somebody changed from what was suggested, by catalogue line. */
   const [edited, setEdited] = useState<Record<string, number>>({})
@@ -115,8 +115,8 @@ export function GenerateOrderModal({
             value={months}
             onChange={setMonths}
             options={[
+              { value: '1', label: t('Last month') },
               { value: '3', label: t('Last 3 months') },
-              { value: '6', label: t('Last 6 months') },
             ]}
           />
         </div>

@@ -1,4 +1,4 @@
-import { ArrowRight, Download, Trash2 } from 'lucide-react'
+import { ArrowRight, FileSpreadsheet, FileText, Trash2 } from 'lucide-react'
 import { Badge } from '@/shared/ui/Badge'
 import { RowActions } from '@/shared/components/RowActions'
 import { SoldBar } from '@/shared/components/SoldBar'
@@ -37,7 +37,7 @@ export function buildTransferColumns({
   usdRate,
 }: {
   onCancel: (transfer: Transfer) => void
-  onDownload: (transfer: Transfer) => void
+  onDownload: (transfer: Transfer, as: 'csv' | 'pdf') => void
   /** For how much of what arrived has sold at the destination. */
   sales: Parameters<typeof transferSoldThrough>[1]
   canCancelTransfers: boolean
@@ -196,9 +196,14 @@ export function buildTransferColumns({
         <RowActions
           actions={[
             {
-              label: t('Download'),
-              icon: Download,
-              onSelect: () => onDownload(row.original),
+              label: t('Download Excel'),
+              icon: FileSpreadsheet,
+              onSelect: () => onDownload(row.original, 'csv'),
+            },
+            {
+              label: t('Download PDF'),
+              icon: FileText,
+              onSelect: () => onDownload(row.original, 'pdf'),
             },
             {
               label: t('Cancel transfer'),

@@ -46,7 +46,7 @@ export function Sidebar() {
         <Logo collapsed={collapsed} />
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-2 pb-4">
+      <nav className="flex-1 overflow-y-auto px-2 pt-1 pb-6">
         {sections.map((section) => (
           <SidebarSection key={section.id} section={section} collapsed={collapsed} />
         ))}
@@ -56,7 +56,7 @@ export function Sidebar() {
 }
 
 const rowBase =
-  'mt-0.5 flex w-full items-center gap-2.5 rounded-control px-2.5 py-2 text-sm font-medium transition-colors'
+  'mt-1 flex w-full items-center gap-2.5 rounded-control px-2.5 py-2.5 text-sm font-medium transition-colors'
 const rowIdle = 'text-chrome-fg-muted hover:bg-chrome-muted hover:text-chrome-fg'
 const rowActive = 'bg-primary-soft text-primary'
 
@@ -116,7 +116,7 @@ function SidebarSection({ section, collapsed }: { section: NavSection; collapsed
             <Fragment key={item.to}>
               {/* Finance mirrors OX's "Reports" / "Setup" headings. */}
               {item.group ? (
-                <p className="text-chrome-fg-muted text-2xs mt-3 mb-1 px-2.5 font-semibold tracking-wide uppercase">
+                <p className="text-chrome-fg-muted text-2xs mt-5 mb-1.5 px-2.5 font-semibold tracking-wide uppercase">
                   {item.group}
                 </p>
               ) : null}
@@ -125,7 +125,7 @@ function SidebarSection({ section, collapsed }: { section: NavSection; collapsed
                 end={item.end}
                 className={({ isActive }) =>
                   cn(
-                    'rounded-control mt-0.5 flex items-center gap-2 px-2.5 py-1.5 text-sm',
+                    'rounded-control mt-1 flex items-center gap-2 px-2.5 py-2 text-sm',
                     isActive || item.tabs?.some((tab) => pathname.startsWith(tab.to))
                       ? 'bg-primary-soft text-primary font-medium'
                       : rowIdle,

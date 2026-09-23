@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { ChevronDown, Download, FileUp, LayoutGrid, List, PencilLine, Plus } from 'lucide-react'
+import { ChevronDown, FileUp, LayoutGrid, List, PencilLine, Plus } from 'lucide-react'
 import { DropdownMenu } from 'radix-ui'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
+import { ExportMenu } from '@/shared/components/ExportMenu'
 import { LabelBasket, type LabelPicks } from '@/features/printTemplates/components/LabelBasket'
 import { FilterSearch } from '@/shared/components/FilterSearch'
 import { decodeFilters, encodeFilters } from '@/shared/lib/fieldFilters'
@@ -20,7 +21,6 @@ import { toast } from '@/shared/ui/toast'
 import { useListQuery } from '@/shared/hooks/useListQuery'
 import { useSession } from '@/app/providers/SessionProvider'
 import { paths } from '@/shared/config/paths'
-import { downloadCsv } from '@/shared/lib/csv'
 import {
   PRODUCT_LIST_VIEWS,
   productListView,
@@ -148,12 +148,13 @@ export default function ProductsPage() {
     })
   }
 
-  const exportCsv = () => {
+  /** What leaves the app, as a spreadsheet or as a PDF. */
+  const exportSheet = () => {
     const rows = data?.items ?? []
-    if (!rows.length) return toast.error(t('Nothing to export with these filters'))
-    downloadCsv(
-      `products-${new Date().toISOString().slice(0, 10)}.csv`,
-      [
+    return {
+      name: `products-${new Date().toISOString().slice(0, 10)}`,
+      title: t('Products'),
+      head: [
         'SKU',
         'Barcode',
         'Name',
@@ -168,7 +169,7 @@ export default function ProductsPage() {
         'Price',
         'Status',
       ],
-      rows.map((p) => [
+      rows: rows.map((p) => [
         p.sku,
         p.barcode,
         p.fullName,
@@ -183,8 +184,7 @@ export default function ProductsPage() {
         effectivePrice(p),
         p.status,
       ]),
-    )
-    toast.success(t('Exported {length} products', { length: rows.length }))
+    }
   }
 
   const displaySwitch = (
@@ -223,10 +223,7 @@ export default function ProductsPage() {
         }
         action={
           <div className="flex items-center gap-2">
-            <Button variant="secondary" onClick={exportCsv}>
-              <Download />
-              {t('Export')}
-            </Button>
+            <ExportMenu sheet={exportSheet} />
             {can('products.list.create') ? (
               /*
                 A split button, not a menu button: typing one product in is the

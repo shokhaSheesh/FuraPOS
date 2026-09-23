@@ -685,26 +685,26 @@ function ProductCard<R extends CatalogueRow>({
   )
 }
 
-/** Sold over 3 and 6 months, as the bottom left of a card shows it. */
+/** Sold over 1 and 3 months, as the bottom left of a card shows it. */
 export function SalesFigures({
   demand,
   title,
 }: {
-  demand: { 3: number; 6: number }
+  demand: { 1: number; 3: number }
   title: string
 }) {
   return (
     <div className="text-2xs text-fg-subtle flex gap-3" title={title}>
       <span>
-        {t('3 months')}
+        {t('1 month')}
         <strong className="text-fg block text-sm font-semibold tabular-nums">
-          {formatNumber(demand[3])}
+          {formatNumber(demand[1])}
         </strong>
       </span>
       <span>
-        {t('6 months')}
+        {t('3 months')}
         <strong className="text-fg block text-sm font-semibold tabular-nums">
-          {formatNumber(demand[6])}
+          {formatNumber(demand[3])}
         </strong>
       </span>
     </div>

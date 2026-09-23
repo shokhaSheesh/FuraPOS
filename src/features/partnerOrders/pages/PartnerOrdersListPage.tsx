@@ -1,11 +1,12 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router'
-import { Download } from 'lucide-react'
+import { FileSpreadsheet, FileText } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { RowActions } from '@/shared/components/RowActions'
-import { Button } from '@/shared/ui/Button'
+import { ExportMenu } from '@/shared/components/ExportMenu'
 import { toast } from '@/shared/ui/toast'
 import { downloadCsv } from '@/shared/lib/csv'
+import { printSheet } from '@/shared/lib/printSheet'
 import { DataTable } from '@/shared/components/DataTable'
 import { ColumnFilterSearch } from '@/shared/components/ColumnFilterSearch'
 import { PARTNER_ORDER_FILTER_OVERRIDES } from '../model/partnerOrderFilterFields'
@@ -57,18 +58,20 @@ export default function PartnerOrdersListPage() {
   const { data: counts } = usePartnerOrderStatusCounts(scope)
 
   /** Their order's lines as a spreadsheet. */
-  const download = (order: PartnerOrder) => {
+  const download = (order: PartnerOrder, as: 'csv' | 'pdf' = 'csv') => {
     const sheet = partnerOrderCsv(order)
-    downloadCsv(sheet.name, sheet.head, sheet.rows)
+    if (as === 'pdf') printSheet({ title: order.number, head: sheet.head, rows: sheet.rows })
+    else downloadCsv(sheet.name, sheet.head, sheet.rows)
     toast.success(t('{number} downloaded', { number: order.number }))
   }
 
   /** Every order on screen, one row each (client request). */
-  const downloadAll = () => {
+  const exportSheet = () => {
     const orders = data?.items ?? []
-    downloadCsv(
-      'partner-orders.csv',
-      [
+    return {
+      name: 'partner-orders',
+      title: t('Partner orders'),
+      head: [
         'Number',
         'Placed',
         'From',
@@ -80,7 +83,7 @@ export default function PartnerOrdersListPage() {
         'Wanted by',
         'Note',
       ],
-      orders.map((order) => [
+      rows: orders.map((order) => [
         order.number,
         order.placedAt.slice(0, 10),
         order.clientName,
@@ -92,8 +95,7 @@ export default function PartnerOrdersListPage() {
         order.wantedBy?.slice(0, 10) ?? '',
         order.comment ?? '',
       ]),
-    )
-    toast.success(t('{count} orders downloaded', { count: orders.length }))
+    }
   }
 
   const columns = useMemo<TableColumn<PartnerOrder>[]>(
@@ -202,7 +204,16 @@ export default function PartnerOrdersListPage() {
         cell: ({ row }) => (
           <RowActions
             actions={[
-              { label: t('Download'), icon: Download, onSelect: () => download(row.original) },
+              {
+                label: t('Download Excel'),
+                icon: FileSpreadsheet,
+                onSelect: () => download(row.original, 'csv'),
+              },
+              {
+                label: t('Download PDF'),
+                icon: FileText,
+                onSelect: () => download(row.original, 'pdf'),
+              },
             ]}
           />
         ),
@@ -220,12 +231,7 @@ export default function PartnerOrdersListPage() {
         description={t(
           'What other businesses have ordered from us. They place it, we accept it and send it — in as many loads as it takes — and they tell us what arrived.',
         )}
-        action={
-          <Button variant="secondary" onClick={downloadAll}>
-            <Download />
-            {t('Export')}
-          </Button>
-        }
+        action={<ExportMenu sheet={exportSheet} />}
         below={
           <div className="flex flex-wrap items-center gap-2">
             <StatusChips

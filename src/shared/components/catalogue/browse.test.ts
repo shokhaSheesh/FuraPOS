@@ -42,7 +42,7 @@ const row = (
   } as unknown as VariationRow,
   quantity: numbers.quantity ?? 0,
   atSource: numbers.atSource ?? 5,
-  demand: { 3: numbers.sold ?? 0, 6: numbers.sold ?? 0 },
+  demand: { 1: numbers.sold ?? 0, 3: numbers.sold ?? 0 },
   supplierSku: `THEIR-${id}`,
 })
 
@@ -63,7 +63,7 @@ describe('groupByProduct', () => {
     expect(groups).toHaveLength(2)
     expect(groups[0]).toMatchObject({ chosen: 2 })
     expect(sumRows(groups[0]!, (r) => r.atSource)).toBe(7)
-    expect(groups[0]!.demand).toEqual({ 3: 5, 6: 5 })
+    expect(groups[0]!.demand).toEqual({ 1: 5, 3: 5 })
   })
 })
 

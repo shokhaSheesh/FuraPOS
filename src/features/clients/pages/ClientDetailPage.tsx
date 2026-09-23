@@ -1,9 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { ArrowLeft, Ban, Building2, Pencil, Play, User } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { EmptyState } from '@/shared/components/EmptyState'
-import { WalletPanel } from '@/shared/components/WalletPanel'
 import { Card, CardBody, CardHeader, CardTitle } from '@/shared/ui/Card'
 import { Badge } from '@/shared/ui/Badge'
 import { Button } from '@/shared/ui/Button'
@@ -12,7 +11,6 @@ import { toast } from '@/shared/ui/toast'
 import { useSession } from '@/app/providers/SessionProvider'
 import { paths } from '@/shared/config/paths'
 import { formatDate, formatDateTime, formatMoney, formatNumber } from '@/shared/lib/format'
-import { useDataStore } from '@/data/store'
 import { useClient, useClientActions, useClientSales } from '../api/clients'
 import { clientStatusLabel, clientStatusTone, daysSinceLastSale } from '../model/client'
 import { t } from '@/shared/i18n'
@@ -24,12 +22,6 @@ export default function ClientDetailPage() {
   const { data: client } = useClient(clientId)
   const recentSales = useClientSales(clientId)
   const actions = useClientActions()
-  const allWalletTransactions = useDataStore((s) => s.walletTransactions)
-  // Filtering inside the selector would hand Zustand a new array every render.
-  const walletTransactions = useMemo(
-    () => allWalletTransactions.filter((t) => t.ownerType === 'client' && t.ownerId === clientId),
-    [allWalletTransactions, clientId],
-  )
   const [blocking, setBlocking] = useState(false)
 
   if (!client) {
@@ -226,41 +218,6 @@ export default function ClientDetailPage() {
           </CardBody>
         </Card>
       </div>
-
-      <WalletPanel
-        wallet={{
-          ownerId: client.id,
-          ownerType: 'client',
-          balance: client.debt,
-          cashback: client.cashback,
-          debt: client.debt,
-          creditLimit: client.creditLimit,
-          currency: 'UZS',
-          updatedAt: client.updatedAt,
-        }}
-        transactions={walletTransactions}
-        labels={{
-          balance: 'They owe us',
-          debt: 'On account',
-          ledgerEmpty:
-            'No credit or payments have been recorded against this client yet. Sales paid up front do not appear here.',
-        }}
-        insights={
-          client.overLimit
-            ? [
-                {
-                  id: 'over-limit',
-                  title: t('They are past their credit limit'),
-                  body: `${formatMoney(client.debt)} outstanding against a limit of ${formatMoney(
-                    client.creditLimit ?? 0,
-                  )}. Another sale on account takes them further out, and the limit exists because somebody once decided this is as far as they should go.`,
-                  tone: 'risk',
-                  generatedAt: new Date().toISOString(),
-                },
-              ]
-            : []
-        }
-      />
 
       <ConfirmDialog
         open={blocking}

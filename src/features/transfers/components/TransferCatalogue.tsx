@@ -75,8 +75,8 @@ export function TransferCatalogue({
         meta: { align: 'right' },
         cell: ({ row }) => (
           <span className="text-fg-muted tabular-nums">
-            {formatNumber(row.original.demand[3])} /{' '}
-            <strong className="text-fg font-medium">{formatNumber(row.original.demand[6])}</strong>
+            {formatNumber(row.original.demand[1])} /{' '}
+            <strong className="text-fg font-medium">{formatNumber(row.original.demand[3])}</strong>
           </span>
         ),
       },
@@ -151,8 +151,8 @@ export function TransferCatalogue({
                 </div>
               ))}
               <DialogStat
-                label={t('Sold at {demand}, 3 / 6 months', { demand: names.demand })}
-                value={`${formatNumber(open.demand[3])} / ${formatNumber(open.demand[6])}`}
+                label={t('Sold at {demand}, 1 / 3 months', { demand: names.demand })}
+                value={`${formatNumber(open.demand[1])} / ${formatNumber(open.demand[3])}`}
               />
               <DialogStat label={t('Variations')} value={formatNumber(open.rows.length)} />
             </>
@@ -186,9 +186,9 @@ export function TransferCatalogue({
               meta: { align: 'right' },
               cell: ({ row }) => (
                 <span className="text-fg-muted tabular-nums">
-                  {formatNumber(row.original.row.demand[3])} /{' '}
+                  {formatNumber(row.original.row.demand[1])} /{' '}
                   <strong className="text-fg font-medium">
-                    {formatNumber(row.original.row.demand[6])}
+                    {formatNumber(row.original.row.demand[3])}
                   </strong>
                 </span>
               ),

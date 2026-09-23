@@ -16,6 +16,7 @@ import { useSession } from '@/app/providers/SessionProvider'
 import { paths } from '@/shared/config/paths'
 import { formatMoney } from '@/shared/lib/format'
 import { downloadCsv } from '@/shared/lib/csv'
+import { printSheet } from '@/shared/lib/printSheet'
 import { useDataStore } from '@/data/store'
 import { USD_RATE } from '@/data/seed'
 import {
@@ -79,20 +80,27 @@ export default function GoodsReceiptListPage() {
 
   /** OX puts a per-row download here, and a delivery is exactly the kind of
    *  document someone forwards to an accountant. */
-  const downloadReceipt = (receipt: GoodsReceipt) => {
-    downloadCsv(
-      `${receipt.number}.csv`,
-      ['SKU', 'Product', 'Invoiced', 'Received', 'Supplier price', 'Currency', 'Landed cost'],
-      receipt.lines.map((line) => [
-        line.sku,
-        line.name,
-        line.orderedQuantity,
-        line.receivedQuantity ?? '',
-        line.unitCost,
-        line.costCurrency,
-        canSeeCost ? Math.round(landedUnitCost(line, receipt, USD_RATE)) : '',
-      ]),
-    )
+  const downloadReceipt = (receipt: GoodsReceipt, as: 'csv' | 'pdf' = 'csv') => {
+    const head = [
+      'SKU',
+      'Product',
+      'Invoiced',
+      'Received',
+      'Supplier price',
+      'Currency',
+      'Landed cost',
+    ]
+    const rows = receipt.lines.map((line) => [
+      line.sku,
+      line.name,
+      line.orderedQuantity,
+      line.receivedQuantity ?? '',
+      line.unitCost,
+      line.costCurrency,
+      canSeeCost ? Math.round(landedUnitCost(line, receipt, USD_RATE)) : '',
+    ])
+    if (as === 'pdf') printSheet({ title: receipt.number, head, rows })
+    else downloadCsv(`${receipt.number}.csv`, head, rows)
     toast.success(t('{number} downloaded', { number: receipt.number }))
   }
 

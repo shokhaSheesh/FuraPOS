@@ -66,7 +66,7 @@ export function buildPurchaseRows({
   lines: PurchaseLineInput[]
   variations: VariationRow[]
   locationId: string
-  demandOf: (variationId: string) => { 3: number; 6: number }
+  demandOf: (variationId: string) => { 1: number; 3: number }
 }): PurchaseRow[] {
   const lineOf = new Map(lines.map((line) => [line.variationId, line]))
   const seen = new Set<string>()

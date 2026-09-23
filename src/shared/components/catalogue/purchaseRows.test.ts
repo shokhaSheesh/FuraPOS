@@ -14,7 +14,7 @@ const variation = (id: string, stock: Record<string, number> = {}) =>
     })),
   }) as unknown as VariationRow
 
-const none = () => ({ 3: 0, 6: 0 })
+const none = () => ({ 1: 0, 3: 0 })
 
 describe('buildPurchaseRows', () => {
   it('offers their price until a line is on the document, then keeps the agreed one', () => {

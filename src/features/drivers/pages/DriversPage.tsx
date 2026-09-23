@@ -1,9 +1,10 @@
 import { VehicleMakeSelect, VehicleModelSelect } from '@/shared/components/VehicleSelects'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
-import { Download, Pencil, Plus, Trash2, Truck } from 'lucide-react'
+import { Pencil, Plus, Trash2, Truck } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
+import { ExportMenu } from '@/shared/components/ExportMenu'
 import { ColumnFilterSearch } from '@/shared/components/ColumnFilterSearch'
 import { DRIVER_FILTER_OVERRIDES } from '../model/driverFilterFields'
 import { Tabs } from '@/shared/ui/Tabs'
@@ -11,7 +12,6 @@ import { EmptyState } from '@/shared/components/EmptyState'
 import { RowActions } from '@/shared/components/RowActions'
 import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
-import { downloadCsv } from '@/shared/lib/csv'
 import { formatDate, formatMoney } from '@/shared/lib/format'
 import { lastPaymentAt } from '@/features/sales/model/sale'
 import { Badge } from '@/shared/ui/Badge'
@@ -330,10 +330,11 @@ export default function DriversPage() {
   }, [can, section, sales])
 
   /** Everyone in this tab, with what they owe and what they may owe. */
-  const download = () => {
-    downloadCsv(
-      'drivers.csv',
-      [
+  const exportSheet = () => {
+    return {
+      name: 'drivers',
+      title: t('Drivers'),
+      head: [
         'Code',
         'Driver',
         'Phone',
@@ -345,7 +346,7 @@ export default function DriversPage() {
         'Owed under autoparks',
         'Status',
       ],
-      (data?.items ?? []).map((driver) => {
+      rows: (data?.items ?? []).map((driver) => {
         const owed = driverDebt(sales, driver.id)
         return [
           driver.code,
@@ -360,8 +361,7 @@ export default function DriversPage() {
           driver.status,
         ]
       }),
-    )
-    toast.success(t('{count} drivers downloaded', { count: data?.items.length ?? 0 }))
+    }
   }
 
   const autoparks = clients
@@ -399,10 +399,7 @@ export default function DriversPage() {
         action={
           <div className="flex items-center gap-2">
             {/* Everyone in this tab as a spreadsheet (client request). */}
-            <Button variant="secondary" onClick={download}>
-              <Download />
-              {t('Export')}
-            </Button>
+            <ExportMenu sheet={exportSheet} />
             {/* Adding belongs to a capacity — the tab you are in says which
                 (client request), so «Все водители» does not offer it. */}
             {can('users.drivers.create') && section !== 'all' ? (

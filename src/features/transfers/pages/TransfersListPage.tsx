@@ -15,6 +15,7 @@ import { useListQuery } from '@/shared/hooks/useListQuery'
 import { useSession } from '@/app/providers/SessionProvider'
 import { paths } from '@/shared/config/paths'
 import { downloadCsv } from '@/shared/lib/csv'
+import { printSheet } from '@/shared/lib/printSheet'
 import { formatNumber } from '@/shared/lib/format'
 import { useDataStore } from '@/data/store'
 import { USD_RATE } from '@/data/seed'
@@ -52,30 +53,29 @@ export default function TransfersListPage() {
   const canSeeCost = can('products.cost.view')
 
   /** The transfer's lines as a spreadsheet — what was asked for, sent and counted in. */
-  const downloadTransfer = (transfer: Transfer) => {
-    downloadCsv(
-      `${transfer.number}.csv`,
-      [
-        'SKU',
-        'Product',
-        'Unit',
-        'Requested',
-        'Sent',
-        'Received',
-        ...(canSeeCost ? ['Cost price', 'Currency'] : []),
-        'Sale price',
-      ],
-      transfer.lines.map((line) => [
-        line.sku,
-        line.name,
-        line.unit,
-        line.requestedQuantity,
-        line.sentQuantity ?? '',
-        line.receivedQuantity ?? '',
-        ...(canSeeCost ? [line.unitCost, line.costCurrency] : []),
-        line.unitPrice,
-      ]),
-    )
+  const downloadTransfer = (transfer: Transfer, as: 'csv' | 'pdf' = 'csv') => {
+    const head = [
+      'SKU',
+      'Product',
+      'Unit',
+      'Requested',
+      'Sent',
+      'Received',
+      ...(canSeeCost ? ['Cost price', 'Currency'] : []),
+      'Sale price',
+    ]
+    const rows = transfer.lines.map((line) => [
+      line.sku,
+      line.name,
+      line.unit,
+      line.requestedQuantity,
+      line.sentQuantity ?? '',
+      line.receivedQuantity ?? '',
+      ...(canSeeCost ? [line.unitCost, line.costCurrency] : []),
+      line.unitPrice,
+    ])
+    if (as === 'pdf') printSheet({ title: transfer.number, head, rows })
+    else downloadCsv(`${transfer.number}.csv`, head, rows)
     toast.success(t('{number} downloaded', { number: transfer.number }))
   }
 

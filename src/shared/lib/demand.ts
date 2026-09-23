@@ -10,7 +10,9 @@ import type { Sale } from '@/features/sales/model/sale'
  * revenue: a cancelled sale is not demand, and counting it would have us
  * shipping stock to replace goods that never left.
  */
-export const DEMAND_WINDOWS = [3, 6] as const
+// One month and three (client request): a parts counter reorders on what has
+// just been selling, not on what sold two quarters ago.
+export const DEMAND_WINDOWS = [1, 3] as const
 export type DemandWindow = (typeof DEMAND_WINDOWS)[number]
 
 /** Months are counted as 30 days — near enough, and the same every time. */
@@ -68,8 +70,8 @@ export function demandAt(
   now: number = Date.now(),
 ): Record<DemandWindow, number> {
   return {
+    1: unitsSoldAt(sales, variationId, locationId, 1, now),
     3: unitsSoldAt(sales, variationId, locationId, 3, now),
-    6: unitsSoldAt(sales, variationId, locationId, 6, now),
   }
 }
 
@@ -77,4 +79,4 @@ export function demandAt(
  * Whether the recent half of the six-month window is quieter than the older
  * half — said plainly on screen rather than left for somebody to subtract.
  */
-export const hasStalled = (demand: Record<DemandWindow, number>) => demand[6] > 0 && demand[3] === 0
+export const hasStalled = (demand: Record<DemandWindow, number>) => demand[3] > 0 && demand[1] === 0

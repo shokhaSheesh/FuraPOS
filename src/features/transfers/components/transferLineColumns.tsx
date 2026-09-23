@@ -36,8 +36,8 @@ export interface TransferRow {
   atSource: number
   /** What the destination already holds. */
   atDestination: number
-  /** Units sold at whichever end receives the goods, over 3 and 6 months. */
-  demand: { 3: number; 6: number }
+  /** Units sold at whichever end receives the goods, over 1 and 3 months. */
+  demand: { 1: number; 3: number }
   stalled: boolean
 }
 
@@ -165,10 +165,10 @@ export function buildTransferLineColumns({
       cell: ({ row }) => (
         <div className="leading-tight">
           <p className="text-fg tabular-nums">
-            {formatNumber(row.original.demand[3])} {t('in 3 months')}
+            {formatNumber(row.original.demand[1])} {t('in 1 month')}
           </p>
           <p className="text-fg-subtle text-2xs tabular-nums">
-            {formatNumber(row.original.demand[6])} {t('in 6 months')}
+            {formatNumber(row.original.demand[3])} {t('in 3 months')}
           </p>
           {row.original.stalled ? (
             <p className="text-warning text-2xs">{t('not selling lately')}</p>

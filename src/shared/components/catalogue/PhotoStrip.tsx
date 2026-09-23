@@ -81,7 +81,7 @@ export function PhotoStrip({
         aria-label={t('View photos of {productName}', { productName: label })}
         title={t('Open full size')}
         onClick={() => setViewing(index)}
-        className="bg-surface/90 text-fg shadow-card absolute top-1.5 right-1.5 flex size-7 items-center justify-center rounded-full opacity-0 transition-opacity group-hover/photos:opacity-100 focus-visible:opacity-100 [&_svg]:size-3.5"
+        className="bg-surface/90 text-fg shadow-card absolute top-1.5 right-1.5 flex size-7 items-center justify-center rounded-full [&_svg]:size-3.5"
       >
         <Maximize2 />
       </button>
@@ -108,7 +108,9 @@ export function PhotoStrip({
               aria-label={arrow.name}
               onClick={() => go(index + arrow.step)}
               className={cn(
-                'bg-surface/90 text-fg shadow-card absolute top-1/2 flex size-6 -translate-y-1/2 items-center justify-center rounded-full opacity-0 transition-opacity group-hover/photos:opacity-100 focus-visible:opacity-100 [&_svg]:size-4',
+                // Always on screen (client request): the counter is a touch
+                // monitor, and nothing reveals itself to a finger.
+                'bg-surface/90 text-fg shadow-card absolute top-1/2 flex size-6 -translate-y-1/2 items-center justify-center rounded-full [&_svg]:size-4',
                 arrow.side,
               )}
             >

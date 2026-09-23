@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { Download, Plus } from 'lucide-react'
+import { FileSpreadsheet, FileText, Plus } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
 import { ColumnFilterSearch } from '@/shared/components/ColumnFilterSearch'
@@ -9,6 +9,7 @@ import { EmptyState } from '@/shared/components/EmptyState'
 import { RowActions } from '@/shared/components/RowActions'
 import { toast } from '@/shared/ui/toast'
 import { downloadCsv } from '@/shared/lib/csv'
+import { printSheet } from '@/shared/lib/printSheet'
 import { StatusChips } from '@/shared/components/StatusChips'
 import { FilterSelect } from '@/shared/components/FilterSelect'
 import { Badge } from '@/shared/ui/Badge'
@@ -65,28 +66,27 @@ export default function OrdersListPage() {
   const canSeeCost = can('products.cost.view')
 
   /** The order's lines as a spreadsheet — what was ordered, what came, what is still coming. */
-  const downloadOrder = (order: PurchaseOrder) => {
-    downloadCsv(
-      `${order.number}.csv`,
-      [
-        'SKU',
-        'Product',
-        'Unit',
-        'Ordered',
-        'Delivered',
-        'Still coming',
-        ...(canSeeCost ? ['Agreed price', 'Currency'] : []),
-      ],
-      order.lines.map((line) => [
-        line.sku,
-        line.name,
-        line.unit,
-        line.orderedQuantity,
-        line.receivedQuantity,
-        Math.max(0, line.orderedQuantity - line.receivedQuantity),
-        ...(canSeeCost ? [line.unitCost, line.costCurrency] : []),
-      ]),
-    )
+  const downloadOrder = (order: PurchaseOrder, as: 'csv' | 'pdf' = 'csv') => {
+    const head = [
+      'SKU',
+      'Product',
+      'Unit',
+      'Ordered',
+      'Delivered',
+      'Still coming',
+      ...(canSeeCost ? ['Agreed price', 'Currency'] : []),
+    ]
+    const rows = order.lines.map((line) => [
+      line.sku,
+      line.name,
+      line.unit,
+      line.orderedQuantity,
+      line.receivedQuantity,
+      Math.max(0, line.orderedQuantity - line.receivedQuantity),
+      ...(canSeeCost ? [line.unitCost, line.costCurrency] : []),
+    ])
+    if (as === 'pdf') printSheet({ title: order.number, head, rows })
+    else downloadCsv(`${order.number}.csv`, head, rows)
     toast.success(t('{number} downloaded', { number: order.number }))
   }
 
@@ -220,9 +220,14 @@ export default function OrdersListPage() {
           <RowActions
             actions={[
               {
-                label: t('Download'),
-                icon: Download,
-                onSelect: () => downloadOrder(row.original),
+                label: t('Download Excel'),
+                icon: FileSpreadsheet,
+                onSelect: () => downloadOrder(row.original, 'csv'),
+              },
+              {
+                label: t('Download PDF'),
+                icon: FileText,
+                onSelect: () => downloadOrder(row.original, 'pdf'),
               },
             ]}
           />

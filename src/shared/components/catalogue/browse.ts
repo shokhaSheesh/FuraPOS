@@ -18,8 +18,8 @@ export interface CatalogueRow {
   variation: VariationRow
   /** How many are on the document. Zero means it is not on it yet. */
   quantity: number
-  /** Units sold over 3 and 6 months, wherever the document cares about. */
-  demand: { 3: number; 6: number }
+  /** Units sold over 1 and 3 months, wherever the document cares about. */
+  demand: { 1: number; 3: number }
 }
 
 /** One card: a product, with its variations on offer. */
@@ -31,7 +31,7 @@ export interface ProductGroup<R extends CatalogueRow = CatalogueRow> {
   vehicleMakes: string[]
   vehicleModels: string[]
   rows: R[]
-  demand: { 3: number; 6: number }
+  demand: { 1: number; 3: number }
   /** Units of it already on the document, across its variations. */
   chosen: number
 }
@@ -57,13 +57,13 @@ export function groupByProduct<R extends CatalogueRow>(rows: R[]): ProductGroup<
         vehicleMakes: v.vehicleMakes,
         vehicleModels: v.vehicleModels,
         rows: [],
-        demand: { 3: 0, 6: 0 },
+        demand: { 1: 0, 3: 0 },
         chosen: 0,
       }
       groups.set(v.productId, group)
     }
     group.rows.push(row)
-    group.demand = { 3: group.demand[3] + row.demand[3], 6: group.demand[6] + row.demand[6] }
+    group.demand = { 1: group.demand[1] + row.demand[1], 3: group.demand[3] + row.demand[3] }
     group.chosen += row.quantity
   }
   return [...groups.values()]
@@ -144,7 +144,7 @@ export const stockLevel = (units: number): StockLevel =>
 
 /** Best sellers first: over three months, then six to break a tie. */
 export function bestSellingFirst<G extends ProductGroup<CatalogueRow>>(groups: G[]): G[] {
-  return [...groups].sort((a, b) => b.demand[3] - a.demand[3] || b.demand[6] - a.demand[6])
+  return [...groups].sort((a, b) => b.demand[1] - a.demand[1] || b.demand[3] - a.demand[3])
 }
 
 /** Every photo of a product once, first variation's first: its photo, then its gallery. */

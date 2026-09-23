@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import { Ban, Download } from 'lucide-react'
+import { Ban, FileSpreadsheet, FileText } from 'lucide-react'
 import { Badge } from '@/shared/ui/Badge'
 import { SoldBar } from '@/shared/components/SoldBar'
 import { RowActions } from '@/shared/components/RowActions'
@@ -42,7 +42,7 @@ export function buildReceiptColumns({
   salePriceOf,
 }: {
   onCancel: (receipt: GoodsReceipt) => void
-  onDownload: (receipt: GoodsReceipt) => void
+  onDownload: (receipt: GoodsReceipt, as: 'csv' | 'pdf') => void
   canCancelReceipts: boolean
   canSeeCost: boolean
   usdRate: number
@@ -183,9 +183,14 @@ export function buildReceiptColumns({
         <RowActions
           actions={[
             {
-              label: t('Download'),
-              icon: Download,
-              onSelect: () => onDownload(row.original),
+              label: t('Download Excel'),
+              icon: FileSpreadsheet,
+              onSelect: () => onDownload(row.original, 'csv'),
+            },
+            {
+              label: t('Download PDF'),
+              icon: FileText,
+              onSelect: () => onDownload(row.original, 'pdf'),
             },
             {
               label: t('Delete receipt'),

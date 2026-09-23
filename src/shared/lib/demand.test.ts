@@ -70,22 +70,24 @@ describe('demandAt', () => {
   it('reports both windows, the longer one containing the shorter', () => {
     const sales = [
       sale({ quantity: 4, createdAt: daysAgo(10) }),
+      // Inside three months, outside one — the whole point of two windows.
+      sale({ quantity: 5, createdAt: daysAgo(45) }),
       sale({ quantity: 6, createdAt: daysAgo(120) }),
     ]
-    expect(demandAt(sales, 'var-1', 'loc-1', NOW)).toEqual({ 3: 4, 6: 10 })
+    expect(demandAt(sales, 'var-1', 'loc-1', NOW)).toEqual({ 1: 4, 3: 9 })
   })
 })
 
 describe('hasStalled', () => {
   it('flags a part that sold months ago and has since stopped', () => {
-    expect(hasStalled({ 3: 0, 6: 12 })).toBe(true)
+    expect(hasStalled({ 1: 0, 3: 12 })).toBe(true)
   })
 
   it('does not flag one still moving', () => {
-    expect(hasStalled({ 3: 5, 6: 12 })).toBe(false)
+    expect(hasStalled({ 1: 5, 3: 12 })).toBe(false)
   })
 
   it('does not flag one that has never sold', () => {
-    expect(hasStalled({ 3: 0, 6: 0 })).toBe(false)
+    expect(hasStalled({ 1: 0, 3: 0 })).toBe(false)
   })
 })

@@ -266,6 +266,14 @@ Conventions that are load-bearing — follow them rather than inventing per-scre
   `text-fg-muted`, `border-border`). The palette is light blue and white (client request): sky blue `#0A7BC4` with white
   text for primary actions, light blue `#E6F3FC` for soft fills, a white sidebar. Nothing blue means
   "warning" — warning is orange.
+- **Nothing waits for a hover** (client request): the counter is a touch monitor, so a control that
+  only appears under a cursor is a control that does not exist. Photo arrows, the full-size button
+  and every row action are on screen from the start.
+- **Every export offers two formats** (client request): `<ExportMenu>` for a whole list, two row
+  actions for one document — a spreadsheet through `downloadCsv`, and a PDF through `printSheet`,
+  which hands the rows to the browser's print dialog rather than shipping a PDF library.
+- **Demand is read over 1 and 3 months** (client request, was 3 and 6): `DEMAND_WINDOWS` in
+  `shared/lib/demand.ts`, and everything that shows or suggests from it follows.
 - **A number field carries no spinners, and a scrolling table no scrollbar** (client request):
   `input[type=number]` is `appearance: textfield` in `global.css`, and anything scrolling sideways
   takes `.scroll-x-quiet`. Where stepping is the job — a cart line, an opening stock count, a

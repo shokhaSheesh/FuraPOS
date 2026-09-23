@@ -311,7 +311,7 @@ export default function NewTransferPage() {
         const index = indexOf.get(variation.id) ?? -1
         const demand = demandLocationId
           ? demandAt(sales, variation.id, demandLocationId)
-          : { 3: 0, 6: 0 }
+          : { 1: 0, 3: 0 }
         return {
           key: variation.id,
           variation,

@@ -1,9 +1,10 @@
 import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { Download, Plus } from 'lucide-react'
+import { FileSpreadsheet, FileText, Plus } from 'lucide-react'
 import { RowActions } from '@/shared/components/RowActions'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
+import { ExportMenu } from '@/shared/components/ExportMenu'
 import { ColumnFilterSearch } from '@/shared/components/ColumnFilterSearch'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusChips } from '@/shared/components/StatusChips'
@@ -16,6 +17,7 @@ import { useListQuery } from '@/shared/hooks/useListQuery'
 import { useSession } from '@/app/providers/SessionProvider'
 import { paths } from '@/shared/config/paths'
 import { downloadCsv } from '@/shared/lib/csv'
+import { printSheet } from '@/shared/lib/printSheet'
 import { formatDate, formatDateTime, formatMoney, formatNumber } from '@/shared/lib/format'
 import { useSaleStatusCounts, useSales } from '../api/sales'
 import { SALE_FILTER_OVERRIDES } from '../model/saleFilterFields'
@@ -35,20 +37,19 @@ import { SALES_TABS } from '@/shared/config/navigation'
 const Empty = () => <span className="text-fg-subtle">—</span>
 
 /** One sale's lines as a spreadsheet — what was sold, for how much (client request). */
-export function downloadSale(sale: Sale) {
-  downloadCsv(
-    `${sale.number}.csv`,
-    ['SKU', 'Product', 'Unit', 'Quantity', 'Unit price', 'Discount, %', 'Line total'],
-    sale.lines.map((line) => [
-      line.sku,
-      line.name,
-      line.unit,
-      line.quantity,
-      line.unitPrice,
-      line.discountPercent,
-      Math.round(lineTotal(line)),
-    ]),
-  )
+export function downloadSale(sale: Sale, as: 'csv' | 'pdf' = 'csv') {
+  const head = ['SKU', 'Product', 'Unit', 'Quantity', 'Unit price', 'Discount, %', 'Line total']
+  const rows = sale.lines.map((line) => [
+    line.sku,
+    line.name,
+    line.unit,
+    line.quantity,
+    line.unitPrice,
+    line.discountPercent,
+    Math.round(lineTotal(line)),
+  ])
+  if (as === 'pdf') printSheet({ title: sale.number, head, rows })
+  else downloadCsv(`${sale.number}.csv`, head, rows)
   toast.success(t('{number} downloaded', { number: sale.number }))
 }
 
@@ -186,7 +187,16 @@ const columns: TableColumn<Sale>[] = [
     cell: ({ row }) => (
       <RowActions
         actions={[
-          { label: t('Download'), icon: Download, onSelect: () => downloadSale(row.original) },
+          {
+            label: t('Download Excel'),
+            icon: FileSpreadsheet,
+            onSelect: () => downloadSale(row.original, 'csv'),
+          },
+          {
+            label: t('Download PDF'),
+            icon: FileText,
+            onSelect: () => downloadSale(row.original, 'pdf'),
+          },
         ]}
       />
     ),
@@ -235,12 +245,13 @@ export function SalesListPage({ title, description }: { title: string; descripti
     to: to ? new Date(to) : null,
   }
 
-  const exportCsv = () => {
+  /** What leaves the app, as a spreadsheet or as a PDF. */
+  const exportSheet = () => {
     const rows = data?.items ?? []
-    if (!rows.length) return toast.error(t('Nothing to export with these filters'))
-    downloadCsv(
-      `sales-${new Date().toISOString().slice(0, 10)}.csv`,
-      [
+    return {
+      name: `sales-${new Date().toISOString().slice(0, 10)}`,
+      title: t('Sales'),
+      head: [
         'Number',
         'Created',
         'Client',
@@ -252,7 +263,7 @@ export function SalesListPage({ title, description }: { title: string; descripti
         'Debt',
         'Status',
       ],
-      rows.map((sale) => [
+      rows: rows.map((sale) => [
         sale.number,
         sale.createdAt.slice(0, 10),
         sale.clientName ?? 'Walk-in',
@@ -264,8 +275,7 @@ export function SalesListPage({ title, description }: { title: string; descripti
         sale.debt,
         sale.status,
       ]),
-    )
-    toast.success(t('Exported {length} sales', { length: rows.length }))
+    }
   }
 
   return (
@@ -276,10 +286,7 @@ export function SalesListPage({ title, description }: { title: string; descripti
         tabs={<RouteTabs tabs={SALES_TABS} />}
         action={
           <div className="flex items-center gap-2">
-            <Button variant="secondary" onClick={exportCsv}>
-              <Download />
-              {t('Export')}
-            </Button>
+            <ExportMenu sheet={exportSheet} />
             {showCreate ? (
               <Button variant="primary" asChild>
                 <Link to={paths.sales.newSale}>

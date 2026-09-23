@@ -48,6 +48,7 @@ import { TillCatalogue, type TillRow } from '../components/TillCatalogue'
 import { TillCatalogueSidebar, browseTitle } from '../components/TillCatalogueSidebar'
 import { TillCustomer } from '../components/TillCustomer'
 import { TillFilters } from '../components/TillFilters'
+import { driverDebt } from '@/features/drivers/model/driver'
 import { WALK_IN, needsTruck, type TillBuyer } from '../model/buyer'
 import { useActiveTab, useTillStore } from '../model/tillStore'
 import { SaleTabs } from '../components/SaleTabs'
@@ -187,8 +188,18 @@ export default function PosPage() {
 
   const totals = computeTotals(cart, Number(paidText) || 0)
   const units = unitsIn(cart)
-  /** Credit is a debt on somebody's account, so it needs somebody. */
-  const creditWithoutAccount = payment === 'credit' && buyer.client === null
+  /*
+    Credit is a debt on somebody's account: an autopark's, or — where the
+    business has given him one — an owner-driver's own limit (client request).
+  */
+  const owed = buyer.driver ? driverDebt(sales, buyer.driver.id) : null
+  const onHisOwnCredit = buyer.client === null && (buyer.driver?.creditLimit ?? null) !== null
+  const creditWithoutAccount = payment === 'credit' && buyer.client === null && !onHisOwnCredit
+  const overHisLimit =
+    payment === 'credit' &&
+    onHisOwnCredit &&
+    buyer.driver !== null &&
+    (owed?.own ?? 0) + totals.total > (buyer.driver.creditLimit ?? 0)
   // The two rules Settings can switch (client request).
   const company = useDataStore((s) => s.company)
   const clientMissing = !company.allowSaleWithoutClient && buyer.party === null
@@ -196,7 +207,7 @@ export default function PosPage() {
 
   /** Step 1 is done: something to sell, and whose purchase it is. */
   const readyToPay = cart.length > 0 && !needsTruck(buyer) && !clientMissing
-  const blocked = !readyToPay || noDrawer || creditWithoutAccount || zeroBlocked
+  const blocked = !readyToPay || noDrawer || creditWithoutAccount || zeroBlocked || overHisLimit
 
   /*
     A discount given at the counter (client request) — haggling is normal in
@@ -535,6 +546,14 @@ export default function PosPage() {
                 {creditWithoutAccount ? (
                   <p className="text-danger text-2xs">
                     {t('On credit needs a client — find one above, or take payment another way.')}
+                  </p>
+                ) : null}
+                {overHisLimit && buyer.driver ? (
+                  <p className="text-danger text-2xs">
+                    {t('Past his credit limit of {limit} — he already owes {owed}.', {
+                      limit: formatMoney(buyer.driver.creditLimit ?? 0),
+                      owed: formatMoney(Math.round(owed?.own ?? 0)),
+                    })}
                   </p>
                 ) : null}
 

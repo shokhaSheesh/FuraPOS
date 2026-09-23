@@ -8,7 +8,15 @@ import { Button } from '@/shared/ui/Button'
 import { paths } from '@/shared/config/paths'
 import { formatDate, formatDateTime, formatMoney, formatNumber } from '@/shared/lib/format'
 import { useDriver, useDriverSales } from '../api/drivers'
-import { KIND_LABEL, describeTruck, kindOf, type Truck } from '../model/driver'
+import {
+  KIND_LABEL,
+  describeTruck,
+  driverDebt,
+  driverHeadroom,
+  kindOf,
+  type Truck,
+} from '../model/driver'
+import { useDataStore } from '@/data/store'
 import { t } from '@/shared/i18n'
 
 /**
@@ -23,6 +31,10 @@ export default function DriverDetailPage() {
   const { driverId } = useParams()
   const { data: driver } = useDriver(driverId)
   const sales = useDriverSales(driverId)
+  const everySale = useDataStore((state) => state.sales)
+  const clients = useDataStore((state) => state.clients)
+  const owed = driverDebt(everySale, driverId ?? '')
+  const headroom = driver ? driverHeadroom(driver, owed.own) : null
 
   if (!driver) {
     return (
@@ -76,6 +88,37 @@ export default function DriverDetailPage() {
           value={lastSale ? formatDate(lastSale.createdAt) : '—'}
           hint={lastSale?.truckPlate ?? undefined}
         />
+      </div>
+
+      {/*
+        What he owes, split by whose account it went on (client request). His
+        own debt runs against his own limit; what he took in a company's name
+        is the company's to settle, but the counter still knows who carried it
+        out of the door.
+      */}
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Stat
+          label={t('Owed on his own account')}
+          value={formatMoney(Math.round(owed.own))}
+          hint={
+            driver.creditLimit === null
+              ? t('No credit — he pays at the counter')
+              : t('{left} of {limit} left', {
+                  left: formatMoney(Math.round(headroom ?? 0)),
+                  limit: formatMoney(driver.creditLimit),
+                })
+          }
+        />
+        {[...owed.byAutopark].map(([clientId, amount]) => (
+          <Stat
+            key={clientId}
+            label={t('Owed under {autopark}', {
+              autopark: clients.find((client) => client.id === clientId)?.name ?? '—',
+            })}
+            value={formatMoney(Math.round(amount))}
+            hint={t('The company settles it — he is who took it')}
+          />
+        ))}
       </div>
 
       <div className="grid gap-3 lg:grid-cols-2">

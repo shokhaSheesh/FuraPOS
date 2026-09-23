@@ -14,6 +14,7 @@ const EMPTY: DriverDraft = {
   ownTrucks: [{ plate: '', make: null, model: null }],
   autoparkId: null,
   autoparkTruck: null,
+  creditLimit: null,
   comment: null,
   status: 'active',
 }

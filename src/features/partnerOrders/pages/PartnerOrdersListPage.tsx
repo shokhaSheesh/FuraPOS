@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router'
 import { Download } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { RowActions } from '@/shared/components/RowActions'
+import { Button } from '@/shared/ui/Button'
 import { toast } from '@/shared/ui/toast'
 import { downloadCsv } from '@/shared/lib/csv'
 import { DataTable } from '@/shared/components/DataTable'
@@ -60,6 +61,39 @@ export default function PartnerOrdersListPage() {
     const sheet = partnerOrderCsv(order)
     downloadCsv(sheet.name, sheet.head, sheet.rows)
     toast.success(t('{number} downloaded', { number: order.number }))
+  }
+
+  /** Every order on screen, one row each (client request). */
+  const downloadAll = () => {
+    const orders = data?.items ?? []
+    downloadCsv(
+      'partner-orders.csv',
+      [
+        'Number',
+        'Placed',
+        'From',
+        'Status',
+        'Ordered',
+        'Sent',
+        'Still to send',
+        'Value',
+        'Wanted by',
+        'Note',
+      ],
+      orders.map((order) => [
+        order.number,
+        order.placedAt.slice(0, 10),
+        order.clientName,
+        order.status,
+        orderedUnits(order),
+        shippedUnits(order),
+        outstandingUnits(order),
+        Math.round(orderValue(order, USD_RATE)),
+        order.wantedBy?.slice(0, 10) ?? '',
+        order.comment ?? '',
+      ]),
+    )
+    toast.success(t('{count} orders downloaded', { count: orders.length }))
   }
 
   const columns = useMemo<TableColumn<PartnerOrder>[]>(
@@ -186,6 +220,12 @@ export default function PartnerOrdersListPage() {
         description={t(
           'What other businesses have ordered from us. They place it, we accept it and send it — in as many loads as it takes — and they tell us what arrived.',
         )}
+        action={
+          <Button variant="secondary" onClick={downloadAll}>
+            <Download />
+            {t('Export')}
+          </Button>
+        }
         below={
           <div className="flex flex-wrap items-center gap-2">
             <StatusChips

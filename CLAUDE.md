@@ -118,7 +118,10 @@ Do not rename a nav item or invent a screen without updating that map first.
    then **cut at the client's request** — see docs/OX-NAVIGATION-MAP.md.
 5. **Users** (OX: «Управление персоналом», renamed at the client's request) — employees,
    **autoparks** and **drivers** (moved here from Marketing; OX keeps its clients there), and access &
-   roles (granular per-module tree, supports partial/indeterminate access, not just on/off).
+   roles. The driver list opens on **«Все водители»** and splits into owner-drivers and autopark
+   drivers; an owner-driver carries a **credit limit** of his own, and a driver's page shows what he
+   owes on his own account against it and what he has run up **in each autopark's name** — the
+   company settles that, but the counter knows who carried it out (`driverDebt`, client request) (granular per-module tree, supports partial/indeterminate access, not just on/off).
 6. **Finance** `beta` — dashboard, transactions, contracts, invoices, budget, scenarios; then a
    **Reports** group (P&L, cashflow, receivables, payables, cash forecast, employee settlements)
    and a **Setup** group (accounts, categories, period lock, taxes). OX nests these behind a second

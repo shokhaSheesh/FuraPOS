@@ -1,7 +1,7 @@
 import { VehicleMakeSelect, VehicleModelSelect } from '@/shared/components/VehicleSelects'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
-import { Pencil, Plus, Trash2, Truck } from 'lucide-react'
+import { Download, Pencil, Plus, Trash2, Truck } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { DataTable } from '@/shared/components/DataTable'
 import { ColumnFilterSearch } from '@/shared/components/ColumnFilterSearch'
@@ -10,6 +10,9 @@ import { Tabs } from '@/shared/ui/Tabs'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { RowActions } from '@/shared/components/RowActions'
 import { Field } from '@/shared/components/Field'
+import { NumberField } from '@/shared/components/NumberField'
+import { downloadCsv } from '@/shared/lib/csv'
+import { formatMoney } from '@/shared/lib/format'
 import { Badge } from '@/shared/ui/Badge'
 import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
@@ -26,6 +29,8 @@ import { useDataStore } from '@/data/store'
 import { useDriverActions, useDriverCounts, useDrivers } from '../api/drivers'
 import {
   DRIVER_SECTIONS,
+  driverDebt,
+  type DriverSection,
   DRIVER_STATUSES,
   capacityOfSection,
   driverSchema,
@@ -42,6 +47,7 @@ const EMPTY: DriverDraft = {
   ownTrucks: [],
   autoparkId: null,
   autoparkTruck: null,
+  creditLimit: null,
   comment: null,
   status: 'active',
 }
@@ -59,12 +65,13 @@ export default function DriversPage() {
   const { query, setQuery } = useListQuery()
   // The list is always one section or the other — there is no combined view,
   // because "all drivers" is not a group anybody sells to.
-  const section = (query.section as 'independent' | 'autopark') ?? 'independent'
+  const section = (query.section as DriverSection) ?? 'all'
   const { data: everyDriver } = useDrivers({ section })
   const { data } = useDrivers({ search: query.search, section, status: query.status, f: query.f })
   const counts = useDriverCounts()
   const actions = useDriverActions()
   const clients = useDataStore((s) => s.clients)
+  const sales = useDataStore((s) => s.sales)
 
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Driver | null>(null)
@@ -85,6 +92,7 @@ export default function DriversPage() {
             ownTrucks: driver.ownTrucks,
             autoparkId: driver.autoparkId,
             autoparkTruck: driver.autoparkTruck,
+            creditLimit: driver.creditLimit,
             comment: driver.comment,
             status: driver.status,
           }
@@ -219,6 +227,17 @@ export default function DriversPage() {
         ),
       },
       {
+        id: 'creditLimit',
+        header: t('Credit limit'),
+        meta: { align: 'right' },
+        cell: ({ row }) =>
+          row.original.creditLimit === null ? (
+            <span className="text-fg-subtle">—</span>
+          ) : (
+            <span className="tabular-nums">{formatMoney(row.original.creditLimit)}</span>
+          ),
+      },
+      {
         id: 'actions',
         header: '',
         enableHiding: false,
@@ -250,6 +269,41 @@ export default function DriversPage() {
     return section === 'independent' ? all.filter((column) => column.id !== 'autopark') : all
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [can, section])
+
+  /** Everyone in this tab, with what they owe and what they may owe. */
+  const download = () => {
+    downloadCsv(
+      'drivers.csv',
+      [
+        'Code',
+        'Driver',
+        'Phone',
+        'Autopark',
+        'Own trucks',
+        'Autopark truck',
+        'Credit limit',
+        'Owed on his own account',
+        'Owed under autoparks',
+        'Status',
+      ],
+      (data?.items ?? []).map((driver) => {
+        const owed = driverDebt(sales, driver.id)
+        return [
+          driver.code,
+          driver.fullName,
+          driver.phone ?? '',
+          driver.autoparkName ?? '',
+          driver.ownTrucks.map((truck) => truck.plate).join(', '),
+          driver.autoparkTruck?.plate ?? '',
+          driver.creditLimit ?? '',
+          Math.round(owed.own),
+          Math.round(owed.total - owed.own),
+          driver.status,
+        ]
+      }),
+    )
+    toast.success(t('{count} drivers downloaded', { count: data?.items.length ?? 0 }))
+  }
 
   const autoparks = clients
     .filter((client) => client.type === 'business' && client.status === 'active')
@@ -284,12 +338,19 @@ export default function DriversPage() {
           "Who collects parts at the counter. Scanning a driver puts the purchase in his own app, and on the right truck in his autopark's.",
         )}
         action={
-          can('users.drivers.create') ? (
-            <Button variant="primary" onClick={() => openFor(null)}>
-              <Plus />
-              {t('Add driver')}
+          <div className="flex items-center gap-2">
+            {/* Everyone in this tab as a spreadsheet (client request). */}
+            <Button variant="secondary" onClick={download}>
+              <Download />
+              {t('Export')}
             </Button>
-          ) : null
+            {can('users.drivers.create') ? (
+              <Button variant="primary" onClick={() => openFor(null)}>
+                <Plus />
+                {t('Add driver')}
+              </Button>
+            ) : null}
+          </div>
         }
       />
 
@@ -496,6 +557,20 @@ export default function DriversPage() {
                   value={draft.status}
                   onChange={(status) => setDraft((c) => ({ ...c, status: status as DriverStatus }))}
                   options={DRIVER_STATUSES.map((option) => ({ ...option, label: t(option.label) }))}
+                />
+              )}
+            </Field>
+            {/* What he may run up on his own account (client request). */}
+            <Field
+              label={t('Credit limit')}
+              hint={t('What he may owe on his own account. Empty means he pays at the counter.')}
+              error={errors.creditLimit?.[0]}
+            >
+              {(p) => (
+                <NumberField
+                  {...p}
+                  value={draft.creditLimit}
+                  onChange={(creditLimit) => setDraft((c) => ({ ...c, creditLimit }))}
                 />
               )}
             </Field>

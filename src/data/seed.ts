@@ -1993,6 +1993,9 @@ export const drivers: Driver[] = (
       autopark && autoparkTruck
         ? { plate: autoparkTruck[0], make: autoparkTruck[1], model: autoparkTruck[2] }
         : null,
+    // By position, not by a draw: an owner-driver who has been coming a while
+    // has a limit, the rest pay at the counter. Nothing else in the seed moves.
+    creditLimit: ownTrucks.length > 0 ? (index % 2 === 0 ? 8_000_000 : 3_000_000) : null,
     comment: null,
     status,
     createdAt: new Date(Date.now() - between(30, 900) * 86_400_000).toISOString(),

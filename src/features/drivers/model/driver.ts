@@ -81,6 +81,13 @@ export interface Driver {
    */
   autoparkTruck: Truck | null
 
+  /**
+   * What an owner-driver may run up on his own account (client request).
+   * Null means no credit: he pays at the counter. An autopark driver buys on
+   * his company's limit, not on this one.
+   */
+  creditLimit: number | null
+
   comment: string | null
   status: DriverStatus
   createdAt: IsoDate
@@ -158,8 +165,12 @@ export const KIND_LABEL: Record<DriverKind, string> = {
   both: 'Both',
 }
 
-/** The two tabs the list is split into. */
-export const DRIVER_SECTIONS: { value: 'independent' | 'autopark'; label: string }[] = [
+/** The tabs the list is split into — everybody, then each way of buying. */
+export type DriverSection = 'all' | 'independent' | 'autopark'
+
+export const DRIVER_SECTIONS: { value: DriverSection; label: string }[] = [
+  // Client request: one tab with everyone in it, whichever way they buy.
+  { value: 'all', label: 'All drivers' },
   { value: 'independent', label: 'Owner-drivers' },
   { value: 'autopark', label: 'Autopark drivers' },
 ]
@@ -173,14 +184,15 @@ export const DRIVER_SECTIONS: { value: 'independent' | 'autopark'; label: string
  */
 export function inSection(
   driver: Pick<Driver, 'ownTrucks' | 'autoparkId'>,
-  section: 'independent' | 'autopark',
+  section: DriverSection,
 ): boolean {
+  if (section === 'all') return true
   return section === 'independent' ? hasOwnTruck(driver) : drivesForAutopark(driver)
 }
 
 /** The capacity a section corresponds to — what the list should show there. */
-export const capacityOfSection = (section: 'independent' | 'autopark'): DriverCapacity =>
-  section === 'independent' ? 'own' : 'autopark'
+export const capacityOfSection = (section: DriverSection): DriverCapacity =>
+  section === 'autopark' ? 'autopark' : 'own'
 
 /* --- validation ---------------------------------------------------------- */
 
@@ -197,6 +209,8 @@ export const driverSchema = z
     ownTrucks: z.array(truckSchema),
     autoparkId: z.string().nullable(),
     autoparkTruck: truckSchema.nullable(),
+    /** What he may owe on his own account. Null is "no credit". */
+    creditLimit: z.number().nonnegative('A limit cannot be negative').nullable(),
     comment: z.string().nullable(),
     status: z.enum(['active', 'inactive']),
   })
@@ -230,4 +244,36 @@ export function describeCapacity(
     return only ? `Himself · ${only.plate}` : 'Himself'
   }
   return [driver.autoparkName, driver.autoparkTruck?.plate].filter(Boolean).join(' · ')
+}
+
+/* --- what he owes -------------------------------------------------------- */
+
+/** A sale, as far as a driver's debt is concerned. */
+type DebtSale = { driverId: string | null; clientId: string | null; debt: number }
+
+/**
+ * What a driver has left unpaid, split by whose account it went on
+ * (client request).
+ *
+ * `own` is his own debt — a purchase on his own truck, against his own credit
+ * limit. `byAutopark` is what he has taken in each company's name: the company
+ * owes it, but the counter still knows which of their drivers walked out with
+ * it, which is the question an autopark owner always asks.
+ */
+export function driverDebt(sales: DebtSale[], driverId: string) {
+  const his = sales.filter((sale) => sale.driverId === driverId && sale.debt > 0)
+  const byAutopark = new Map<string, number>()
+  let own = 0
+  for (const sale of his) {
+    if (sale.clientId)
+      byAutopark.set(sale.clientId, (byAutopark.get(sale.clientId) ?? 0) + sale.debt)
+    else own += sale.debt
+  }
+  return { own, byAutopark, total: own + [...byAutopark.values()].reduce((a, b) => a + b, 0) }
+}
+
+/** What is left of an owner-driver's credit. Null when he has no limit. */
+export function driverHeadroom(driver: Pick<Driver, 'creditLimit'>, owed: number): number | null {
+  if (driver.creditLimit === null) return null
+  return Math.max(0, driver.creditLimit - owed)
 }

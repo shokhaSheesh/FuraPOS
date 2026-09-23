@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
+  driverDebt,
+  driverHeadroom,
   capacitiesOf,
   capacityOfSection,
   describeCapacity,
@@ -170,6 +172,7 @@ describe('driverSchema', () => {
     ownTrucks: [{ plate: '01 A 123 AA', make: 'MAN', model: 'TGX' }],
     autoparkId: null,
     autoparkTruck: null,
+    creditLimit: null,
     comment: null,
     status: 'active' as const,
   }
@@ -234,5 +237,37 @@ describe('statusLabel', () => {
   it('reads in plain words', () => {
     expect(statusLabel('active')).toBe('Driving')
     expect(statusLabel('inactive')).toBe('No longer driving')
+  })
+})
+
+describe('driverDebt', () => {
+  const sale = (
+    over: Partial<{ driverId: string | null; clientId: string | null; debt: number }>,
+  ) => ({ driverId: 'driver-1', clientId: null, debt: 0, ...over })
+
+  it('splits what he owes himself from what he took in a company name', () => {
+    const owed = driverDebt(
+      [
+        sale({ debt: 400_000 }),
+        sale({ clientId: 'cl-1', debt: 1_000_000 }),
+        sale({ clientId: 'cl-1', debt: 250_000 }),
+        sale({ clientId: 'cl-2', debt: 90_000 }),
+        // Somebody else's, and a sale that was paid in full.
+        sale({ driverId: 'driver-2', debt: 700_000 }),
+        sale({ debt: 0 }),
+      ],
+      'driver-1',
+    )
+    expect(owed.own).toBe(400_000)
+    expect(owed.byAutopark.get('cl-1')).toBe(1_250_000)
+    expect(owed.byAutopark.get('cl-2')).toBe(90_000)
+    expect(owed.total).toBe(1_740_000)
+  })
+
+  it('leaves a driver with no limit no headroom to report', () => {
+    expect(driverHeadroom({ creditLimit: null }, 500_000)).toBeNull()
+    expect(driverHeadroom({ creditLimit: 800_000 }, 500_000)).toBe(300_000)
+    // Past the limit is no credit left, never a negative one.
+    expect(driverHeadroom({ creditLimit: 800_000 }, 900_000)).toBe(0)
   })
 })

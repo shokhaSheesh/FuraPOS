@@ -4,7 +4,13 @@ import { gettersOf } from '@/shared/lib/columnFilterFields'
 import { DRIVER_FILTER_OVERRIDES } from '../model/driverFilterFields'
 import { useDataStore } from '@/data/store'
 import { matches } from '@/data/query'
-import { inSection, type Driver, type DriverDraft, type DriverStatus } from '../model/driver'
+import {
+  inSection,
+  type Driver,
+  type DriverDraft,
+  type DriverSection,
+  type DriverStatus,
+} from '../model/driver'
 
 export function useDrivers(
   filters: { search?: unknown; section?: unknown; status?: unknown; f?: unknown } = {},
@@ -15,7 +21,7 @@ export function useDrivers(
     const items = drivers
       .filter((driver) => {
         if (filters.status && driver.status !== filters.status) return false
-        if (filters.section && !inSection(driver, filters.section as 'independent' | 'autopark')) {
+        if (filters.section && !inSection(driver, filters.section as DriverSection)) {
           return false
         }
         // Plates are searched too: at the counter people know the truck
@@ -49,10 +55,11 @@ export function useDrivers(
  * There is no total, because adding them would produce a number that means
  * nothing.
  */
-export function useDriverCounts(): Record<'independent' | 'autopark', number> {
+export function useDriverCounts(): Record<DriverSection, number> {
   const drivers = useDataStore((s) => s.drivers)
   return useMemo(
     () => ({
+      all: drivers.length,
       independent: drivers.filter((driver) => inSection(driver, 'independent')).length,
       autopark: drivers.filter((driver) => inSection(driver, 'autopark')).length,
     }),

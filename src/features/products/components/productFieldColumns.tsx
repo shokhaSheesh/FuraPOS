@@ -234,5 +234,6 @@ export function buildProductFieldColumns<T extends RowData>({
  * after nineteen catalogue fields.
  */
 export const PRODUCT_FIELD_COLUMN_IDS = PRODUCT_COLUMN_ORDER.filter(
-  (id) => id !== 'status' && id !== 'actions',
+  // 'labels' is the list's label-printing control, not a field of a product.
+  (id) => id !== 'status' && id !== 'actions' && id !== 'labels',
 )

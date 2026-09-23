@@ -1,6 +1,6 @@
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/shared/ui/Button'
-import { QuantityStepper } from '@/shared/components/catalogue/VariationsDialog'
+import { QuantityStepper } from '@/shared/components/QuantityStepper'
 import { Badge } from '@/shared/ui/Badge'
 import { RowActions } from '@/shared/components/RowActions'
 import { ProductThumb } from '@/shared/components/ProductThumb'

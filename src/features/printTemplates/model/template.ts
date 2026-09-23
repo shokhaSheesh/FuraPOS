@@ -14,12 +14,14 @@ import { t } from '@/shared/i18n'
  * print. The preview is rendered to true scale in millimetres, which is the
  * one thing about a label that must be right before anything is printed.
  */
-export type TemplateKind = 'label' | 'shelf' | 'receipt'
+export type TemplateKind = 'label' | 'shelf' | 'receipt' | 'waybill'
 
 export const TEMPLATE_KINDS: { value: TemplateKind; label: string; hint: string }[] = [
   { value: 'label', label: 'Product label', hint: 'Goes on the part itself' },
   { value: 'shelf', label: 'Shelf label', hint: 'Goes on the rack, priced' },
-  { value: 'receipt', label: 'Receipt', hint: 'Handed to the customer' },
+  { value: 'receipt', label: 'Customer receipt', hint: 'Handed to the customer' },
+  // Client request: the fourth paper this trade prints.
+  { value: 'waybill', label: 'Waybill', hint: 'Goes with the goods, signed by both' },
 ]
 
 export type CodeKind = 'none' | 'barcode' | 'qr'
@@ -48,28 +50,38 @@ export const TEMPLATE_FIELDS: TemplateField[] = [
   {
     key: 'productName',
     label: 'Product name',
-    kinds: ['label', 'shelf', 'receipt'],
+    kinds: ['label', 'shelf', 'receipt', 'waybill'],
     sample: 'Brake pad set, front',
   },
-  { key: 'sku', label: 'SKU', kinds: ['label', 'shelf', 'receipt'], sample: 'FS-14829' },
-  { key: 'oem', label: 'OEM codes', kinds: ['label', 'shelf'], sample: '1K0 698 151 B' },
-  { key: 'brand', label: 'Brand', kinds: ['label', 'shelf', 'receipt'], sample: 'Bosch' },
-  { key: 'category', label: 'Category', kinds: ['label', 'shelf'], sample: 'Brakes' },
+  { key: 'sku', label: 'SKU', kinds: ['label', 'shelf', 'receipt', 'waybill'], sample: 'FS-14829' },
+  { key: 'oem', label: 'OEM codes', kinds: ['label', 'shelf', 'waybill'], sample: '1K0 698 151 B' },
+  {
+    key: 'brand',
+    label: 'Brand',
+    kinds: ['label', 'shelf', 'receipt', 'waybill'],
+    sample: 'Bosch',
+  },
+  { key: 'category', label: 'Category', kinds: ['label', 'shelf', 'waybill'], sample: 'Brakes' },
   {
     key: 'vehicle',
     label: 'Make and models',
-    kinds: ['label', 'shelf'],
+    kinds: ['label', 'shelf', 'waybill'],
     sample: 'VW Golf V, Audi A3',
   },
-  { key: 'shelf', label: 'Shelf address', kinds: ['label', 'shelf'], sample: 'A-04-12' },
-  { key: 'price', label: 'Price', kinds: ['shelf', 'receipt'], sample: '420 000' },
+  { key: 'shelf', label: 'Shelf address', kinds: ['label', 'shelf', 'waybill'], sample: 'A-04-12' },
+  { key: 'price', label: 'Price', kinds: ['shelf', 'receipt', 'waybill'], sample: '420 000' },
   {
     key: 'company',
     label: 'Company name',
-    kinds: ['label', 'shelf', 'receipt'],
+    kinds: ['label', 'shelf', 'receipt', 'waybill'],
     sample: 'Fura Sentr',
   },
-  { key: 'date', label: 'Date printed', kinds: ['label', 'receipt'], sample: '09.09.2026' },
+  {
+    key: 'date',
+    label: 'Date printed',
+    kinds: ['label', 'receipt', 'waybill'],
+    sample: '09.09.2026',
+  },
 ]
 
 export const fieldsFor = (kind: TemplateKind) =>
@@ -83,6 +95,48 @@ export const PRESET_SIZES: { label: string; widthMm: number; heightMm: number }[
   { label: '100 × 150 mm', widthMm: 100, heightMm: 150 },
 ]
 
+/**
+ * One thing placed on the sheet, in millimetres from its top-left corner
+ * (client request: OX's canvas, where everything is dragged where it goes).
+ *
+ * A `field` prints a column of the variation; `text` prints what was typed;
+ * `barcode` and `qr` print the code; `line`, `rect` and `circle` are the rules
+ * and boxes a form needs. Everything is measured in millimetres, because that
+ * is what comes out of the printer — pixels are only how it looks on screen.
+ */
+export type ElementKind = 'field' | 'text' | 'barcode' | 'qr' | 'line' | 'rect' | 'circle'
+
+export interface TemplateElement {
+  id: string
+  kind: ElementKind
+  /** Which variation column, for a `field`. */
+  field?: string
+  /** What was typed, for a `text`. */
+  text?: string
+  xMm: number
+  yMm: number
+  widthMm: number
+  heightMm: number
+  fontPt: number
+  bold: boolean
+  italic: boolean
+  underline: boolean
+  strike: boolean
+  align: 'left' | 'center' | 'right'
+  /** A CSS colour — black ink unless somebody chose otherwise. */
+  color: string
+}
+
+export const ELEMENT_DEFAULTS = {
+  fontPt: 9,
+  bold: false,
+  italic: false,
+  underline: false,
+  strike: false,
+  align: 'left',
+  color: '#111111',
+} as const
+
 export interface PrintTemplate {
   id: Id
   name: string
@@ -94,18 +148,44 @@ export interface PrintTemplate {
   fields: string[]
   /** Bigger than the rest, at the top. Usually the product name. */
   headlineField: string | null
+  /**
+   * Laid out by hand on the canvas. Empty means the template still prints as
+   * the plain stack of fields it was made as, which is what the seeded ones do
+   * until somebody opens the designer.
+   */
+  elements?: TemplateElement[]
   createdBy: string
   updatedAt: IsoDate
 }
 
+const elementSchema = z.object({
+  id: z.string(),
+  kind: z.enum(['field', 'text', 'barcode', 'qr', 'line', 'rect', 'circle']),
+  field: z.string().optional(),
+  text: z.string().optional(),
+  xMm: z.number(),
+  yMm: z.number(),
+  widthMm: z.number(),
+  heightMm: z.number(),
+  fontPt: z.number(),
+  bold: z.boolean(),
+  italic: z.boolean(),
+  underline: z.boolean(),
+  strike: z.boolean(),
+  align: z.enum(['left', 'center', 'right']),
+  color: z.string(),
+})
+
 export const templateSchema = z.object({
   name: z.string().min(2, 'Give the template a name'),
-  kind: z.enum(['label', 'shelf', 'receipt']),
+  kind: z.enum(['label', 'shelf', 'receipt', 'waybill']),
   widthMm: z.number().min(20, 'Nothing readable prints under 20 mm').max(210, 'Wider than A4'),
   heightMm: z.number().min(20, 'Nothing readable prints under 20 mm').max(297, 'Taller than A4'),
   code: z.enum(['none', 'barcode', 'qr']),
   fields: z.array(z.string()).min(1, 'A label with no fields on it prints a blank sticker'),
   headlineField: z.string().nullable(),
+  /** Laid out by hand. Empty means the fields print as a plain stack. */
+  elements: z.array(elementSchema).default([]),
 })
 
 export type TemplateDraft = z.infer<typeof templateSchema>
@@ -147,6 +227,51 @@ export function describeTemplate(template: PrintTemplate): string {
   const parts = [kindLabel(template.kind), t('{count} fields', { count: template.fields.length })]
   if (template.code !== 'none') parts.push(template.code === 'qr' ? t('QR code') : t('barcode'))
   return parts.join(' · ')
+}
+
+/**
+ * The chosen fields, laid out down the label as a starting point for the
+ * canvas — the headline first and larger, the rest beneath it. Somebody
+ * opening the designer starts from what they already ticked, not a blank
+ * sheet.
+ */
+export function elementsFromFields(draft: {
+  fields: string[]
+  headlineField: string | null
+  widthMm: number
+  code: CodeKind
+  heightMm: number
+}): TemplateElement[] {
+  const ordered = [
+    ...(draft.headlineField ? [draft.headlineField] : []),
+    ...draft.fields.filter((field) => field !== draft.headlineField),
+  ]
+  const lineMm = 5
+  const elements: TemplateElement[] = ordered.map((field, index) => ({
+    id: `el-${field}-${index}`,
+    kind: 'field',
+    field,
+    xMm: 3,
+    yMm: 3 + index * lineMm,
+    widthMm: Math.max(10, draft.widthMm - 6),
+    heightMm: lineMm - 0.5,
+    ...ELEMENT_DEFAULTS,
+    fontPt: index === 0 && draft.headlineField ? 12 : ELEMENT_DEFAULTS.fontPt,
+    bold: index === 0 && Boolean(draft.headlineField),
+  }))
+  if (draft.code !== 'none') {
+    const size = draft.code === 'qr' ? 16 : 12
+    elements.push({
+      id: 'el-code',
+      kind: draft.code === 'qr' ? 'qr' : 'barcode',
+      xMm: 3,
+      yMm: Math.max(3, draft.heightMm - size - 3),
+      widthMm: draft.code === 'qr' ? size : Math.max(16, draft.widthMm - 6),
+      heightMm: size,
+      ...ELEMENT_DEFAULTS,
+    })
+  }
+  return elements
 }
 
 /**

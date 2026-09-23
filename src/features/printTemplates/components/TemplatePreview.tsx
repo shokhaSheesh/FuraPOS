@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { cn } from '@/shared/lib/cn'
 import { TEMPLATE_FIELDS, type PrintTemplate } from '../model/template'
+import { ElementBody } from './TemplateCanvas'
 
 /** Same string in, same pattern out — a preview that flickers looks broken. */
 function hash(seed: string): () => number {
@@ -26,14 +27,22 @@ function hash(seed: string): () => number {
  * it shows how much room the code takes, which is the only question the
  * preview needs to answer.
  */
-function Barcode({ seed, height }: { seed: string; height: number }) {
+export function Barcode({
+  seed,
+  height,
+  className,
+}: {
+  seed: string
+  height: number
+  className?: string
+}) {
   const bars = useMemo(() => {
     const next = hash(seed)
     return Array.from({ length: 42 }, () => (next() > 0.5 ? 2 : 1))
   }, [seed])
 
   return (
-    <div className="flex items-end gap-px" style={{ height }} aria-hidden>
+    <div className={cn('flex items-end gap-px', className)} style={{ height }} aria-hidden>
       {bars.map((weight, index) => (
         <span
           key={index}
@@ -45,7 +54,7 @@ function Barcode({ seed, height }: { seed: string; height: number }) {
   )
 }
 
-function QrCode({ seed, size }: { seed: string; size: number }) {
+export function QrCode({ seed, size }: { seed: string; size: number }) {
   const cells = useMemo(() => {
     const next = hash(seed)
     const grid = 21
@@ -118,6 +127,34 @@ export function TemplatePreview({
   const text = (key: string) =>
     values?.[key] ?? TEMPLATE_FIELDS.find((field) => field.key === key)?.sample ?? ''
 
+  // Laid out by hand on the canvas: every element sits where it was dropped.
+  if (template.elements && template.elements.length > 0) {
+    return (
+      <div
+        className={cn(
+          'relative overflow-hidden border border-neutral-300 bg-white text-neutral-950',
+          className,
+        )}
+        style={{ width, height }}
+      >
+        {template.elements.map((element) => (
+          <div
+            key={element.id}
+            className="absolute"
+            style={{
+              left: element.xMm * mmToPx,
+              top: element.yMm * mmToPx,
+              width: element.widthMm * mmToPx,
+              height: element.heightMm * mmToPx,
+            }}
+          >
+            <ElementBody element={element} values={values} mmToPx={mmToPx} />
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   const headline = template.headlineField
   const rest = template.fields.filter((field) => field !== headline)
   const codeSize = Math.min(height * 0.34, width * 0.34)
@@ -171,3 +208,7 @@ export function TemplatePreview({
     </div>
   )
 }
+
+/** The sample text a field shows on a blank template. */
+export const sampleFor = (key: string) =>
+  TEMPLATE_FIELDS.find((field) => field.key === key)?.sample ?? ''

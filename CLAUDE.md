@@ -262,6 +262,12 @@ Conventions that are load-bearing — follow them rather than inventing per-scre
   `input[type=number]` is `appearance: textfield` in `global.css`, and anything scrolling sideways
   takes `.scroll-x-quiet`. Where stepping is the job — a cart line, an opening stock count, a
   document's quantities — the screen draws `<QuantityStepper>` instead.
+- **A print template is laid out by hand** (client request, as OX does it): `<TemplateCanvas>` is
+  the label at true scale, where fields, text, codes, lines and boxes are dragged where they go and
+  pulled to size, each with its own size, colour, weight and alignment. The layout lives in
+  `elements` on the template; a template with none still prints as the plain stack of ticked
+  fields it was made as, and «Разложить вручную» turns that stack into elements to move. The four
+  kinds are **Этикетка товара / Этикетка на полку / Чек / Накладная**.
 - **Labels are printed off the product list** (client request, as OX does it): the first column of
   every row is a `+` that becomes a − / count / + stepper, what is picked gathers in a basket at
   the corner of the screen across pages and views, and `<LabelBasket>` prints the lot on one sheet

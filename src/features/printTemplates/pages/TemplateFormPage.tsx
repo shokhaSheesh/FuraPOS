@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import { ArrowDown, ArrowLeft, ArrowUp, Save } from 'lucide-react'
+import { ArrowDown, ArrowLeft, ArrowUp, LayoutTemplate, Save } from 'lucide-react'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { Field } from '@/shared/components/Field'
 import { NumberField } from '@/shared/components/NumberField'
@@ -14,6 +14,7 @@ import { toast } from '@/shared/ui/toast'
 import { paths } from '@/shared/config/paths'
 import { usePrintTemplate, useTemplateActions } from '../api/templates'
 import {
+  elementsFromFields,
   CODE_KINDS,
   PRESET_SIZES,
   TEMPLATE_KINDS,
@@ -26,6 +27,7 @@ import {
   type TemplateKind,
 } from '../model/template'
 import { TemplatePreview } from '../components/TemplatePreview'
+import { TemplateCanvas } from '../components/TemplateCanvas'
 import { t } from '@/shared/i18n'
 
 const EMPTY: TemplateDraft = {
@@ -36,6 +38,7 @@ const EMPTY: TemplateDraft = {
   code: 'barcode',
   fields: ['productName', 'sku'],
   headlineField: 'productName',
+  elements: [],
 }
 
 /**
@@ -67,6 +70,7 @@ export default function TemplateFormPage() {
           code: existing.code,
           fields: existing.fields,
           headlineField: existing.headlineField,
+          elements: existing.elements ?? [],
         }
       : EMPTY,
   )
@@ -266,6 +270,50 @@ export default function TemplateFormPage() {
           </Card>
 
           <Card>
+            <CardHeader className="items-start justify-between gap-3">
+              <div>
+                <CardTitle>{t('Layout')}</CardTitle>
+                <p className="text-fg-subtle text-2xs mt-0.5">
+                  {draft.elements.length > 0
+                    ? t('Drag anything where it goes, and pull its corner to resize it.')
+                    : t('The ticked fields print in order. Lay them out by hand to move them.')}
+                </p>
+              </div>
+              {draft.elements.length > 0 ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setDraft((c) => ({ ...c, elements: [] }))}
+                >
+                  {t('Back to the plain list')}
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setDraft((c) => ({ ...c, elements: elementsFromFields(c) }))}
+                >
+                  <LayoutTemplate />
+                  {t('Lay it out by hand')}
+                </Button>
+              )}
+            </CardHeader>
+            {draft.elements.length > 0 ? (
+              <CardBody>
+                <TemplateCanvas
+                  kind={draft.kind}
+                  widthMm={draft.widthMm}
+                  heightMm={draft.heightMm}
+                  elements={draft.elements}
+                  onChange={(elements) => setDraft((c) => ({ ...c, elements }))}
+                />
+              </CardBody>
+            ) : null}
+          </Card>
+
+          <Card className={draft.elements.length > 0 ? 'hidden' : undefined}>
             <CardHeader className="flex-col items-stretch gap-1">
               <CardTitle>{t('What prints on it')}</CardTitle>
               <p className="text-fg-subtle text-2xs">
